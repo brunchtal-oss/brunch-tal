@@ -40,3 +40,5 @@ pnpm-debug.log*
 next-env.d.ts
 
 context-practice-files/
+.vercel
+.env*
