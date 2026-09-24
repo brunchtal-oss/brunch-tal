@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>בראנץ׳ סתיו: שקשוקה ירוקה ולחמים חמים · בראנץ׳ אצל טל — מוקאפ מסך מפתח</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@200;300&family=Assistant:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/*
+  KEY SCREEN — public session page: guest (col 1) vs logged-in customer (col 2)
+  Governing spine sections (the spine is the contract; this mock only illustrates):
+  - DESIGN.md › Colors, Typography (display-lg 40/200 on cream only; numbers/dates in Assistant),
+    Layout & Spacing (gutter 24, section-public 88, whatsapp-bar reserve only when the bar exists), Shapes
+  - DESIGN.md › Components: top-bar, chip-type, status-chip (few-left), button-secondary, button-primary,
+    button-link, whatsapp-bar, card-framed photo (direction 1 frame, rounded.sm photo)
+  - EXPERIENCE.md › IA › אתר ציבורי › עמוד מפגש (לאורחת אין כפתור הרשמה), Component Patterns › top-bar
+    (לקוחה מחוברת: "האזור שלי"; בעמוד מפגש "להרשמה"; בלי whatsapp-bar), whatsapp-bar, State Patterns ›
+    מצבי מפגש (נותרו מעט ≤3), Accessibility Floor (<time>, h1, landmarks), Flow 1 steps 4–6
+  - .memlog: "Logged-in customer on public session page sees 'להרשמה' … and no WhatsApp join bar"
+  Fonts: Heebo + Assistant via Google Fonts, system fallbacks. No JS.
+*/
+:root{
+  --background:#FAF6EE;--card:#FFFDF8;--muted:#F2ECDF;--ink:#2E2A1F;--ink-muted:#6B6450;--border:#E6DFCF;
+  --accent:#8A875A;--primary:#4A4A2A;--on-primary:#FAF6EE;
+  --success:#4E6B34;--success-tint:#E7EDDC;--success-dot:#8FA874;
+  --warning:#8C5E14;--warning-tint:#F4E8D0;--warning-dot:#C9A060;
+  --expired:#676154;--expired-tint:#EDE9E0;--expired-dot:#B0A998;
+  --scrim72:rgba(46,42,31,.72);--scrim85:rgba(46,42,31,.85);--scrim40:rgba(46,42,31,.40);
+  --display:'Heebo',"Segoe UI",system-ui,sans-serif;
+  --body:'Assistant',"Segoe UI",system-ui,sans-serif;
+  --gutter:24px;--section:88px;--touch:44px;--cta:48px;--safe:20px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#EFE9DC;color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5}
+a{color:inherit}
+ul,ol{list-style:none}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px;box-shadow:0 0 0 2px var(--on-primary)}
+
+/* ---------- presentation shell (not part of the product) ---------- */
+.doc-head{max-width:880px;margin:0 auto;padding:32px 16px 8px}
+.doc-head h1{font-family:var(--display);font-weight:300;font-size:28px}
+.doc-head p{color:var(--ink-muted);font-size:15px;margin-top:6px}
+.cols{max-width:880px;margin:0 auto;padding:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(390px,1fr));gap:40px;align-items:start}
+.col-h{font-family:var(--display);font-weight:300;font-size:22px;margin-bottom:4px}
+.col-n{color:var(--ink-muted);font-size:14px;margin-bottom:14px;min-height:64px}
+.phone{width:390px;max-width:100%;height:844px;margin:0 auto;border:10px solid #2E2A1F;border-radius:44px;overflow:hidden;background:var(--background);position:relative}
+.screen{height:100%;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scroll-padding-bottom:calc(var(--cta) + 16px + var(--safe))}
+.home-ind{position:absolute;bottom:7px;left:50%;transform:translateX(-50%);width:120px;height:4px;border-radius:9999px;background:#2E2A1F;opacity:.55;z-index:30}
+.anno{border:1.5px dashed #9A8F74;border-radius:8px;padding:12px 14px;color:#5A5343;background:repeating-linear-gradient(135deg,#F6F1E6 0 8px,#F2ECDF 8px 16px);font-size:13px;line-height:1.45}
+.anno b{font-weight:600;display:block;margin-bottom:2px}
+.todo{display:inline-block;border:1px dashed #9A8F74;border-radius:4px;padding:0 6px;color:#5A5343;background:#F6F1E6;font-size:15px}
+
+/* ---------- photo placeholders ---------- */
+.ph{position:relative;overflow:hidden}
+.ph .lbl{position:absolute;inset-inline-start:10px;bottom:10px;background:var(--scrim85);color:var(--on-primary);font-size:13px;padding:3px 10px;border-radius:9999px;line-height:1.4}
+.ph-table{background:
+  radial-gradient(circle at 30% 35%,#F2C94C 0 7%,#FFF6DA 7.5% 11%,transparent 11.5%),
+  radial-gradient(circle at 30% 35%,#B8432F 0 16%,#7C3B22 16.5% 20%,transparent 20.5%),
+  radial-gradient(circle at 72% 30%,#E7D3A8 0 13%,#FFFDF8 13.5% 18%,transparent 18.5%),
+  radial-gradient(circle at 60% 58%,#6E8B3D 0 10%,#FFFDF8 10.5% 15%,transparent 15.5%),
+  radial-gradient(circle at 20% 62%,#D98E4A 0 8%,#F4E6CC 8.5% 12%,transparent 12.5%),
+  radial-gradient(circle at 86% 60%,#A63D40 0 5%,transparent 5.5%),
+  linear-gradient(135deg,#C49568,#8E6A45)}
+.ph-moms{background:
+  radial-gradient(circle at 30% 40%,#E3B999 0 9%,transparent 9.5%),
+  radial-gradient(circle at 65% 38%,#C99474 0 9%,transparent 9.5%),
+  radial-gradient(ellipse 55% 20% at 50% 80%,#F4ECDD 0 60%,transparent 61%),
+  linear-gradient(180deg,#A9B38A,#7F8A5E)}
+.ph-bread{background:
+  radial-gradient(ellipse 40% 22% at 40% 45%,#C98A45 0 70%,#9C6630 71% 100%,transparent 100%),
+  radial-gradient(ellipse 30% 18% at 70% 65%,#D9A35F 0 70%,#A8703A 71% 100%,transparent 100%),
+  linear-gradient(145deg,#E8D9BD,#C7AF88)}
+
+/* ---------- top-bar ---------- */
+.skip{position:absolute;inset-inline-start:8px;top:-60px}
+.skip:focus{top:8px;z-index:50;background:var(--background);padding:8px 12px;border-radius:4px}
+.top-bar{display:flex;align-items:center;gap:8px;padding:20px var(--gutter);background:var(--background)}
+.wordmark{font-family:var(--display);font-weight:300;font-size:20px;line-height:1;letter-spacing:.01em;text-decoration:none;margin-inline-end:auto;min-height:var(--touch);display:inline-flex;align-items:center}
+.btn-login{display:inline-flex;align-items:center;min-height:var(--touch);padding:0 12px;border:1px solid var(--ink);border-radius:4px;font-size:13px;font-weight:600;line-height:1.4;text-decoration:none;color:var(--ink);background:transparent}
+.btn-menu{width:var(--touch);height:var(--touch);display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:4px;background:transparent;color:var(--ink);flex:none}
+.btn-menu svg{width:24px;height:24px}
+/* over hero: 72% band behind whole bar; menu + login become solid chips */
+.top-bar.over-hero{position:absolute;top:0;inset-inline:0;z-index:5;background:transparent;padding-inline:16px 16px}
+.top-bar.over-hero .wordmark{color:var(--on-primary)}
+.top-bar.over-hero .btn-login,.top-bar.over-hero .btn-menu{background:var(--background);color:var(--ink);border-color:var(--background)}
+
+/* ---------- hero ---------- */
+.hero{position:relative;min-height:560px;display:flex;flex-direction:column;justify-content:flex-end;color:var(--on-primary)}
+.hero .ph{position:absolute;inset:0}
+.hero .ph .lbl{bottom:auto;top:150px}
+.hero-top-scrim{position:absolute;top:0;inset-inline:0;height:140px;background:linear-gradient(180deg,var(--scrim72) 0,var(--scrim72) 90px,rgba(46,42,31,0) 140px);z-index:1}
+.hero-text{position:relative;z-index:2;padding:8px var(--gutter) 32px;background:linear-gradient(180deg,var(--scrim72),var(--scrim85))}
+.hero-text::before{content:"";position:absolute;bottom:100%;inset-inline:0;height:72px;background:linear-gradient(180deg,rgba(46,42,31,0),var(--scrim72))}
+.hero h1{font-family:var(--display);font-weight:300;font-size:46px;line-height:1.05}
+.hero .headline{font-family:var(--display);font-weight:300;font-size:22px;line-height:1.25;margin:14px 0 6px}
+.hero .desc{font-size:16px;line-height:1.5}
+.btn-hero{display:inline-flex;align-items:center;justify-content:center;min-height:var(--cta);padding:0 22px;margin-top:20px;border-radius:4px;background:var(--background);color:var(--ink);font-size:16px;font-weight:600;line-height:1.2;text-decoration:none}
+
+/* ---------- sections (direction 1 rhythm) ---------- */
+.sec{padding:var(--section) var(--gutter) 0}
+.eyebrow{font-size:13px;letter-spacing:.04em;color:var(--ink-muted);text-align:center}
+.sec h2{font-family:var(--display);font-weight:300;font-size:26px;line-height:1.2;text-align:center;margin:8px 0 16px}
+.rule{width:32px;height:1px;background:var(--accent);margin:0 auto 20px}
+.lead{font-size:17px;line-height:1.65;text-align:center}
+
+/* ---------- session-row ---------- */
+.sessions{border-top:1px solid var(--border)}
+.srow{position:relative;display:grid;grid-template-columns:64px 1fr;gap:16px;padding:22px 0;border-bottom:1px solid var(--border)}
+.srow .date{text-align:center}
+.srow .date b{display:block;font-size:26px;font-weight:400;line-height:1}
+.srow .date span{font-size:13px;color:var(--ink-muted)}
+.srow h3{font-size:16px;font-weight:600;line-height:1.35}
+.srow h3 a{text-decoration:none}
+.srow h3 a::after{content:"";position:absolute;inset:0}
+.srow .meta{font-size:13px;color:var(--ink-muted);margin:4px 0 10px}
+.srow .row{display:flex;align-items:center;gap:8px}
+.srow .hint{margin-inline-start:auto;font-size:13px;text-decoration:underline;text-underline-offset:3px;display:inline-flex;align-items:center;gap:2px}
+.srow .hint svg{width:16px;height:16px}
+.srow.is-full h3{color:var(--ink-muted)}
+.more{display:flex;justify-content:center;margin-top:12px}
+.btn-link{display:inline-flex;align-items:center;min-height:var(--touch);font-size:15px;text-decoration:underline;text-underline-offset:3px;color:var(--ink)}
+
+/* ---------- status-chip ---------- */
+.status{display:inline-flex;align-items:center;gap:6px;border-radius:9999px;padding:3px 10px;font-size:13px;font-weight:600;line-height:1.4;white-space:nowrap}
+.status i{width:7px;height:7px;border-radius:9999px;flex:none}
+.st-avail{color:var(--success);background:var(--success-tint)}.st-avail i{background:var(--success-dot)}
+.st-few{color:var(--warning);background:var(--warning-tint)}.st-few i{background:var(--warning-dot)}
+.st-full{color:var(--expired);background:var(--expired-tint)}.st-full i{background:var(--expired-dot)}
+
+/* ---------- gallery pair (direction 1) ---------- */
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pair .ph{height:170px;border-radius:8px}
+.pair .ph:first-child{height:220px}
+
+/* ---------- contact ---------- */
+.contact{text-align:center}
+.contact .lines{margin-top:16px;font-size:16px;display:grid;gap:4px}
+.btn-secondary{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:var(--touch);padding:0 22px;border:1px solid var(--ink);border-radius:4px;font-size:16px;font-weight:600;line-height:1.2;text-decoration:none;color:var(--ink);background:transparent;margin-top:20px}
+
+/* ---------- footer ---------- */
+footer.site{margin-top:var(--section);padding:24px var(--gutter) calc(var(--cta) + 16px + var(--safe) + 8px);border-top:1px solid var(--border);font-size:13px;color:var(--ink-muted)}
+footer.site .fwm{font-family:var(--display);font-weight:300;font-size:20px;color:var(--ink)}
+footer.site ul{display:flex;flex-wrap:wrap;gap:0 20px;margin-top:8px}
+footer.site .btn-link{font-size:15px}
+footer.site .admin{display:inline-flex;align-items:center;min-height:var(--touch);font-size:13px;color:var(--ink-muted);text-underline-offset:3px}
+
+/* ---------- whatsapp-bar ---------- */
+.wa-aside{position:absolute;inset-inline:var(--gutter);bottom:calc(16px + var(--safe) - 8px);z-index:20}
+.whatsapp-bar{display:flex;align-items:center;justify-content:center;gap:8px;min-height:var(--cta);border-radius:4px;background:var(--success);color:var(--on-primary);font-size:16px;font-weight:600;line-height:1.2;text-decoration:none}
+.whatsapp-bar svg{width:20px;height:20px}
+
+
+/* ---------- session page ---------- */
+.btn-primary{display:flex;align-items:center;justify-content:center;min-height:var(--cta);padding:0 22px;border-radius:4px;background:var(--primary);color:var(--on-primary);font-size:16px;font-weight:600;line-height:1.2;text-decoration:none}
+.top-bar{border-bottom:1px solid var(--border)}
+.s-head{padding:32px var(--gutter) 0}
+.s-head .eyebrow{text-align:start}
+.s-head h1{font-family:var(--display);font-weight:200;font-size:40px;line-height:1.15;margin:8px 0 16px}
+.when{font-size:17px;line-height:1.5}
+.when b{font-weight:600}
+.tags{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin-top:10px}
+.chip-type{display:inline-block;border:1px solid var(--accent);border-radius:4px;padding:2px 8px;font-size:13px;line-height:1.4;color:var(--ink)}
+.tag-note{font-size:13px;color:var(--ink-muted)}
+.action{padding:24px var(--gutter) 0}
+.action .why{font-size:15px;color:var(--ink-muted);margin-bottom:12px}
+.action .btn-secondary,.action .btn-primary{display:flex;width:100%;margin-top:0}
+.frame{margin:32px var(--gutter) 0;border:1px solid var(--border);padding:10px;border-radius:8px;background:var(--card)}
+.frame .ph{height:240px;border-radius:4px}
+.s-sec{padding:var(--section) var(--gutter) 0}
+.s-sec h2{font-family:var(--display);font-weight:300;font-size:26px;line-height:1.2;margin-bottom:12px}
+.s-sec .rule{margin:0 0 16px}
+.s-sec p{font-size:17px;line-height:1.65}
+.menu-list{border-top:1px solid var(--border)}
+.menu-list li{padding:14px 0;border-bottom:1px solid var(--border)}
+.menu-list b{display:block;font-weight:600;font-size:16px;line-height:1.35}
+.menu-list span{font-size:15px;color:var(--ink-muted)}
+footer.site.no-reserve{padding-bottom:32px}
+</style>
+</head>
+<body>
+
+<header class="doc-head">
+  <h1>מסך מפתח: עמוד מפגש ציבורי</h1>
+  <p>אותו עמוד לשני קהלים. מימין: אורחת (אין כפתור הרשמה, פס וואטסאפ צמוד לתחתית). משמאל: לקוחה מחוברת ("להרשמה", "האזור שלי", בלי פס וואטסאפ). גללי בתוך הטלפון.</p>
+</header>
+
+<div class="cols">
+
+<!-- ======================= COLUMN 1: guest ======================= -->
+<section>
+  <h2 class="col-h">אורחת</h2>
+  <p class="col-n">מגיעה מ-session-row בדף הבית (Flow 1, צעד 4). במקום הרשמה: "כניסה לאזור האישי" בגוף העמוד ו"להצטרפות צרי קשר עם טל" בפס הצמוד. העמוד שומר מקום בתחתית כדי שהפוטר לא יוסתר.</p>
+
+  <div class="phone">
+    <div class="screen">
+      <a class="skip" href="#main1">דילוג לתוכן הראשי</a>
+      <header class="top-bar">
+        <a class="wordmark" href="#">בראנץ׳ אצל טל</a>
+        <a class="btn-login" href="#">כניסה לאזור האישי</a>
+        <button class="btn-menu" type="button" aria-label="תפריט" aria-expanded="false" aria-controls="menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+      </header>
+
+      <main id="main1">
+        <div class="s-head">
+          <div class="eyebrow">בראנץ׳ של יום שני</div>
+          <h1 tabindex="-1">בראנץ׳ סתיו: שקשוקה ירוקה ולחמים חמים</h1>
+          <p class="when"><time datetime="2026-10-12T10:00"><span class="sr">יום שני, 12 באוקטובר, 10:00</span><span aria-hidden="true"><b>יום שני 12.10</b> · 10:00</span></time></p>
+          <div class="tags">
+            <span class="chip-type">רגיל</span>
+            <span class="tag-note">מגיעות עם התינוקות</span>
+            <span class="status st-few"><i aria-hidden="true"></i>נותרו 3 מקומות</span>
+          </div>
+        </div>
+        <div class="action">
+          <p class="why">ההרשמה למפגשים נעשית מהאזור האישי. עוד אין לך חשבון? ההצטרפות נפתחת אחרי שיחה קצרה עם טל.</p>
+          <a class="btn-secondary" href="#">כניסה לאזור האישי</a>
+        </div>
+        <div class="frame"><div class="ph ph-table" role="img" aria-label="שולחן בראנץ׳ סתווי עם שקשוקה ירוקה ולחמים"><span class="lbl">מקום לצילום המפגש (טל מעלה, עם טקסט חלופי)</span></div></div>
+
+        <section class="s-sec">
+          <h2>הקונספט</h2>
+          <div class="rule" aria-hidden="true"></div>
+          <p>בוקר ראשון של סתיו, חלון פתוח וריח של לחם מהתנור. יושבות סביב שולחן אחד, התינוקות על השטיח לידנו, ואף אחת לא ממהרת לשום מקום.</p>
+        </section>
+
+        <section class="s-sec">
+          <h2>על השולחן</h2>
+          <div class="rule" aria-hidden="true"></div>
+          <ul class="menu-list">
+            <li><b>שקשוקה ירוקה</b><span>תרד, מנגולד ופטה, במחבת אחת גדולה באמצע השולחן</span></li>
+            <li><b>לחמים חמים</b><span>נאפים באותו בוקר, עם חמאה ומטבלים</span></li>
+            <li><b>סלט עונה</b><span>עלים, רימונים ואגוזים קלויים</span></li>
+            <li><b>יוגורט וגרנולה ביתית</b><span>עם פירות העונה</span></li>
+            <li><b>קפה, תה ולימונדה</b><span>כמה שרוצות</span></li>
+          </ul>
+        </section>
+      </main>
+
+      <footer class="site">
+        <div class="fwm">בראנץ׳ אצל טל</div>
+        <ul>
+          <li><a class="btn-link" href="#">מדיניות פרטיות</a></li>
+          <li><a class="btn-link" href="#">הצהרת נגישות</a></li>
+        </ul>
+        <a class="admin" href="#">כניסת מנהלת</a>
+      </footer>
+    </div>
+
+    <aside class="wa-aside" aria-label="יצירת קשר">
+      <a class="whatsapp-bar" href="#" aria-label="להצטרפות צרי קשר עם טל בוואטסאפ (נפתח בוואטסאפ)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-12.3 7.4L3 20.5l1.6-5.4A8.4 8.4 0 1 1 21 11.5z"/></svg>
+        להצטרפות צרי קשר עם טל
+      </a>
+    </aside>
+    <div class="home-ind" aria-hidden="true"></div>
+  </div>
+</section>
+
+<!-- ======================= COLUMN 2: logged-in customer ======================= -->
+<section>
+  <h2 class="col-h">לקוחה מחוברת</h2>
+  <p class="col-n">אותו תוכן. בסרגל העליון "האזור שלי" במקום "כניסה לאזור האישי"; בגוף העמוד "להרשמה" (button-primary) שמעביר להרשמה באזור האישי, שם נפתח גיליון האישור. אין פס וואטסאפ ואין שמירת מקום בתחתית.</p>
+
+  <div class="phone">
+    <div class="screen">
+      <a class="skip" href="#main2">דילוג לתוכן הראשי</a>
+      <header class="top-bar">
+        <a class="wordmark" href="#">בראנץ׳ אצל טל</a>
+        <a class="btn-login" href="#">האזור שלי</a>
+        <button class="btn-menu" type="button" aria-label="תפריט" aria-expanded="false" aria-controls="menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+      </header>
+
+      <main id="main2">
+        <div class="s-head">
+          <div class="eyebrow">בראנץ׳ של יום שני</div>
+          <h1 tabindex="-1">בראנץ׳ סתיו: שקשוקה ירוקה ולחמים חמים</h1>
+          <p class="when"><time datetime="2026-10-12T10:00"><span class="sr">יום שני, 12 באוקטובר, 10:00</span><span aria-hidden="true"><b>יום שני 12.10</b> · 10:00</span></time></p>
+          <div class="tags">
+            <span class="chip-type">רגיל</span>
+            <span class="tag-note">מגיעות עם התינוקות</span>
+            <span class="status st-few"><i aria-hidden="true"></i>נותרו 3 מקומות</span>
+          </div>
+        </div>
+        <div class="action">
+          <a class="btn-primary" href="#">להרשמה</a>
+        </div>
+        <div class="frame"><div class="ph ph-table" role="img" aria-label="שולחן בראנץ׳ סתווי עם שקשוקה ירוקה ולחמים"><span class="lbl">מקום לצילום המפגש (טל מעלה, עם טקסט חלופי)</span></div></div>
+
+        <section class="s-sec">
+          <h2>הקונספט</h2>
+          <div class="rule" aria-hidden="true"></div>
+          <p>בוקר ראשון של סתיו, חלון פתוח וריח של לחם מהתנור. יושבות סביב שולחן אחד, התינוקות על השטיח לידנו, ואף אחת לא ממהרת לשום מקום.</p>
+        </section>
+
+        <section class="s-sec">
+          <h2>על השולחן</h2>
+          <div class="rule" aria-hidden="true"></div>
+          <ul class="menu-list">
+            <li><b>שקשוקה ירוקה</b><span>תרד, מנגולד ופטה, במחבת אחת גדולה באמצע השולחן</span></li>
+            <li><b>לחמים חמים</b><span>נאפים באותו בוקר, עם חמאה ומטבלים</span></li>
+            <li><b>סלט עונה</b><span>עלים, רימונים ואגוזים קלויים</span></li>
+            <li><b>יוגורט וגרנולה ביתית</b><span>עם פירות העונה</span></li>
+            <li><b>קפה, תה ולימונדה</b><span>כמה שרוצות</span></li>
+          </ul>
+        </section>
+      </main>
+
+      <footer class="site no-reserve">
+        <div class="fwm">בראנץ׳ אצל טל</div>
+        <ul>
+          <li><a class="btn-link" href="#">מדיניות פרטיות</a></li>
+          <li><a class="btn-link" href="#">הצהרת נגישות</a></li>
+        </ul>
+        <a class="admin" href="#">כניסת מנהלת</a>
+      </footer>
+    </div>
+    <div class="home-ind" aria-hidden="true"></div>
+  </div>
+</section>
+
+</div>
+</body>
+</html>

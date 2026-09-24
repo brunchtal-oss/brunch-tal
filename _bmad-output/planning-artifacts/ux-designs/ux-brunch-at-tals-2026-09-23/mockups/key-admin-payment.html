@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>הוספת תשלום · פאנל ניהול · בראנץ׳ אצל טל</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@200;300;400&family=Assistant:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/*
+  KEY SCREEN — admin "הוספת תשלום" (phone, 390px)
+  Governing spine sections:
+    EXPERIENCE › Key Flows › Flow 2 (טל מאשרת תשלום בין בצק לבצק; CAP-2/4, branch CAP-6)
+    EXPERIENCE › חלון אישור רגיש › "שינוי מחיר (באישור תשלום)"
+    EXPERIENCE › Component Patterns: input, button-primary (lock + no double submit), sensitive-confirm-dialog, inline-notice, status-chip
+    EXPERIENCE › Interaction Primitives: "בלי שליחה כפולה", "אישור רגיש באדמין"
+    EXPERIENCE › Voice › מיקרו-קופי: "אדמין — צ׳קבוקס רגיש"
+    DESIGN › Components: input, button-primary, button-secondary, sensitive-confirm-dialog, inline-notice, status-chip, balance-card, bottom-tab-bar, focus-ring
+    Business rules: SPEC CAP-2, CAP-4 (link one-time, 48h), products-catalog (price, validity 49 days)
+  Tokens applied exactly from DESIGN.md front-matter. Light mode only. No shadows (focus ring excepted). No JS.
+*/
+:root{
+  --background:#FAF6EE;--card:#FFFDF8;--muted:#F2ECDF;--ink:#2E2A1F;--ink-muted:#6B6450;--border:#E6DFCF;
+  --accent:#8A875A;--primary:#4A4A2A;--on-primary:#FAF6EE;
+  --success:#4E6B34;--success-tint:#E7EDDC;--success-dot:#8FA874;
+  --warning:#8C5E14;--warning-tint:#F4E8D0;--warning-dot:#C9A060;
+  --error:#B42318;--error-tint:#F8E4E1;--error-dot:#B42318;
+  --pending:#4A5A6A;--pending-tint:#E6EAEC;--pending-dot:#8C9AA8;
+  --expired:#676154;--expired-tint:#EDE9E0;--expired-dot:#B0A998;
+  --display:'Heebo',"Segoe UI",Arial,sans-serif;--body:'Assistant',"Segoe UI",Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#EFE9DC;color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px;box-shadow:0 0 0 2px var(--on-primary)}
+bdi{unicode-bidi:isolate}
+
+.board-head{max-width:1320px;margin:0 auto;padding:32px 16px 8px}
+.board-head h1{font-family:var(--display);font-weight:300;font-size:26px;line-height:1.2}
+.board-head p{color:var(--ink-muted);font-size:15px;margin-top:6px;max-width:720px}
+.grid{max-width:1320px;margin:0 auto;padding:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(390px,1fr));gap:40px;align-items:start}
+.col-title{font-family:var(--display);font-weight:300;font-size:22px;line-height:1.25;margin-bottom:4px}
+.col-note{color:var(--ink-muted);font-size:15px;margin-bottom:16px;min-height:68px}
+
+.phone{width:390px;max-width:100%;margin:0 auto;border:10px solid #2E2A1F;border-radius:40px;overflow:hidden;background:var(--background);display:flex;flex-direction:column;min-height:844px;position:relative}
+.status-bar{height:36px;display:flex;justify-content:space-between;align-items:center;padding:0 24px;font-size:13px;font-weight:600}
+.screen{flex:1;padding:8px 16px 32px}
+
+.eyebrow{font-size:13px;letter-spacing:.04em;color:var(--ink-muted)}
+.h1{font-family:var(--display);font-weight:300;font-size:26px;line-height:1.2}
+.h2{font-family:var(--display);font-weight:300;font-size:22px;line-height:1.25}
+.body-sm{font-size:15px;line-height:1.5}
+.label{font-size:13px;line-height:1.4}
+.muted{color:var(--ink-muted)}
+.strong{font-weight:600}
+
+/* status-chip */
+.status{display:inline-flex;align-items:center;gap:6px;border-radius:9999px;padding:3px 10px;font-size:13px;font-weight:600;line-height:1.4;white-space:nowrap}
+.status::before{content:"";width:7px;height:7px;border-radius:9999px;flex:none}
+.st-success{color:var(--success);background:var(--success-tint)}.st-success::before{background:var(--success-dot)}
+.st-warning{color:var(--warning);background:var(--warning-tint)}.st-warning::before{background:var(--warning-dot)}
+.st-pending{color:var(--pending);background:var(--pending-tint)}.st-pending::before{background:var(--pending-dot)}
+.st-expired{color:var(--expired);background:var(--expired-tint)}.st-expired::before{background:var(--expired-dot)}
+
+/* form / input */
+.form{margin-top:20px}
+.field{margin-bottom:20px}
+.field > label,.field > .lbl,fieldset legend{display:block;font-size:15px;font-weight:600;line-height:1.5;margin-bottom:6px}
+.req{font-weight:400;color:var(--ink-muted)}
+.input{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;min-height:48px;padding:12px 14px;background:var(--card);border:1px solid var(--ink-muted);border-radius:4px;font-family:var(--body);font-size:16px;line-height:1.5;color:var(--ink)}
+.input.ta{min-height:72px;align-items:flex-start}
+.input .ph{color:var(--ink-muted)}
+.input svg{flex:none;color:var(--ink-muted)}
+.hint{font-size:15px;color:var(--ink-muted);margin-top:6px}
+.edited{border-inline-start:2px solid var(--accent);padding-inline-start:12px}
+fieldset{border:0}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.radio{display:flex;align-items:center;gap:10px;min-height:48px;padding:0 14px;border:1px solid var(--ink-muted);border-radius:4px;background:var(--card);font-size:16px}
+.radio .dot{width:20px;height:20px;border-radius:9999px;border:1.5px solid var(--ink-muted);flex:none;display:grid;place-items:center}
+.radio.on{background:var(--muted);border-color:var(--ink)}
+.radio.on .dot{border-color:var(--primary)}
+.radio.on .dot::after{content:"";width:10px;height:10px;border-radius:9999px;background:var(--primary)}
+.pm{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+/* preview (balance-card visual) */
+.preview{background:var(--muted);border-radius:8px;padding:12px 16px;margin:8px 0 20px}
+.preview .row{display:flex;align-items:center;gap:8px}
+.preview .dot{width:8px;height:8px;border-radius:9999px;background:var(--accent);flex:none}
+.preview .nums{font-weight:600;font-size:16px;line-height:1.35}
+.preview p{font-size:15px}
+
+/* buttons */
+.btn{display:flex;align-items:center;justify-content:center;gap:10px;min-height:48px;padding:0 22px;border-radius:4px;font-family:var(--body);font-size:16px;font-weight:600;line-height:1.2;text-decoration:none;border:0;width:100%}
+.btn-primary{background:var(--primary);color:var(--on-primary)}
+.btn-primary[aria-disabled="true"]{opacity:.5}
+.btn-primary[aria-busy="true"]{opacity:1}
+.btn-secondary{background:transparent;color:var(--ink);border:1px solid var(--ink);min-height:44px}
+.btn-link{display:inline-flex;align-items:center;gap:4px;min-height:44px;font-size:15px;color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+.reason{font-size:15px;color:var(--ink-muted);margin-top:8px}
+.spinner{width:18px;height:18px;border-radius:9999px;border:2px solid rgba(250,246,238,.35);border-top-color:var(--on-primary);flex:none}
+
+/* dialog */
+.scrim{position:absolute;inset:0;background:rgba(46,42,31,.40);display:flex;align-items:center;justify-content:center;padding:8px;z-index:2}
+.dialog{background:var(--card);border-radius:8px;padding:24px 16px 16px;width:100%}
+.dialog .h2{margin-bottom:8px}
+.impact{background:var(--muted);border-radius:8px;padding:12px 16px;margin:12px 0 16px}
+.impact dl{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:15px}
+.impact dt{color:var(--ink-muted)}
+.impact .change{font-weight:600}
+.check{display:flex;gap:12px;align-items:flex-start;min-height:44px;font-size:16px;line-height:1.5;margin-bottom:16px}
+.box{width:24px;height:24px;border:1.5px solid var(--ink-muted);border-radius:4px;background:var(--card);flex:none;margin-top:1px}
+.actions{display:grid;gap:8px}
+
+/* inline-notice */
+.notice{border-radius:8px;padding:12px 16px;font-size:15px;line-height:1.5;display:flex;gap:10px;align-items:flex-start}
+.notice svg{flex:none;margin-top:2px}
+.n-success{color:var(--success);background:var(--success-tint)}
+.notice .title{font-weight:600;font-size:16px;line-height:1.35}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px;margin-top:16px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:15px;margin:12px 0 16px}
+.kv dt{color:var(--ink-muted)}
+.linkbox{font-size:15px;background:var(--muted);border-radius:4px;padding:8px 12px;direction:ltr;text-align:left;color:var(--ink);margin-bottom:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.more summary{font-size:15px;font-weight:600;min-height:44px;display:flex;align-items:center;gap:6px;cursor:pointer}
+.divider{border-top:1px solid var(--border);margin:24px 0 16px}
+
+/* idempotency strip */
+.state-strip{width:390px;max-width:100%;margin:24px auto 0;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px}
+.state-strip h3{font-size:16px;font-weight:600;line-height:1.35;margin-bottom:4px}
+
+/* bottom-tab-bar */
+.tabbar{background:var(--card);border-top:1px solid var(--border);min-height:64px;display:grid;grid-template-columns:repeat(5,1fr);padding:4px 4px calc(4px + 20px)}
+.tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:44px;min-width:44px;text-decoration:none;color:var(--ink-muted);font-size:13px;line-height:1.4;position:relative;padding-top:6px}
+.tab svg,.ico{fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.tab svg{width:24px;height:24px}
+.ico{width:20px;height:20px}
+.tab[aria-current="page"]{color:var(--ink);font-weight:600}
+.tab[aria-current="page"]::before{content:"";position:absolute;top:0;width:24px;height:2px;background:var(--accent)}
+</style>
+</head>
+<body>
+
+<header class="board-head">
+  <h1>פאנל ניהול — הוספת תשלום</h1>
+  <p>Flow 2: מיכל העבירה בביט, טל מאשרת בטלפון. עמודה 1: הטופס (לקוחה חדשה — בלי פרטי לקוחה, המחיר שונה). עמודה 2: חלון אישור רגיש לשינוי המחיר. עמודה 3: הצלחה — קישור הצטרפות נוצר.</p>
+</header>
+
+<main class="grid">
+
+<!-- ================= COLUMN 1: FORM ================= -->
+<section>
+  <h2 class="col-title">1 · הוספת תשלום</h2>
+  <p class="col-note">ללקוחה חדשה אין שדות לקוחה — היא ממלאת הכול בטופס ההצטרפות. הסכום מתמלא מהמוצר; כששונה נפתח שדה סיבה לא חובה. תאריך התפוגה מוצג לפני האישור.</p>
+
+  <div class="phone">
+    <div class="status-bar"><span><bdi>07:40</bdi></span><span>●●● ▮</span></div>
+    <div class="screen">
+      <a class="btn-link" href="#"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24" style="transform:scaleX(-1)"><polyline points="15 18 9 12 15 6"/></svg>תשלומים</a>
+      <h1 class="h1">הוספת תשלום</h1>
+
+      <form class="form" action="#">
+        <fieldset class="field">
+          <legend>לקוחה <span class="req">(חובה)</span></legend>
+          <div class="seg">
+            <label class="radio on"><span class="dot" aria-hidden="true"></span>לקוחה חדשה</label>
+            <label class="radio"><span class="dot" aria-hidden="true"></span>לקוחה קיימת</label>
+          </div>
+        </fieldset>
+
+        <p class="hint" style="margin:-12px 0 20px">את הפרטים שלה היא תמלא בעצמה בקישור ההצטרפות</p>
+
+        <div class="field">
+          <label>מוצר <span class="req">(חובה)</span></label>
+          <div class="input"><span>כרטיסייה אישית</span><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+        </div>
+
+        <div class="edited">
+          <div class="field">
+            <label>סכום ששולם <span class="req">(חובה)</span></label>
+            <div class="input"><bdi>440 ₪</bdi></div>
+            <p class="hint">מחיר הקטלוג: <bdi>472 ₪</bdi> · הסכום שונה</p>
+          </div>
+          <div class="field">
+            <label>סיבת שינוי המחיר <span class="req">(לא חובה)</span></label>
+            <div class="input ta">הנחה שסיכמנו בוואטסאפ — הגיעה בהמלצת חברה</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>תאריך רכישה <span class="req">(חובה)</span></label>
+          <div class="input"><bdi>23.09.2026</bdi> <span class="muted">· היום</span><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
+        </div>
+
+        <fieldset class="field">
+          <legend>אמצעי תשלום <span class="req">(חובה)</span></legend>
+          <div class="pm">
+            <label class="radio on"><span class="dot" aria-hidden="true"></span>ביט</label>
+            <label class="radio"><span class="dot" aria-hidden="true"></span>פייבוקס</label>
+            <label class="radio"><span class="dot" aria-hidden="true"></span>העברה בנקאית</label>
+            <label class="radio"><span class="dot" aria-hidden="true"></span>מזומן</label>
+          </div>
+        </fieldset>
+
+        <details class="field more" open>
+          <summary>פרטים נוספים <span class="req">(לא חובה)</span></summary>
+          <div class="field" style="margin-top:12px">
+            <label>אסמכתה <span class="req">(לא חובה)</span></label>
+            <div class="input"><bdi>58213946</bdi></div>
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <label>הערה <span class="req">(לא חובה)</span></label>
+            <div class="input ta"><span class="ph">למשל: שילמה גם על חברה</span></div>
+          </div>
+        </details>
+
+        <p class="label strong" style="margin-bottom:0">מה ייווצר</p>
+        <div class="preview">
+          <div class="row"><span class="dot" aria-hidden="true"></span><span class="nums">כרטיסייה אישית · 4 כניסות</span></div>
+          <p>בתוקף עד <time datetime="2026-11-11"><bdi>11.11</bdi></time> <span class="muted">(49 ימים · שני וחמישי)</span></p>
+          <p class="muted">אחרי האישור ייווצר קישור הצטרפות חד-פעמי (48 שעות)</p>
+        </div>
+
+        <a class="btn btn-primary" href="#">אישור תשלום ויצירת קישור</a>
+      </form>
+    </div>
+
+    <nav class="tabbar" aria-label="ניווט ראשי">
+      <a class="tab" href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10l9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>בית</a>
+      <a class="tab" href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>מפגשים</a>
+      <a class="tab" href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2M16 3.1a4 4 0 0 1 0 7.8M21 21v-2a4 4 0 0 0-3-3.9"/></svg>לקוחות</a>
+      <a class="tab" href="#" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>תשלומים</a>
+      <a class="tab" href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>עוד</a>
+    </nav>
+  </div>
+</section>
+
+<!-- ================= COLUMN 2: SENSITIVE CONFIRM ================= -->
+<section>
+  <h2 class="col-title">2 · אישור שינוי מחיר</h2>
+  <p class="col-note">sensitive-confirm-dialog. פוקוס התחלתי על הכותרת. רק הצ׳קבוקס חוסם את "אישור תשלום ויצירת קישור"; סיבת השינוי לא חובה ומוצגת רק אם הוזנה.</p>
+
+  <div class="phone">
+    <div class="status-bar"><span><bdi>07:41</bdi></span><span>●●● ▮</span></div>
+    <div class="screen" aria-hidden="true">
+      <p class="btn-link">תשלומים</p>
+      <p class="h1">הוספת תשלום</p>
+      <div class="form">
+        <div class="field"><p class="lbl">לקוחה</p><div class="input">לקוחה חדשה</div></div>
+        <div class="field"><p class="lbl">מוצר</p><div class="input">כרטיסייה אישית</div></div>
+        <div class="field"><p class="lbl">סכום ששולם</p><div class="input"><bdi>440 ₪</bdi></div></div>
+        <div class="field"><p class="lbl">תאריך רכישה</p><div class="input"><bdi>23.09.2026</bdi></div></div>
+        <div class="field"><p class="lbl">אמצעי תשלום</p><div class="input">ביט</div></div>
+      </div>
+    </div>
+
+    <div class="scrim">
+      <div class="dialog" role="alertdialog" aria-modal="true" aria-labelledby="dlg-t">
+        <h2 id="dlg-t" class="h2" tabindex="-1">האם לאשר שינוי מחיר?</h2>
+        <p class="body-sm muted">הסכום שונה ממחיר הקטלוג. בדקי לפני האישור.</p>
+        <div class="impact">
+          <dl>
+            <dt>לקוחה</dt><dd>לקוחה חדשה (תמלא פרטים בקישור)</dd>
+            <dt>מוצר</dt><dd>כרטיסייה אישית · 4 כניסות</dd>
+            <dt>מחיר</dt><dd class="change"><bdi>472 ₪</bdi> ← <bdi>440 ₪</bdi></dd>
+            <dt>סיבה</dt><dd>הנחה שסיכמנו בוואטסאפ — הגיעה בהמלצת חברה <span class="muted">(לא חובה)</span></dd>
+          </dl>
+        </div>
+        <label class="check"><span class="box" aria-hidden="true"></span><span>אני מאשרת שהלקוחה משלמת <bdi>440 ₪</bdi> במקום מחיר הקטלוג <bdi>472 ₪</bdi>, ושהשינוי יירשם ביומן הפעולות</span></label>
+        <div class="actions">
+          <a class="btn btn-primary" href="#" aria-disabled="true" aria-describedby="dlg-why">אישור תשלום ויצירת קישור</a>
+          <p id="dlg-why" class="reason" style="margin:0 0 4px">צריך לסמן את האישור כדי להמשיך</p>
+          <a class="btn btn-secondary" href="#">ביטול</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= COLUMN 3: SUCCESS ================= -->
+<section>
+  <h2 class="col-title">3 · התשלום אושר</h2>
+  <p class="col-note">שיא Flow 2. הפוקוס עובר ל-inline-notice. קישור ההצטרפות בסטטוס "ממתין למימוש", תקף 48 שעות; "שליחה בוואטסאפ" פותח הודעה מוכנה, "העתקת הקישור" לשליחה ידנית. טל יכולה גם לבטל את הקישור או להפיק חלופי.</p>
+
+  <div class="phone">
+    <div class="status-bar"><span><bdi>07:42</bdi></span><span>●●● ▮</span></div>
+    <div class="screen">
+      <a class="btn-link" href="#"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24" style="transform:scaleX(-1)"><polyline points="15 18 9 12 15 6"/></svg>תשלומים</a>
+      <h1 class="h1">הוספת תשלום</h1>
+
+      <div class="notice n-success" role="status" tabindex="-1" style="margin-top:20px">
+        <svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="16 9 10.5 15 8 12.5"/></svg>
+        <div><p class="title">התשלום אושר. הקישור מוכן לשליחה</p></div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <h2 class="strong" style="font-size:16px;line-height:1.35">לקוחה חדשה · הקישור מחכה להצטרפות</h2>
+          <span class="status st-pending">ממתין למימוש</span>
+        </div>
+        <dl class="kv">
+          <dt>תקף</dt><dd>48 שעות · עד <time datetime="2026-09-25T07:42">יום שישי <bdi>25.09</bdi> · <bdi>07:42</bdi></time></dd>
+          <dt>לשימוש</dt><dd>פעם אחת. פתיחה לא צורכת אותו</dd>
+        </dl>
+        <p class="linkbox">…/join/k7Q2…</p>
+        <a class="btn btn-primary" href="#">
+          <svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 21l2.1-5.4A8.4 8.4 0 1 1 21 11.5z"/></svg>
+          שליחה בוואטסאפ
+        </a>
+        <p class="hint">נפתח בוואטסאפ עם הודעה מוכנה; בוחרים את השיחה איתה</p>
+        <a class="btn btn-secondary" href="#" style="margin-top:8px">העתקת הקישור</a>
+      </div>
+
+      <div class="divider"></div>
+      <h2 class="label strong" style="margin-bottom:8px">מה נרשם</h2>
+      <div class="preview" style="margin-top:0">
+        <div class="row"><span class="dot" aria-hidden="true"></span><span class="nums">כרטיסייה אישית · 4 כניסות</span></div>
+        <p>בתוקף עד <time datetime="2026-11-11"><bdi>11.11</bdi></time> · <bdi>440 ₪</bdi> · ביט</p>
+        <p class="muted">שינוי מחיר: <bdi>472 ₪</bdi> ← <bdi>440 ₪</bdi> · נרשם ביומן</p>
+      </div>
+
+      <a class="btn-link" href="#">להוספת תשלום נוסף</a>
+    </div>
+
+    <nav class="tabbar" aria-label="ניווט ראשי">
+      <a class="tab" href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10l9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>בית</a>
+      <a class="tab" href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>מפגשים</a>
+      <a class="tab" href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2M16 3.1a4 4 0 0 1 0 7.8M21 21v-2a4 4 0 0 0-3-3.9"/></svg>לקוחות</a>
+      <a class="tab" href="#" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>תשלומים</a>
+      <a class="tab" href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>עוד</a>
+    </nav>
+  </div>
+
+  <aside class="state-strip" aria-label="מצב ביניים: הכפתור בזמן שליחה">
+    <h3>בזמן האישור (לפני התשובה)</h3>
+    <p class="body-sm muted" style="margin-bottom:12px">הכפתור ננעל עם ספינר, באותו רוחב. לחיצה נוספת, רענון או חזרה אחורה לא יוצרים תשלום שני — השרת idempotent.</p>
+    <a class="btn btn-primary" href="#" aria-disabled="true" aria-busy="true"><span class="spinner" aria-hidden="true"></span>אישור תשלום ויצירת קישור</a>
+  </aside>
+</section>
+
+</main>
+</body>
+</html>

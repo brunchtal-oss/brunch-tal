@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>כיווני עיצוב — דף הבית</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@200;300;400&family=Assistant:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/*
+  Palette "קרם וזית" (locked)
+  bg          #FAF6EE
+  card        #FFFDF8
+  ink         #2E2A1F
+  ink-muted   #6B6450
+  border      #E6DFCF
+  accent      #8A875A  (decorative only - never body text on it)
+  primary     #4A4A2A  / on-primary #FAF6EE
+  success     #4E6B34
+  warning     #8C5E14
+  error       #B42318
+  pending     #4A5A6A
+  expired     #676154
+  Fonts: Heebo 200/300 display (200 only >=28px), Assistant 400/600 body + numbers.
+  Flat: no shadows. Buttons 4px, cards 8px, chips full.
+*/
+:root{
+  --bg:#FAF6EE;--card:#FFFDF8;--ink:#2E2A1F;--muted:#6B6450;--border:#E6DFCF;
+  --accent:#8A875A;--primary:#4A4A2A;--on-primary:#FAF6EE;--success:#4E6B34;
+  --warning:#8C5E14;--error:#B42318;--pending:#4A5A6A;--expired:#676154;
+  --display:'Heebo',system-ui,sans-serif;--body:'Assistant',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#EFE9DC;color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5}
+a{color:inherit}
+.page-head{max-width:1320px;margin:0 auto;padding:32px 16px 8px}
+.page-head h1{font-family:var(--display);font-weight:300;font-size:30px}
+.page-head p{color:var(--muted);max-width:720px;margin-top:6px}
+.grid{max-width:1320px;margin:0 auto;padding:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:32px;align-items:start}
+.col h2{font-family:var(--display);font-weight:300;font-size:24px}
+.col .num{font-family:var(--body);font-size:13px;color:var(--muted);letter-spacing:.04em}
+.rationale{color:var(--muted);font-size:15px;margin:6px 0 16px;min-height:96px}
+.phone{width:100%;max-width:390px;margin:0 auto;height:820px;border:10px solid #2E2A1F;border-radius:40px;overflow:hidden;background:var(--bg);position:relative}
+.screen{height:100%;overflow-y:auto;overflow-x:hidden;position:relative;scrollbar-width:thin}
+
+/* shared photo placeholders */
+.ph{position:relative;overflow:hidden;background:#C9A77C}
+.ph .lbl{position:absolute;bottom:8px;right:8px;background:rgba(46,42,31,.78);color:#FAF6EE;font-size:12px;padding:3px 8px;border-radius:9999px;line-height:1.4}
+.ph-table{background:
+  radial-gradient(circle at 30% 35%,#F2C94C 0 7%,#FFF6DA 7.5% 11%,transparent 11.5%),
+  radial-gradient(circle at 30% 35%,#B8432F 0 16%,#7C3B22 16.5% 20%,transparent 20.5%),
+  radial-gradient(circle at 72% 30%,#E7D3A8 0 13%,#FFFDF8 13.5% 18%,transparent 18.5%),
+  radial-gradient(circle at 60% 72%,#6E8B3D 0 10%,#FFFDF8 10.5% 15%,transparent 15.5%),
+  radial-gradient(circle at 20% 78%,#D98E4A 0 8%,#F4E6CC 8.5% 12%,transparent 12.5%),
+  radial-gradient(circle at 88% 70%,#A63D40 0 5%,transparent 5.5%),
+  linear-gradient(135deg,#B98B5E,#8E6A45)}
+.ph-pancake{background:
+  radial-gradient(circle at 50% 50%,#E9B872 0 20%,#D39A52 20.5% 24%,#FFFDF8 24.5% 32%,transparent 32.5%),
+  radial-gradient(circle at 75% 25%,#9B2D4B 0 5%,transparent 5.5%),
+  radial-gradient(circle at 25% 72%,#E27D3A 0 7%,transparent 7.5%),
+  linear-gradient(160deg,#D9C4A0,#B89A6E)}
+.ph-bread{background:
+  radial-gradient(ellipse 40% 22% at 40% 45%,#C98A45 0 70%,#9C6630 71% 100%,transparent 100%),
+  radial-gradient(ellipse 30% 18% at 70% 65%,#D9A35F 0 70%,#A8703A 71% 100%,transparent 100%),
+  linear-gradient(145deg,#E8D9BD,#C7AF88)}
+.ph-moms{background:
+  radial-gradient(circle at 30% 40%,#E3B999 0 9%,transparent 9.5%),
+  radial-gradient(circle at 65% 38%,#C99474 0 9%,transparent 9.5%),
+  radial-gradient(ellipse 55% 20% at 50% 80%,#F4ECDD 0 60%,transparent 61%),
+  linear-gradient(180deg,#A9B38A,#7F8A5E)}
+.ph-green{background:
+  radial-gradient(circle at 50% 50%,#5E7F2E 0 18%,#FFFDF8 18.5% 26%,transparent 26.5%),
+  radial-gradient(circle at 45% 45%,#F2C94C 0 4%,transparent 4.5%),
+  radial-gradient(circle at 58% 55%,#F2C94C 0 4%,transparent 4.5%),
+  linear-gradient(120deg,#C2A57E,#96744E)}
+
+.wa-ico{width:18px;height:18px;flex:none}
+.chip{display:inline-block;border-radius:9999px;font-size:13px;line-height:1;padding:6px 10px;border:1px solid var(--border);white-space:nowrap}
+
+/* ============ D1: שקט של Ziona ============ */
+.d1{padding-bottom:40px}
+.d1 .top{display:flex;justify-content:space-between;align-items:center;padding:20px 24px}
+.d1 .wm{font-family:var(--display);font-weight:300;font-size:20px;letter-spacing:.01em}
+.d1 .login{font-size:13px;border:1px solid var(--ink);border-radius:4px;padding:8px 12px;text-decoration:none;min-height:40px;display:inline-flex;align-items:center}
+.d1 .join{padding:0 24px;font-size:13px;color:var(--muted)}
+.d1 .join a{color:var(--ink);font-weight:600}
+.d1 .hero{padding:72px 24px 0;text-align:center}
+.d1 .eyebrow{font-size:12px;letter-spacing:.08em;color:var(--muted)}
+.d1 .hero h1{font-family:var(--display);font-weight:200;font-size:40px;line-height:1.15;margin:14px 0 18px}
+.d1 .hero p{font-size:17px;color:var(--muted);max-width:300px;margin:0 auto}
+.d1 .btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 22px;border-radius:4px;font-size:15px;text-decoration:none}
+.d1 .btn-p{background:var(--primary);color:var(--on-primary)}
+.d1 .btn-o{border:1px solid var(--ink)}
+.d1 .hero .btn{margin-top:28px}
+.d1 .frame{margin:64px 24px 0;border:1px solid var(--border);padding:10px;border-radius:8px;background:var(--card)}
+.d1 .frame .ph{height:240px;border-radius:4px}
+.d1 .sec{padding:88px 24px 0}
+.d1 .sec-t{font-size:12px;letter-spacing:.08em;color:var(--muted);text-align:center}
+.d1 .sec h2{font-family:var(--display);font-weight:300;font-size:26px;text-align:center;margin:8px 0 20px}
+.d1 .sec .txt{font-size:17px;text-align:center;color:var(--ink)}
+.d1 .rule{width:32px;height:1px;background:var(--accent);margin:0 auto 20px}
+.d1 .sess{border-top:1px solid var(--border)}
+.d1 .s{padding:22px 0;border-bottom:1px solid var(--border);display:grid;grid-template-columns:64px 1fr;gap:16px}
+.d1 .date{text-align:center}
+.d1 .date b{display:block;font-size:26px;font-weight:400;line-height:1}
+.d1 .date span{font-size:12px;color:var(--muted)}
+.d1 .s h3{font-family:var(--body);font-weight:600;font-size:16px;line-height:1.35}
+.d1 .meta{font-size:13px;color:var(--muted);margin:4px 0 10px}
+.d1 .s .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.d1 .avail{color:var(--success);border-color:var(--success)}
+.d1 .full{color:var(--expired);background:#F1ECE1;border-color:#F1ECE1}
+.d1 .s.is-full h3{color:var(--muted)}
+.d1 .lnk{font-size:14px;text-decoration:underline;text-underline-offset:3px;margin-inline-start:auto;padding:10px 0}
+.d1 .pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.d1 .pair .ph{height:170px;border-radius:8px}
+.d1 .pair .ph:first-child{height:220px}
+.d1 .quote{border:1px dashed var(--border);border-radius:8px;padding:28px 20px;text-align:center;color:var(--muted);font-size:15px;margin-bottom:12px;background:var(--card)}
+.d1 .quote .q{font-family:var(--display);font-weight:200;font-size:40px;line-height:.6;color:var(--accent);display:block;margin-bottom:10px}
+.d1 .contact{text-align:center}
+.d1 .contact .btn{margin-top:8px}
+.d1 footer{margin-top:88px;padding:24px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:13px;color:var(--muted)}
+.d1 .fabwrap{position:sticky;bottom:0;height:0;display:flex;justify-content:flex-end;padding:0 18px}
+.d1 .fabwrap a{transform:translateY(-74px);width:56px;height:56px;border-radius:9999px;background:var(--success);color:#FAF6EE;display:flex;align-items:center;justify-content:center;text-decoration:none;flex:none}
+
+/* ============ D2: השולחן במרכז ============ */
+.d2{padding-bottom:0}
+.d2 .hero{position:relative;height:560px}
+.d2 .hero .ph{position:absolute;inset:0}
+.d2 .hero .scrim{position:absolute;inset:0;background:linear-gradient(180deg,rgba(46,42,31,.55) 0%,rgba(46,42,31,0) 28%,rgba(46,42,31,0) 42%,rgba(46,42,31,.82) 100%)}
+.d2 .hero .lbl{bottom:auto;top:76px;right:16px}
+.d2 .top{position:absolute;top:0;inset-inline:0;display:flex;justify-content:space-between;align-items:center;padding:16px;z-index:2;color:#FAF6EE}
+.d2 .wm-s{font-family:var(--display);font-weight:300;font-size:17px}
+.d2 .login{font-size:13px;border:1px solid rgba(250,246,238,.85);color:#FAF6EE;border-radius:4px;padding:0 12px;min-height:40px;display:inline-flex;align-items:center;text-decoration:none}
+.d2 .htxt{position:absolute;bottom:0;inset-inline:0;padding:0 20px 28px;color:#FAF6EE;z-index:2}
+.d2 .wm{font-family:var(--display);font-weight:200;font-size:46px;line-height:1.05}
+.d2 .htxt h1{font-family:var(--display);font-weight:300;font-size:22px;margin:10px 0 6px}
+.d2 .htxt p{font-size:16px;opacity:.95}
+.d2 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 20px;border-radius:4px;font-size:16px;font-weight:600;text-decoration:none}
+.d2 .btn-light{background:#FAF6EE;color:var(--ink);margin-top:18px}
+.d2 .intro{padding:28px 20px 8px;font-size:17px}
+.d2 .intro b{font-weight:600}
+.d2 .sec{padding:32px 0 0}
+.d2 .sec-h{display:flex;justify-content:space-between;align-items:baseline;padding:0 20px 14px}
+.d2 .sec-h h2{font-family:var(--display);font-weight:300;font-size:26px}
+.d2 .sec-h a{font-size:14px;text-decoration:underline;text-underline-offset:3px}
+.d2 .hscroll{display:flex;gap:12px;overflow-x:auto;padding:0 20px 8px;scroll-snap-type:x mandatory;scrollbar-width:none}
+.d2 .card{flex:0 0 260px;scroll-snap-align:start;background:var(--card);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.d2 .card .ph{height:150px}
+.d2 .card .b{padding:14px}
+.d2 .when{font-size:14px;color:var(--muted)}
+.d2 .when b{color:var(--ink);font-weight:600}
+.d2 .card h3{font-family:var(--body);font-weight:600;font-size:17px;line-height:1.3;margin:6px 0 12px;min-height:44px}
+.d2 .card .row{display:flex;gap:6px;flex-wrap:wrap}
+.d2 .avail{background:#E9EEDF;border-color:#E9EEDF;color:var(--success)}
+.d2 .full{background:#EDE8DC;border-color:#EDE8DC;color:var(--expired)}
+.d2 .card.is-full .ph{filter:grayscale(.55) brightness(1.05)}
+.d2 .card.is-full .ph::after{content:"מלא";position:absolute;top:10px;left:10px;background:#FAF6EE;color:var(--expired);font-size:13px;font-weight:600;padding:3px 10px;border-radius:9999px}
+.d2 .strip{display:flex;gap:6px;overflow-x:auto;padding:0 20px;scrollbar-width:none}
+.d2 .strip .ph{flex:0 0 150px;height:190px;border-radius:8px}
+.d2 .strip .ph.w{flex-basis:230px}
+.d2 .quote{margin:0 20px 10px;background:var(--card);border:1px dashed var(--border);border-radius:8px;padding:20px;color:var(--muted);font-size:15px;display:flex;gap:12px;align-items:center}
+.d2 .quote .av{width:44px;height:44px;border-radius:9999px;background:#E6DFCF;flex:none}
+.d2 .contact{margin:0 20px;padding:24px 20px;background:var(--primary);color:var(--on-primary);border-radius:8px}
+.d2 .contact h2{font-family:var(--display);font-weight:300;font-size:24px;margin-bottom:6px}
+.d2 .contact p{font-size:15px;opacity:.92}
+.d2 footer{padding:28px 20px 16px;font-size:13px;color:var(--muted);display:flex;justify-content:space-between}
+.d2 .sticky{position:sticky;bottom:0;padding:10px 16px 14px;background:rgba(250,246,238,.96);border-top:1px solid var(--border);z-index:5}
+.d2 .sticky a{display:flex;width:100%;background:var(--success);color:#FAF6EE}
+
+/* ============ D3: תפריט ביתי ============ */
+.d3{padding-bottom:24px}
+.d3 .top{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid var(--border)}
+.d3 .wa{font-size:13px;display:inline-flex;gap:6px;align-items:center;text-decoration:none;color:var(--success);font-weight:600;min-height:40px}
+.d3 .login{font-size:13px;background:var(--primary);color:var(--on-primary);border-radius:4px;padding:0 12px;min-height:40px;display:inline-flex;align-items:center;text-decoration:none}
+.d3 .mast{text-align:center;padding:36px 20px 24px}
+.d3 .mast .small{font-size:12px;letter-spacing:.14em;color:var(--muted)}
+.d3 .wm{font-family:var(--display);font-weight:200;font-size:44px;line-height:1.1;margin:8px 0}
+.d3 .dbl{border-top:1px solid var(--ink);border-bottom:1px solid var(--ink);height:5px;margin:0 20px}
+.d3 .lead{display:grid;grid-template-columns:1fr 128px;gap:16px;padding:24px 20px;align-items:start}
+.d3 .lead h1{font-family:var(--display);font-weight:300;font-size:26px;line-height:1.2;margin-bottom:8px}
+.d3 .lead p{font-size:15px;color:var(--muted)}
+.d3 .lead .ph{height:168px;border-radius:8px}
+.d3 .lead .ph .lbl{font-size:11px;right:4px;left:4px;bottom:4px;border-radius:4px;text-align:center}
+.d3 .cta{margin:0 20px;display:flex;min-height:48px;align-items:center;justify-content:center;border:1px solid var(--ink);border-radius:4px;text-decoration:none;font-size:15px;font-weight:600}
+.d3 .sec{padding:36px 20px 0}
+.d3 .sh{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.d3 .sh h2{font-family:var(--display);font-weight:300;font-size:22px;white-space:nowrap}
+.d3 .sh::after{content:"";flex:1;height:1px;background:var(--ink)}
+.d3 .sub{font-size:13px;color:var(--muted);margin-bottom:8px}
+.d3 .item{padding:16px 0;border-bottom:1px solid var(--border)}
+.d3 .item .l1{display:flex;align-items:baseline;gap:8px}
+.d3 .item h3{font-family:var(--display);font-weight:300;font-size:20px;line-height:1.25}
+.d3 .dots{flex:1;border-bottom:1px dotted var(--muted);transform:translateY(-5px);min-width:16px}
+.d3 .item .d{font-size:15px;font-weight:600;white-space:nowrap}
+.d3 .item .l2{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:4px;font-size:14px;color:var(--muted)}
+.d3 .item .st{font-weight:600}
+.d3 .st.ok{color:var(--success)}
+.d3 .st.full{color:var(--expired)}
+.d3 .item.is-full h3{text-decoration:line-through;text-decoration-thickness:1px;color:var(--muted)}
+.d3 .more{display:block;text-align:center;font-size:14px;padding:14px 0;text-decoration:underline;text-underline-offset:3px}
+.d3 .expl{font-size:16px}
+.d3 .expl li{list-style:none;display:grid;grid-template-columns:28px 1fr;padding:8px 0;border-bottom:1px solid var(--border)}
+.d3 .expl li b{font-weight:600;color:var(--accent);font-size:15px}
+.d3 .gal{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.d3 .gal .ph{height:104px;border-radius:4px}
+.d3 .gal .ph .lbl{font-size:10px;right:4px;bottom:4px}
+.d3 .quote{border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:18px 0;text-align:center;color:var(--muted);font-size:15px;font-style:italic}
+.d3 .contact{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:20px;text-align:center}
+.d3 .contact p{font-size:15px;color:var(--muted);margin-bottom:12px}
+.d3 .btn-p{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;background:var(--success);color:#FAF6EE;border-radius:4px;text-decoration:none;font-weight:600}
+.d3 footer{margin:36px 20px 0;padding-top:14px;border-top:1px solid var(--ink);display:flex;justify-content:space-between;font-size:13px;color:var(--muted)}
+
+.note{max-width:1320px;margin:0 auto;padding:8px 16px 48px;color:var(--muted);font-size:14px}
+@media (max-width:420px){.phone{border-width:0;border-radius:0;height:auto}.screen{height:auto;overflow:visible}.rationale{min-height:0}}
+</style>
+</head>
+<body>
+
+<header class="page-head">
+  <h1>דף הבית הציבורי — 3 כיוונים</h1>
+  <p>כל הכיוונים משתמשים באותה פלטה ("קרם וזית"), באותם גופנים ובאותו תוכן. ההבדל הוא באופי: כמה אוויר, כמה צילום, ואיך מוצגים המפגשים. גללי בתוך כל טלפון.</p>
+</header>
+
+<main class="grid">
+
+<!-- ================= DIRECTION 1 ================= -->
+<section class="col">
+  <span class="num">כיוון 1</span>
+  <h2>שקט של Ziona</h2>
+  <p class="rationale">הכי קרוב לרפרנס: הרבה אוויר, תוויות קטנות ושקטות, והטיפוגרפיה מובילה. הצילום מוצג כתמונה ממוסגרת ולא ממלא את המסך. מתאים אם רוצים תחושה של בית קפה איכותי ורגוע, על חשבון מעט פחות "תיאבון" במבט ראשון.</p>
+  <div class="phone"><div class="screen d1">
+    <div class="top">
+      <span class="wm">בראנץ׳ אצל טל</span>
+      <a class="login" href="#">כניסה לאזור האישי</a>
+    </div>
+    <p class="join">להצטרפות <a href="#">צרי קשר עם טל</a> בוואטסאפ</p>
+
+    <div class="hero">
+      <div class="eyebrow">בראנצ׳ים לאמהות בחופשת לידה</div>
+      <h1>בוקר טעים<br>סביב השולחן</h1>
+      <p>בראנצ׳ים חמים לנשים בחופשת לידה. מגיעות עם התינוקות, יושבות לשולחן ערוך, ומכירות אמהות נוספות.</p>
+      <a class="btn btn-p" href="#">למפגשים הקרובים</a>
+    </div>
+
+    <div class="frame"><div class="ph ph-table"><span class="lbl">צילום: שולחן בראנץ׳ ערוך מלמעלה</span></div></div>
+
+    <div class="sec">
+      <div class="sec-t">איך זה עובד</div>
+      <h2>את מגיעה, השולחן מחכה</h2>
+      <div class="rule"></div>
+      <p class="txt">בוחרות מפגש, מגיעות עם התינוק בעגלה או במנשא, ואני דואגת לכל השאר: אוכל ביתי, קפה חם ומקום להניק בנחת.</p>
+    </div>
+
+    <div class="sec">
+      <div class="sec-t">המפגשים הקרובים</div>
+      <h2>מה על השולחן</h2>
+      <div class="sess">
+        <div class="s">
+          <div class="date"><b>12.10</b><span>יום שני</span></div>
+          <div>
+            <h3>בראנץ׳ סתיו: שקשוקה ירוקה ולחמים חמים</h3>
+            <div class="meta">10:00 · רגיל</div>
+            <div class="row"><span class="chip avail">נותרו 3 מקומות</span><a class="lnk" href="#">לפרטים</a></div>
+          </div>
+        </div>
+        <div class="s is-full">
+          <div class="date"><b>15.10</b><span>יום חמישי</span></div>
+          <div>
+            <h3>פנקייקים ופירות עונה</h3>
+            <div class="meta">10:00 · רגיל</div>
+            <div class="row"><span class="chip full">מלא</span><a class="lnk" href="#">לפרטים</a></div>
+          </div>
+        </div>
+        <div class="s">
+          <div class="date"><b>16.10</b><span>יום שישי</span></div>
+          <div>
+            <h3>בראנץ׳ שישי מיוחד</h3>
+            <div class="meta">10:30 · זוגי</div>
+            <div class="row"><span class="chip avail">נותרו 4 מקומות</span><a class="lnk" href="#">לפרטים</a></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-t">מהמפגשים</div>
+      <h2>רגעים מהשולחן</h2>
+      <div class="pair">
+        <div class="ph ph-moms"><span class="lbl">צילום: אמהות ותינוקות סביב השולחן</span></div>
+        <div class="ph ph-bread"><span class="lbl">צילום: לחמים חמים</span></div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-t">מה אומרות</div>
+      <h2>מילים חמות</h2>
+      <div class="quote"><span class="q">"</span>[המלצה אמיתית תתווסף על ידי טל]</div>
+      <div class="quote"><span class="q">"</span>[המלצה אמיתית תתווסף על ידי טל]</div>
+    </div>
+
+    <div class="sec contact">
+      <div class="sec-t">רוצה להצטרף?</div>
+      <h2>דברי איתי</h2>
+      <p class="txt">ההרשמה לאתר נפתחת אחרי שיחה קצרה. כתבי לי בוואטסאפ ואחזור אלייך.</p>
+      <a class="btn btn-o" href="#">להצטרפות צרי קשר עם טל</a>
+    </div>
+
+    <footer><span>בראנץ׳ אצל טל</span><a href="#">כניסת מנהלת</a></footer>
+
+    <div class="fabwrap"><a href="#" aria-label="להצטרפות צרי קשר עם טל בוואטסאפ">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-12.3 7.4L3 20.5l1.6-5.4A8.4 8.4 0 1 1 21 11.5z"/></svg>
+    </a></div>
+  </div></div>
+</section>
+
+<!-- ================= DIRECTION 2 ================= -->
+<section class="col">
+  <span class="num">כיוון 2</span>
+  <h2>השולחן במרכז</h2>
+  <p class="rationale">הצילום הוא הגיבור: שולחן ערוך מלמעלה על כל המסך, והשם יושב עליו. המפגשים נגללים הצידה ככרטיסים עם תמונה, ויש רצועת גלריה. הכי מגרה ומזמין, ודורש צילומים טובים באמת כדי לעבוד.</p>
+  <div class="phone"><div class="screen d2">
+    <div class="hero">
+      <div class="ph ph-table"><span class="lbl">צילום: שולחן בראנץ׳ ערוך מלמעלה</span></div>
+      <div class="scrim"></div>
+      <div class="top">
+        <span class="wm-s">בוקר של אמהות</span>
+        <a class="login" href="#">כניסה לאזור האישי</a>
+      </div>
+      <div class="htxt">
+        <div class="wm">בראנץ׳<br>אצל טל</div>
+        <h1>בוקר טעים סביב השולחן</h1>
+        <p>בראנצ׳ים חמים לנשים בחופשת לידה. מגיעות עם התינוקות, יושבות לשולחן ערוך, ומכירות אמהות נוספות.</p>
+        <a class="btn btn-light" href="#">למפגשים הקרובים</a>
+      </div>
+    </div>
+
+    <p class="intro"><b>איך זה עובד?</b> בוחרות מפגש, מגיעות עם התינוק, ואני דואגת לאוכל ביתי, לקפה חם ולפינה שקטה להנקה.</p>
+
+    <div class="sec">
+      <div class="sec-h"><h2>המפגשים הקרובים</h2><a href="#">לכל המפגשים</a></div>
+      <div class="hscroll">
+        <article class="card">
+          <div class="ph ph-green"><span class="lbl">צילום: שקשוקה ירוקה</span></div>
+          <div class="b">
+            <div class="when"><b>יום שני 12.10</b> · 10:00</div>
+            <h3>בראנץ׳ סתיו: שקשוקה ירוקה ולחמים חמים</h3>
+            <div class="row"><span class="chip">רגיל</span><span class="chip avail">נותרו 3 מקומות</span></div>
+          </div>
+        </article>
+        <article class="card is-full">
+          <div class="ph ph-pancake"><span class="lbl">צילום: פנקייקים</span></div>
+          <div class="b">
+            <div class="when"><b>יום חמישי 15.10</b> · 10:00</div>
+            <h3>פנקייקים ופירות עונה</h3>
+            <div class="row"><span class="chip">רגיל</span><span class="chip full">מלא</span></div>
+          </div>
+        </article>
+        <article class="card">
+          <div class="ph ph-bread"><span class="lbl">צילום: שולחן שישי</span></div>
+          <div class="b">
+            <div class="when"><b>יום שישי 16.10</b> · 10:30</div>
+            <h3>בראנץ׳ שישי מיוחד</h3>
+            <div class="row"><span class="chip">זוגי</span><span class="chip avail">נותרו 4 מקומות</span></div>
+          </div>
+        </article>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-h"><h2>מהמפגשים</h2></div>
+      <div class="strip">
+        <div class="ph ph-moms w"><span class="lbl">צילום: אמהות סביב השולחן</span></div>
+        <div class="ph ph-pancake"><span class="lbl">צילום: מגש פירות</span></div>
+        <div class="ph ph-green"><span class="lbl">צילום: מנה ירוקה</span></div>
+        <div class="ph ph-bread w"><span class="lbl">צילום: לחמים</span></div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-h"><h2>מה אומרות</h2></div>
+      <div class="quote"><span class="av"></span>[המלצה אמיתית תתווסף על ידי טל]</div>
+      <div class="quote"><span class="av"></span>[המלצה אמיתית תתווסף על ידי טל]</div>
+    </div>
+
+    <div class="sec">
+      <div class="contact">
+        <h2>רוצה לשבת איתנו?</h2>
+        <p>ההצטרפות היא דרכי. כתבי לי בוואטסאפ ונקבע את המפגש הראשון שלך.</p>
+      </div>
+    </div>
+
+    <footer><span>בראנץ׳ אצל טל</span><a href="#">כניסת מנהלת</a></footer>
+
+    <div class="sticky"><a class="btn" href="#">
+      <svg class="wa-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-12.3 7.4L3 20.5l1.6-5.4A8.4 8.4 0 1 1 21 11.5z"/></svg>
+      להצטרפות צרי קשר עם טל</a></div>
+  </div></div>
+</section>
+
+<!-- ================= DIRECTION 3 ================= -->
+<section class="col">
+  <span class="num">כיוון 3</span>
+  <h2>תפריט ביתי</h2>
+  <p class="rationale">הדף נראה כמו תפריט מודפס על השולחן: קווים דקים, שם המנה (הקונספט) גדול, והתאריך בצד כמו מחיר. קומפקטי, רואים את כל המפגשים במבט אחד, והצילום קטן ומלווה. אישי ומיוחד, פחות "אתר" ויותר "הזמנה".</p>
+  <div class="phone"><div class="screen d3">
+    <div class="top">
+      <a class="wa" href="#">
+        <svg class="wa-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-12.3 7.4L3 20.5l1.6-5.4A8.4 8.4 0 1 1 21 11.5z"/></svg>
+        להצטרפות צרי קשר עם טל</a>
+      <a class="login" href="#">כניסה לאזור האישי</a>
+    </div>
+
+    <div class="mast">
+      <div class="small">תפריט הבקרים · סתיו</div>
+      <div class="wm">בראנץ׳ אצל טל</div>
+    </div>
+    <div class="dbl"></div>
+
+    <div class="lead">
+      <div>
+        <h1>בוקר טעים סביב השולחן</h1>
+        <p>בראנצ׳ים חמים לנשים בחופשת לידה. מגיעות עם התינוקות, יושבות לשולחן ערוך, ומכירות אמהות נוספות.</p>
+      </div>
+      <div class="ph ph-table"><span class="lbl">צילום: שולחן מלמעלה</span></div>
+    </div>
+    <a class="cta" href="#">למפגשים הקרובים ←</a>
+
+    <div class="sec">
+      <div class="sh"><h2>על השולחן החודש</h2></div>
+      <p class="sub">מפגש רגיל: אמא ותינוק · מפגש זוגי: שתי חברות יחד</p>
+
+      <div class="item">
+        <div class="l1"><h3>בראנץ׳ סתיו: שקשוקה ירוקה ולחמים חמים</h3><span class="dots"></span><span class="d">12.10</span></div>
+        <div class="l2"><span>יום שני · 10:00 · רגיל</span><span class="st ok">נותרו 3 מקומות</span></div>
+      </div>
+      <div class="item is-full">
+        <div class="l1"><h3>פנקייקים ופירות עונה</h3><span class="dots"></span><span class="d">15.10</span></div>
+        <div class="l2"><span>יום חמישי · 10:00 · רגיל</span><span class="st full">מלא</span></div>
+      </div>
+      <div class="item">
+        <div class="l1"><h3>בראנץ׳ שישי מיוחד</h3><span class="dots"></span><span class="d">16.10</span></div>
+        <div class="l2"><span>יום שישי · 10:30 · זוגי</span><span class="st ok">נותרו 4 מקומות</span></div>
+      </div>
+      <a class="more" href="#">לכל המפגשים</a>
+    </div>
+
+    <div class="sec">
+      <div class="sh"><h2>איך זה עובד</h2></div>
+      <ol class="expl">
+        <li><b>1</b>בוחרות מפגש שמתאים לך.</li>
+        <li><b>2</b>מגיעות עם התינוק, בלי להביא כלום.</li>
+        <li><b>3</b>אוכלות, מדברות, ומכירות אמהות נוספות.</li>
+      </ol>
+    </div>
+
+    <div class="sec">
+      <div class="sh"><h2>מהמפגשים</h2></div>
+      <div class="gal">
+        <div class="ph ph-moms"><span class="lbl">צילום: אמהות</span></div>
+        <div class="ph ph-green"><span class="lbl">צילום: מנה</span></div>
+        <div class="ph ph-bread"><span class="lbl">צילום: לחמים</span></div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sh"><h2>מה אומרות</h2></div>
+      <p class="quote">[המלצה אמיתית תתווסף על ידי טל]</p>
+      <p class="quote" style="border-top:0">[המלצה אמיתית תתווסף על ידי טל]</p>
+    </div>
+
+    <div class="sec">
+      <div class="contact">
+        <p>רוצה לשבת איתנו לשולחן? ההצטרפות דרכי, כתבי לי ונקבע.</p>
+        <a class="btn-p" href="#">
+          <svg class="wa-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-12.3 7.4L3 20.5l1.6-5.4A8.4 8.4 0 1 1 21 11.5z"/></svg>
+          להצטרפות צרי קשר עם טל</a>
+      </div>
+    </div>
+
+    <footer><span>בראנץ׳ אצל טל</span><a href="#">כניסת מנהלת</a></footer>
+  </div></div>
+</section>
+
+</main>
+<p class="note">הערה: הצילומים הם מלבנים צבעוניים שמסמנים איזו תמונה תבוא שם. ההמלצות מסומנות כמקום ריק עד שטל תוסיף המלצות אמיתיות.</p>
+</body>
+</html>

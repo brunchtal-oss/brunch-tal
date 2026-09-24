@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>בית · בראנץ׳ אצל טל</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@200;300;400&family=Assistant:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/*
+  KEY SCREEN — אזור אישי › בית (מיכל, כרטיסייה)
+  Governing spine sections (spine is the contract; this mock illustrates):
+  - EXPERIENCE › Information Architecture › אזור אישי (שורת "בית")
+  - EXPERIENCE › Voice and Tone › מיקרו-קופי (הודעה אחרי הצטרפות — verbatim from products-catalog.md)
+  - EXPERIENCE › Component Patterns: balance-card, session-card, notification-item, bottom-tab-bar, button-primary, button-link
+  - EXPERIENCE › State Patterns › מצבי זכות ויתרה (פעילה, עומדת לפוג ≤10 ימים)
+  - EXPERIENCE › Key Flows › Flow 3 (steps 3-4)
+  - EXPERIENCE › Accessibility Floor (h1 per page, <time>, <bdi>, unread as sr-only, tab badge in link name)
+  - DESIGN › Colors, Typography, Layout & Spacing, Components (tokens applied 1:1 below)
+*/
+:root{
+  --background:#FAF6EE;--card:#FFFDF8;--muted:#F2ECDF;--ink:#2E2A1F;--ink-muted:#6B6450;--border:#E6DFCF;
+  --accent:#8A875A;--primary:#4A4A2A;--on-primary:#FAF6EE;
+  --success:#4E6B34;--success-tint:#E7EDDC;--success-dot:#8FA874;
+  --warning:#8C5E14;--warning-tint:#F4E8D0;--warning-dot:#C9A060;
+  --error:#B42318;--error-tint:#F8E4E1;
+  --pending:#4A5A6A;--pending-tint:#E6EAEC;--pending-dot:#8C9AA8;
+  --expired:#676154;--expired-tint:#EDE9E0;--expired-dot:#B0A998;
+  --display:'Heebo',system-ui,'Segoe UI',Arial,sans-serif;
+  --body:'Assistant',system-ui,'Segoe UI',Arial,sans-serif;
+  --gutter:24px;--touch:44px;--cta:48px;--section:32px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#EFE9DC;color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px;box-shadow:0 0 0 2px var(--on-primary)}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+svg.i{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex:none}
+svg.i.s20{width:20px;height:20px}
+
+/* mock page chrome */
+.page-head{max-width:900px;margin:0 auto;padding:32px 16px 8px}
+.page-head h1{font-family:var(--display);font-weight:300;font-size:30px}
+.page-head p{color:var(--ink-muted);margin-top:6px;font-size:15px}
+.grid{max-width:900px;margin:0 auto;padding:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(390px,1fr));gap:40px;align-items:start}
+.col h2.cap{font-family:var(--display);font-weight:300;font-size:22px}
+.col .num{font-size:13px;color:var(--ink-muted);letter-spacing:.04em}
+.col .why{font-size:15px;color:var(--ink-muted);margin:6px 0 16px;min-height:72px}
+.phone{width:390px;max-width:100%;margin:0 auto;height:844px;border:10px solid #2E2A1F;border-radius:44px;overflow:hidden;background:var(--background);position:relative}
+.statusbar{height:40px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-size:13px;font-weight:600}
+.screen{position:absolute;top:40px;bottom:0;inset-inline:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;padding-bottom:96px;scroll-padding-bottom:96px}
+
+/* app header (customer area) */
+.app-top{display:flex;align-items:center;justify-content:space-between;padding:12px var(--gutter)}
+.wordmark{font-family:var(--display);font-weight:300;font-size:20px;line-height:1;letter-spacing:.01em;text-decoration:none}
+.hello{padding:8px var(--gutter) 0}
+.hello h1{font-family:var(--display);font-weight:300;font-size:26px;line-height:1.2}
+.hello .date{font-size:13px;color:var(--ink-muted);margin-top:2px}
+.sec{padding:var(--section) var(--gutter) 0}
+.sec > h2{font-family:var(--body);font-size:13px;font-weight:400;letter-spacing:.04em;color:var(--ink-muted);margin-bottom:12px}
+
+/* welcome message (products-catalog) */
+.welcome{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:24px 16px 16px}
+.welcome .rule{width:32px;height:1px;background:var(--accent);margin-bottom:16px}
+.welcome p{font-size:17px;line-height:1.65}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;min-height:var(--cta);padding:0 22px;border-radius:4px;font-family:var(--body);font-size:16px;font-weight:600;line-height:1.2;text-decoration:none;width:100%;border:0;cursor:pointer}
+.btn-primary{background:var(--primary);color:var(--on-primary)}
+.btn-secondary{background:transparent;color:var(--ink);border:1px solid var(--ink);min-height:var(--touch)}
+.btn-link{display:inline-flex;align-items:center;min-height:var(--touch);font-size:15px;text-decoration:underline;text-underline-offset:3px}
+.welcome .btn{margin-top:20px}
+
+/* balance-card */
+.balance{display:block;position:relative;background:var(--muted);border-radius:8px;padding:12px 16px;text-decoration:none;color:var(--ink)}
+.balance .l1{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.balance .dot{width:8px;height:8px;border-radius:9999px;background:var(--accent);flex:none}
+.balance .kind{font-size:16px}
+.balance .nums{font-size:16px;font-weight:600;line-height:1.35;margin-top:6px}
+.balance .l2{font-size:15px;color:var(--ink-muted);margin-top:2px}
+.balance .chev{position:absolute;inset-inline-end:12px;top:50%;margin-top:-10px;color:var(--ink-muted)}
+.balance .chip-row{margin-top:8px}
+
+/* status-chip */
+.st{display:inline-flex;align-items:center;gap:6px;border-radius:9999px;padding:3px 10px;font-size:13px;font-weight:600;line-height:1.4;white-space:nowrap}
+.st::before{content:"";width:7px;height:7px;border-radius:9999px;flex:none}
+.st.confirmed{color:var(--success);background:var(--success-tint)}.st.confirmed::before{background:var(--success-dot)}
+.st.expiring{color:var(--warning);background:var(--warning-tint)}.st.expiring::before{background:var(--warning-dot)}
+.chip-type{display:inline-block;border:1px solid var(--accent);border-radius:4px;padding:2px 8px;font-size:13px;line-height:1.4}
+.chip{display:inline-block;background:var(--muted);border-radius:9999px;padding:6px 10px;font-size:13px;line-height:1}
+
+/* session-card */
+.scard{background:var(--card);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.scard .photo{height:150px;background:
+  radial-gradient(circle at 50% 50%,#E9B872 0 20%,#D39A52 20.5% 24%,#FFFDF8 24.5% 32%,transparent 32.5%),
+  radial-gradient(circle at 75% 25%,#9B2D4B 0 5%,transparent 5.5%),
+  radial-gradient(circle at 25% 72%,#E27D3A 0 7%,transparent 7.5%),
+  linear-gradient(160deg,#D9C4A0,#B89A6E)}
+.scard .b{padding:16px}
+.scard .when{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:15px}
+.scard .when b{font-weight:600}
+.scard h3{font-size:16px;font-weight:600;line-height:1.35;margin:8px 0}
+.scard .tags{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.scard .cancel-by{font-size:15px;color:var(--ink-muted);margin:12px 0 16px}
+.scard .actions{display:flex;flex-direction:column;align-items:stretch}
+.scard .actions .btn-link{align-self:center}
+.also{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0 0;font-size:15px}
+
+/* notification-item */
+.notes{border-top:1px solid var(--border)}
+.note{display:grid;grid-template-columns:8px 1fr auto;gap:12px;align-items:start;padding:16px 0;border-bottom:1px solid var(--border);text-decoration:none;min-height:44px}
+.note .udot{width:8px;height:8px;border-radius:9999px;background:var(--accent);margin-top:7px}
+.note .t{font-size:16px;font-weight:600;line-height:1.35}
+.note .d{font-size:15px;color:var(--ink-muted)}
+.note .time{font-size:13px;color:var(--ink-muted);white-space:nowrap}
+.all{display:flex;justify-content:flex-start}
+
+/* bottom-tab-bar */
+.tabs{position:absolute;bottom:0;inset-inline:0;min-height:64px;background:var(--card);border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(5,1fr);padding:4px 4px 18px}
+.tabs a{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:2px;min-height:var(--touch);padding-top:8px;text-decoration:none;color:var(--ink-muted);font-size:13px;line-height:1.25;text-align:center;position:relative}
+.tabs a[aria-current="page"]{color:var(--ink);font-weight:600}
+.tabs a[aria-current="page"]::before{content:"";position:absolute;top:0;width:24px;height:2px;background:var(--accent)}
+.tabs .ico{position:relative}
+.tabs .badge{position:absolute;top:-6px;inset-inline-end:-12px;min-width:20px;height:20px;padding:0 5px;border-radius:9999px;background:var(--primary);color:var(--on-primary);font-size:13px;font-weight:600;line-height:20px;text-align:center}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></symbol>
+  <symbol id="i-ticket" viewBox="0 0 24 24"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+</svg>
+
+<header class="page-head">
+  <h1>מסך מפתח — בית באזור האישי</h1>
+  <p>מיכל, לקוחה חדשה עם כרטיסייה אישית (4 כניסות, 49 ימים, שני וחמישי). רוחב טלפון 390px. ה-spine קובע; המוקאפ ממחיש.</p>
+</header>
+
+<div class="grid">
+
+  <!-- ===================== COLUMN 1: right after activation ===================== -->
+  <section class="col">
+    <span class="num">01 · רביעי 23.09 · רגע אחרי ההפעלה</span>
+    <h2 class="cap">ברוכה הבאה, 0 הרשמות</h2>
+    <p class="why">אישור הרכישה (מוצר, סכום, תאריך רכישה, יתרה, תפוגה — מקור §4) + ההודעה לכרטיסייה מילה במילה + הכפתור היחיד במסך. balance-card: 4 זמינות, 0 משוריינות, בתוקף עד 11.11. התראה אחת שלא נקראה ("הכרטיסייה שלך מוכנה"). אין "המפגש הקרוב" — עוד אין הרשמה.</p>
+
+    <div class="phone">
+      <div class="statusbar"><span>09:41</span><span aria-hidden="true">●●● ▮</span></div>
+      <div class="screen">
+        <div class="app-top"><a class="wordmark" href="#">בראנץ׳ אצל טל</a></div>
+        <main>
+          <div class="hello">
+            <h1 tabindex="-1">היי מיכל</h1>
+          </div>
+
+          <section class="sec" aria-labelledby="w1">
+            <h2 id="w1" class="sr-only">הכרטיסייה שלך מוכנה</h2>
+            <div class="welcome">
+              <div class="rule" aria-hidden="true"></div>
+              <p class="label" style="color:var(--ink-muted);margin-bottom:6px">אישור רכישה: כרטיסייה אישית · <bdi>472 ₪</bdi> · נרכשה <bdi>23.09</bdi> · 4 זמינות · בתוקף עד <bdi>11.11</bdi></p>
+              <p>אוכל טוב וחברה נעימה מחכים לך. כדאי לבחור כבר עכשיו את כל ארבעת התאריכים שנוחים לך ולהבטיח את מקומך.</p>
+              <a class="btn btn-primary" href="key-booking-sheet.html">בואי נבחר תאריכים</a>
+            </div>
+          </section>
+
+          <section class="sec" aria-labelledby="b1">
+            <h2 id="b1">הכניסות שלי</h2>
+            <a class="balance" href="#">
+              <div class="l1"><span class="dot" aria-hidden="true"></span><span class="kind">כרטיסייה אישית</span></div>
+              <div class="nums"><bdi>4</bdi> זמינות · <bdi>0</bdi> משוריינות</div>
+              <div class="l2">בתוקף עד <time datetime="2026-11-11"><bdi>11.11</bdi></time> · ימי שני וחמישי</div>
+              <svg class="i s20 chev" aria-hidden="true"><use href="#i-chev"/></svg>
+            </a>
+          </section>
+
+          <section class="sec" aria-labelledby="n1">
+            <h2 id="n1">התראות שלא נקראו</h2>
+            <div class="notes">
+              <a class="note" href="#">
+                <span class="udot" aria-hidden="true"></span>
+                <span><span class="sr-only">לא נקראה. </span><span class="t">הכרטיסייה שלך מוכנה.</span>
+                  <span class="d" style="display:block">מומלץ להירשם מראש לארבעת המפגשים כדי לבחור את התאריכים שנוחים לך</span></span>
+                <span class="time">עכשיו</span>
+              </a>
+            </div>
+          </section>
+        </main>
+      </div>
+      <nav class="tabs" aria-label="ניווט ראשי">
+        <a href="#" aria-current="page"><span class="ico"><svg class="i" aria-hidden="true"><use href="#i-home"/></svg></span>בית</a>
+        <a href="#"><span class="ico"><svg class="i" aria-hidden="true"><use href="#i-cal"/></svg></span>מפגשים</a>
+        <a href="#"><span class="ico"><svg class="i" aria-hidden="true"><use href="#i-ticket"/></svg></span>ההרשמות שלי</a>
+        <a href="#" aria-label="התראות, 1 שלא נקראה"><span class="ico"><svg class="i" aria-hidden="true"><use href="#i-bell"/></svg><span class="badge" aria-hidden="true">1</span></span>התראות</a>
+        <a href="#"><span class="ico"><svg class="i" aria-hidden="true"><use href="#i-user"/></svg></span>פרופיל</a>
+      </nav>
+    </div>
+  </section>
+
+  <!-- ===================== COLUMN 2: 2 of 4 booked, expiring ===================== -->
+  <section class="col">
+    <span class="num">02 · שני 02.11 · 9 ימים לתפוגה</span>
+    <h2 class="cap">2 מתוך 4 שמורות, הכרטיסייה עומדת לפוג</h2>
+    <p class="why">המפגש הקרוב כ-session-card עם מה שאפשר לעשות עכשיו (עדיין לפני חלון הביטול). balance-card: 2 זמינות · 2 משוריינות + status-chip expiring (≤10 ימים). 2 התראות שלא נקראו, המונה בטאב.</p>
+
+    <div class="phone">
+      <div class="statusbar"><span>09:41</span><span aria-hidden="true">●●● ▮</span></div>
+      <div class="screen">
+        <div class="app-top"><a class="wordmark" href="#">בראנץ׳ אצל טל</a></div>
+        <main>
+          <div class="hello">
+            <h1 tabindex="-1">היי מיכל</h1>
+          </div>
+
+          <section class="sec" aria-labelledby="s2">
+            <h2 id="s2">המפגש הקרוב שלי</h2>
+            <article class="scard">
+              <div class="photo" role="img" aria-label="פנקייקים ופירות עונה על השולחן של טל"></div>
+              <div class="b">
+                <div class="when">
+                  <span><time datetime="2026-11-05T10:00"><b>יום חמישי <bdi>05.11</bdi></b> · <bdi>10:00</bdi></time></span>
+                  <span class="st confirmed">מאושר</span>
+                </div>
+                <h3>פנקייקים ופירות עונה</h3>
+                <div class="tags"><span class="chip-type">רגיל</span><span class="chip">מגיעות עם התינוקות</span></div>
+                <p class="cancel-by">אפשר לבטל בעצמך עד <time datetime="2026-11-03T10:00">יום שלישי <bdi>03.11</bdi> · <bdi>10:00</bdi></time></p>
+                <div class="actions">
+                  <a class="btn btn-secondary" href="#">ביטול הרשמה</a>
+                  <a class="btn-link" href="#">להעביר למועד אחר</a>
+                </div>
+              </div>
+            </article>
+            <div class="also">
+              <span>ועוד מקום שמור לך ב<time datetime="2026-11-09T10:00">יום שני <bdi>09.11</bdi> · <bdi>10:00</bdi></time></span>
+            </div>
+            <div class="all"><a class="btn-link" href="#">לכל ההרשמות שלי</a></div>
+          </section>
+
+          <section class="sec" aria-labelledby="b2">
+            <h2 id="b2">הכניסות שלי</h2>
+            <a class="balance" href="#">
+              <div class="l1"><span class="dot" aria-hidden="true"></span><span class="kind">כרטיסייה אישית</span></div>
+              <div class="nums"><bdi>2</bdi> זמינות · <bdi>2</bdi> משוריינות</div>
+              <div class="l2">בתוקף עד <time datetime="2026-11-11"><bdi>11.11</bdi></time> · עוד <bdi>9</bdi> ימים · ימי שני וחמישי</div>
+              <div class="chip-row"><span class="st expiring">עומדת לפוג</span></div>
+              <svg class="i s20 chev" aria-hidden="true"><use href="#i-chev"/></svg>
+            </a>
+          </section>
+
+          <section class="sec" aria-labelledby="n2">
+            <h2 id="n2">התראות שלא נקראו</h2>
+            <div class="notes">
+              <a class="note" href="#">
+                <span class="udot" aria-hidden="true"></span>
+                <span><span class="sr-only">לא נקראה. </span><span class="t">ההרשמה אושרה</span>
+                  <span class="d" style="display:block"><time datetime="2026-11-05T10:00">יום חמישי <bdi>05.11</bdi> · <bdi>10:00</bdi></time> · רגיל</span></span>
+                <span class="time">אתמול</span>
+              </a>
+              <a class="note" href="#">
+                <span class="udot" aria-hidden="true"></span>
+                <span><span class="sr-only">לא נקראה. </span><span class="t">ההרשמה אושרה</span>
+                  <span class="d" style="display:block"><time datetime="2026-11-09T10:00">יום שני <bdi>09.11</bdi> · <bdi>10:00</bdi></time> · רגיל</span></span>
+                <span class="time">אתמול</span>
+              </a>
+            </div>
+          </section>
+        </main>
+      </div>
+      <nav class="tabs" aria-label="ניווט ראשי">
+        <a href="#" aria-current="page"><span class="ico"><svg class="i" aria-hidden="true"><use href="#i-home"/></svg></span>בית</a>
+        <a href="#"><span class="ico"><svg class="i" aria-hidden="true"><use href="#i-cal"/></svg></span>מפגשים</a>
+        <a href="#"><span class="ico"><svg class="i" aria-hidden="true"><use href="#i-ticket"/></svg></span>ההרשמות שלי</a>
+        <a href="#" aria-label="התראות, 2 שלא נקראו"><span class="ico"><svg class="i" aria-hidden="true"><use href="#i-bell"/></svg><span class="badge" aria-hidden="true">2</span></span>התראות</a>
+        <a href="#"><span class="ico"><svg class="i" aria-hidden="true"><use href="#i-user"/></svg></span>פרופיל</a>
+      </nav>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

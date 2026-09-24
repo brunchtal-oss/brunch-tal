@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ערכות צבע — בראנץ׳ אצל טל</title>
+<style>
+/* ziona — Ziona נאמן
+   bg #FFFFFF | surface #F3EEE8 | muted #F5F1EA | ink #000000 | ink-muted #6B6560
+   border #E4DDD2 | accent #C9B691 | primary #000000 on-primary #FFFFFF
+   success #4F6B3A/#E9EFE1/#8FA874 | warning #8A5A12/#F6ECD9/#C9A060 | error #B42318/#FBEAE8/#B42318
+   info #3F5A73/#E8EEF3/#7F99B0 | expired #6E6A66/#EEECEA/#A8A39E  (text/tint/dot) */
+/* olive — קרם וזית
+   bg #FAF6EE | surface #FFFDF8 | muted #F2ECDF | ink #2E2A1F | ink-muted #6B6450
+   border #E6DFCF | accent #8A875A | primary #4A4A2A on-primary #FAF6EE
+   success #4E6B34/#E7EDDC/#8FA874 | warning #8C5E14/#F4E8D0/#C9A060 | error #B42318/#F8E4E1/#B42318
+   info #4A5A6A/#E6EAEC/#8C9AA8 | expired #676154/#EDE9E0/#B0A998  (text/tint/dot) */
+/* honey — חלב ודבש
+   bg #FBF7F1 | surface #FFFFFF | muted #F4ECE2 | ink #3B2A20 | ink-muted #75655A
+   border #EADFD3 | accent #C9A46A | primary #A34F35 on-primary #FFFFFF
+   success #52703A/#E9EFDF/#8FA874 | warning #8A5B10/#F7EAD2/#C9A060 | error #B42318/#FAE6E3/#B42318
+   info #4B5E78/#E7ECF2/#8C9CB2 | expired #6C5F56/#EFE9E3/#B3A79D  (text/tint/dot) */
+/* herb — פשתן ועשבים
+   bg #F4F0E8 | surface #FBF9F4 | muted #ECE7DC | ink #2B2D2A | ink-muted #5F625C
+   border #DCD6CA | accent #A9B59A | primary #4F6B4A on-primary #FFFFFF
+   success #46703A/#E2EBD8/#8FA874 | warning #87590F/#F3E6CC/#C9A060 | error #B42318/#F7E1DD/#B42318
+   info #4A5B70/#E3E8EE/#8A99AC | expired #62605A/#E8E5DE/#AAA69C  (text/tint/dot) */
+*{box-sizing:border-box}
+body{margin:0;background:#EDEAE5;color:#1A1A1A;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,"Noto Sans Hebrew",sans-serif;line-height:1.5}
+.page{max-width:1400px;margin:0 auto;padding:24px 16px 48px}
+h1{font-size:26px;margin:0 0 4px}
+.lead{margin:0 0 24px;color:#555;font-size:15px}
+.wrap{display:grid;grid-template-columns:1fr;gap:20px}
+@media(min-width:1000px){.wrap{grid-template-columns:1fr 1fr}}
+.v{border:1px solid;border-radius:8px;padding:20px 16px}
+.v header h2{margin:0;font-size:22px}.v header p{margin:4px 0 16px;font-size:14px}.num{font-size:12px;letter-spacing:.04em}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-bottom:20px}
+.chip{border:1px solid;border-radius:8px;display:flex;gap:10px;padding:8px;align-items:flex-start}
+.sw{width:40px;height:40px;border-radius:4px;flex:none}
+.ci{min-width:0;flex:1}.cr{font-weight:600;font-size:13px}
+code{font-size:12px;font-family:ui-monospace,Consolas,monospace;direction:ltr;display:inline-block}
+.pr{display:flex;flex-wrap:wrap;gap:4px;font-size:11px;align-items:baseline;color:#444}
+.pr b{font-family:ui-monospace,Consolas,monospace;direction:ltr}
+.pr em{font-style:normal;padding:0 4px;border-radius:3px}
+.ok{background:#E3EEDB;color:#2F5020}.no{background:#FBE3E0;color:#8E1A12}.na{background:#ECEAE6;color:#555}
+.phone{width:100%;max-width:380px;margin:0 auto;border:1px solid;border-radius:8px;overflow:hidden}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid}
+.balance{margin:16px;padding:10px 12px;border-radius:8px;font-size:14px}
+.card{margin:0 16px 16px;border:1px solid;border-radius:8px;overflow:hidden}
+.photo{height:150px;display:flex;align-items:center;justify-content:center;font-size:14px}
+.cb{padding:14px}
+.cb h3{font-size:18px;margin:8px 0 10px;line-height:1.35}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.type{border:1px solid;border-radius:4px;padding:1px 8px;font-size:13px}
+.tag{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;padding:3px 10px;border-radius:4px;margin:0 0 6px 6px}
+.tag i{width:7px;height:7px;border-radius:50%;display:inline-block}
+.btn{display:block;width:100%;font:inherit;font-size:16px;font-weight:600;padding:12px;border-radius:4px;border:1px solid;margin-top:10px;cursor:pointer}
+.statusrow{padding:0 16px 8px}
+</style></head>
+<body><div class="page">
+<h1>בראנץ׳ אצל טל — ערכות צבע</h1>
+<p class="lead">ארבע וריאציות במרשם השקט של Ziona Cafe. הצבע מגיע מהאוכל, לא מהממשק. יחסי ניגוד לפי WCAG 2.x: טקסט רגיל 4.5:1, רכיבים גרפיים 3:1.</p>
+<div class="wrap">
+<section class="v" style="background:#FFFFFF;color:#000000;border-color:#E4DDD2">
+  <header><div class="num" style="color:#6B6560">וריאציה 1</div><h2>Ziona נאמן</h2><p style="color:#6B6560">לבן נקי ודיו שחור — שקט, מדויק, כמו תפריט של בית קפה טוב.</p></header>
+  <div class="grid"><div class="chip" style="border-color:#E4DDD2;background:#F3EEE8">
+      <div class="sw" style="background:#FFFFFF;border:1px solid #E4DDD2"></div>
+      <div class="ci"><div class="cr" style="color:#000000">רקע</div><code style="color:#6B6560">#FFFFFF</code><div class="pr"><span>דיו על רקע</span><b>21.00:1</b><em class="ok">AA עובר (4.5)</em></div></div></div><div class="chip" style="border-color:#E4DDD2;background:#F3EEE8">
+      <div class="sw" style="background:#F3EEE8;border:1px solid #E4DDD2"></div>
+      <div class="ci"><div class="cr" style="color:#000000">משטח / כרטיס</div><code style="color:#6B6560">#F3EEE8</code><div class="pr"><span>דיו על כרטיס</span><b>18.21:1</b><em class="ok">AA עובר (4.5)</em></div></div></div><div class="chip" style="border-color:#E4DDD2;background:#F3EEE8">
+      <div class="sw" style="background:#000000;"></div>
+      <div class="ci"><div class="cr" style="color:#000000">דיו (טקסט)</div><code style="color:#6B6560">#000000</code><div class="pr"><span>מול רקע</span><b>21.00:1</b><em class="ok">AA עובר (4.5)</em></div></div></div><div class="chip" style="border-color:#E4DDD2;background:#F3EEE8">
+      <div class="sw" style="background:#6B6560;"></div>
+      <div class="ci"><div class="cr" style="color:#000000">דיו משני</div><code style="color:#6B6560">#6B6560</code><div class="pr"><span>מול רקע</span><b>5.74:1</b><em class="ok">AA עובר (4.5)</em></div><div class="pr"><span>מול כרטיס</span><b>4.98:1</b><em class="ok">AA עובר (4.5)</em></div></div></div><div class="chip" style="border-color:#E4DDD2;background:#F3EEE8">
+      <div class="sw" style="background:#E4DDD2;"></div>
+      <div class="ci"><div class="cr" style="color:#000000">קו גבול</div><code style="color:#6B6560">#E4DDD2</code><div class="pr"><span>מול רקע</span><b>1.35:1</b><em class="na">מפריד דקורטיבי — לא נדרש</em></div></div></div><div class="chip" style="border-color:#E4DDD2;background:#F3EEE8">
+      <div class="sw" style="background:#C9B691;"></div>
+      <div class="ci"><div class="cr" style="color:#000000">אקסנט</div><code style="color:#6B6560">#C9B691</code><div class="pr"><span>דיו על אקסנט</span><b>10.58:1</b><em class="ok">AA עובר (4.5)</em></div><div class="pr"><span>אקסנט כגרפיקה</span><b>1.98:1</b><em class="no">AA נכשל (3)</em></div></div></div><div class="chip" style="border-color:#E4DDD2;background:#F3EEE8">
+      <div class="sw" style="background:#000000;"></div>
+      <div class="ci"><div class="cr" style="color:#000000">כפתור ראשי</div><code style="color:#6B6560">#000000</code><div class="pr"><span>טקסט על כפתור</span><b>21.00:1</b><em class="ok">AA עובר (4.5)</em></div><div class="pr"><span>כפתור מול רקע</span><b>21.00:1</b><em class="ok">AA עובר (3)</em></div></div></div><div class="chip" style="border-color:#E4DDD2;background:#F3EEE8">
+      <div class="sw" style="background:#FFFFFF;border:1px solid #E4DDD2"></div>
+      <div class="ci"><div class="cr" style="color:#000000">טקסט על כפתור</div><code style="color:#6B6560">#FFFFFF</code></div></div><div class="chip" style="border-color:#E4DDD2;background:#F3EEE8">
+      <div class="sw" style="background:#4F6B3A;box-shadow:inset 0 -14px 0 #E9EFE1"></div>
+      <div class="ci"><div class="cr" style="color:#000000">הצלחה / מאושר</div><code style="color:#6B6560">#4F6B3A</code><div class="pr"><span>טקסט על שבב</span><b>5.12:1</b><em class="ok">AA עובר (4.5)</em></div><div class="pr"><span>טקסט על רקע</span><b>6.01:1</b><em class="ok">AA עובר (4.5)</em></div></div></div><div class="chip" style="border-color:#E4DDD2;background:#F3EEE8">
+      <div class="sw" style="background:#8A5A12;box-shadow:inset 0 -14px 0 #F6ECD9"></div>
+      <div class="ci"><div class="cr" style="color:#000000">אזהרה / כמעט מלא</div><code style="color:#6B6560">#8A5A12</code><div class="pr"><span>טקסט על שבב</span><b>5.04:1</b><em class="ok">AA עובר (4.5)</em></div><div class="pr"><span>טקסט על רקע</span><b>5.91:1</b><em class="ok">AA עובר (4.5)</em></div></div></div><div class="chip" style="border-color:#E4DDD2;background:#F3EEE8">
+      <div class="sw" style="background:#B42318;box-shadow:inset 0 -14px 0 #FBEAE8"></div>
+      <div class="ci"><div class="cr" style="color:#000000">שגיאה / מלא</div><code style="color:#6B6560">#B42318</code><div class="pr"><span>טקסט על שבב</span><b>5.65:1</b><em class="ok">AA עובר (4.5)</em></div><div class="pr"><span>טקסט על רקע</span><b>6.57:1</b><em class="ok">AA עובר (4.5)</em></div></div></div><div class="chip" style="border-color:#E4DDD2;background:#F3EEE8">
+      <div class="sw" style="background:#3F5A73;box-shadow:inset 0 -14px 0 #E8EEF3"></div>
+      <div class="ci"><div class="cr" style="color:#000000">מידע / ממתין</div><code style="color:#6B6560">#3F5A73</code><div class="pr"><span>טקסט על שבב</span><b>6.15:1</b><em class="ok">AA עובר (4.5)</em></div><div class="pr"><span>טקסט על רקע</span><b>7.19:1</b><em class="ok">AA עובר (4.5)</em></div></div></div><div class="chip" style="border-color:#E4DDD2;background:#F3EEE8">
+      <div class="sw" style="background:#6E6A66;box-shadow:inset 0 -14px 0 #EEECEA"></div>
+      <div class="ci"><div class="cr" style="color:#000000">פג תוקף / מושבת</div><code style="color:#6B6560">#6E6A66</code><div class="pr"><span>טקסט על שבב</span><b>4.55:1</b><em class="ok">AA עובר (4.5)</em></div><div class="pr"><span>טקסט על רקע</span><b>5.36:1</b><em class="ok">AA עובר (4.5)</em></div></div></div></div>
+  <div class="phone" style="background:#FFFFFF;border-color:#E4DDD2;color:#000000">
+  <div class="topbar" style="border-color:#E4DDD2"><span style="font-weight:700">בראנץ׳ אצל טל</span><span style="color:#6B6560;font-size:13px">האזור שלי</span></div>
+  <div class="balance" style="background:#F5F1EA;color:#000000"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#C9B691;margin-inline-end:8px"></span>כרטיסייה: 3 כניסות זמינות · <span style="color:#6B6560">בתוקף עד 28.10</span></div>
+  <div class="card" style="background:#F3EEE8;border-color:#E4DDD2">
+    <div class="photo" style="background:#D9D4CC;color:#6B6560">צילום אוכל</div>
+    <div class="cb">
+      <div class="row"><span style="color:#6B6560;font-size:13px">יום שני 12.10 · 10:00–12:30</span><span class="tag" style="color:#8A5A12;background:#F6ECD9"><i style="background:#C9A060"></i>נותרו 3 מקומות</span></div>
+      <h3 style="color:#000000">בראנץ׳ סתיו: שקשוקה ירוקה ולחמים חמים</h3>
+      <div class="row" style="justify-content:flex-start;gap:8px"><span class="type" style="border-color:#C9B691;color:#000000">רגיל</span><span style="color:#6B6560;font-size:13px">מגיעים עם התינוקות</span></div>
+      <button class="btn" style="background:#000000;color:#FFFFFF;border-color:#000000">לבחירת הבראנץ׳ שלי</button>
+      <button class="btn" style="background:transparent;color:#000000;border-color:#000000">ביטול הרשמה</button>
+    </div>
+  </div>
+  <div class="statusrow"><div style="font-size:13px;color:#6B6560;margin-bottom:8px">סטטוסים</div>
+    <span class="tag" style="color:#4F6B3A;background:#E9EFE1"><i style="background:#8FA874"></i>מאושר</span><span class="tag" style="color:#3F5A73;background:#E8EEF3"><i style="background:#7F99B0"></i>ממתין</span><span class="tag" style="color:#6E6A66;background:#EEECEA"><i style="background:#A8A39E"></i>פג תוקף</span><span class="tag" style="color:#B42318;background:#FBEAE8"><i style="background:#B42318"></i>מלא</span>
+  </div>
+  <div style="font-size:13px;color:#6B6560;padding:0 16px 16px">טקסט משני לדוגמה: אפשר לבטל עד 24 שעות לפני.</div>
+</div>
+</section>
+<section class="v" style="background:#FAF6EE;color:#2E2A1F;border-color:#E6DFCF">
+  <header><div class="num" style="color:#6B6450">וריאציה 2</div><h2>קרם וזית</h2><p style="color:#6B6450">קרם רך ודיו חום-זית — חמים ואדמתי, כמו שולחן עץ בבוקר.</p></header>
+  <div class="grid"><div class="chip" style="border-color:#E6DFCF;background:#FFFDF8">
+      <div class="sw" style="background:#FAF6EE;border:1px solid #E6DFCF"></div>
+      <div class="ci"><div class="cr" style="color:#2E2A1F">רקע</div><code style="color:#6B6450">#FAF6EE</code><div class="pr"><span>דיו על רקע</span><b>13.28:1</b><em class="ok">AA עובר (4.5)</em></div></div></div><div class="chip" style="border-color:#E6DFCF;background:#FFFDF8">
+      <div class="sw" style="background:#FFFDF8;border:1px solid #E6DFCF"></div>
+      <div class="ci"><div class="cr" style="color:#2E2A1F">משטח / כרטיס</div><code style="color:#6B6450">#FFFDF8</code><div class="pr"><span>דיו על כרטיס</span><b>14.08:1</b><em class="ok">AA עובר (4.5)</em></div></div></div><div class="chip" style="border-color:#E6DFCF;background:#FFFDF8">
+      <div class="sw" style="background:#2E2A1F;"></div>
+      <div class="ci"><div class="cr" style="color:#2E2A1F">דיו (טקסט)</div><code style="color:#6B6450">#2E2A1F</code><div class="pr"><span>מול רקע</span><b>13.28:1</b><em class="ok">AA עובר (4.5)</em></div></div></div><div class="chip" style="border-color:#E6DFCF;background:#FFFDF8">
+      <div class="sw" style="background:#6B6450;"></div>
+      <div class="ci"><div class="cr" style="color:#2E2A1F">דיו משני</div><code style="color:#6B6450">#6B6450</code><div class="pr"><span>מול רקע</span><b>5.47:1</b><em class="ok">AA עובר (4.5)</em></div><div class="pr"><span>מול כרטיס</span><b>5.80:1</b><em class="ok">AA עובר (4.5)</em></div></div></div><div class="chip" style="border-color:#E6DFCF;background:#FFFDF8">
+      <div class="sw" style="background:#E6DFCF;"></div>
+      <div class="ci"><div class="cr" style="color:#2E2A1F">קו גבול</div><code style="color:#6B6450">#E6DFCF</code><div class="pr"><span>מול רקע</span><b>1.23:1</b><em class="na">מפריד דקורטיבי — לא נדרש</em></div></div></div><div class="chip" style="border-color:#E6DFCF;background:#FFFDF8">
+      <div class="sw" style="background:#8A875A;"></div>
+      <div class="ci"><div class="cr" style="color:#2E2A1F">אקסנט</div><code style="color:#6B6450">#8A875A</code><div class="pr"><span>דיו על אקסנט</span><b>3.88:1</b><em class="no">AA נכשל (4.5)</em></div><div class="pr"><span>אקסנט כגרפיקה</span><b>3.42:1</b><em class="ok">AA עובר (3)</em></div></div></div><div class="chip" style="border-color:#E6DFCF;background:#FFFDF8">
+      <div class="sw" style="background:#4A4A2A;"></div>
+      <div class="ci"><div class="cr" style="color:#2E2A1F">כפתור ראשי</div><code style="color:#6B6450">#4A4A2A</code><div class="pr"><span>טקסט על כפתור</span><b>8.46:1</b><em class="ok">AA עובר (4.5)</em></div><div class="pr"><span>כפתור מול רקע</span><b>8.46:1</b><em class="ok">AA עובר (3)</em></div></div></div><div class="chip" style="border-color:#E6DFCF;background:#FFFDF8">
+      <div class="sw" style="background:#FAF6EE;border:1px solid #E6DFCF"></div>
+      <div class="ci"><div class="cr" style="color:#2E2A1F">טקסט על כפתור</div><code style="color:#6B6450">#FAF6EE</code></div></div><div class="chip" style="border-color:#E6DFCF;background:#FFFDF8">
+      <div class="sw" style="background:#4E6B34;box-shadow:inset 0 -14px 0 #E7EDDC"></div>
+      <div class="ci"><div class="cr" style="color:#2E2A1F">הצלחה / מאושר</div><code style="color:#6B6450">#4E6B34</code><div class="pr"><span>טקסט על שבב</span><b>5.05:1</b><em class="ok">AA עובר (4.5)</em></div><div class="pr"><span>טקסט על רקע</span><b>5.60:1</b><em class="ok">AA עובר (4.5)</em></div></div></div><div class="chip" style="border-color:#E6DFCF;background:#FFFDF8">
+      <div class="sw" style="background:#8C5E14;box-shadow:inset 0 -14px 0 #F4E8D0"></div>
+      <div class="ci"><div class="cr" style="color:#2E2A1F">אזהרה / כמעט מלא</div><code style="color:#6B6450">#8C5E14</code><div class="pr"><span>טקסט על שבב</span><b>4.64:1</b><em class="ok">AA עובר (4.5)</em></div><div class="pr"><span>טקסט על רקע</span><b>5.23:1</b><em class="ok">AA עובר (4.5)</em></div></div></div><div class="chip" style="border-color:#E6DFCF;background:#FFFDF8">
+      <div class="sw" style="background:#B42318;box-shadow:inset 0 -14px 0 #F8E4E1"></div>
+      <div class="ci"><div class="cr" style="color:#2E2A1F">שגיאה / מלא</div><code style="color:#6B6450">#B42318</code><div class="pr"><span>טקסט על שבב</span><b>5.38:1</b><em class="ok">AA עובר (4.5)</em></div><div class="pr"><span>טקסט על רקע</span><b>6.10:1</b><em class="ok">AA עובר (4.5)</em></div></div></div><div class="chip" style="border-color:#E6DFCF;background:#FFFDF8">
+      <div class="sw" style="background:#4A5A6A;box-shadow:inset 0 -14px 0 #E6EAEC"></div>
+      <div class="ci"><div class="cr" style="color:#2E2A1F">מידע / ממתין</div><code style="color:#6B6450">#4A5A6A</code><div class="pr"><span>טקסט על שבב</span><b>5.86:1</b><em class="ok">AA עובר (4.5)</em></div><div class="pr"><span>טקסט על רקע</span><b>6.58:1</b><em class="ok">AA עובר (4.5)</em></div></div></div><div class="chip" style="border-color:#E6DFCF;background:#FFFDF8">
+      <div class="sw" style="background:#676154;box-shadow:inset 0 -14px 0 #EDE9E0"></div>
+      <div class="ci"><div class="cr" style="color:#2E2A1F">פג תוקף / מושבת</div><code style="color:#6B6450">#676154</code><div class="pr"><span>טקסט על שבב</span><b>5.08:1</b><em class="ok">AA עובר (4.5)</em></div><div class="pr"><span>טקסט על רקע</span><b>5.71:1</b><em class="ok">AA עובר (4.5)</em></div></div></div></div>
+  <div class="phone" style="background:#FAF6EE;border-color:#E6DFCF;color:#2E2A1F">
+  <div class="topbar" style="border-color:#E6DFCF"><span style="font-weight:700">בראנץ׳ אצל טל</span><span style="color:#6B6450;font-size:13px">האזור שלי</span></div>
+  <div class="balance" style="background:#F2ECDF;color:#2E2A1F"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#8A875A;margin-inline-end:8px"></span>כרטיסייה: 3 כניסות זמינות · <span style="color:#6B6450">בתוקף עד 28.10</span></div>
+  <div class="card" style="background:#FFFDF8;border-color:#E6DFCF">
+    <div class="photo" style="background:#DDD6C6;color:#6B6450">צילום אוכל</div>
+    <div class="cb">
+      <div class="row"><span style="color:#6B6450;font-size:13px">יום שני 12.10 · 10:00–12:30</span><span class="tag" style="color:#8C5E14;background:#F4E8D0"><i style="background:#C9A060"></i>נותרו 3 מקומות</span></div>
+      <h3 style="color:#2E2A1F">בראנץ׳ סתיו: שקשוקה ירוקה ולחמים חמים</h3>
+      <div class="row" style="justify-content:flex-start;gap:8px"><span class="type" style="border-color:#8A875A;color:#2E2A1F">רגיל</span><span style="color:#6B6450;font-size:13px">מגיעים עם התינוקות</span></div>
+      <button class="btn" style="background:#4A4A2A;color:#FAF6EE;border-color:#4A4A2A">לבחירת הבראנץ׳ שלי</button>
+      <button class="btn" style="background:transparent;color:#2E2A1F;border-color:#2E2A1F">ביטול הרשמה</button>
+    </div>
+  </div>
+  <div class="statusrow"><div style="font-size:13px;color:#6B6450;margin-bottom:8px">סטטוסים</div>
+    <span class="tag" style="color:#4E6B34;background:#E7EDDC"><i style="background:#8FA874"></i>מאושר</span><span class="tag" style="color:#4A5A6A;background:#E6EAEC"><i style="background:#8C9AA8"></i>ממתין</span><span class="tag" style="color:#676154;background:#EDE9E0"><i style="background:#B0A998"></i>פג תוקף</span><span class="tag" style="color:#B42318;background:#F8E4E1"><i style="background:#B42318"></i>מלא</span>
+  </div>
+  <div style="font-size:13px;color:#6B6450;padding:0 16px 16px">טקסט משני לדוגמה: אפשר לבטל עד 24 שעות לפני.</div>
+</div>
+</section>
+<section class="v" style="background:#FBF7F1;color:#3B2A20;border-color:#EADFD3">
+  <header><div class="num" style="color:#75655A">וריאציה 3</div><h2>חלב ודבש</h2><p style="color:#75655A">חלב חמים, דיו אספרסו ונגיעת טרקוטה — מזמין ועוטף, כמו קפה ראשון אחרי לילה ארוך.</p></header>
+  <div class="grid"><div class="chip" style="border-color:#EADFD3;background:#FFFFFF">
+      <div class="sw" style="background:#FBF7F1;border:1px solid #EADFD3"></div>
+      <div class="ci"><div class="cr" style="color:#3B2A20">רקע</div><code style="color:#75655A">#FBF7F1</code><div class="pr"><span>דיו על רקע</span><b>12.79:1</b><em class="ok">AA עובר (4.5)</em></div></div></div><div class="chip" style="border-color:#EADFD3;background:#FFFFFF">
+      <div class="sw" style="background:#FFFFFF;border:1px solid #EADFD3"></div>
+      <div class="ci"><div class="cr" style="color:#3B2A20">משטח / כרטיס</div><code style="color:#75655A">#FFFFFF</code><div class="pr"><span>דיו על כרטיס</span><b>13.65:1</b><em class="ok">AA עובר (4.5)</em></div></div></div><div class="chip" style="border-color:#EADFD3;background:#FFFFFF">
+      <div class="sw" style="background:#3B2A20;"></div>
+      <div class="ci"><div class="cr" style="color:#3B2A20">דיו (טקסט)</div><code style="color:#75655A">#3B2A20</code><div class="pr"><span>מול רקע</span><b>12.79:1</b><em class="ok">AA עובר (4.5)</em></div></div></div><div class="chip" style="border-color:#EADFD3;background:#FFFFFF">
+      <div class="sw" style="background:#75655A;"></div>
+      <div class="ci"><div class="cr" style="color:#3B2A20">דיו משני</div><code style="color:#75655A">#75655A</code><div class="pr"><span>מול רקע</span><b>5.23:1</b><em class="ok">AA עובר (4.5)</em></div><div class="pr"><span>מול כרטיס</span><b>5.58:1</b><em class="ok">AA עובר (4.5)</em></div></div></div><div class="chip" style="border-color:#EADFD3;background:#FFFFFF">
+      <div class="sw" style="background:#EADFD3;"></div>
+      <div class="ci"><div class="cr" style="color:#3B2A20">קו גבול</div><code style="color:#75655A">#EADFD3</code><div class="pr"><span>מול רקע</span><b>1.23:1</b><em class="na">מפריד דקורטיבי — לא נדרש</em></div></div></div><div class="chip" style="border-color:#EADFD3;background:#FFFFFF">
+      <div class="sw" style="background:#C9A46A;"></div>
+      <div class="ci"><div class="cr" style="color:#3B2A20">אקסנט</div><code style="color:#75655A">#C9A46A</code><div class="pr"><span>דיו על אקסנט</span><b>5.85:1</b><em class="ok">AA עובר (4.5)</em></div><div class="pr"><span>אקסנט כגרפיקה</span><b>2.19:1</b><em class="no">AA נכשל (3)</em></div></div></div><div class="chip" style="border-color:#EADFD3;background:#FFFFFF">
+      <div class="sw" style="background:#A34F35;"></div>
+      <div class="ci"><div class="cr" style="color:#3B2A20">כפתור ראשי</div><code style="color:#75655A">#A34F35</code><div class="pr"><span>טקסט על כפתור</span><b>5.63:1</b><em class="ok">AA עובר (4.5)</em></div><div class="pr"><span>כפתור מול רקע</span><b>5.28:1</b><em class="ok">AA עובר (3)</em></div></div></div><div class="chip" style="border-color:#EADFD3;background:#FFFFFF">
+      <div class="sw" style="background:#FFFFFF;border:1px solid #EADFD3"></div>
+      <div class="ci"><div class="cr" style="color:#3B2A20">טקסט על כפתור</div><code style="color:#75655A">#FFFFFF</code></div></div><div class="chip" style="border-color:#EADFD3;background:#FFFFFF">
+      <div class="sw" style="background:#52703A;box-shadow:inset 0 -14px 0 #E9EFDF"></div>
+      <div class="ci"><div class="cr" style="color:#3B2A20">הצלחה / מאושר</div><code style="color:#75655A">#52703A</code><div class="pr"><span>טקסט על שבב</span><b>4.78:1</b><em class="ok">AA עובר (4.5)</em></div><div class="pr"><span>טקסט על רקע</span><b>5.26:1</b><em class="ok">AA עובר (4.5)</em></div></div></div><div class="chip" style="border-color:#EADFD3;background:#FFFFFF">
+      <div class="sw" style="background:#8A5B10;box-shadow:inset 0 -14px 0 #F7EAD2"></div>
+      <div class="ci"><div class="cr" style="color:#3B2A20">אזהרה / כמעט מלא</div><code style="color:#75655A">#8A5B10</code><div class="pr"><span>טקסט על שבב</span><b>4.93:1</b><em class="ok">AA עובר (4.5)</em></div><div class="pr"><span>טקסט על רקע</span><b>5.49:1</b><em class="ok">AA עובר (4.5)</em></div></div></div><div class="chip" style="border-color:#EADFD3;background:#FFFFFF">
+      <div class="sw" style="background:#B42318;box-shadow:inset 0 -14px 0 #FAE6E3"></div>
+      <div class="ci"><div class="cr" style="color:#3B2A20">שגיאה / מלא</div><code style="color:#75655A">#B42318</code><div class="pr"><span>טקסט על שבב</span><b>5.48:1</b><em class="ok">AA עובר (4.5)</em></div><div class="pr"><span>טקסט על רקע</span><b>6.16:1</b><em class="ok">AA עובר (4.5)</em></div></div></div><div class="chip" style="border-color:#EADFD3;background:#FFFFFF">
+      <div class="sw" style="background:#4B5E78;box-shadow:inset 0 -14px 0 #E7ECF2"></div>
+      <div class="ci"><div class="cr" style="color:#3B2A20">מידע / ממתין</div><code style="color:#75655A">#4B5E78</code><div class="pr"><span>טקסט על שבב</span><b>5.57:1</b><em class="ok">AA עובר (4.5)</em></div><div class="pr"><span>טקסט על רקע</span><b>6.20:1</b><em class="ok">AA עובר (4.5)</em></div></div></div><div class="chip" style="border-color:#EADFD3;background:#FFFFFF">
+      <div class="sw" style="background:#6C5F56;box-shadow:inset 0 -14px 0 #EFE9E3"></div>
+      <div class="ci"><div class="cr" style="color:#3B2A20">פג תוקף / מושבת</div><code style="color:#75655A">#6C5F56</code><div class="pr"><span>טקסט על שבב</span><b>5.11:1</b><em class="ok">AA עובר (4.5)</em></div><div class="pr"><span>טקסט על רקע</span><b>5.77:1</b><em class="ok">AA עובר (4.5)</em></div></div></div></div>
+  <div class="phone" style="background:#FBF7F1;border-color:#EADFD3;color:#3B2A20">
+  <div class="topbar" style="border-color:#EADFD3"><span style="font-weight:700">בראנץ׳ אצל טל</span><span style="color:#75655A;font-size:13px">האזור שלי</span></div>
+  <div class="balance" style="background:#F4ECE2;color:#3B2A20"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#C9A46A;margin-inline-end:8px"></span>כרטיסייה: 3 כניסות זמינות · <span style="color:#75655A">בתוקף עד 28.10</span></div>
+  <div class="card" style="background:#FFFFFF;border-color:#EADFD3">
+    <div class="photo" style="background:#E0D5C8;color:#75655A">צילום אוכל</div>
+    <div class="cb">
+      <div class="row"><span style="color:#75655A;font-size:13px">יום שני 12.10 · 10:00–12:30</span><span class="tag" style="color:#8A5B10;background:#F7EAD2"><i style="background:#C9A060"></i>נותרו 3 מקומות</span></div>
+      <h3 style="color:#3B2A20">בראנץ׳ סתיו: שקשוקה ירוקה ולחמים חמים</h3>
+      <div class="row" style="justify-content:flex-start;gap:8px"><span class="type" style="border-color:#C9A46A;color:#3B2A20">רגיל</span><span style="color:#75655A;font-size:13px">מגיעים עם התינוקות</span></div>
+      <button class="btn" style="background:#A34F35;color:#FFFFFF;border-color:#A34F35">לבחירת הבראנץ׳ שלי</button>
+      <button class="btn" style="background:transparent;color:#3B2A20;border-color:#3B2A20">ביטול הרשמה</button>
+    </div>
+  </div>
+  <div class="statusrow"><div style="font-size:13px;color:#75655A;margin-bottom:8px">סטטוסים</div>
+    <span class="tag" style="color:#52703A;background:#E9EFDF"><i style="background:#8FA874"></i>מאושר</span><span class="tag" style="color:#4B5E78;background:#E7ECF2"><i style="background:#8C9CB2"></i>ממתין</span><span class="tag" style="color:#6C5F56;background:#EFE9E3"><i style="background:#B3A79D"></i>פג תוקף</span><span class="tag" style="color:#B42318;background:#FAE6E3"><i style="background:#B42318"></i>מלא</span>
+  </div>
+  <div style="font-size:13px;color:#75655A;padding:0 16px 16px">טקסט משני לדוגמה: אפשר לבטל עד 24 שעות לפני.</div>
+</div>
+</section>
+<section class="v" style="background:#F4F0E8;color:#2B2D2A;border-color:#DCD6CA">
+  <header><div class="num" style="color:#5F625C">וריאציה 4</div><h2>פשתן ועשבים</h2><p style="color:#5F625C">פשתן, פחם ועלי מרווה — רגוע ונושם, כמו גינת תבלינים בצל.</p></header>
+  <div class="grid"><div class="chip" style="border-color:#DCD6CA;background:#FBF9F4">
+      <div class="sw" style="background:#F4F0E8;border:1px solid #DCD6CA"></div>
+      <div class="ci"><div class="cr" style="color:#2B2D2A">רקע</div><code style="color:#5F625C">#F4F0E8</code><div class="pr"><span>דיו על רקע</span><b>12.22:1</b><em class="ok">AA עובר (4.5)</em></div></div></div><div class="chip" style="border-color:#DCD6CA;background:#FBF9F4">
+      <div class="sw" style="background:#FBF9F4;border:1px solid #DCD6CA"></div>
+      <div class="ci"><div class="cr" style="color:#2B2D2A">משטח / כרטיס</div><code style="color:#5F625C">#FBF9F4</code><div class="pr"><span>דיו על כרטיס</span><b>13.20:1</b><em class="ok">AA עובר (4.5)</em></div></div></div><div class="chip" style="border-color:#DCD6CA;background:#FBF9F4">
+      <div class="sw" style="background:#2B2D2A;"></div>
+      <div class="ci"><div class="cr" style="color:#2B2D2A">דיו (טקסט)</div><code style="color:#5F625C">#2B2D2A</code><div class="pr"><span>מול רקע</span><b>12.22:1</b><em class="ok">AA עובר (4.5)</em></div></div></div><div class="chip" style="border-color:#DCD6CA;background:#FBF9F4">
+      <div class="sw" style="background:#5F625C;"></div>
+      <div class="ci"><div class="cr" style="color:#2B2D2A">דיו משני</div><code style="color:#5F625C">#5F625C</code><div class="pr"><span>מול רקע</span><b>5.45:1</b><em class="ok">AA עובר (4.5)</em></div><div class="pr"><span>מול כרטיס</span><b>5.89:1</b><em class="ok">AA עובר (4.5)</em></div></div></div><div class="chip" style="border-color:#DCD6CA;background:#FBF9F4">
+      <div class="sw" style="background:#DCD6CA;"></div>
+      <div class="ci"><div class="cr" style="color:#2B2D2A">קו גבול</div><code style="color:#5F625C">#DCD6CA</code><div class="pr"><span>מול רקע</span><b>1.27:1</b><em class="na">מפריד דקורטיבי — לא נדרש</em></div></div></div><div class="chip" style="border-color:#DCD6CA;background:#FBF9F4">
+      <div class="sw" style="background:#A9B59A;"></div>
+      <div class="ci"><div class="cr" style="color:#2B2D2A">אקסנט</div><code style="color:#5F625C">#A9B59A</code><div class="pr"><span>דיו על אקסנט</span><b>6.46:1</b><em class="ok">AA עובר (4.5)</em></div><div class="pr"><span>אקסנט כגרפיקה</span><b>1.89:1</b><em class="no">AA נכשל (3)</em></div></div></div><div class="chip" style="border-color:#DCD6CA;background:#FBF9F4">
+      <div class="sw" style="background:#4F6B4A;"></div>
+      <div class="ci"><div class="cr" style="color:#2B2D2A">כפתור ראשי</div><code style="color:#5F625C">#4F6B4A</code><div class="pr"><span>טקסט על כפתור</span><b>5.94:1</b><em class="ok">AA עובר (4.5)</em></div><div class="pr"><span>כפתור מול רקע</span><b>5.23:1</b><em class="ok">AA עובר (3)</em></div></div></div><div class="chip" style="border-color:#DCD6CA;background:#FBF9F4">
+      <div class="sw" style="background:#FFFFFF;border:1px solid #DCD6CA"></div>
+      <div class="ci"><div class="cr" style="color:#2B2D2A">טקסט על כפתור</div><code style="color:#5F625C">#FFFFFF</code></div></div><div class="chip" style="border-color:#DCD6CA;background:#FBF9F4">
+      <div class="sw" style="background:#46703A;box-shadow:inset 0 -14px 0 #E2EBD8"></div>
+      <div class="ci"><div class="cr" style="color:#2B2D2A">הצלחה / מאושר</div><code style="color:#5F625C">#46703A</code><div class="pr"><span>טקסט על שבב</span><b>4.70:1</b><em class="ok">AA עובר (4.5)</em></div><div class="pr"><span>טקסט על רקע</span><b>5.08:1</b><em class="ok">AA עובר (4.5)</em></div></div></div><div class="chip" style="border-color:#DCD6CA;background:#FBF9F4">
+      <div class="sw" style="background:#87590F;box-shadow:inset 0 -14px 0 #F3E6CC"></div>
+      <div class="ci"><div class="cr" style="color:#2B2D2A">אזהרה / כמעט מלא</div><code style="color:#5F625C">#87590F</code><div class="pr"><span>טקסט על שבב</span><b>4.91:1</b><em class="ok">AA עובר (4.5)</em></div><div class="pr"><span>טקסט על רקע</span><b>5.33:1</b><em class="ok">AA עובר (4.5)</em></div></div></div><div class="chip" style="border-color:#DCD6CA;background:#FBF9F4">
+      <div class="sw" style="background:#B42318;box-shadow:inset 0 -14px 0 #F7E1DD"></div>
+      <div class="ci"><div class="cr" style="color:#2B2D2A">שגיאה / מלא</div><code style="color:#5F625C">#B42318</code><div class="pr"><span>טקסט על שבב</span><b>5.25:1</b><em class="ok">AA עובר (4.5)</em></div><div class="pr"><span>טקסט על רקע</span><b>5.78:1</b><em class="ok">AA עובר (4.5)</em></div></div></div><div class="chip" style="border-color:#DCD6CA;background:#FBF9F4">
+      <div class="sw" style="background:#4A5B70;box-shadow:inset 0 -14px 0 #E3E8EE"></div>
+      <div class="ci"><div class="cr" style="color:#2B2D2A">מידע / ממתין</div><code style="color:#5F625C">#4A5B70</code><div class="pr"><span>טקסט על שבב</span><b>5.64:1</b><em class="ok">AA עובר (4.5)</em></div><div class="pr"><span>טקסט על רקע</span><b>6.11:1</b><em class="ok">AA עובר (4.5)</em></div></div></div><div class="chip" style="border-color:#DCD6CA;background:#FBF9F4">
+      <div class="sw" style="background:#62605A;box-shadow:inset 0 -14px 0 #E8E5DE"></div>
+      <div class="ci"><div class="cr" style="color:#2B2D2A">פג תוקף / מושבת</div><code style="color:#5F625C">#62605A</code><div class="pr"><span>טקסט על שבב</span><b>5.00:1</b><em class="ok">AA עובר (4.5)</em></div><div class="pr"><span>טקסט על רקע</span><b>5.53:1</b><em class="ok">AA עובר (4.5)</em></div></div></div></div>
+  <div class="phone" style="background:#F4F0E8;border-color:#DCD6CA;color:#2B2D2A">
+  <div class="topbar" style="border-color:#DCD6CA"><span style="font-weight:700">בראנץ׳ אצל טל</span><span style="color:#5F625C;font-size:13px">האזור שלי</span></div>
+  <div class="balance" style="background:#ECE7DC;color:#2B2D2A"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#A9B59A;margin-inline-end:8px"></span>כרטיסייה: 3 כניסות זמינות · <span style="color:#5F625C">בתוקף עד 28.10</span></div>
+  <div class="card" style="background:#FBF9F4;border-color:#DCD6CA">
+    <div class="photo" style="background:#D6D2C6;color:#5F625C">צילום אוכל</div>
+    <div class="cb">
+      <div class="row"><span style="color:#5F625C;font-size:13px">יום שני 12.10 · 10:00–12:30</span><span class="tag" style="color:#87590F;background:#F3E6CC"><i style="background:#C9A060"></i>נותרו 3 מקומות</span></div>
+      <h3 style="color:#2B2D2A">בראנץ׳ סתיו: שקשוקה ירוקה ולחמים חמים</h3>
+      <div class="row" style="justify-content:flex-start;gap:8px"><span class="type" style="border-color:#A9B59A;color:#2B2D2A">רגיל</span><span style="color:#5F625C;font-size:13px">מגיעים עם התינוקות</span></div>
+      <button class="btn" style="background:#4F6B4A;color:#FFFFFF;border-color:#4F6B4A">לבחירת הבראנץ׳ שלי</button>
+      <button class="btn" style="background:transparent;color:#2B2D2A;border-color:#2B2D2A">ביטול הרשמה</button>
+    </div>
+  </div>
+  <div class="statusrow"><div style="font-size:13px;color:#5F625C;margin-bottom:8px">סטטוסים</div>
+    <span class="tag" style="color:#46703A;background:#E2EBD8"><i style="background:#8FA874"></i>מאושר</span><span class="tag" style="color:#4A5B70;background:#E3E8EE"><i style="background:#8A99AC"></i>ממתין</span><span class="tag" style="color:#62605A;background:#E8E5DE"><i style="background:#AAA69C"></i>פג תוקף</span><span class="tag" style="color:#B42318;background:#F7E1DD"><i style="background:#B42318"></i>מלא</span>
+  </div>
+  <div style="font-size:13px;color:#5F625C;padding:0 16px 16px">טקסט משני לדוגמה: אפשר לבטל עד 24 שעות לפני.</div>
+</div>
+</section>
+</div></div></body></html>

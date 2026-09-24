@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>טיפוגרפיה – סבב 2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@200;300;400;500&family=Rubik:wght@300;400;500&family=IBM+Plex+Sans+Hebrew:wght@200;300;400;500&family=Karantina:wght@300;400&family=Assistant:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FAF6EE; --card:#FFFDF8; --ink:#2E2A1F; --muted:#6B6450; --border:#E6DFCF;
+  --accent:#8A875A; --btn:#4A4A2A; --btn-ink:#FAF6EE;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:"Assistant",sans-serif;padding:24px 16px 64px}
+.intro{max-width:1240px;margin:0 auto 24px}
+.intro h1{font:300 28px/1.2 "Heebo",sans-serif;margin-bottom:8px}
+.intro p{font-size:16px;line-height:1.6;color:var(--muted);max-width:760px}
+.ref{max-width:1240px;margin:0 auto 32px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:20px}
+.ref h2{font:500 18px/1.3 "Heebo",sans-serif;margin-bottom:10px}
+.ref ul{padding-inline-start:20px;font-size:16px;line-height:1.7}
+.ref .note{margin-top:10px;font-size:14px;color:var(--muted)}
+.grid{max-width:1240px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,380px));gap:24px;justify-content:center}
+.col .tag{font:600 13px/1.4 "Assistant",sans-serif;color:var(--muted);margin-bottom:6px}
+.col .tag b{color:var(--ink)}
+.phone{width:100%;max-width:380px;background:var(--bg);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.bar{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)}
+.wordmark{font-size:30px;line-height:1;color:var(--ink)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+.hero{padding:36px 20px 28px}
+.hero h2{font-size:40px;line-height:1.1;margin-bottom:16px}
+.hero p{font-size:17px;line-height:1.65;color:var(--ink)}
+.rule{height:1px;background:var(--accent);width:48px;margin:0 20px}
+.sec{padding:28px 20px}
+.sec h3{font-size:26px;line-height:1.2;margin-bottom:16px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:18px}
+.card .when{font-size:15px;color:var(--muted);margin-bottom:6px}
+.card .title{font-size:18px;line-height:1.4;margin-bottom:12px}
+.label{display:inline-block;font-size:13px;border:1px solid var(--accent);color:var(--ink);border-radius:4px;padding:2px 8px}
+.btn{display:block;width:100%;margin-top:20px;background:var(--btn);color:var(--btn-ink);border:0;border-radius:4px;padding:14px 16px;font-size:17px;text-align:center;cursor:pointer}
+.verdict{margin-top:12px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:15px;line-height:1.6}
+.verdict .score{font-weight:600}
+.verdict .muted{color:var(--muted)}
+.footnote{max-width:1240px;margin:36px auto 0;font-size:14px;line-height:1.7;color:var(--muted)}
+
+/* Pairing 1 – Heebo 200 + Assistant */
+.p1 .d{font-family:"Heebo",sans-serif;font-weight:200}
+.p1 .wordmark{font-weight:300}
+.p1 .b{font-family:"Assistant",sans-serif;font-weight:400}
+/* Pairing 2 – Rubik 300 + Heebo */
+.p2 .d{font-family:"Rubik",sans-serif;font-weight:300}
+.p2 .b{font-family:"Heebo",sans-serif;font-weight:400}
+/* Pairing 3 – IBM Plex Sans Hebrew 200 + Assistant */
+.p3 .d{font-family:"IBM Plex Sans Hebrew",sans-serif;font-weight:200}
+.p3 .wordmark{font-weight:300}
+.p3 .b{font-family:"Assistant",sans-serif;font-weight:400}
+/* Pairing 4 – Karantina 300 + Heebo */
+.p4 .d{font-family:"Karantina",sans-serif;font-weight:300}
+.p4 .wordmark{font-size:40px}
+.p4 .hero h2{font-size:56px;line-height:.95}
+.p4 .sec h3{font-size:36px}
+.p4 .b{font-family:"Heebo",sans-serif;font-weight:400}
+.col .btn.b,.col .card .title.b{font-weight:500}
+</style>
+</head>
+<body>
+
+<div class="intro">
+  <h1>טיפוגרפיה – סבב 2: חלופות חינמיות ל־Ezer Block Pro Light ול־Almoni</h1>
+  <p>כל הפונטים כאן מ־Google Fonts, וכולם כוללים תת־קבוצה עברית (נבדק ב־CSS של fonts.googleapis.com). הפלטה: קרם וזית. כל עמודה היא תצוגה ברוחב טלפון (380px).</p>
+</div>
+
+<section class="ref">
+  <h2>שורת רפרנס: איך נראה Ezer Block Pro Light (הפונט של זיונה)</h2>
+  <ul>
+    <li>משקל דק מאוד (Light), קו בעובי אחיד – בלי ניגוד בין קווים עבים לדקים.</li>
+    <li>צורות "בלוקיות" וגאומטריות: אותיות מרובעות, פינות ישרות או מעוגלות קלות, מעט עקומות.</li>
+    <li>פרופורציה פתוחה ורחבה, הרבה אוויר בתוך האות ובין האותיות – תחושה אוורירית ועריכתית.</li>
+    <li>בלי קישוטים, בלי אופי כתב־יד. נראה כמו שלט עכשווי של בית קפה.</li>
+    <li>Almoni (טקסט רץ): גרוטסק עברי נקי, מעט צר, קריא מאוד ב־16–17px.</li>
+  </ul>
+  <p class="note">לא נמצאה תמונת דוגמה ציבורית של Ezer Block באתר הסטודיו של עודד עזר, לכן אין כאן השוואה חזותית ישירה. עובדה חשובה: את העברית של Heebo צייר עודד עזר עצמו – ולכן זו המשפחה החינמית הקרובה ביותר לסגנון שלו.</p>
+</section>
+
+<div class="grid">
+
+<div class="col p1">
+  <div class="tag">זוג 1 · כותרות: <b>Heebo 200/300</b> · טקסט: <b>Assistant 400</b></div>
+  <div class="phone">
+    <div class="bar"><span class="wordmark d">בראנץ׳ אצל טל</span><span class="dot"></span></div>
+    <div class="hero"><h2 class="d">בוקר טעים סביב השולחן</h2>
+      <p class="b">בראנצ׳ים חמים לנשים בחופשת לידה. מגיעות עם התינוקות, יושבות לשולחן ערוך, ומכירות אמהות נוספות.</p></div>
+    <div class="rule"></div>
+    <div class="sec"><h3 class="d">המפגשים הקרובים</h3>
+      <div class="card"><div class="when b">יום שני 12.10 · 10:00</div>
+        <div class="title b">בראנץ׳ סתיו: שקשוקה ירוקה ולחמים חמים</div>
+        <span class="label b">נותרו 3 מקומות</span></div>
+      <button class="btn b">לבחירת הבראנץ׳ שלי</button></div>
+  </div>
+  <div class="verdict"><span class="score">דמיון ל־Ezer Block: 4/5</span> – אותו מעצב עברי, קו אחיד ודק, צורות ישרות ופתוחות. פחות "מרובע" מהמקור.<br><span class="muted">קריאות: מצוינת. במשקל 200 לא לרדת מתחת ל־28px.</span></div>
+</div>
+
+<div class="col p2">
+  <div class="tag">זוג 2 · כותרות: <b>Rubik 300</b> · טקסט: <b>Heebo 400</b></div>
+  <div class="phone">
+    <div class="bar"><span class="wordmark d">בראנץ׳ אצל טל</span><span class="dot"></span></div>
+    <div class="hero"><h2 class="d">בוקר טעים סביב השולחן</h2>
+      <p class="b">בראנצ׳ים חמים לנשים בחופשת לידה. מגיעות עם התינוקות, יושבות לשולחן ערוך, ומכירות אמהות נוספות.</p></div>
+    <div class="rule"></div>
+    <div class="sec"><h3 class="d">המפגשים הקרובים</h3>
+      <div class="card"><div class="when b">יום שני 12.10 · 10:00</div>
+        <div class="title b">בראנץ׳ סתיו: שקשוקה ירוקה ולחמים חמים</div>
+        <span class="label b">נותרו 3 מקומות</span></div>
+      <button class="btn b">לבחירת הבראנץ׳ שלי</button></div>
+  </div>
+  <div class="verdict"><span class="score">דמיון ל־Ezer Block: 4/5</span> – הכי "בלוקי": אותיות מרובעות עם פינות מעוגלות. המשקל הדק ביותר הוא 300, כך שהוא מעט כבד יותר מ־Light.<br><span class="muted">קריאות: מצוינת. Rubik נפוץ מאוד באתרים ישראליים – פחות ייחודי.</span></div>
+</div>
+
+<div class="col p3">
+  <div class="tag">זוג 3 · כותרות: <b>IBM Plex Sans Hebrew 200/300</b> · טקסט: <b>Assistant 400</b></div>
+  <div class="phone">
+    <div class="bar"><span class="wordmark d">בראנץ׳ אצל טל</span><span class="dot"></span></div>
+    <div class="hero"><h2 class="d">בוקר טעים סביב השולחן</h2>
+      <p class="b">בראנצ׳ים חמים לנשים בחופשת לידה. מגיעות עם התינוקות, יושבות לשולחן ערוך, ומכירות אמהות נוספות.</p></div>
+    <div class="rule"></div>
+    <div class="sec"><h3 class="d">המפגשים הקרובים</h3>
+      <div class="card"><div class="when b">יום שני 12.10 · 10:00</div>
+        <div class="title b">בראנץ׳ סתיו: שקשוקה ירוקה ולחמים חמים</div>
+        <span class="label b">נותרו 3 מקומות</span></div>
+      <button class="btn b">לבחירת הבראנץ׳ שלי</button></div>
+  </div>
+  <div class="verdict"><span class="score">דמיון ל־Ezer Block: 3/5</span> – דק ונקי, אבל יש לו חיתוכים וזוויות טכניות שמרגישים יותר תאגידיים מבית קפה.<br><span class="muted">קריאות: מצוינת. אופי קריר יותר.</span></div>
+</div>
+
+<div class="col p4">
+  <div class="tag">זוג 4 · כותרות: <b>Karantina 300</b> · טקסט: <b>Heebo 400</b></div>
+  <div class="phone">
+    <div class="bar"><span class="wordmark d">בראנץ׳ אצל טל</span><span class="dot"></span></div>
+    <div class="hero"><h2 class="d">בוקר טעים סביב השולחן</h2>
+      <p class="b">בראנצ׳ים חמים לנשים בחופשת לידה. מגיעות עם התינוקות, יושבות לשולחן ערוך, ומכירות אמהות נוספות.</p></div>
+    <div class="rule"></div>
+    <div class="sec"><h3 class="d">המפגשים הקרובים</h3>
+      <div class="card"><div class="when b">יום שני 12.10 · 10:00</div>
+        <div class="title b">בראנץ׳ סתיו: שקשוקה ירוקה ולחמים חמים</div>
+        <span class="label b">נותרו 3 מקומות</span></div>
+      <button class="btn b">לבחירת הבראנץ׳ שלי</button></div>
+  </div>
+  <div class="verdict"><span class="score">דמיון ל־Ezer Block: 3/5</span> – דק, בעובי קו אחיד וגאומטרי כמו המקור, אבל צר מאוד (פונט פוסטר) – חסר הרוחב האוורירי.<br><span class="muted">קריאות: טובה רק בגדלים גדולים (36px ומעלה). לכותרות בלבד.</span></div>
+</div>
+
+</div>
+
+<p class="footnote">
+הערות: Varela Round ו־Fredoka נפסלו – מעוגלים וחמודים מדי, ו־Varela Round קיים רק במשקל אחד, עבה מדי ביחס ל־Light. Secular One ו־Suez One – קיימים רק במשקל כבד. Noto Sans Hebrew 200 נראה כמעט זהה ל־Heebo, אבל עם פחות אופי. חלופות לגוף הטקסט במקום Almoni: Assistant (הכי קרוב – גרוטסק צר וחם) ו־Heebo 400 (מעט רחב יותר).
+אפשרות חינמית מחוץ ל־Google: פונטי Culmus (למשל Simple CLM, רישיון GPL) – אין להם קישור CDN יציב ב־jsdelivr, לכן לא הוצגו כאן; כדי להשתמש בהם צריך לארח את הקבצים באתר עצמו.
+</p>
+</body>
+</html>

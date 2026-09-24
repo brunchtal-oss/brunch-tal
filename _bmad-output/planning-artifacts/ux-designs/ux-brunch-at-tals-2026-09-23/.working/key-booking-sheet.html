@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>בחירת תאריכים · בראנץ׳ אצל טל</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@200;300;400&family=Assistant:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/*
+  KEY SCREEN — כרטיסייה: בחירה מרובה → גיליון אישור → "המקום שלך סביב השולחן שמור"
+  Governing spine sections (spine is the contract; this mock illustrates):
+  - EXPERIENCE › Key Flows › Flow 3 (steps 5-10 + failure: partial confirmation)
+  - EXPERIENCE › Interaction Primitives: אישור הרשמה בגיליון, בחירה מרובה בכרטיסייה, גבול חלון הביטול, פוש / הצעת הסבר הפוש
+  - EXPERIENCE › Component Patterns: session-row (מצב בחירה, שורה לא זכאית, מונה aria-live), bottom-sheet, inline-notice, balance-card, button-primary/secondary/link, bottom-tab-bar
+  - EXPERIENCE › Voice and Tone › מיקרו-קופי: אישור הרשמה (שיא), אישור חלקי (כרטיסייה), הסבר פוש
+  - EXPERIENCE › State Patterns › מצבי מפגש (זמין / נותרו מעט ≤3), מצבי זכות ויתרה
+  - EXPERIENCE › Accessibility Floor: יעד פוקוס אחרי פעולה (כותרת השיא; כותרת רשימת התוצאות), גיליונות (פוקוס על הכותרת, X גלוי), <time>/<bdi>
+  - DESIGN › Components: session-row, bottom-sheet, status-chip, inline-notice, balance-card, card, bottom-tab-bar; Typography (display-lg 200 ≥28px on cream)
+*/
+:root{
+  --background:#FAF6EE;--card:#FFFDF8;--muted:#F2ECDF;--ink:#2E2A1F;--ink-muted:#6B6450;--border:#E6DFCF;
+  --accent:#8A875A;--primary:#4A4A2A;--on-primary:#FAF6EE;
+  --success:#4E6B34;--success-tint:#E7EDDC;--success-dot:#8FA874;
+  --warning:#8C5E14;--warning-tint:#F4E8D0;--warning-dot:#C9A060;
+  --error:#B42318;--error-tint:#F8E4E1;
+  --pending:#4A5A6A;--pending-tint:#E6EAEC;--pending-dot:#8C9AA8;
+  --expired:#676154;--expired-tint:#EDE9E0;--expired-dot:#B0A998;
+  --display:'Heebo',system-ui,'Segoe UI',Arial,sans-serif;
+  --body:'Assistant',system-ui,'Segoe UI',Arial,sans-serif;
+  --gutter:24px;--touch:44px;--cta:48px;--section:32px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#EFE9DC;color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px;box-shadow:0 0 0 2px var(--on-primary)}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+svg.i{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex:none}
+svg.i.s20{width:20px;height:20px}
+
+/* mock page chrome */
+.page-head{max-width:1320px;margin:0 auto;padding:32px 16px 8px}
+.page-head h1{font-family:var(--display);font-weight:300;font-size:30px}
+.page-head p{color:var(--ink-muted);margin-top:6px;font-size:15px;max-width:760px}
+.grid{max-width:1320px;margin:0 auto;padding:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(390px,1fr));gap:36px;align-items:start}
+.col h2.cap{font-family:var(--display);font-weight:300;font-size:22px}
+.col .num{font-size:13px;color:var(--ink-muted);letter-spacing:.04em}
+.col .why{font-size:15px;color:var(--ink-muted);margin:6px 0 16px;min-height:96px}
+.phone{width:390px;max-width:100%;margin:0 auto;height:844px;border:10px solid #2E2A1F;border-radius:44px;overflow:hidden;background:var(--background);position:relative}
+.statusbar{height:40px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-size:13px;font-weight:600}
+.screen{position:absolute;top:40px;bottom:0;inset-inline:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;padding-bottom:96px;scroll-padding-bottom:180px}
+.screen.has-footer{padding-bottom:190px}
+
+.app-top{display:flex;align-items:center;justify-content:space-between;padding:12px var(--gutter)}
+.wordmark{font-family:var(--display);font-weight:300;font-size:20px;line-height:1;letter-spacing:.01em;text-decoration:none}
+.head{padding:8px var(--gutter) 0}
+.head h1{font-family:var(--display);font-weight:300;font-size:26px;line-height:1.2}
+.eyebrow{font-size:13px;letter-spacing:.04em;color:var(--ink-muted)}
+.head .sub{font-size:15px;color:var(--ink-muted);margin-top:4px}
+
+/* buttons */
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;min-height:var(--cta);padding:0 22px;border-radius:4px;font-family:var(--body);font-size:16px;font-weight:600;line-height:1.2;text-decoration:none;width:100%;border:0;cursor:pointer}
+.btn-primary{background:var(--primary);color:var(--on-primary)}
+.btn-secondary{background:transparent;color:var(--ink);border:1px solid var(--ink);min-height:var(--touch)}
+.btn-link{display:inline-flex;align-items:center;min-height:var(--touch);font-size:15px;text-decoration:underline;text-underline-offset:3px;background:none;border:0;font-family:var(--body);color:var(--ink);cursor:pointer}
+
+/* status-chip */
+.st{display:inline-flex;align-items:center;gap:6px;border-radius:9999px;padding:3px 10px;font-size:13px;font-weight:600;line-height:1.4;white-space:nowrap}
+.st::before{content:"";width:7px;height:7px;border-radius:9999px;flex:none}
+.st.available,.st.confirmed{color:var(--success);background:var(--success-tint)}.st.available::before,.st.confirmed::before{background:var(--success-dot)}
+.st.few{color:var(--warning);background:var(--warning-tint)}.st.few::before{background:var(--warning-dot)}
+.st.full{color:var(--expired);background:var(--expired-tint)}.st.full::before{background:var(--expired-dot)}
+
+/* session-row, select mode */
+.list{margin:24px var(--gutter) 0;border-top:1px solid var(--border)}
+.srow{display:grid;grid-template-columns:24px 64px 1fr;gap:12px;align-items:start;padding:22px 8px;border-bottom:1px solid var(--border);cursor:pointer;margin:0 -8px}
+.srow input{position:absolute;opacity:0;width:1px;height:1px}
+.box{width:24px;height:24px;border:1.5px solid var(--ink-muted);border-radius:4px;background:var(--card);display:flex;align-items:center;justify-content:center;margin-top:2px;color:var(--on-primary)}
+.box svg{width:16px;height:16px;stroke-width:2.5;visibility:hidden}
+.srow.sel{background:var(--muted)}
+.srow.sel .box{background:var(--primary);border-color:var(--primary)}
+.srow.sel .box svg{visibility:visible}
+.date{text-align:center;line-height:1}
+.date b{display:block;font-size:26px;font-weight:400;line-height:1}
+.date span{display:block;font-size:13px;color:var(--ink-muted);margin-top:6px}
+.srow h3{font-size:16px;font-weight:600;line-height:1.35}
+.srow .meta{font-size:13px;color:var(--ink-muted);margin:4px 0 8px}
+.srow.inel{cursor:not-allowed}
+.srow.inel h3,.srow.inel .date b{color:var(--ink-muted)}
+.srow.inel .box{opacity:.5;background:var(--muted)}
+.srow .reason{font-size:13px;color:var(--ink-muted);line-height:1.4}
+
+/* sticky selection footer (above tab bar, in thumb reach) */
+.selbar{position:absolute;inset-inline:0;bottom:82px;background:var(--background);border-top:1px solid var(--border);padding:12px var(--gutter) 12px}
+.selbar .count{font-size:15px;font-weight:600;margin-bottom:8px;text-align:center}
+
+/* bottom-tab-bar */
+.tabs{position:absolute;bottom:0;inset-inline:0;min-height:64px;background:var(--card);border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(5,1fr);padding:4px 4px 18px}
+.tabs a{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:2px;min-height:var(--touch);padding-top:8px;text-decoration:none;color:var(--ink-muted);font-size:13px;line-height:1.25;text-align:center;position:relative}
+.tabs a[aria-current="page"]{color:var(--ink);font-weight:600}
+.tabs a[aria-current="page"]::before{content:"";position:absolute;top:0;width:24px;height:2px;background:var(--accent)}
+.tabs .ico{position:relative}
+.tabs .badge{position:absolute;top:-6px;inset-inline-end:-12px;min-width:20px;height:20px;padding:0 5px;border-radius:9999px;background:var(--primary);color:var(--on-primary);font-size:13px;font-weight:600;line-height:20px;text-align:center}
+
+/* bottom-sheet */
+.scrim{position:absolute;inset:0;background:rgba(46,42,31,.40);z-index:10}
+.sheet{position:absolute;inset-inline:0;bottom:0;max-height:90%;overflow-y:auto;background:var(--card);border-radius:12px 12px 0 0;padding:8px 24px 30px;z-index:11}
+.grabber{width:36px;height:4px;border-radius:9999px;background:var(--border);margin:0 auto 8px}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.sheet-head h2{font-family:var(--display);font-weight:300;font-size:22px;line-height:1.25}
+.xbtn{width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:0;background:transparent;color:var(--ink);border-radius:4px;flex:none;margin-inline-end:-10px;cursor:pointer}
+.sum{list-style:none;margin-top:12px;border-top:1px solid var(--border)}
+.sum li{padding:12px 0;border-bottom:1px solid var(--border)}
+.sum .w{font-size:16px;font-weight:600;line-height:1.35}
+.sum .t{font-size:15px}
+.sum .c{font-size:13px;color:var(--ink-muted);margin-top:2px}
+.uses{background:var(--muted);border-radius:8px;padding:12px 16px;margin:16px 0 20px}
+.uses dl{display:grid;grid-template-columns:auto 1fr;gap:4px 16px;font-size:15px}
+.uses dt{color:var(--ink-muted)}
+.uses dd{font-weight:600}
+
+/* result */
+.climax{padding:24px var(--gutter) 0}
+.climax .rule{width:32px;height:1px;background:var(--accent);margin-bottom:16px}
+.climax h1{font-family:var(--display);font-weight:200;font-size:40px;line-height:1.15}
+.res{padding:var(--section) var(--gutter) 0}
+.res h2{font-family:var(--display);font-weight:300;font-size:22px;line-height:1.25;margin-bottom:8px}
+.rlist{list-style:none;border-top:1px solid var(--border)}
+.rlist > li{padding:16px 0;border-bottom:1px solid var(--border)}
+.rlist .top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.rlist .w{font-size:16px;font-weight:600}
+.rlist .t{font-size:15px;margin-top:2px}
+.rlist .c{font-size:13px;color:var(--ink-muted);margin-top:2px}
+.rlist .failed .w,.rlist .failed .t{color:var(--ink-muted)}
+.notice{border-radius:8px;padding:12px 16px;font-size:15px;line-height:1.5;margin-top:10px;display:grid;grid-template-columns:20px 1fr;gap:8px}
+.notice.warning{background:var(--warning-tint);color:var(--warning)}
+.notice.success{background:var(--success-tint);color:var(--success)}
+.notice .acts{grid-column:2;display:flex;flex-direction:column;gap:4px;margin-top:8px}
+.notice .acts .btn-secondary{color:var(--ink);border-color:var(--ink);background:var(--card)}
+.notice .acts .btn-link{color:var(--ink);align-self:flex-start}
+.balance{display:block;position:relative;background:var(--muted);border-radius:8px;padding:12px 16px;text-decoration:none;color:var(--ink);margin-top:16px}
+.balance .l1{display:flex;align-items:center;gap:8px}
+.balance .dot{width:8px;height:8px;border-radius:9999px;background:var(--accent)}
+.balance .nums{font-size:16px;font-weight:600;line-height:1.35;margin-top:6px}
+.balance .l2{font-size:15px;color:var(--ink-muted);margin-top:2px}
+.balance .chev{position:absolute;inset-inline-end:12px;top:50%;margin-top:-10px;color:var(--ink-muted)}
+.keep{font-size:15px;color:var(--ink-muted);margin-top:8px}
+.push{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px}
+.push .ph{display:flex;gap:12px;align-items:flex-start}
+.push p{font-size:17px;line-height:1.65}
+.push .btn{margin-top:16px}
+.push .later{display:flex;justify-content:center}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></symbol>
+  <symbol id="i-ticket" viewBox="0 0 24 24"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></symbol>
+</svg>
+
+<header class="page-head">
+  <h1>מסך מפתח — מיכל בוחרת תאריכים בכרטיסייה</h1>
+  <p>Flow 3, רביעי 23.09, רגע אחרי ההפעלה (4 כניסות, בתוקף עד 11.11, שני וחמישי). שלושה רגעים: בחירה מרובה → גיליון סיכום ואישור אחד → השיא, עם תאריך אחד שהתמלא בינתיים. ה-spine קובע; המוקאפ ממחיש.</p>
+</header>
+
+<div class="grid">
+
+  <!-- ===================== COLUMN 1: multi-select ===================== -->
+  <section class="col">
+    <span class="num">01 · מפגשים במצב בחירה</span>
+    <h2 class="cap">נבחרו 3 מתוך 4</h2>
+    <p class="why">השורה כולה היא label של צ׳קבוקס אמיתי (בלי קישור לעמוד המפגש). נבחרה = רקע muted <b>וגם</b> צ׳קבוקס מסומן. שלישי 29.09 לא זכאי: טקסט ink-muted, צ׳קבוקס aria-disabled והסיבה מקושרת. מונה aria-live ו"להמשך" צמודים מעל הסרגל, באזור האגודל.</p>
+
+    <div class="phone">
+      <div class="statusbar"><span>09:41</span><span aria-hidden="true">●●● ▮</span></div>
+      <div class="screen has-footer">
+        <div class="app-top"><a class="wordmark" href="#">בראנץ׳ אצל טל</a></div>
+        <main>
+          <div class="head">
+            <span class="eyebrow">בחירת תאריכים לכרטיסייה</span>
+            <h1 tabindex="-1">מפגשים</h1>
+            <p class="sub"><bdi>4</bdi> כניסות זמינות · בתוקף עד <time datetime="2026-11-11"><bdi>11.11</bdi></time> · ימי שני וחמישי</p>
+          </div>
+
+          <fieldset style="border:0">
+            <legend class="sr-only">בחירת מפגשים לכרטיסייה, עד 4</legend>
+            <div class="list">
+              <label class="srow sel">
+                <input type="checkbox" checked>
+                <span class="box" aria-hidden="true"><svg class="i"><use href="#i-check"/></svg></span>
+                <span class="date" aria-hidden="true"><b>28.09</b><span>שני</span></span>
+                <span>
+                  <h3>בראנץ׳ סתיו: שקשוקה ירוקה ולחמים חמים</h3>
+                  <span class="meta" style="display:block"><time datetime="2026-09-28T10:00"><span class="sr-only">יום שני, 28 בספטמבר, </span><bdi>10:00</bdi></time> · רגיל</span>
+                  <span class="st available">נותרו 6 מקומות</span>
+                </span>
+              </label>
+
+              <label class="srow inel">
+                <input type="checkbox" aria-disabled="true" aria-describedby="r-tue">
+                <span class="box" aria-hidden="true"><svg class="i"><use href="#i-check"/></svg></span>
+                <span class="date" aria-hidden="true"><b>29.09</b><span>שלישי</span></span>
+                <span>
+                  <h3>לחמים ביתיים ומטבלים</h3>
+                  <span class="meta" style="display:block"><time datetime="2026-09-29T10:00"><span class="sr-only">יום שלישי, 29 בספטמבר, </span><bdi>10:00</bdi></time> · רגיל</span>
+                  <span class="reason" id="r-tue">הכרטיסייה ממומשת רק בימי שני וחמישי</span>
+                </span>
+              </label>
+
+              <label class="srow sel">
+                <input type="checkbox" checked>
+                <span class="box" aria-hidden="true"><svg class="i"><use href="#i-check"/></svg></span>
+                <span class="date" aria-hidden="true"><b>01.10</b><span>חמישי</span></span>
+                <span>
+                  <h3>פנקייקים ופירות עונה</h3>
+                  <span class="meta" style="display:block"><time datetime="2026-10-01T10:00"><span class="sr-only">יום חמישי, 1 באוקטובר, </span><bdi>10:00</bdi></time> · רגיל</span>
+                  <span class="st few">נותרו 2 מקומות</span>
+                </span>
+              </label>
+
+              <label class="srow sel">
+                <input type="checkbox" checked>
+                <span class="box" aria-hidden="true"><svg class="i"><use href="#i-check"/></svg></span>
+                <span class="date" aria-hidden="true"><b>05.10</b><span>שני</span></span>
+                <span>
+                  <h3>בראנץ׳ סתיו: שקשוקה ירוקה ולחמים חמים</h3>
+                  <span class="meta" style="display:block"><time datetime="2026-10-05T10:00"><span class="sr-only">יום שני, 5 באוקטובר, </span><bdi>10:00</bdi></time> · רגיל</span>
+                  <span class="st available">נותרו 7 מקומות</span>
+                </span>
+              </label>
+
+              <label class="srow">
+                <input type="checkbox">
+                <span class="box" aria-hidden="true"><svg class="i"><use href="#i-check"/></svg></span>
+                <span class="date" aria-hidden="true"><b>08.10</b><span>חמישי</span></span>
+                <span>
+                  <h3>פנקייקים ופירות עונה</h3>
+                  <span class="meta" style="display:block"><time datetime="2026-10-08T10:00"><span class="sr-only">יום חמישי, 8 באוקטובר, </span><bdi>10:00</bdi></time> · רגיל</span>
+                  <span class="st available">נותרו 8 מקומות</span>
+                </span>
+              </label>
+
+              <label class="srow">
+                <input type="checkbox">
+                <span class="box" aria-hidden="true"><svg class="i"><use href="#i-check"/></svg></span>
+                <span class="date" aria-hidden="true"><b>12.10</b><span>שני</span></span>
+                <span>
+                  <h3>בראנץ׳ סתיו: שקשוקה ירוקה ולחמים חמים</h3>
+                  <span class="meta" style="display:block"><time datetime="2026-10-12T10:00"><span class="sr-only">יום שני, 12 באוקטובר, </span><bdi>10:00</bdi></time> · רגיל</span>
+                  <span class="st available">נותרו 8 מקומות</span>
+                </span>
+              </label>
+            </div>
+          </fieldset>
+        </main>
+      </div>
+      <div class="selbar">
+        <p class="count" aria-live="polite">נבחרו <bdi>3</bdi> מתוך <bdi>4</bdi></p>
+        <a class="btn btn-primary" href="#">להמשך</a>
+      </div>
+      <nav class="tabs" aria-label="ניווט ראשי">
+        <a href="#"><span class="ico"><svg class="i" aria-hidden="true"><use href="#i-home"/></svg></span>בית</a>
+        <a href="#" aria-current="page"><span class="ico"><svg class="i" aria-hidden="true"><use href="#i-cal"/></svg></span>מפגשים</a>
+        <a href="#"><span class="ico"><svg class="i" aria-hidden="true"><use href="#i-ticket"/></svg></span>ההרשמות שלי</a>
+        <a href="#" aria-label="התראות, 1 שלא נקראה"><span class="ico"><svg class="i" aria-hidden="true"><use href="#i-bell"/></svg><span class="badge" aria-hidden="true">1</span></span>התראות</a>
+        <a href="#"><span class="ico"><svg class="i" aria-hidden="true"><use href="#i-user"/></svg></span>פרופיל</a>
+      </nav>
+    </div>
+  </section>
+
+  <!-- ===================== COLUMN 2: bottom-sheet summary ===================== -->
+  <section class="col">
+    <span class="num">02 · bottom-sheet · סיכום אחד, אישור אחד</span>
+    <h2 class="cap">מה ינוצל, עד מתי, ועד מתי אפשר לבטל</h2>
+    <p class="why">גיליון מעל רשימת הבחירה (scrim 40%). פוקוס התחלתי על הכותרת; X גלוי 44×44 ב-inline-end. כל תאריך עם מועד ביטול עצמי מחושב (הגדרת חלון הביטול, לא "48" בטקסט). כפתור ראשי אחד ברוחב מלא בתחתית.</p>
+
+    <div class="phone">
+      <div class="statusbar"><span>09:41</span><span aria-hidden="true">●●● ▮</span></div>
+      <div class="screen has-footer" aria-hidden="true" inert>
+        <div class="app-top"><span class="wordmark">בראנץ׳ אצל טל</span></div>
+        <div class="head">
+          <span class="eyebrow">בחירת תאריכים לכרטיסייה</span>
+          <h1>מפגשים</h1>
+          <p class="sub">4 כניסות זמינות · בתוקף עד 11.11 · ימי שני וחמישי</p>
+        </div>
+        <div class="list">
+          <div class="srow sel"><span class="box"><svg class="i"><use href="#i-check"/></svg></span><span class="date"><b>28.09</b><span>שני</span></span><span><h3>בראנץ׳ סתיו: שקשוקה ירוקה ולחמים חמים</h3><span class="meta" style="display:block">10:00 · רגיל</span></span></div>
+          <div class="srow inel"><span class="box"></span><span class="date"><b>29.09</b><span>שלישי</span></span><span><h3>לחמים ביתיים ומטבלים</h3><span class="meta" style="display:block">10:00 · רגיל</span></span></div>
+          <div class="srow sel"><span class="box"><svg class="i"><use href="#i-check"/></svg></span><span class="date"><b>01.10</b><span>חמישי</span></span><span><h3>פנקייקים ופירות עונה</h3><span class="meta" style="display:block">10:00 · רגיל</span></span></div>
+        </div>
+      </div>
+      <div class="scrim" aria-hidden="true"></div>
+      <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sh-t">
+        <div class="grabber" aria-hidden="true"></div>
+        <div class="sheet-head">
+          <h2 id="sh-t" tabindex="-1">3 התאריכים שבחרת</h2>
+          <button class="xbtn" type="button" aria-label="סגירה"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button>
+        </div>
+        <ul class="sum">
+          <li>
+            <div class="w"><time datetime="2026-09-28T10:00">יום שני <bdi>28.09</bdi> · <bdi>10:00</bdi></time></div>
+            <div class="t">בראנץ׳ סתיו: שקשוקה ירוקה ולחמים חמים</div>
+            <div class="c">אפשר לבטל בעצמך עד <time datetime="2026-09-26T10:00">שבת <bdi>26.09</bdi> · <bdi>10:00</bdi></time></div>
+          </li>
+          <li>
+            <div class="w"><time datetime="2026-10-01T10:00">יום חמישי <bdi>01.10</bdi> · <bdi>10:00</bdi></time></div>
+            <div class="t">פנקייקים ופירות עונה</div>
+            <div class="c">אפשר לבטל בעצמך עד <time datetime="2026-09-29T10:00">שלישי <bdi>29.09</bdi> · <bdi>10:00</bdi></time></div>
+          </li>
+          <li>
+            <div class="w"><time datetime="2026-10-05T10:00">יום שני <bdi>05.10</bdi> · <bdi>10:00</bdi></time></div>
+            <div class="t">בראנץ׳ סתיו: שקשוקה ירוקה ולחמים חמים</div>
+            <div class="c">אפשר לבטל בעצמך עד <time datetime="2026-10-03T10:00">שבת <bdi>03.10</bdi> · <bdi>10:00</bdi></time></div>
+          </li>
+        </ul>
+        <div class="uses">
+          <dl>
+            <dt>מה ינוצל</dt><dd><bdi>3</bdi> כניסות מהכרטיסייה האישית</dd>
+            <dt>יישארו</dt><dd>כניסה אחת</dd>
+            <dt>בתוקף עד</dt><dd><time datetime="2026-11-11">יום רביעי <bdi>11.11</bdi></time></dd>
+          </dl>
+        </div>
+        <button class="btn btn-primary" type="button">לשמור לי את 3 המקומות</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== COLUMN 3: climax + partial failure + push offer ===================== -->
+  <section class="col">
+    <span class="num">03 · השיא · אישור חלקי · הצעת פוש</span>
+    <h2 class="cap">המקום שלך סביב השולחן שמור</h2>
+    <p class="why">הפוקוס עובר לכותרת השיא; ברשימת התוצאות כל תאריך עם הסטטוס <b>כטקסט</b>. חמישי 01.10 התמלא בינתיים: סיבה + מה לעשות (רשימת המתנה / תאריך אחר), והכניסה נשארת ביתרה. הרשמה ראשונה → כרטיס הסבר פוש.</p>
+
+    <div class="phone">
+      <div class="statusbar"><span>09:42</span><span aria-hidden="true">●●● ▮</span></div>
+      <div class="screen">
+        <div class="app-top"><a class="wordmark" href="#">בראנץ׳ אצל טל</a></div>
+        <main>
+          <div class="climax">
+            <div class="rule" aria-hidden="true"></div>
+            <h1 tabindex="-1">המקום שלך סביב השולחן שמור</h1>
+          </div>
+
+          <section class="res" aria-labelledby="res-h">
+            <h2 id="res-h" tabindex="-1">שמרנו לך <bdi>2</bdi> מתוך <bdi>3</bdi> תאריכים</h2>
+            <ul class="rlist">
+              <li>
+                <div class="top"><span class="w"><time datetime="2026-09-28T10:00">יום שני <bdi>28.09</bdi> · <bdi>10:00</bdi></time></span><span class="st confirmed">נשמר</span></div>
+                <div class="t">בראנץ׳ סתיו: שקשוקה ירוקה ולחמים חמים</div>
+                <div class="c">נוצלה כניסה מהכרטיסייה · אפשר לבטל בעצמך עד <time datetime="2026-09-26T10:00">שבת <bdi>26.09</bdi> · <bdi>10:00</bdi></time></div>
+              </li>
+              <li class="failed">
+                <div class="top"><span class="w"><time datetime="2026-10-01T10:00">יום חמישי <bdi>01.10</bdi> · <bdi>10:00</bdi></time></span><span class="st full">לא נשמר</span></div>
+                <div class="t">פנקייקים ופירות עונה</div>
+                <div class="notice warning" role="alert">
+                  <svg class="i s20" aria-hidden="true"><use href="#i-alert"/></svg>
+                  <span>המקום האחרון נתפס רגע לפני — אפשר להצטרף לרשימת ההמתנה או לבחור תאריך אחר</span>
+                  <div class="acts">
+                    <button class="btn btn-secondary" type="button">להצטרף לרשימת ההמתנה</button>
+                    <a class="btn-link" href="#">לבחור תאריך אחר</a>
+                  </div>
+                </div>
+              </li>
+              <li>
+                <div class="top"><span class="w"><time datetime="2026-10-05T10:00">יום שני <bdi>05.10</bdi> · <bdi>10:00</bdi></time></span><span class="st confirmed">נשמר</span></div>
+                <div class="t">בראנץ׳ סתיו: שקשוקה ירוקה ולחמים חמים</div>
+                <div class="c">נוצלה כניסה מהכרטיסייה · אפשר לבטל בעצמך עד <time datetime="2026-10-03T10:00">שבת <bdi>03.10</bdi> · <bdi>10:00</bdi></time></div>
+              </li>
+            </ul>
+
+            <a class="balance" href="#">
+              <div class="l1"><span class="dot" aria-hidden="true"></span><span>כרטיסייה אישית</span></div>
+              <div class="nums"><bdi>2</bdi> זמינות · <bdi>2</bdi> משוריינות</div>
+              <div class="l2">בתוקף עד <time datetime="2026-11-11"><bdi>11.11</bdi></time> · ימי שני וחמישי</div>
+              <svg class="i s20 chev" aria-hidden="true"><use href="#i-chev"/></svg>
+            </a>
+            <p class="keep">הכניסה של <bdi>01.10</bdi> לא נוצלה ונשארה ביתרה שלך.</p>
+          </section>
+
+          <section class="res" aria-labelledby="push-h">
+            <div class="push">
+              <h2 id="push-h" class="sr-only">תזכורות</h2>
+              <div class="ph">
+                <svg class="i" aria-hidden="true" style="margin-top:4px"><use href="#i-bell"/></svg>
+                <p>רוצה שנזכיר לך יום לפני הבראנץ׳? נשלח רק דברים שחשובים לך</p>
+              </div>
+              <button class="btn btn-primary" type="button">כן, להפעיל תזכורות</button>
+              <div class="later"><button class="btn-link" type="button">לא עכשיו</button></div>
+            </div>
+          </section>
+        </main>
+      </div>
+      <nav class="tabs" aria-label="ניווט ראשי">
+        <a href="#"><span class="ico"><svg class="i" aria-hidden="true"><use href="#i-home"/></svg></span>בית</a>
+        <a href="#" aria-current="page"><span class="ico"><svg class="i" aria-hidden="true"><use href="#i-cal"/></svg></span>מפגשים</a>
+        <a href="#"><span class="ico"><svg class="i" aria-hidden="true"><use href="#i-ticket"/></svg></span>ההרשמות שלי</a>
+        <a href="#" aria-label="התראות, 3 שלא נקראו"><span class="ico"><svg class="i" aria-hidden="true"><use href="#i-bell"/></svg><span class="badge" aria-hidden="true">3</span></span>התראות</a>
+        <a href="#"><span class="ico"><svg class="i" aria-hidden="true"><use href="#i-user"/></svg></span>פרופיל</a>
+      </nav>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

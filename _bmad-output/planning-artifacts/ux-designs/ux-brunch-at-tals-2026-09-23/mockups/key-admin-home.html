@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>בית · פאנל ניהול · בראנץ׳ אצל טל</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@200;300;400&family=Assistant:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/*
+  KEY SCREEN — admin home + session-morning view (phone, 390px)
+  Governing spine sections:
+    EXPERIENCE › Information Architecture › פאנל ניהול › בית (CAP-24)
+    EXPERIENCE › פאנל ניהול בטלפון › מבט בוקר המפגש
+    EXPERIENCE › Key Flows › Flow 5 (מבט בוקר)
+    EXPERIENCE › State Patterns › הצהרת נגישות — טרם פורסמה; מצבי מפגש (בוטל ע״י העסק — טרם נבחר)
+    EXPERIENCE › Component Patterns: session-card, attendee-row, status-chip, bottom-tab-bar, notification-item (used for "לטיפול" rows — see gap)
+    DESIGN › Components: session-card, card, status-chip, chip-type, attendee-row, bottom-tab-bar, button-primary, button-link, focus-ring
+  Tokens applied exactly from DESIGN.md front-matter. Light mode only. No shadows.
+  Fonts: Heebo (display) + Assistant (body/numbers) with system fallbacks. No JS.
+*/
+:root{
+  --background:#FAF6EE;--card:#FFFDF8;--muted:#F2ECDF;--ink:#2E2A1F;--ink-muted:#6B6450;--border:#E6DFCF;
+  --accent:#8A875A;--primary:#4A4A2A;--on-primary:#FAF6EE;
+  --success:#4E6B34;--success-tint:#E7EDDC;--success-dot:#8FA874;
+  --warning:#8C5E14;--warning-tint:#F4E8D0;--warning-dot:#C9A060;
+  --error:#B42318;--error-tint:#F8E4E1;--error-dot:#B42318;
+  --pending:#4A5A6A;--pending-tint:#E6EAEC;--pending-dot:#8C9AA8;
+  --expired:#676154;--expired-tint:#EDE9E0;--expired-dot:#B0A998;
+  --display:'Heebo',"Segoe UI",Arial,sans-serif;--body:'Assistant',"Segoe UI",Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#EFE9DC;color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px;box-shadow:0 0 0 2px var(--on-primary)}
+bdi{unicode-bidi:isolate}
+
+/* board chrome (outside the device) */
+.board-head{max-width:1000px;margin:0 auto;padding:32px 16px 8px}
+.board-head h1{font-family:var(--display);font-weight:300;font-size:26px;line-height:1.2}
+.board-head p{color:var(--ink-muted);font-size:15px;margin-top:6px;max-width:720px}
+.grid{max-width:1000px;margin:0 auto;padding:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(390px,1fr));gap:40px;align-items:start}
+.col-title{font-family:var(--display);font-weight:300;font-size:22px;line-height:1.25;margin-bottom:4px}
+.col-note{color:var(--ink-muted);font-size:15px;margin-bottom:16px}
+
+/* device */
+.phone{width:390px;max-width:100%;margin:0 auto;border:10px solid #2E2A1F;border-radius:40px;overflow:hidden;background:var(--background);display:flex;flex-direction:column;min-height:844px}
+.status-bar{height:36px;display:flex;justify-content:space-between;align-items:center;padding:0 24px;font-size:13px;font-weight:600;color:var(--ink)}
+.screen{flex:1;padding:8px 16px 32px}
+
+/* type */
+.eyebrow{font-size:13px;letter-spacing:.04em;color:var(--ink-muted)}
+.h1{font-family:var(--display);font-weight:300;font-size:26px;line-height:1.2}
+.h2{font-family:var(--display);font-weight:300;font-size:22px;line-height:1.25}
+.body-sm{font-size:15px;line-height:1.5}
+.label{font-size:13px;line-height:1.4}
+.muted{color:var(--ink-muted)}
+.strong{font-weight:600}
+.section{margin-top:32px}
+.section-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:4px}
+
+/* status-chip */
+.status{display:inline-flex;align-items:center;gap:6px;border-radius:9999px;padding:3px 10px;font-size:13px;font-weight:600;line-height:1.4;white-space:nowrap}
+.status::before{content:"";width:7px;height:7px;border-radius:9999px;background:currentColor;flex:none}
+.st-success{color:var(--success);background:var(--success-tint)}.st-success::before{background:var(--success-dot)}
+.st-warning{color:var(--warning);background:var(--warning-tint)}.st-warning::before{background:var(--warning-dot)}
+.st-error{color:var(--error);background:var(--error-tint)}.st-error::before{background:var(--error-dot)}
+.st-pending{color:var(--pending);background:var(--pending-tint)}.st-pending::before{background:var(--pending-dot)}
+.st-expired{color:var(--expired);background:var(--expired-tint)}.st-expired::before{background:var(--expired-dot)}
+.chip-type{display:inline-block;border:1px solid var(--accent);border-radius:4px;padding:2px 8px;font-size:13px;line-height:1.4;color:var(--ink)}
+
+/* session-card */
+.session-card{background:var(--card);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-top:12px}
+.session-card .photo{height:150px;background:
+  radial-gradient(circle at 30% 35%,#F2C94C 0 7%,#FFF6DA 7.5% 11%,transparent 11.5%),
+  radial-gradient(circle at 30% 35%,#B8432F 0 16%,#7C3B22 16.5% 20%,transparent 20.5%),
+  radial-gradient(circle at 72% 30%,#E7D3A8 0 13%,#FFFDF8 13.5% 18%,transparent 18.5%),
+  radial-gradient(circle at 60% 72%,#6E8B3D 0 10%,#FFFDF8 10.5% 15%,transparent 15.5%),
+  radial-gradient(circle at 20% 78%,#D98E4A 0 8%,#F4E6CC 8.5% 12%,transparent 12.5%),
+  linear-gradient(135deg,#B98B5E,#8E6A45)}
+.session-card .body{padding:16px}
+.row-between{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.session-card .title{font-weight:600;font-size:16px;line-height:1.35;margin:8px 0 4px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:14px 0 16px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:12px 0}
+.stat{text-align:center}
+.stat .num{font-size:26px;line-height:1;font-weight:400;display:block}
+.stat .lbl{font-size:13px;color:var(--ink-muted);display:block;margin-top:6px}
+.stat.hl .num{color:var(--warning)}
+.allergy-line{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+
+/* buttons */
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 22px;border-radius:4px;font-family:var(--body);font-size:16px;font-weight:600;line-height:1.2;text-decoration:none;border:0;width:100%}
+.btn-primary{background:var(--primary);color:var(--on-primary)}
+.btn-link{display:inline-flex;align-items:center;gap:4px;min-height:44px;font-size:15px;color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+
+/* "לטיפול" list — notification-item visual (single-target rows) */
+.list{list-style:none}
+.item{position:relative;border-bottom:1px solid var(--border);padding:16px 0;display:flex;gap:10px;align-items:flex-start;min-height:44px}
+.item:first-child{border-top:1px solid var(--border)}
+.item .main{flex:1;min-width:0}
+.item .t{font-weight:600;font-size:16px;line-height:1.35;display:block;text-decoration:none}
+.item .t::after{content:"";position:absolute;inset:0}
+.item .d{font-size:15px;color:var(--ink);margin-top:2px}
+.item .m{font-size:13px;color:var(--ink-muted);margin-top:4px}
+.item .chev{flex:none;color:var(--ink-muted);margin-top:2px}
+.item .side{flex:none;text-align:end}
+.count{font-size:13px;font-weight:600;color:var(--on-primary);background:var(--primary);border-radius:9999px;padding:1px 9px}
+
+/* sum */
+.sum{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px;margin-top:12px}
+.sum .big{font-size:26px;line-height:1;margin:10px 0 12px;display:block}
+.sum dl{display:grid;grid-template-columns:1fr auto;gap:6px 12px;font-size:15px;border-top:1px solid var(--border);padding-top:12px}
+.sum dt{color:var(--ink-muted)}
+.sum dd{text-align:end}
+
+/* attendee-row */
+.summary-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px 8px;margin-top:16px}
+.summary-card .stats{margin:0;border:0;padding:0}
+.att{position:relative;border-bottom:1px solid var(--border);padding:12px 0;display:flex;gap:10px}
+.att:first-child{border-top:1px solid var(--border)}
+.att .main{flex:1;min-width:0}
+.att .name{font-weight:600;font-size:16px;line-height:1.35;text-decoration:none;display:block}
+.att .name::after{content:"";position:absolute;inset:0}
+.att .x2{font-weight:400;color:var(--ink-muted)}
+.att .detail{font-size:15px;line-height:1.5}
+.att .diet{font-size:15px;line-height:1.5;color:var(--ink-muted)}
+.att .chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 4px}
+.att .second{margin-top:6px;padding-inline-start:10px;border-inline-start:2px solid var(--accent)}
+.att .chev{flex:none;color:var(--ink-muted);align-self:center}
+
+/* bottom-tab-bar */
+.tabbar{background:var(--card);border-top:1px solid var(--border);min-height:64px;display:grid;grid-template-columns:repeat(5,1fr);padding:4px 4px calc(4px + 20px)}
+.tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:44px;min-width:44px;text-decoration:none;color:var(--ink-muted);font-size:13px;line-height:1.4;position:relative;padding-top:6px}
+.tab svg{width:24px;height:24px}
+.tab[aria-current="page"]{color:var(--ink);font-weight:600}
+.tab[aria-current="page"]::before{content:"";position:absolute;top:0;width:24px;height:2px;background:var(--accent)}
+.ico{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.tab svg{fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+</style>
+</head>
+<body>
+
+<header class="board-head">
+  <h1>פאנל ניהול — בית ומבט בוקר המפגש</h1>
+  <p>טל, בטלפון, בין בצק לבצק. המסכים מוצגים בגלילה מלאה. עמודה 1: מסך הבית (CAP-24). עמודה 2: מבט בוקר המפגש שנפתח מכרטיס המפגש הבא.</p>
+</header>
+
+<main class="grid">
+
+<!-- ================= COLUMN 1: ADMIN HOME ================= -->
+<section>
+  <h2 class="col-title">1 · בית</h2>
+  <p class="col-note">קודם המפגש הבא, אחר כך "לטיפול", ובסוף תשלומים, כרטיסיות שעומדות לפוג והסכום.</p>
+
+  <div class="phone">
+    <div class="status-bar"><span><bdi>07:32</bdi></span><span>●●● ▮</span></div>
+    <div class="screen">
+      <p class="eyebrow"><time datetime="2026-09-23">יום רביעי <bdi>23.09</bdi></time></p>
+      <h1 class="h1">בית</h1>
+
+      <!-- 1. next session -->
+      <section class="section" style="margin-top:20px" aria-labelledby="next-h">
+        <h2 id="next-h" class="h2">המפגש הבא</h2>
+        <article class="session-card">
+          <div class="photo" aria-hidden="true"></div>
+          <div class="body">
+            <div class="row-between">
+              <span class="label"><time datetime="2026-09-25T10:00">יום שישי <bdi>25.09</bdi> · <bdi>10:00</bdi></time></span>
+              <span class="status st-warning">נותרו 2 מקומות</span>
+            </div>
+            <p class="title">בראנץ׳ שישי מיוחד</p>
+            <span class="chip-type">זוגי</span> <span class="label muted">· מגיעות עם התינוקות</span>
+
+            <div class="stats">
+              <div class="stat"><span class="num"><bdi>10/12</bdi></span><span class="lbl">מקומות</span></div>
+              <div class="stat"><span class="num">5</span><span class="lbl">הרשמות</span></div>
+              <div class="stat"><span class="num">6</span><span class="lbl">תינוקות</span></div>
+              <div class="stat hl"><span class="num">2</span><span class="lbl">אלרגיות</span></div>
+            </div>
+            <p class="label muted" style="margin:-6px 0 10px">הרשמה זוגית תופסת 2 מקומות</p>
+            <div class="allergy-line">
+              <span class="status st-warning">גלוטן</span>
+              <span class="status st-warning">אגוזים</span>
+              <span class="status st-pending">טרם נמסר: 1</span>
+            </div>
+            <a class="btn btn-primary" href="#morning">למבט בוקר המפגש</a>
+          </div>
+        </article>
+      </section>
+
+      <!-- 2. action needed -->
+      <section class="section" aria-labelledby="todo-h">
+        <div class="section-head">
+          <h2 id="todo-h" class="h2">לטיפול</h2>
+          <span class="count" aria-hidden="true">5</span>
+        </div>
+        <p class="body-sm muted" style="margin-bottom:12px">5 דברים מחכים לך</p>
+        <ul class="list">
+          <li class="item">
+            <div class="main">
+              <a class="t" href="#">התנגשות חשבון · ליאת גבאי</a>
+              <p class="d">הטלפון והמייל שייכים לשני חשבונות שונים. ההצטרפות נעצרה.</p>
+              <p class="m">לפני שעתיים</p>
+            </div>
+            <div class="side"><span class="status st-error">התנגשות</span></div>
+            <svg class="ico chev" aria-hidden="true" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+          </li>
+          <li class="item">
+            <div class="main">
+              <a class="t" href="#">בקשת החזר · דנה כהן</a>
+              <p class="d">כניסה בודדת · <bdi>128 ₪</bdi> · מפגש <bdi>17.09</bdi></p>
+              <p class="m">אתמול</p>
+            </div>
+            <div class="side"><span class="status st-pending">ממתין לאישור טל</span></div>
+            <svg class="ico chev" aria-hidden="true" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+          </li>
+          <li class="item">
+            <div class="main">
+              <a class="t" href="#">קישור הצטרפות פג · לקוחה חדשה</a>
+              <p class="d">כרטיסייה אישית · <bdi>472 ₪</bdi> · אושר <bdi>19.09</bdi>. אפשר להפיק קישור חלופי בלי תשלום נוסף.</p>
+              <p class="m">פג ב-<bdi>21.09</bdi></p>
+            </div>
+            <div class="side"><span class="status st-expired">פג תוקף</span></div>
+            <svg class="ico chev" aria-hidden="true" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+          </li>
+          <li class="item">
+            <div class="main">
+              <a class="t" href="#">טרם בחרה זיכוי או החזר · אורית שלום</a>
+              <p class="d">המפגש של יום חמישי <bdi>17.09</bdi> בוטל</p>
+              <p class="m">מאז <bdi>15.09</bdi></p>
+            </div>
+            <div class="side"><span class="status st-pending">ממתינה לבחירה</span></div>
+            <svg class="ico chev" aria-hidden="true" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+          </li>
+          <li class="item">
+            <div class="main">
+              <a class="t" href="#">הצהרת הנגישות עוד לא פורסמה</a>
+              <p class="d">עמוד חובה. חסרים: מגבלות ידועות, פרטי אשת קשר לנגישות.</p>
+              <p class="m">עוד › תוכן האתר</p>
+            </div>
+            <svg class="ico chev" aria-hidden="true" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+          </li>
+        </ul>
+      </section>
+
+      <!-- 3. payments -->
+      <section class="section" aria-labelledby="pay-h">
+        <div class="section-head">
+          <h2 id="pay-h" class="h2">תשלומים אחרונים</h2>
+          <a class="btn-link" href="#">לכל התשלומים</a>
+        </div>
+        <ul class="list">
+          <li class="item">
+            <div class="main">
+              <a class="t" href="#">לקוחה חדשה · הקישור מחכה להצטרפות</a>
+              <p class="d">כרטיסייה אישית · <bdi>440 ₪</bdi> · ביט</p>
+              <p class="m"><bdi>23.09</bdi> · קישור הצטרפות</p>
+            </div>
+            <div class="side"><span class="status st-pending">ממתין למימוש</span></div>
+          </li>
+          <li class="item">
+            <div class="main">
+              <a class="t" href="#">נועה ביטון</a>
+              <p class="d">בראנץ׳ שישי מיוחד (זוגי) · <bdi>250 ₪</bdi> · פייבוקס</p>
+              <p class="m"><bdi>22.09</bdi> · רכישה חוזרת</p>
+            </div>
+            <div class="side"><span class="status st-success">מאושר</span></div>
+          </li>
+          <li class="item">
+            <div class="main">
+              <a class="t" href="#">שני פרץ</a>
+              <p class="d">בראנץ׳ רגיל · <bdi>128 ₪</bdi> · ביט</p>
+              <p class="m"><bdi>21.09</bdi></p>
+            </div>
+            <div class="side"><span class="status st-success">מאושר</span></div>
+          </li>
+        </ul>
+      </section>
+
+      <section class="section" aria-labelledby="exp-h">
+        <h2 id="exp-h" class="h2" style="margin-bottom:12px">כרטיסיות שעומדות לפוג</h2>
+        <ul class="list">
+          <li class="item">
+            <div class="main">
+              <a class="t" href="#">אורנה גולן</a>
+              <p class="d">נשארו 2 כניסות · בתוקף עד <bdi>30.09</bdi></p>
+            </div>
+            <div class="side"><span class="status st-warning">עומדת לפוג</span></div>
+          </li>
+          <li class="item">
+            <div class="main">
+              <a class="t" href="#">יעל מזרחי</a>
+              <p class="d">נשארה כניסה 1 · בתוקף עד <bdi>02.10</bdi></p>
+            </div>
+            <div class="side"><span class="status st-warning">עומדת לפוג</span></div>
+          </li>
+        </ul>
+      </section>
+
+      <section class="section" aria-labelledby="sum-h">
+        <div class="sum">
+          <h2 id="sum-h" class="label strong">תשלומים שאושרו פחות החזרים</h2>
+          <p class="label muted">ספטמבר 2026 · עד היום</p>
+          <span class="big"><bdi>3,164 ₪</bdi></span>
+          <dl>
+            <dt>תשלומים שאושרו (14)</dt><dd><bdi>3,420 ₪</bdi></dd>
+            <dt>החזרים שבוצעו (2)</dt><dd><bdi>− 256 ₪</bdi></dd>
+          </dl>
+        </div>
+      </section>
+    </div>
+
+    <nav class="tabbar" aria-label="ניווט ראשי">
+      <a class="tab" href="#" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10l9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>בית</a>
+      <a class="tab" href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>מפגשים</a>
+      <a class="tab" href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2M16 3.1a4 4 0 0 1 0 7.8M21 21v-2a4 4 0 0 0-3-3.9"/></svg>לקוחות</a>
+      <a class="tab" href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>תשלומים</a>
+      <a class="tab" href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>עוד</a>
+    </nav>
+  </div>
+</section>
+
+<!-- ================= COLUMN 2: SESSION-MORNING VIEW ================= -->
+<section id="morning">
+  <h2 class="col-title">2 · מבט בוקר המפגש</h2>
+  <p class="col-note">רשימת <bdi>attendee-row</bdi>. כל שורה היא יעד אחד (פרופיל הלקוחה). אלרגיות והעדפות: טקסט אחד כמו שהלקוחה כתבה (ה-spine קובע: מוצג כטקסט מודגש, לא כצ׳יפים); ריק = "טרם נמסר". עובד רק עם רשת.</p>
+
+  <div class="phone">
+    <div class="status-bar"><span><bdi>07:34</bdi></span><span>●●● ▮</span></div>
+    <div class="screen">
+      <a class="btn-link" href="#"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24" style="transform:scaleX(-1)"><polyline points="15 18 9 12 15 6"/></svg>חזרה לבית</a>
+      <p class="eyebrow" style="margin-top:4px"><time datetime="2026-09-25T10:00">יום שישי <bdi>25.09</bdi> · <bdi>10:00</bdi></time></p>
+      <h1 class="h1">בראנץ׳ שישי מיוחד</h1>
+      <p style="margin-top:6px"><span class="chip-type">זוגי</span></p>
+
+      <div class="summary-card">
+        <div class="stats">
+          <div class="stat"><span class="num">5</span><span class="lbl">נרשמות</span></div>
+          <div class="stat"><span class="num"><bdi>10/12</bdi></span><span class="lbl">מקומות</span></div>
+          <div class="stat"><span class="num">6</span><span class="lbl">תינוקות</span></div>
+          <div class="stat hl"><span class="num">2</span><span class="lbl">אלרגיות</span></div>
+        </div>
+      </div>
+
+      <h2 class="h2 section" style="margin-top:24px;margin-bottom:12px">מי מגיעה</h2>
+      <ul class="list">
+        <li class="att">
+          <div class="main">
+            <a class="name" href="#">שני פרץ <span class="x2">×2</span></a>
+            <p class="detail">תאומים: אורי ומאיה, 3 חודשים</p>
+            <div class="chips"><span class="status st-warning">אלרגיה: אגוזים</span></div>
+            <p class="diet">טבעונית</p>
+            <div class="second"><p class="label muted">המלווה</p><p class="diet">צמחונית</p></div>
+          </div>
+          <svg class="ico chev" aria-hidden="true" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        </li>
+        <li class="att">
+          <div class="main">
+            <a class="name" href="#">רוני אברהם <span class="x2">×2</span></a>
+            <p class="detail">תינוקת: שירה, 4 חודשים</p>
+            <p class="diet">אין אלרגיות ידועות</p>
+            <div class="second"><p class="label muted">המלווה</p><div class="chips" style="margin-top:2px"><span class="status st-warning">אלרגיה: גלוטן</span></div></div>
+          </div>
+          <svg class="ico chev" aria-hidden="true" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        </li>
+        <li class="att">
+          <div class="main">
+            <a class="name" href="#">יעל מזרחי <span class="x2">×2</span></a>
+            <p class="detail">תינוק: איתי, 5 חודשים</p>
+            <div class="chips"><span class="status st-pending">אלרגיות: טרם נמסר</span></div>
+            <div class="second"><p class="label muted">המלווה</p><p class="diet">לא נמסר</p></div>
+          </div>
+          <svg class="ico chev" aria-hidden="true" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        </li>
+        <li class="att">
+          <div class="main">
+            <a class="name" href="#">נועה ביטון <span class="x2">×2</span></a>
+            <p class="detail">תינוקת: ליה, 3 חודשים</p>
+            <p class="diet">אין אלרגיות ידועות · בלי קפה</p>
+            <div class="second"><p class="label muted">המלווה</p><p class="diet">לא נמסר</p></div>
+          </div>
+          <svg class="ico chev" aria-hidden="true" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        </li>
+        <li class="att">
+          <div class="main">
+            <a class="name" href="#">דנה כהן <span class="x2">×2</span></a>
+            <p class="detail">תינוק: עומר, 7 חודשים</p>
+            <p class="diet">אין אלרגיות ידועות</p>
+            <div class="second"><p class="label muted">המלווה</p><p class="diet">לא נמסר</p></div>
+          </div>
+          <svg class="ico chev" aria-hidden="true" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        </li>
+      </ul>
+    </div>
+
+    <nav class="tabbar" aria-label="ניווט ראשי">
+      <a class="tab" href="#" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10l9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>בית</a>
+      <a class="tab" href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>מפגשים</a>
+      <a class="tab" href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2M16 3.1a4 4 0 0 1 0 7.8M21 21v-2a4 4 0 0 0-3-3.9"/></svg>לקוחות</a>
+      <a class="tab" href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>תשלומים</a>
+      <a class="tab" href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>עוד</a>
+    </nav>
+  </div>
+</section>
+
+</main>
+</body>
+</html>
