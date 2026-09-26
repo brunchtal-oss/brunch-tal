@@ -12,6 +12,7 @@ companions:
   - acceptance-criteria.md
   - glossary.md
   - build-sequence.md
+  - ../../planning-artifacts/architecture/architecture-brunch-at-tals-2026-09-24/ARCHITECTURE-SPINE.md
   - ../../planning-artifacts/ux-designs/ux-brunch-at-tals-2026-09-23/DESIGN.md
   - ../../planning-artifacts/ux-designs/ux-brunch-at-tals-2026-09-23/EXPERIENCE.md
 sources:
@@ -208,7 +209,7 @@ sources:
 ## Assumptions
 
 - שלושת החלקים נכללים ב-SPEC אחד, כי הם חולקים מסד נתונים.
-- מבנה הנתונים והארכיטקטורה מהמקור (§9–§10) הם הצעה. הם נמצאים בקבצים נלווים ואינם התחייבות.
+- מבנה הנתונים והארכיטקטורה מהמקור (§9–§10) הם הצעה. ההחלטות הטכניות המחייבות נמצאות ב-[ARCHITECTURE-SPINE.md](../../planning-artifacts/architecture/architecture-brunch-at-tals-2026-09-24/ARCHITECTURE-SPINE.md) (החלטות AD-1 עד AD-23), ו-[data-model.md](data-model.md) מיושר אליו.
 - סדר הבנייה נשמר ב-[build-sequence.md](build-sequence.md).
 - לתינוק נשמר תאריך לידה, כי הטופס אוסף אותו. שדות הגיל המשוער מ-§9 אופציונליים, ליבוא.
 - קישורי ההפעלה ללקוחות מיובאות מקבלים את אותם סטטוסים ואת אותו תוקף של 48 שעות.

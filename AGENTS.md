@@ -20,7 +20,8 @@
 
 ## איפה דברים נמצאים
 
-- לפני כתיבת מיגרציה, policy או RPC לקרוא את `security-and-rpc-rules.md` וגם את `data-model.md` שב-SPEC.
+- החלטות הארכיטקטורה המחייבות (נתיבים, חוזה RPC והרשאות, סדר נעילה, תזמון ופוש, יצירת חשבון, זמן וכסף): `_bmad-output/planning-artifacts/architecture/architecture-brunch-at-tals-2026-09-24/ARCHITECTURE-SPINE.md`. לקרוא לפני כל עבודת בנייה. בשאלה טכנית הוא גובר על `data-model.md`.
+- לפני כתיבת מיגרציה, policy או RPC לקרוא את `security-and-rpc-rules.md`, את `data-model.md` שב-SPEC ואת החלטות AD-3, AD-5, AD-6 ו-AD-14 בארכיטקטורה.
 - ערכים עסקיים שנערכים באדמין (ולכן לא נכתבים בקוד): `admin-configurable-parameters.md`. תוצאות ביטול: `cancellation-rules.md`.
 - לקוחות Supabase: `lib/supabase/client.ts` לדפדפן, `lib/supabase/server.ts` לשרת (מכבד RLS), ו-`lib/supabase/proxy.ts` לרענון session (נקרא מ-`proxy.ts` שבשורש).
 
