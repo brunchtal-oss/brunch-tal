@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>קונספטים · סבב 3 · בראנץ׳ אצל טל</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400&family=Assistant:wght@400;600&family=David+Libre&family=Bona+Nova&family=Noto+Serif+Hebrew:wght@300;400&family=Frank+Ruhl+Libre:wght@700&family=Suez+One&display=swap" rel="stylesheet">
+<style>
+/*
+  CONCEPT THEMES — round 3 ("menu card"), via frontend-design.
+  Rejected before: thin accents (round 1), textile patterns (round 2, "childish").
+  Idea: each concept = one deep "paper" colour + its own typeface for the concept name.
+  No patterns, no icons, no illustration. The concept name IS the session title (user, 2026-09-26),
+  so each concept name becomes a fixed typographic lockup that repeats session after session.
+  One bold move: on the session page the photo straddles the edge between the colour field and the cream page.
+  Soft fields (round 3b): dark same-hue text on each field 6.08–7.48:1. House status chips, buttons and focus ring unchanged.
+*/
+:root{
+  --background:#FAF6EE;--card:#FFFDF8;--ink:#2E2A1F;--ink-muted:#6B6450;--border:#E6DFCF;--cream:#FAF6EE;
+  --primary:#4A4A2A;
+  --success:#4E6B34;--success-tint:#E7EDDC;--success-dot:#8FA874;
+  --warning:#8C5E14;--warning-tint:#F4E8D0;--warning-dot:#C9A060;
+  --expired:#676154;--expired-tint:#EDE9E0;--expired-dot:#B0A998;
+  --body:'Assistant',"Segoe UI",Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#ECE6D8;color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px;box-shadow:0 0 0 2px var(--cream)}
+
+.intro{max-width:1240px;margin:0 auto;padding:40px 20px 8px}
+.intro h1{font-family:'Heebo',sans-serif;font-weight:300;font-size:32px;line-height:1.15}
+.intro p{color:var(--ink-muted);font-size:16px;margin-top:8px;max-width:64ch}
+
+.board{max-width:1240px;margin:0 auto;padding:24px 20px 64px;display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:48px 32px}
+.concept{display:grid;gap:18px;align-content:start}
+.note{font-size:15px;color:var(--ink-muted);max-width:44ch}
+.note b{color:var(--ink);font-weight:600}
+
+/* ---------- concept tokens: field colour + name typeface ---------- */
+.c-mothers{--field:#CDD3BC;--on-field:#3C4631}
+.c-couples{--field:#D3CCE0;--on-field:#3B3350}
+.c-grandma{--field:#F0E2B6;--on-field:#5A4513}
+.c-grandpa{--field:#D2C0A6;--on-field:#3E2E20}
+.c-greek{--field:#BDD0DC;--on-field:#1C3A4F}
+.c-generic{--field:#D0CEB2;--on-field:#3D3D22}
+
+.name{color:var(--on-field);line-height:1}
+.name .pre{display:block;font-family:var(--body);font-size:15px;opacity:.9;margin-bottom:6px;letter-spacing:.01em}
+.c-mothers .name .main{font-family:'Heebo',sans-serif;font-weight:300;font-size:40px;letter-spacing:-.005em}
+.c-couples .name .main{font-family:'Bona Nova',serif;font-size:46px}
+.c-grandma .name .main{font-family:'David Libre',serif;font-size:40px}
+.c-grandpa .name .main{font-family:'Frank Ruhl Libre',serif;font-weight:700;font-size:40px;letter-spacing:-.01em}
+.c-greek .name .main{font-family:'Suez One',serif;font-size:42px;letter-spacing:.01em}
+.c-generic .name .main{font-family:'Heebo',sans-serif;font-weight:300;font-size:40px}
+
+/* ---------- food photo placeholder (stands in for Tal's photo) ---------- */
+.photo{aspect-ratio:4/3;width:100%;background:
+  radial-gradient(circle at 28% 38%,var(--p1) 0 9%,#FFF8E6 9.5% 13%,transparent 13.5%),
+  radial-gradient(circle at 70% 30%,var(--p2) 0 13%,#FFFDF8 13.5% 19%,transparent 19.5%),
+  radial-gradient(circle at 58% 74%,var(--p3) 0 11%,#FFFDF8 11.5% 16%,transparent 16.5%),
+  radial-gradient(circle at 18% 80%,var(--p4) 0 7%,#F2EBDC 7.5% 11%,transparent 11.5%),
+  linear-gradient(135deg,#C9B08A,#A88B63)}
+.c-mothers .photo{--p1:#E9C46A;--p2:#DCCB9E;--p3:#7A8F4E;--p4:#D98E4A}
+.c-couples .photo{--p1:#B8A2C9;--p2:#E8D5B0;--p3:#5D6B3A;--p4:#D98E4A}
+.c-grandma .photo{--p1:#C98A8E;--p2:#F1DDB3;--p3:#B35C3E;--p4:#E4B64B}
+.c-grandpa .photo{--p1:#3B2A1D;--p2:#F0A43A;--p3:#6E8B3D;--p4:#E07B2E}
+.c-greek .photo{--p1:#F2D24B;--p2:#F7F7F2;--p3:#4F5B2B;--p4:#2E6C9A}
+.c-generic .photo{--p1:#D9A441;--p2:#EFE3C8;--p3:#8C6A3F;--p4:#6E8B3D}
+
+/* ---------- session page header: colour field + straddling photo ---------- */
+.page{background:var(--background);border-radius:14px;overflow:hidden;border:1px solid var(--border)}
+.field{background:var(--field);padding:28px 20px 96px}
+.field .when{color:var(--on-field);font-size:16px;margin-top:14px}
+.page .photo{width:calc(100% - 40px);margin:-72px 20px 0;border-radius:4px;position:relative}
+.page .below{padding:18px 20px 22px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.page .below p{font-size:15px;color:var(--ink-muted);max-width:32ch}
+.btn{min-height:48px;padding:0 22px;border-radius:4px;border:0;background:var(--primary);color:var(--cream);font:600 16px var(--body)}
+
+/* ---------- session card: photo + colour band ---------- */
+.card{background:var(--card);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.band{background:var(--field);padding:16px 18px 18px}
+.card .name .main{font-size:34px}
+.c-greek .card .name .main{font-size:36px}
+.c-couples .card .name .main{font-size:40px}
+.meta{padding:12px 18px 16px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.meta .when{font-size:15px}
+.meta .who{font-size:13px;color:var(--ink-muted)}
+.status{display:inline-flex;align-items:center;gap:6px;border-radius:9999px;padding:3px 10px;font-size:13px;font-weight:600;white-space:nowrap}
+.status::before{content:"";width:7px;height:7px;border-radius:9999px}
+.st-success{color:var(--success);background:var(--success-tint)}.st-success::before{background:var(--success-dot)}
+.st-warning{color:var(--warning);background:var(--warning-tint)}.st-warning::before{background:var(--warning-dot)}
+.st-expired{color:var(--expired);background:var(--expired-tint)}.st-expired::before{background:var(--expired-dot)}
+
+/* no-photo fallback: the band takes the photo's place; the name becomes the image */
+.card.nophoto .band{aspect-ratio:4/3;display:flex;align-items:flex-end;padding:22px}
+.card.nophoto .name .main{font-size:52px}
+.c-greek .card.nophoto .name .main{font-size:54px}
+
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:420px){.pair{grid-template-columns:1fr}}
+.legend{max-width:1240px;margin:0 auto;padding:0 20px 64px;color:var(--ink-muted);font-size:15px}
+.legend li{margin-inline-start:20px;margin-top:6px;max-width:80ch}
+.gen{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:13px;color:var(--ink-muted)}
+.gen i{width:22px;height:22px;border-radius:4px;display:inline-block}
+</style>
+</head>
+<body>
+
+<header class="intro">
+  <h1>קונספטים: כרטיס תפריט</h1>
+  <p>בלי דוגמאות ובלי איורים. לכל קונספט צבע נייר אחד וגופן אחד לשם שלו, כמו תפריט של מסעדה טובה. שם הקונספט הוא הכותרת של המפגש, ולכן הוא חוזר זהה בכל פעם ונהיה הסמל של הקונספט. כל השאר נשאר בקרם השקט של האתר.</p>
+</header>
+
+<main class="board">
+
+  <!-- 1 mothers -->
+  <section class="concept c-mothers" aria-labelledby="n1">
+    <p class="note"><b>אמהות בחל״ד</b> · מרווה רכה. Heebo דק, הקול של הבית, כי זה הבראנץ׳ שממנו הכול התחיל.</p>
+    <div class="page">
+      <div class="field"><h2 class="name" id="n1"><span class="pre">בראנץ׳</span><span class="main">אמהות בחל״ד</span></h2><p class="when">יום שני 12.10, 10:00</p></div>
+      <div class="photo" role="img" aria-label="צילום המפגש"></div>
+      <div class="below"><p>השולחן ערוך מ-10:00. מגיעות עם התינוקות.</p><button class="btn">להרשמה</button></div>
+    </div>
+    <div class="pair">
+      <article class="card"><div class="photo" role="img" aria-label="צילום המפגש"></div><div class="band"><h3 class="name"><span class="pre">בראנץ׳</span><span class="main">אמהות בחל״ד</span></h3></div><div class="meta"><span class="when">שני 12.10, 10:00</span><span class="status st-success">יש מקום</span></div></article>
+      <article class="card nophoto"><div class="band"><h3 class="name"><span class="pre">בראנץ׳</span><span class="main">אמהות בחל״ד</span></h3></div><div class="meta"><span class="when">חמישי 15.10, 10:00</span><span class="status st-warning">מקומות אחרונים</span></div></article>
+    </div>
+  </section>
+
+  <!-- 2 couples -->
+  <section class="concept c-couples" aria-labelledby="n2">
+    <p class="note"><b>זוגות</b> · לילך מאובק. Bona Nova, קו קליגרפי של עט, כמו כרטיס הזמנה.</p>
+    <div class="page">
+      <div class="field"><h2 class="name" id="n2"><span class="pre">בראנץ׳</span><span class="main">זוגות</span></h2><p class="when">יום שישי 16.10, 10:30</p></div>
+      <div class="photo" role="img" aria-label="צילום המפגש"></div>
+      <div class="below"><p>השולחן ערוך מ-10:30. מגיעים עם התינוקות.</p><button class="btn">להרשמה</button></div>
+    </div>
+    <div class="pair">
+      <article class="card"><div class="photo" role="img" aria-label="צילום המפגש"></div><div class="band"><h3 class="name"><span class="pre">בראנץ׳</span><span class="main">זוגות</span></h3></div><div class="meta"><span><span class="when">שישי 16.10, 10:30</span></span><span class="status st-warning">מקומות אחרונים</span></div></article>
+      <article class="card nophoto"><div class="band"><h3 class="name"><span class="pre">בראנץ׳</span><span class="main">זוגות</span></h3></div><div class="meta"><span><span class="when">שישי 30.10, 10:30</span></span><span class="status st-success">יש מקום</span></div></article>
+    </div>
+  </section>
+
+  <!-- 3 grandma -->
+  <section class="concept c-grandma" aria-labelledby="n3">
+    <p class="note"><b>עם סבתוש</b> · צהוב בננה עתיק ורך. David Libre, גופן ספרים קלאסי וחם.</p>
+    <div class="page">
+      <div class="field"><h2 class="name" id="n3"><span class="pre">בראנץ׳</span><span class="main">עם סבתוש</span></h2><p class="when">יום שני 19.10, 10:00</p></div>
+      <div class="photo" role="img" aria-label="צילום המפגש"></div>
+      <div class="below"><p>השולחן ערוך מ-10:00. מגיעות עם התינוקות.</p><button class="btn">להרשמה</button></div>
+    </div>
+    <div class="pair">
+      <article class="card"><div class="photo" role="img" aria-label="צילום המפגש"></div><div class="band"><h3 class="name"><span class="pre">בראנץ׳</span><span class="main">עם סבתוש</span></h3></div><div class="meta"><span><span class="when">שני 19.10, 10:00</span></span><span class="status st-success">יש מקום</span></div></article>
+      <article class="card nophoto"><div class="band"><h3 class="name"><span class="pre">בראנץ׳</span><span class="main">עם סבתוש</span></h3></div><div class="meta"><span><span class="when">שני 02.11, 10:00</span></span><span class="status st-expired">מלא</span></div></article>
+    </div>
+  </section>
+
+  <!-- 4 grandpa -->
+  <section class="concept c-grandpa" aria-labelledby="n4">
+    <p class="note"><b>עם סבוש</b> · קפה עם חלב ועץ בהיר. Frank Ruhl Libre שמן, הגופן של כותרות העיתון של שבת בבוקר.</p>
+    <div class="page">
+      <div class="field"><h2 class="name" id="n4"><span class="pre">בראנץ׳</span><span class="main">עם סבוש</span></h2><p class="when">יום חמישי 22.10, 10:00</p></div>
+      <div class="photo" role="img" aria-label="צילום המפגש"></div>
+      <div class="below"><p>השולחן ערוך מ-10:00. מגיעים עם התינוקות.</p><button class="btn">להרשמה</button></div>
+    </div>
+    <div class="pair">
+      <article class="card"><div class="photo" role="img" aria-label="צילום המפגש"></div><div class="band"><h3 class="name"><span class="pre">בראנץ׳</span><span class="main">עם סבוש</span></h3></div><div class="meta"><span><span class="when">חמישי 22.10, 10:00</span></span><span class="status st-expired">מלא</span></div></article>
+      <article class="card nophoto"><div class="band"><h3 class="name"><span class="pre">בראנץ׳</span><span class="main">עם סבוש</span></h3></div><div class="meta"><span><span class="when">חמישי 05.11, 10:00</span></span><span class="status st-success">יש מקום</span></div></article>
+    </div>
+  </section>
+
+  <!-- 5 greek -->
+  <section class="concept c-greek" aria-labelledby="n5">
+    <p class="note"><b>יווני</b> · כחול אגאי מעומעם. Suez One, סריף תצוגה מלא וחם, כמו שלט של טברנה.</p>
+    <div class="page">
+      <div class="field"><h2 class="name" id="n5"><span class="pre">בראנץ׳</span><span class="main">יווני</span></h2><p class="when">יום שני 26.10, 10:00</p></div>
+      <div class="photo" role="img" aria-label="צילום המפגש"></div>
+      <div class="below"><p>השולחן ערוך מ-10:00. מגיעות עם התינוקות.</p><button class="btn">להרשמה</button></div>
+    </div>
+    <div class="pair">
+      <article class="card"><div class="photo" role="img" aria-label="צילום המפגש"></div><div class="band"><h3 class="name"><span class="pre">בראנץ׳</span><span class="main">יווני</span></h3></div><div class="meta"><span class="when">שני 26.10, 10:00</span><span class="status st-success">יש מקום</span></div></article>
+      <article class="card nophoto"><div class="band"><h3 class="name"><span class="pre">בראנץ׳</span><span class="main">יווני</span></h3></div><div class="meta"><span class="when">חמישי 12.11, 10:00</span><span class="status st-success">יש מקום</span></div></article>
+    </div>
+  </section>
+
+  <!-- 6 generic -->
+  <section class="concept c-generic" aria-labelledby="n6">
+    <p class="note"><b>כללי לקונספט חדש</b> · Heebo של הבית, וטל בוחרת צבע נייר אחד מתוך שישה (בכולם הטקסט הכהה מאותו גוון, בניגודיות 6.4:1 ומעלה):</p>
+    <div class="gen" aria-label="צבעי נייר לבחירה"><i style="background:#D0CEB2"></i>זית <i style="background:#CDBBCF"></i>שזיף <i style="background:#B9CFCA"></i>ירקן <i style="background:#E2CF9E"></i>חרדל <i style="background:#C3CAD3"></i>צפחה <i style="background:#DDB9AC"></i>חימר</div>
+    <div class="page">
+      <div class="field"><h2 class="name" id="n6"><span class="pre">בראנץ׳</span><span class="main">ערב חג</span></h2><p class="when">יום חמישי 29.10, 10:00</p></div>
+      <div class="photo" role="img" aria-label="צילום המפגש"></div>
+      <div class="below"><p>השולחן ערוך מ-10:00. מגיעות עם התינוקות.</p><button class="btn">להרשמה</button></div>
+    </div>
+    <div class="pair">
+      <article class="card"><div class="photo" role="img" aria-label="צילום המפגש"></div><div class="band"><h3 class="name"><span class="pre">בראנץ׳</span><span class="main">ערב חג</span></h3></div><div class="meta"><span class="when">חמישי 29.10, 10:00</span><span class="status st-success">יש מקום</span></div></article>
+      <article class="card nophoto" style="--field:#CDBBCF;--on-field:#46304A"><div class="band"><h3 class="name"><span class="pre">בראנץ׳</span><span class="main">ערב חג</span></h3></div><div class="meta"><span class="when">חמישי 10.12, 10:00</span><span class="status st-success">יש מקום</span></div></article>
+    </div>
+  </section>
+
+</main>
+
+<ul class="legend">
+  <li><b>מקום לתמונה בכרטיס:</b> הצילום של המפגש בחלק העליון של הכרטיס, ביחס 4:3, ובעמוד המפגש הוא יושב על הגבול בין שדה הצבע לדף. בלי צילום, פס הצבע גדל וממלא את מקום התמונה, ושם הקונספט הופך לתמונה (הכרטיס הימני בכל זוג מול השמאלי).</li>
+  <li>כל הבראנצ׳ים הם עם תינוקות. בכרטיס אין תווית רגיל/זוגי ואין "לשני מבוגרים"; שני המקומות מוצגים רק בגיליון אישור ההרשמה.</li>
+  <li>באתר הציבורי אין תווית תפוסה. "יש מקום / מקומות אחרונים / מלא" מוצגות רק ללקוחה מחוברת.</li>
+</ul>
+</body>
+</html>

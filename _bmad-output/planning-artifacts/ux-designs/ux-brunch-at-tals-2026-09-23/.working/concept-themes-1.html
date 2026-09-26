@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ערכות עיצוב לקונספטים · בראנץ׳ אצל טל</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@200;300;400&family=Assistant:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/*
+  CONCEPT THEMES — 5 concept themes + generic (CAP-41; SPEC memlog 215; UX memlog 79)
+  Rule: a theme changes ONLY decorative accent, section tint and motif. Text stays ink / ink-muted.
+  Buttons, status chips and focus ring stay house tokens.
+  Contrast (computed): accent on background 3.42–5.68:1 (graphics ≥3:1) · ink on tint ≥11.5:1 · ink-muted on tint ≥4.73:1.
+*/
+:root{
+  --background:#FAF6EE;--card:#FFFDF8;--muted:#F2ECDF;--ink:#2E2A1F;--ink-muted:#6B6450;--border:#E6DFCF;
+  --primary:#4A4A2A;--on-primary:#FAF6EE;
+  --success:#4E6B34;--success-tint:#E7EDDC;--success-dot:#8FA874;
+  --warning:#8C5E14;--warning-tint:#F4E8D0;--warning-dot:#C9A060;
+  --expired:#676154;--expired-tint:#EDE9E0;--expired-dot:#B0A998;
+  --display:'Heebo',"Segoe UI",Arial,sans-serif;--body:'Assistant',"Segoe UI",Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#EFE9DC;color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px;box-shadow:0 0 0 2px var(--on-primary)}
+.board-head{max-width:1100px;margin:0 auto;padding:32px 16px 8px}
+.board-head h1{font-family:var(--display);font-weight:300;font-size:26px;line-height:1.2}
+.board-head p{color:var(--ink-muted);font-size:15px;margin-top:6px;max-width:760px}
+.grid{max-width:1100px;margin:0 auto;padding:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:28px}
+
+/* theme variables */
+.t-mothers{--accent:#8A875A;--tint:#EEF0E2}
+.t-couples{--accent:#B5654A;--tint:#F6E6DE}
+.t-grandma{--accent:#B0707A;--tint:#F7EAEA}
+.t-grandpa{--accent:#7A5C3E;--tint:#EFE5D8}
+.t-greek{--accent:#3E6E8E;--tint:#E3EDF3}
+.t-generic{--accent:#7A6A9A;--tint:#F2ECDF}
+
+/* motif band — decorative, aria-hidden */
+.motif{height:28px;background:var(--tint);border-bottom:2px solid var(--accent)}
+.t-mothers .motif{background:repeating-linear-gradient(0deg,var(--tint) 0 5px,#E4E7D2 5px 6px)}
+.t-couples .motif{background:
+  radial-gradient(circle at 46% 50%,transparent 0 8px,var(--accent) 8px 9.5px,transparent 10px),
+  radial-gradient(circle at 54% 50%,transparent 0 8px,var(--accent) 8px 9.5px,transparent 10px),var(--tint)}
+.t-grandma .motif{background:radial-gradient(circle,var(--accent) 0 2px,transparent 2.5px) 0 0/16px 14px,var(--tint)}
+.t-grandpa .motif{background:
+  repeating-linear-gradient(90deg,rgba(122,92,62,.18) 0 8px,transparent 8px 16px),
+  repeating-linear-gradient(0deg,rgba(122,92,62,.18) 0 8px,transparent 8px 16px),var(--tint)}
+.t-greek .motif{background:
+  repeating-linear-gradient(90deg,var(--accent) 0 2px,transparent 2px 14px) 0 6px/100% 16px no-repeat,
+  linear-gradient(var(--accent),var(--accent)) 0 6px/100% 2px no-repeat,
+  linear-gradient(var(--accent),var(--accent)) 0 20px/100% 2px no-repeat,var(--tint)}
+.t-generic .motif{background:linear-gradient(var(--accent),var(--accent)) 50% 50%/40px 2px no-repeat,var(--tint)}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.card .inner{padding:16px}
+.name{font-family:var(--display);font-weight:300;font-size:22px;line-height:1.25}
+.mood{color:var(--ink-muted);font-size:15px;margin-top:2px}
+.swatches{display:flex;gap:8px;margin-top:12px;align-items:center;font-size:13px;color:var(--ink-muted)}
+.sw{width:28px;height:28px;border-radius:4px;border:1px solid var(--border)}
+.photo-note{font-size:13px;color:var(--ink-muted);margin-top:10px}
+
+/* session-row in theme */
+.row{display:flex;gap:12px;padding:16px 0;border-top:1px solid var(--border);margin-top:14px;position:relative}
+.row::before{content:"";position:absolute;inset-inline-start:0;top:16px;bottom:16px;width:3px;border-radius:2px;background:var(--accent)}
+.date{width:64px;flex:none;padding-inline-start:12px}
+.date b{font-weight:400;font-size:26px;line-height:1;display:block}
+.date span{font-size:13px;color:var(--ink-muted)}
+.title{font-weight:600}
+.meta{font-size:13px;color:var(--ink-muted)}
+.chip-type{display:inline-block;border:1px solid var(--accent);border-radius:4px;padding:2px 8px;font-size:13px;margin-top:6px}
+.status{display:inline-flex;align-items:center;gap:6px;border-radius:9999px;padding:3px 10px;font-size:13px;font-weight:600;margin-top:6px;margin-inline-start:6px}
+.status::before{content:"";width:7px;height:7px;border-radius:9999px}
+.st-success{color:var(--success);background:var(--success-tint)}.st-success::before{background:var(--success-dot)}
+.st-warning{color:var(--warning);background:var(--warning-tint)}.st-warning::before{background:var(--warning-dot)}
+.st-expired{color:var(--expired);background:var(--expired-tint)}.st-expired::before{background:var(--expired-dot)}
+
+/* session page header in theme */
+.page-head{background:var(--tint);padding:20px 16px;border-radius:8px;margin-top:14px}
+.page-head .eyebrow{font-size:13px;letter-spacing:.04em;color:var(--ink-muted)}
+.page-head h2{font-family:var(--display);font-weight:300;font-size:26px;line-height:1.2;margin-top:2px}
+.page-head .dot{display:inline-block;width:8px;height:8px;border-radius:9999px;background:var(--accent);margin-inline-end:6px}
+
+.legend{max-width:1100px;margin:8px auto 48px;padding:0 16px;color:var(--ink-muted);font-size:15px}
+.legend li{margin-inline-start:20px;margin-top:4px}
+.gen-sw{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.gen-sw span{display:inline-flex;align-items:center;gap:6px;font-size:13px}
+.gen-sw i{width:20px;height:20px;border-radius:9999px;display:inline-block}
+</style>
+</head>
+<body>
+<div class="board-head">
+  <h1>ערכות עיצוב לקונספטים</h1>
+  <p>כל ערכה משנה רק שלושה דברים: צבע הדגשה קישוטי (פס, נקודה, מסגרת תווית), גוון רקע לראש עמוד המפגש, ומוטיב גרפי. הטקסט, הכפתורים, תוויות הסטטוס וטבעת הפוקוס נשארים של הבית, ולכן הניגודיות לא משתנה. באתר הציבורי אין תווית תפוסה; התוויות כאן הן מה שלקוחה מחוברת רואה.</p>
+</div>
+
+<div class="grid">
+
+  <section class="card t-mothers" aria-labelledby="c1">
+    <div class="motif" aria-hidden="true"></div>
+    <div class="inner">
+      <h2 class="name" id="c1">אמהות בחל״ד · "בוקר רך"</h2>
+      <p class="mood">פשתן, אור בוקר מהחלון, שיבולת ודבש. הקו של הבית.</p>
+      <div class="swatches"><span class="sw" style="background:#8A875A"></span>#8A875A <span class="sw" style="background:#EEF0E2"></span>#EEF0E2</div>
+      <div class="row"><div class="date"><b>12</b><span>שני</span></div><div><div class="title">בוקר של פשתן ודבש</div><div class="meta">10:00 · מגיעות עם התינוקות</div><span class="chip-type">רגיל</span><span class="status st-success">יש מקום</span></div></div>
+      <div class="page-head"><div class="eyebrow"><span class="dot" aria-hidden="true"></span>אמהות בחל״ד</div><h2>בוקר של פשתן ודבש</h2></div>
+      <p class="photo-note">צילום: שולחן מלמעלה באור רך, גוונים חמים-טבעיים.</p>
+    </div>
+  </section>
+
+  <section class="card t-couples" aria-labelledby="c2">
+    <div class="motif" aria-hidden="true"></div>
+    <div class="inner">
+      <h2 class="name" id="c2">זוגות · "שולחן לשניים"</h2>
+      <p class="mood">שתי כוסות, צלחות לשיתוף, פרח בודד.</p>
+      <div class="swatches"><span class="sw" style="background:#B5654A"></span>#B5654A <span class="sw" style="background:#F6E6DE"></span>#F6E6DE</div>
+      <div class="row"><div class="date"><b>16</b><span>שישי</span></div><div><div class="title">שולחן לשניים</div><div class="meta">10:30 · הרשמה לשני מבוגרים</div><span class="chip-type">זוגי</span><span class="status st-warning">מקומות אחרונים</span></div></div>
+      <div class="page-head"><div class="eyebrow"><span class="dot" aria-hidden="true"></span>זוגות</div><h2>שולחן לשניים</h2></div>
+      <p class="photo-note">צילום: צלחות משותפות, ידיים מושיטות, טרקוטה ועץ.</p>
+    </div>
+  </section>
+
+  <section class="card t-grandma" aria-labelledby="c3">
+    <div class="motif" aria-hidden="true"></div>
+    <div class="inner">
+      <h2 class="name" id="c3">עם סבתוש · "המטבח של סבתא"</h2>
+      <p class="mood">מפת רקמה, פרחים קטנים, חרסינה, צנצנות ריבה.</p>
+      <div class="swatches"><span class="sw" style="background:#B0707A"></span>#B0707A <span class="sw" style="background:#F7EAEA"></span>#F7EAEA</div>
+      <div class="row"><div class="date"><b>19</b><span>שני</span></div><div><div class="title">עוגיות של סבתא</div><div class="meta">10:00 · הרשמה לשני מבוגרים</div><span class="chip-type">זוגי</span><span class="status st-success">יש מקום</span></div></div>
+      <div class="page-head"><div class="eyebrow"><span class="dot" aria-hidden="true"></span>עם סבתוש</div><h2>עוגיות של סבתא</h2></div>
+      <p class="photo-note">צילום: כלי חרסינה עם פרחים, מאפים ביתיים, מתכון בכתב יד.</p>
+    </div>
+  </section>
+
+  <section class="card t-grandpa" aria-labelledby="c4">
+    <div class="motif" aria-hidden="true"></div>
+    <div class="inner">
+      <h2 class="name" id="c4">עם סבוש · "בוקר של סבא"</h2>
+      <p class="mood">מפה משובצת, עיתון, פינג׳אן קפה, פרי מהפרדס.</p>
+      <div class="swatches"><span class="sw" style="background:#7A5C3E"></span>#7A5C3E <span class="sw" style="background:#EFE5D8"></span>#EFE5D8</div>
+      <div class="row"><div class="date"><b>22</b><span>חמישי</span></div><div><div class="title">קפה שחור ופרי מהפרדס</div><div class="meta">10:00 · הרשמה לשני מבוגרים</div><span class="chip-type">זוגי</span><span class="status st-expired">מלא</span></div></div>
+      <div class="page-head"><div class="eyebrow"><span class="dot" aria-hidden="true"></span>עם סבוש</div><h2>קפה שחור ופרי מהפרדס</h2></div>
+      <p class="photo-note">צילום: עץ כהה, קפה, הדרים, משבצות.</p>
+    </div>
+  </section>
+
+  <section class="card t-greek" aria-labelledby="c5">
+    <div class="motif" aria-hidden="true"></div>
+    <div class="inner">
+      <h2 class="name" id="c5">יווני · "טברנה בבוקר"</h2>
+      <p class="mood">סיד לבן, תריסים כחולים, לימונים, זיתים, קו מאנדר.</p>
+      <div class="swatches"><span class="sw" style="background:#3E6E8E"></span>#3E6E8E <span class="sw" style="background:#E3EDF3"></span>#E3EDF3</div>
+      <div class="row"><div class="date"><b>26</b><span>שני</span></div><div><div class="title">בוקר בכיקלדים</div><div class="meta">10:00 · מגיעות עם התינוקות</div><span class="chip-type">רגיל</span><span class="status st-success">יש מקום</span></div></div>
+      <div class="page-head"><div class="eyebrow"><span class="dot" aria-hidden="true"></span>יווני</div><h2>בוקר בכיקלדים</h2></div>
+      <p class="photo-note">צילום: לבן וכחול, לימונים, שמן זית, פטה.</p>
+    </div>
+  </section>
+
+  <section class="card t-generic" aria-labelledby="c6">
+    <div class="motif" aria-hidden="true"></div>
+    <div class="inner">
+      <h2 class="name" id="c6">כללי לקונספט חדש · "שולחן פתוח"</h2>
+      <p class="mood">בסיס הקרם של הבית, פשתן נקי, הצילום מוביל. טל בוחרת צבע הדגשה אחד מתוך שישה.</p>
+      <div class="gen-sw" aria-label="צבעי הדגשה לבחירה">
+        <span><i style="background:#8A875A"></i>זית</span><span><i style="background:#B5654A"></i>טרקוטה</span><span><i style="background:#3E6E8E"></i>כחול</span>
+        <span><i style="background:#7A6A9A"></i>לבנדר</span><span><i style="background:#5E8472"></i>מרווה</span><span><i style="background:#A7802F"></i>חרדל</span>
+      </div>
+      <div class="row"><div class="date"><b>29</b><span>חמישי</span></div><div><div class="title">בוקר של פסח</div><div class="meta">10:00 · מגיעות עם התינוקות</div><span class="chip-type">רגיל</span><span class="status st-success">יש מקום</span></div></div>
+      <div class="page-head"><div class="eyebrow"><span class="dot" aria-hidden="true"></span>קונספט חדש</div><h2>בוקר של פסח</h2></div>
+      <p class="photo-note">רקע הראש נשאר muted של הבית; רק צבע ההדגשה משתנה.</p>
+    </div>
+  </section>
+
+</div>
+
+<ul class="legend">
+  <li>איפה הערכה מופיעה: פס בצד שורת המפגש, מסגרת תווית הסוג, נקודה ורקע בראש עמוד המפגש, פס מוטיב מעל כרטיס המפגש, וכותרת דף העבודה המודפס.</li>
+  <li>לא משתנה: צבע טקסט, כפתורים, תוויות סטטוס ("יש מקום", "מקומות אחרונים", "מלא"), טבעת פוקוס.</li>
+  <li>המוטיבים כאן הם סקיצה ב-CSS. בבנייה הם יכולים להיות SVG קטן, תמיד קישוטי (aria-hidden).</li>
+</ul>
+</body>
+</html>

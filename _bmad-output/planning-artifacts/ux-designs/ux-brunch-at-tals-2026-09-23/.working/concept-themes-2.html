@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ערכות עיצוב לקונספטים · סבב 2 · בראנץ׳ אצל טל</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400&family=Assistant:wght@400;600&family=Varela+Round&family=Bellefair&family=Gveret+Levin&family=Frank+Ruhl+Libre:wght@500&family=Suez+One&display=swap" rel="stylesheet">
+<style>
+/*
+  CONCEPT THEMES — round 2 (user feedback: round 1 too sparse; kept only grandpa's gingham)
+  Direction (UX memlog): concept lives ONLY in the session-page header and the session card.
+  Each concept = textile pattern (like the gingham) + its own display font for the session name only.
+  Text always sits on a solid cream plate (ink on card 14:1) — never directly on the pattern.
+  Patterns are decorative (aria-hidden). Status chips, buttons, focus ring stay house tokens.
+*/
+:root{
+  --background:#FAF6EE;--card:#FFFDF8;--muted:#F2ECDF;--ink:#2E2A1F;--ink-muted:#6B6450;--border:#E6DFCF;
+  --primary:#4A4A2A;--on-primary:#FAF6EE;
+  --success:#4E6B34;--success-tint:#E7EDDC;--success-dot:#8FA874;
+  --warning:#8C5E14;--warning-tint:#F4E8D0;--warning-dot:#C9A060;
+  --expired:#676154;--expired-tint:#EDE9E0;--expired-dot:#B0A998;
+  --body:'Assistant',"Segoe UI",Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#EFE9DC;color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5}
+.board-head{max-width:1200px;margin:0 auto;padding:32px 16px 8px}
+.board-head h1{font-family:'Heebo',sans-serif;font-weight:300;font-size:26px}
+.board-head p{color:var(--ink-muted);font-size:15px;margin-top:6px;max-width:780px}
+.grid{max-width:1200px;margin:0 auto;padding:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:32px}
+.panel{background:var(--background);border:1px solid var(--border);border-radius:12px;overflow:hidden;padding-bottom:20px}
+.panel-title{font-family:'Heebo',sans-serif;font-weight:300;font-size:22px;padding:16px 16px 0}
+.panel-note{color:var(--ink-muted);font-size:15px;padding:2px 16px 0}
+
+/* ---------- textile patterns ---------- */
+/* 1. mothers — linen tea towel: fine weave + two sage stripes */
+.p-mothers{background:
+  repeating-linear-gradient(0deg,transparent 0 34px,rgba(138,135,90,.75) 34px 40px,transparent 40px 46px,rgba(138,135,90,.75) 46px 49px,transparent 49px 96px),
+  repeating-linear-gradient(90deg,rgba(138,135,90,.10) 0 1px,transparent 1px 3px),
+  repeating-linear-gradient(0deg,rgba(138,135,90,.10) 0 1px,transparent 1px 3px),
+  #F1F1E4}
+/* 2. couples — bistro awning stripes with a pinstripe */
+.p-couples{background:
+  repeating-linear-gradient(90deg,transparent 0 22px,rgba(181,101,74,.55) 22px 23px,transparent 23px 32px),
+  repeating-linear-gradient(90deg,#B5654A 0 16px,#F8ECE5 16px 32px)}
+/* 3. grandma — embroidered small flowers (cross-stitch look) */
+.p-grandma{background:
+  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='36'%3E%3Cg fill='%23B0707A'%3E%3Ccircle cx='9' cy='6' r='2.2'/%3E%3Ccircle cx='12.5' cy='9' r='2.2'/%3E%3Ccircle cx='9' cy='12' r='2.2'/%3E%3Ccircle cx='5.5' cy='9' r='2.2'/%3E%3C/g%3E%3Ccircle cx='9' cy='9' r='1.6' fill='%23C9A060'/%3E%3Cpath d='M9 14 q3 3 6 2 M9 14 q-2 4 -5 4' stroke='%237E8C5A' stroke-width='1.4' fill='none'/%3E%3Cg fill='%23B0707A' opacity='.75'%3E%3Ccircle cx='27' cy='24' r='1.8'/%3E%3Ccircle cx='30' cy='27' r='1.8'/%3E%3Ccircle cx='27' cy='30' r='1.8'/%3E%3Ccircle cx='24' cy='27' r='1.8'/%3E%3C/g%3E%3Ccircle cx='27' cy='27' r='1.2' fill='%23C9A060'/%3E%3C/svg%3E") 0 0/36px 36px,
+  #F7EAEA}
+/* 4. grandpa — gingham (kept from round 1, a little denser) */
+.p-grandpa{background:
+  repeating-linear-gradient(90deg,rgba(122,92,62,.38) 0 10px,transparent 10px 20px),
+  repeating-linear-gradient(0deg,rgba(122,92,62,.38) 0 10px,transparent 10px 20px),
+  #F3EBDD}
+/* 5. greek — Greek key (meander) band between Aegean stripes, whitewash ground */
+.p-greek{background:
+  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Cpath d='M0 28 H24 V4 H4 V20 H16 V12 H10' fill='none' stroke='%233E6E8E' stroke-width='3'/%3E%3C/svg%3E") 0 50%/32px 32px repeat-x,
+  linear-gradient(#3E6E8E,#3E6E8E) 0 14px/100% 6px no-repeat,
+  linear-gradient(#3E6E8E,#3E6E8E) 0 calc(100% - 14px)/100% 6px no-repeat,
+  repeating-linear-gradient(0deg,#F5F8FA 0 12px,#EAF1F6 12px 13px)}
+/* 6. generic — plain linen with one stripe in Tal's chosen accent */
+.p-generic{--acc:#7A6A9A;background:
+  linear-gradient(var(--acc),var(--acc)) 0 38px/100% 5px no-repeat,
+  repeating-linear-gradient(90deg,rgba(107,100,80,.08) 0 1px,transparent 1px 3px),
+  #F2ECDF}
+
+/* ---------- concept display fonts (session name only) ---------- */
+.f-mothers{font-family:'Varela Round',sans-serif;font-size:28px}
+.f-couples{font-family:'Bellefair',serif;font-size:32px}
+.f-grandma{font-family:'Gveret Levin',cursive;font-size:34px;line-height:1.1}
+.f-grandpa{font-family:'Frank Ruhl Libre',serif;font-weight:500;font-size:30px}
+.f-greek{font-family:'Suez One',serif;font-size:28px}
+.f-generic{font-family:'Heebo',sans-serif;font-weight:300;font-size:28px}
+
+/* ---------- session page header ---------- */
+.hero{height:150px;margin-top:14px}
+.plate{background:var(--card);border-radius:8px;margin:-56px 16px 0;position:relative;padding:14px 16px;border:1px solid var(--border)}
+.eyebrow{font-size:13px;letter-spacing:.04em;color:var(--ink-muted)}
+.when{font-size:15px;color:var(--ink-muted);margin-top:4px}
+
+/* ---------- session card ---------- */
+.card{background:var(--card);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin:16px 16px 0}
+.card .strip{height:56px}
+.card .body{padding:12px 16px}
+.card .name{line-height:1.15}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
+.chip-type{border:1px solid var(--ink-muted);border-radius:4px;padding:2px 8px;font-size:13px}
+.status{display:inline-flex;align-items:center;gap:6px;border-radius:9999px;padding:3px 10px;font-size:13px;font-weight:600}
+.status::before{content:"";width:7px;height:7px;border-radius:9999px}
+.st-success{color:var(--success);background:var(--success-tint)}.st-success::before{background:var(--success-dot)}
+.st-warning{color:var(--warning);background:var(--warning-tint)}.st-warning::before{background:var(--warning-dot)}
+.st-expired{color:var(--expired);background:var(--expired-tint)}.st-expired::before{background:var(--expired-dot)}
+.meta{font-size:13px;color:var(--ink-muted)}
+.acc-pick{display:flex;gap:8px;padding:12px 16px 0;flex-wrap:wrap;font-size:13px;color:var(--ink-muted);align-items:center}
+.acc-pick i{width:20px;height:20px;border-radius:9999px;display:inline-block}
+.legend{max-width:1200px;margin:8px auto 48px;padding:0 16px;color:var(--ink-muted);font-size:15px}
+.legend li{margin-inline-start:20px;margin-top:4px}
+</style>
+</head>
+<body>
+<div class="board-head">
+  <h1>ערכות עיצוב לקונספטים · סבב 2</h1>
+  <p>לפי ההערות: הקונספט מופיע רק בראש עמוד המפגש ובכרטיס המפגש. לכל קונספט דוגמת טקסטיל (ברוח המשבצות של סבא) וגופן משלו לשם המפגש. הטקסט תמיד על לוח קרם אטום, לא ישירות על הדוגמה, ולכן הקריאות לא נפגעת. תוויות "יש מקום / מקומות אחרונים / מלא" הן מה שלקוחה מחוברת רואה; באתר הציבורי אין תווית תפוסה.</p>
+</div>
+
+<div class="grid">
+
+  <section class="panel" aria-labelledby="t1">
+    <h2 class="panel-title" id="t1">אמהות בחל״ד · מגבת פשתן</h2>
+    <p class="panel-note">פשתן ארוג עם שני פסי מרווה, כמו מגבת מטבח. גופן: Varela Round, רך ועגול.</p>
+    <div class="hero p-mothers" aria-hidden="true"></div>
+    <div class="plate"><div class="eyebrow">אמהות בחל״ד</div><div class="f-mothers">בוקר של פשתן ודבש</div><div class="when">יום שני 12.10 · 10:00</div></div>
+    <article class="card"><div class="strip p-mothers" aria-hidden="true"></div><div class="body"><div class="f-mothers name" style="font-size:22px">בוקר של פשתן ודבש</div><div class="meta">יום שני 12.10 · 10:00 · מגיעות עם התינוקות</div><div class="row"><span class="status st-success">יש מקום</span></div></div></article>
+  </section>
+
+  <section class="panel" aria-labelledby="t2">
+    <h2 class="panel-title" id="t2">זוגות · פסי ביסטרו</h2>
+    <p class="panel-note">פסים רחבים בטרקוטה עם קו דק, כמו מפה או סוכך של בית קפה. גופן: Bellefair, אלגנטי.</p>
+    <div class="hero p-couples" aria-hidden="true"></div>
+    <div class="plate"><div class="eyebrow">זוגות</div><div class="f-couples">שולחן לשניים</div><div class="when">יום שישי 16.10 · 10:30</div></div>
+    <article class="card"><div class="strip p-couples" aria-hidden="true"></div><div class="body"><div class="f-couples name" style="font-size:26px">שולחן לשניים</div><div class="meta">יום שישי 16.10 · 10:30 · הרשמה לשני מבוגרים</div><div class="row"><span class="status st-warning">מקומות אחרונים</span></div></div></article>
+  </section>
+
+  <section class="panel" aria-labelledby="t3">
+    <h2 class="panel-title" id="t3">עם סבתוש · רקמת פרחים</h2>
+    <p class="panel-note">פרחים קטנים רקומים בוורוד מאובק, עלים ירוקים ולב חרדל. גופן: Gveret Levin, כתב יד כמו מתכון של סבתא.</p>
+    <div class="hero p-grandma" aria-hidden="true"></div>
+    <div class="plate"><div class="eyebrow">עם סבתוש</div><div class="f-grandma">עוגיות של סבתא</div><div class="when">יום שני 19.10 · 10:00</div></div>
+    <article class="card"><div class="strip p-grandma" aria-hidden="true"></div><div class="body"><div class="f-grandma name" style="font-size:28px">עוגיות של סבתא</div><div class="meta">יום שני 19.10 · 10:00 · הרשמה לשני מבוגרים</div><div class="row"><span class="status st-success">יש מקום</span></div></div></article>
+  </section>
+
+  <section class="panel" aria-labelledby="t4">
+    <h2 class="panel-title" id="t4">עם סבוש · מפה משובצת</h2>
+    <p class="panel-note">המשבצות מסבב 1, קצת צפופות יותר. גופן: Frank Ruhl Libre, הגופן של העיתונים הישנים.</p>
+    <div class="hero p-grandpa" aria-hidden="true"></div>
+    <div class="plate"><div class="eyebrow">עם סבוש</div><div class="f-grandpa">קפה שחור ופרי מהפרדס</div><div class="when">יום חמישי 22.10 · 10:00</div></div>
+    <article class="card"><div class="strip p-grandpa" aria-hidden="true"></div><div class="body"><div class="f-grandpa name" style="font-size:24px">קפה שחור ופרי מהפרדס</div><div class="meta">יום חמישי 22.10 · 10:00 · הרשמה לשני מבוגרים</div><div class="row"><span class="status st-expired">מלא</span></div></div></article>
+  </section>
+
+  <section class="panel" aria-labelledby="t5">
+    <h2 class="panel-title" id="t5">יווני · מאנדר ופסים כחולים</h2>
+    <p class="panel-note">קו מאנדר (Greek key) בין פסים כחולים על סיד לבן. גופן: Suez One, כמו שלט של טברנה.</p>
+    <div class="hero p-greek" aria-hidden="true"></div>
+    <div class="plate"><div class="eyebrow">יווני</div><div class="f-greek">בוקר בכיקלדים</div><div class="when">יום שני 26.10 · 10:00</div></div>
+    <article class="card"><div class="strip p-greek" aria-hidden="true" style="background-size:32px 32px,100% 4px,100% 4px,auto;background-position:0 50%,0 6px,0 calc(100% - 6px),0 0"></div><div class="body"><div class="f-greek name" style="font-size:22px">בוקר בכיקלדים</div><div class="meta">יום שני 26.10 · 10:00 · מגיעות עם התינוקות</div><div class="row"><span class="status st-success">יש מקום</span></div></div></article>
+  </section>
+
+  <section class="panel" aria-labelledby="t6">
+    <h2 class="panel-title" id="t6">כללי לקונספט חדש · פשתן פשוט</h2>
+    <p class="panel-note">פשתן קרם עם פס אחד בצבע שטל בוחרת. הגופן של הבית (Heebo). טל יכולה להחליף לכל ערכה אחרת.</p>
+    <div class="acc-pick" aria-label="צבעי הדגשה לבחירה"><i style="background:#8A875A"></i>זית <i style="background:#B5654A"></i>טרקוטה <i style="background:#3E6E8E"></i>כחול <i style="background:#7A6A9A"></i>לבנדר <i style="background:#5E8472"></i>מרווה <i style="background:#A7802F"></i>חרדל</div>
+    <div class="hero p-generic" aria-hidden="true"></div>
+    <div class="plate"><div class="eyebrow">קונספט חדש</div><div class="f-generic">בוקר של פסח</div><div class="when">יום חמישי 29.10 · 10:00</div></div>
+    <article class="card"><div class="strip p-generic" aria-hidden="true" style="background-position:0 24px,0 0,0 0"></div><div class="body"><div class="f-generic name" style="font-size:22px">בוקר של פסח</div><div class="meta">יום חמישי 29.10 · 10:00 · מגיעות עם התינוקות</div><div class="row"><span class="status st-success">יש מקום</span></div></div></article>
+  </section>
+
+</div>
+
+<ul class="legend">
+  <li>הדוגמאות כאן הן סקיצה ב-CSS וב-SVG. בבנייה כל דוגמה היא קובץ SVG אחד שחוזר על עצמו, תמיד קישוטי.</li>
+  <li>כשטל מעלה צילום למפגש, הצילום מחליף את פס הדוגמה בכרטיס, והדוגמה נשארת בראש עמוד המפגש.</li>
+  <li>גופן הקונספט רק לשם המפגש, תמיד 22px ומעלה. כל שאר הטקסט באותו גופן של הבית.</li>
+</ul>
+</body>
+</html>
