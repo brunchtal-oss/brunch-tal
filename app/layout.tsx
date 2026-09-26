@@ -1,14 +1,17 @@
-import { Geist_Mono, Inter } from "next/font/google"
+import { Assistant, Heebo } from "next/font/google"
 
 import "./globals.css"
-import { ThemeProvider } from "@/components/theme-provider"
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils"
 
-const inter = Inter({subsets:['latin'],variable:'--font-sans'})
+// Fonts per DESIGN.md: Assistant for body text, Heebo for headings.
+const fontSans = Assistant({
+  subsets: ["hebrew", "latin"],
+  variable: "--font-sans",
+})
 
-const fontMono = Geist_Mono({
-  subsets: ["latin"],
-  variable: "--font-mono",
+const fontHeading = Heebo({
+  subsets: ["hebrew", "latin"],
+  variable: "--font-heading",
 })
 
 export default function RootLayout({
@@ -18,13 +21,16 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
-      suppressHydrationWarning
-      className={cn("antialiased", fontMono.variable, "font-sans", inter.variable)}
+      lang="he"
+      dir="rtl"
+      className={cn(
+        "antialiased",
+        "font-sans",
+        fontSans.variable,
+        fontHeading.variable,
+      )}
     >
-      <body>
-        <ThemeProvider>{children}</ThemeProvider>
-      </body>
+      <body>{children}</body>
     </html>
   )
 }
