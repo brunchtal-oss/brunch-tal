@@ -8,7 +8,7 @@ scope: 'כל המערכת: אתר ציבורי, אזור אישי ופאנל נ�
 status: final
 created: '2026-09-24'
 updated: '2026-09-26'
-binds: [CAP-1, CAP-2, CAP-3, CAP-4, CAP-5, CAP-6, CAP-7, CAP-8, CAP-9, CAP-10, CAP-11, CAP-12, CAP-13, CAP-14, CAP-15, CAP-16, CAP-17, CAP-18, CAP-19, CAP-20, CAP-21, CAP-22, CAP-23, CAP-24, CAP-25, CAP-26, CAP-27, CAP-28, CAP-29, CAP-30, CAP-31, CAP-32, CAP-33, CAP-34]
+binds: [CAP-1, CAP-2, CAP-3, CAP-4, CAP-5, CAP-6, CAP-7, CAP-8, CAP-9, CAP-10, CAP-11, CAP-12, CAP-13, CAP-14, CAP-15, CAP-16, CAP-17, CAP-18, CAP-19, CAP-20, CAP-21, CAP-22, CAP-23, CAP-24, CAP-25, CAP-26, CAP-27, CAP-28, CAP-29, CAP-30, CAP-31, CAP-32, CAP-33, CAP-34, CAP-35, CAP-36, CAP-37, CAP-38, CAP-39, CAP-40, CAP-41, CAP-42]
 sources:
   - ../../../../brunch_at_tal_charecter.md
   - ../../../specs/spec-brunch-at-tal/SPEC.md
@@ -18,6 +18,7 @@ sources:
   - ../../../specs/spec-brunch-at-tal/cancellation-rules.md
   - ../../../specs/spec-brunch-at-tal/site-map.md
   - ../ux-designs/ux-brunch-at-tals-2026-09-23/EXPERIENCE.md
+  - ../ux-designs/ux-brunch-at-tals-2026-09-23/DESIGN.md
   - ../../../../AGENTS.md
 companions: []
 ---
@@ -66,13 +67,13 @@ flowchart TD
 
 - **Binds:** CAP-2, CAP-3, CAP-4, CAP-5, CAP-6, CAP-9, CAP-10, CAP-11, CAP-12, CAP-13, CAP-14, CAP-15, CAP-16, CAP-17, CAP-18, CAP-19, CAP-20, CAP-25, CAP-26, CAP-27, CAP-29, CAP-30, CAP-31, CAP-32, CAP-34
 - **Prevents:** בדיקה אחת ב-TS ובדיקה אחרת ב-SQL, פעולה שמורכבת מכמה קריאות לא אטומיות, ושני סשנים שכותבים את אותו כלל פעמיים.
-- **Rule:** כל פעולה מהרשימה ב-`security-and-rpc-rules.md › פונקציות שרת`, וכל כתיבה של אדמין (כולל הערות פנימיות ושורות `media_assets`), מתבצעת ב-RPC אחד ב-`public`. ה-RPC מבצע בדיקה, נעילה, שינוי, יומן (`private.audit`, ‏AD-19) והכנסת התראה לתור (`private.enqueue_notification`, ‏AD-12) באותה עסקה. Server Action מבצע RPC עסקי אחד לכל היותר. החריגים היחידים הם הפעולות הדו-שלביות של AD-21. ל-`authenticated` אין הרשאת `insert/update/delete` על אף טבלה, חוץ מעדכון עצמי של `profiles` (רק `full_name`, ‏`dietary_notes`) ושל `babies`, בהרשאות לפי רשימת עמודות (AD-5). מנויי פוש וסימון התראות כנקראו עוברים RPC (AD-12).
+- **Rule:** כל פעולה מהרשימה ב-`security-and-rpc-rules.md › פונקציות שרת`, וכל כתיבה של אדמין (כולל הערות פנימיות ושורות `media_assets`), מתבצעת ב-RPC אחד ב-`public`. ה-RPC מבצע בדיקה, נעילה, שינוי, יומן (`private.audit`, ‏AD-19) והכנסת התראה לתור (`private.enqueue_notification`, ‏AD-12) באותה עסקה. Server Action מבצע RPC עסקי אחד לכל היותר. החריגים היחידים הם הפעולות הדו-שלביות של AD-21. ל-`authenticated` אין הרשאת `insert/update/delete` על אף טבלה, חוץ מעדכון עצמי של `profiles` (רק `full_name`, ‏`dietary_notes`) ושל `babies`, בהרשאות לפי רשימת עמודות (AD-5). מנויי פוש, סימון התראות כנקראו ואישור השימוש בתמונות (`set_photo_consent`, שרושם מועד, גרסת נוסח ויומן — CAP-40) עוברים RPC.
 
 ### AD-2: שלוש מעטפות, מפת נתיבים קבועה, כתובות באנגלית [ADOPTED]
 
 - **Binds:** CAP-1, CAP-4, CAP-7, CAP-8, CAP-12, CAP-24, CAP-25, CAP-27, CAP-29, CAP-33, EXPERIENCE › Information Architecture
 - **Prevents:** נתיב אחד לאותו מסך בשני סשנים, ניווט שמורכב פעמיים, ואזור אישי או אדמין שנבנים מחוץ למעטפת.
-- **Rule:** הנתיבים הם אלה שב-*Structural Seed*. כתובות באנגלית, `<title>` וכותרות בעברית. ‏`app/me/layout.tsx` דורש לקוחה עם פרופיל פעיל (`get_my_session_role()` מחזיר `customer`), ו-`app/admin/(shell)/layout.tsx` דורש `admin`. אחרת הם מפנים ל-`/login?next=…` או ל-`/admin/login?next=…`. בדיקת התפקיד רצה בתוך רכיב שעטוף ב-`<Suspense>` (דרישה של `cacheComponents`, ‏AD-16). ההגנה ב-layout היא נוחות בלבד. ההרשאה האמיתית היא RLS ובדיקה בתוך ה-RPC. כניסת אדמין בנתיב נפרד, ‏`/admin/login` (מקור §3), מחוץ למעטפת האדמין, עם אותו רכיב טופס כמו `/login`. עמוד מפגש קיים ב-`/sessions/[id]` (אורחת) וב-`/me/sessions/[id]` (לקוחה), ושניהם מרנדרים את אותו רכיב מ-`components/shared/`. מסך חדש נוסף תחת אחת המעטפות בלבד.
+- **Rule:** הנתיבים הם אלה שב-*Structural Seed*. כתובות באנגלית, `<title>` וכותרות בעברית. ‏`app/me/layout.tsx` דורש לקוחה עם פרופיל פעיל (`get_my_session_role()` מחזיר `customer`), ו-`app/admin/(shell)/layout.tsx` דורש `admin`. אחרת הם מפנים ל-`/login?next=…` או ל-`/admin/login?next=…`. בדיקת התפקיד רצה בתוך רכיב שעטוף ב-`<Suspense>` (דרישה של `cacheComponents`, ‏AD-16). ההגנה ב-layout היא נוחות בלבד. ההרשאה האמיתית היא RLS ובדיקה בתוך ה-RPC. כניסת אדמין בנתיב נפרד, ‏`/admin/login` (מקור §3), מחוץ למעטפת האדמין, עם אותו רכיב טופס כמו `/login`. עמוד מפגש קיים ב-`/sessions/[id]` (אורחת) וב-`/me/sessions/[id]` (לקוחה), ושניהם מרנדרים את אותו רכיב מ-`components/shared/`. מסך חדש נוסף תחת אחת המעטפות בלבד. באדמין, שתי תצוגות של אותו דבר הן נתיבים אחים ולא state בדף: `sessions/[id]` (פרטים) ו-`sessions/[id]/work` (דף העבודה, CAP-38), ‏`customers` ו-`customers/open-cards` (CAP-42). מרכז ההתראות של טל הוא `/admin/notifications`, ונפתח מהפעמון בסרגל העליון של המעטפת (CAP-35).
 
 ### AD-3: זהות, `profiles.id = auth.users.id`, וחיפוש זהות אחד
 
@@ -102,7 +103,7 @@ flowchart TD
   - **שגיאה:** `raise exception '<CODE>' using errcode = 'P0001', detail = <json>`. ‏`<CODE>` הוא קוד יציב באנגלית באותיות גדולות. קוד חדש נוסף ל-`lib/errors.ts` באותו commit, יחד עם המפתחות של `detail` שלו. אין טקסט בעברית ב-SQL, חוץ מתבניות התראה שבטבלה.
   - **הצלחה:** ‏`jsonb` עם שדות `snake_case`.
   - **Idempotency:** כל RPC שמשנה נתונים מקבל `p_idempotency_key uuid`. טבלה אחת, `private.idempotency_results(actor_scope text, rpc text, key uuid, request_hash text, result jsonb, created_at)`, עם מפתח ראשי `(actor_scope, rpc, key)`. ‏`actor_scope` הוא `auth.uid()` אצל `authenticated`, ואצל service role נושא מפורש (`token:<id>`), אף פעם לא `null`. ‏`private.idempotent_begin` היא הפקודה הראשונה אחרי בדיקת ההרשאה, לפני כל נעילה. היא מכניסה שורה בלי תוצאה, כך שקריאה מקבילה עם אותו מפתח ממתינה, ומחזירה תוצאה שמורה אם יש כזאת. אם אותו מפתח מגיע עם `request_hash` שונה, היא זורקת `IDEMPOTENCY_KEY_REUSED`. כשל לא נשמר. מפתח אחד שייך לקריאת RPC אחת. בחירה מרובה בכרטיסייה עוברת ב-`book_sessions(p_items, p_idempotency_key)`, שמחזירה תוצאה לכל תאריך. אין עמודת `idempotency_key` באף טבלה אחרת, כך ש-`payments.idempotency_key` יוצא מ-data-model.
-  - **פטורים מ-idempotency:** RPC של קריאה, סימון נקראו, מנויי פוש, עדכון פרופיל עצמי, ‏`claim_push_jobs`/`finish_push_job`, ורענון פנימי אידמפוטנטי (`private.refresh_credit_options`).
+  - **פטורים מ-idempotency:** RPC של קריאה, סימון נקראו, מנויי פוש, עדכון פרופיל עצמי, ‏`claim_push_jobs`/`finish_push_job`, רענון פנימי אידמפוטנטי (`private.refresh_credit_options`), ו-RPC מסוג `set_*` שקובע ערך מוחלט (סימון בוצע במשימה, בפריט קניות או בפתק, נעיצה, ארכיון, `set_photo_consent`). RPC שיוצר שורה (מנה, משימה, פריט, פתק, נושא, קונספט) מקבל מפתח.
   - **מתאם:** Server Action מחזיר תמיד `{ ok: true, data } | { ok: false, code }`. ‏`lib/errors.ts` הוא המקום היחיד שממפה `code` למיקרו-קופי. קוד לא מוכר מוצג כשגיאת שרת כללית.
 
 ### AD-6: סדר נעילה מלא, יומן והתראה בתוך העסקה [ADOPTED]
@@ -122,7 +123,7 @@ flowchart TD
 - **Binds:** CAP-2, CAP-4, CAP-9, CAP-13, CAP-14, CAP-16, CAP-18, CAP-21, CAP-24, CAP-28
 - **Prevents:** מועד סגירה או גבול 48 שעות שמחושבים ב-JS לפי שעון הדפדפן או בלי שעון קיץ, ומתגלים כשונים מהשרת.
 - **Rule:**
-  - כל מועד עסקי מחושב ב-SQL בעזרי `private` עם `'Asia/Jerusalem'`: `local_day_end(date)`, ‏`registration_closes_at(starts_at, rule)`, ‏`cancel_deadline(confirmed_policy, starts_at)`. העזרים האלה פונקציות טהורות של הקלט שלהן, כדי שבדיקות יוכלו לבדוק בדיוק 48 שעות ושעון קיץ. השעון הוא `now()` של המסד.
+  - כל מועד עסקי מחושב ב-SQL בעזרי `private` עם `'Asia/Jerusalem'`: `local_day_end(date)`, ‏`registration_closes_at(starts_at, rule)`, ‏`cancel_deadline(confirmed_policy, starts_at)`, ‏`local_week_start(date)` (יום ראשון המקומי, להארכה אוטומטית), ‏`prep_day(starts_at, offset)` (ימי ההכנה בדף העבודה). תפוגה של מוצר מוצמד = `local_day_end` של יום המפגש. העזרים האלה פונקציות טהורות של הקלט שלהן, כדי שבדיקות יוכלו לבדוק בדיוק 48 שעות ושעון קיץ. השעון הוא `now()` של המסד.
   - `events.registration_closes_at` נשמר. יש לו דגל `registration_close_overridden`, ו-trigger מחשב אותו מחדש כששעת המפגש משתנה, אלא אם טל קבעה אותו ידנית.
   - RPC של קריאה מחזיר את המועדים המחושבים ואת ההחלטות (`cancel_deadline`, ‏`can_self_cancel`, ‏`registration_open`), ו-TS רק מציג אותם. ‏`lib/time.ts` מכיל רק עיצוב (`Intl`, ‏`he-IL`, ‏`timeZone: 'Asia/Jerusalem'`, ‏`<time datetime>`) וגיל תינוק לתצוגה. ‏`Date.now()` לא משמש להחלטה עסקית.
 
@@ -139,11 +140,11 @@ flowchart TD
 - **Rule:**
   - **טוקן:** נוצר רק ב-SQL, ב-`private.issue_token(p_purpose, …)`: ‏32 בייט מ-`gen_random_bytes`, ב-base64url בלי ריפוד. במסד נשמר `token_hash = encode(digest(raw,'sha256'),'hex')`. החיפוש רק דרך `private.find_token(p_raw)`. שום קוד TS לא מגבב טוקן, ושום RPC לא מקבל גיבוב. הטוקן הגולמי מוחזר פעם אחת בלבד, בתשובה של ה-RPC שהנפיק אותו, ו-`idempotent_finish` שומר את התוצאה בלעדיו. קריאה חוזרת מחזירה `reissue_required`. במסך הקישורים אין "העתקה" מאוחרת, רק סטטוס ו"הפקת קישור חלופי", שמעביר את הקודם ל-`revoked` באותה עסקה. תוקף של 48 שעות, קבוע ב-SQL.
   - **מצבים:** `pending`, ‏`awaiting_login`, ‏`claiming`, ‏`consumed`, ‏`revoked`, ‏`conflict`. ‏`expired` נגזר (`now() > expires_at` ו-`state in (pending, awaiting_login)`) ולא נשמר. ‏`claiming` שהתחיל לפני התפוגה רשאי להסתיים.
-  - **אישור תשלום:** ללקוחה חדשה, `admin_approve_payment` יוצר בעסקה אחת `payments` ו-`entitlements` עם `customer_id = null`, וטוקן `join`. התראת הרכישה נוצרת ב-`join_complete`, לא כאן.
+  - **אישור תשלום:** ללקוחה חדשה, `admin_approve_payment` יוצר בעסקה אחת `payments` ו-`entitlements` עם `customer_id = null`, וטוקן `join`. במוצר מוצמד (CAP-37) הוא מקבל גם `p_event_id` ויוצר באותה עסקה הרשמה דרך `private.book_core` במצב `admin` (AD-23). התראת הרכישה נוצרת ב-`join_complete`, לא כאן. ‏`join_complete` ו-`claim_join` משייכים את התשלום, הזכות **וההרשמה** ללקוחה.
   - **הצטרפות (`purpose = join`),** מתוזמרת ב-`lib/server/privileged/join.ts`:
     1. `join_begin(p_token, p_email, p_phone)` (service role) נועל את הטוקן וקורא ל-`find_identity`. ‏`existing_account` ← ‏`state = awaiting_login` עם `bound_user_id`. ‏`conflict` ← ‏`state = conflict`, שמופיע ב"לטיפול". אחרת ← ‏`state = claiming` עם `pending_user_id` חדש ו-`input_hash = sha256(email|phone)`. כניסה חוזרת במצב `claiming` עם `input_hash` אחר זורקת `LINK_IN_USE`.
     2. `getUserById(pending_user_id)`: אם היא קיימת ← `updateUserById` לסיסמה (רק במצב `claiming` עם אותו id ובלי פרופיל מופעל). אם לא ← `createUser({ id, email, password, email_confirm: true })`. ‏`email_exists` כשה-id לא קיים ← ‏`conflict`.
-    3. `join_complete(p_token, p_profile)` בעסקה אחת: פרופיל עם `activated_at`, תינוקות, הסכמה עם הגרסה המפורסמת הנוכחית של המדיניות (נקראת בשרת), שיוך התשלום והזכות, ‏`consumed`, התראה ויומן. קריאה חוזרת מחזירה את אותה תוצאה.
+    3. `join_complete(p_token, p_profile)` בעסקה אחת: פרופיל עם `activated_at`, תינוקות, הסכמה עם הגרסה המפורסמת הנוכחית של המדיניות (נקראת בשרת), אישור התמונות (לא חובה) עם הגרסה המפורסמת של נוסח הבקשה (CAP-40), שיוך התשלום והזכות, ‏`consumed`, התראה ויומן. קריאה חוזרת מחזירה את אותה תוצאה.
     4. `signInWithPassword` בשרת ואז `/me`.
   - **חשבון קיים:** הפניה ל-`/login?next=/join/<token>`. אחרי ההתחברות, `claim_join(p_token)` (‏`authenticated`) מצליח רק כש-`purpose = join`, ‏`state = awaiting_login`, ‏`bound_user_id = auth.uid()` והטוקן לא פג. אחרת `NOT_AUTHORIZED` בלי פרטים.
   - **הפעלה ליבוא (`claim`) ואיפוס (`reset`)** עוברים רק דרך המתזמר המוגבר, עם RPC של service role (`claim_begin`/`claim_complete`, ‏`reset_begin`/`reset_complete`). אף RPC של `authenticated` לא מקבל טוקן שאינו `join`. ‏claim יוצר את משתמשת ה-Auth עם `id = profiles.id` ורושם הסכמה. ‏`admin_issue_link(purpose => 'claim')` נדחה לפרופיל שכבר הופעל (`ALREADY_ACTIVATED`, וטל משתמשת ב-reset).
@@ -152,9 +153,9 @@ flowchart TD
 
 ### AD-11: מנגנון התזמון הוא pg_cron [ADOPTED]
 
-- **Binds:** CAP-9, CAP-15, CAP-18, CAP-21, CAP-22, CAP-28
-- **Prevents:** מתזמן שונה לכל פיצ'ר (Vercel cron, ‏setTimeout, קריאה מהדפדפן), ומשימה שלא רצה כשאין דפדפן פתוח.
-- **Rule:** כל משימה נרשמת ב-migration עם `cron.schedule('<job_name>', …)` ומריצה פונקציית `private.job_<name>()` אחת, שבטוחה להרצה כפולה. אין Vercel Cron (בתוכנית Hobby הוא רץ רק פעם ביום). ‏pg_cron רץ ב-UTC, והשעות היומיות לא קריטיות.
+- **Binds:** CAP-9, CAP-15, CAP-18, CAP-21, CAP-22, CAP-28, CAP-35, CAP-36
+- **Prevents:** מתזמן שונה לכל פיצ'ר (Vercel cron, ‏setTimeout, קריאה מהדפדפן), משימה שלא רצה כשאין דפדפן פתוח, ותזכורת "ל-09:00" שמגיעה ב-10:00 אחרי מעבר לשעון קיץ.
+- **Rule:** כל משימה נרשמת ב-migration עם `cron.schedule('<job_name>', …)` ומריצה פונקציית `private.job_<name>()` אחת, שבטוחה להרצה כפולה. אין Vercel Cron (בתוכנית Hobby הוא רץ רק פעם ביום). ‏pg_cron רץ ב-UTC, ולכן **אף משימה לא נשענת על שעת ה-cron**: משימה שקשורה לשעה או ליום מקומיים רצה בתדירות גבוהה, מחשבת ב-SQL לפי `Asia/Jerusalem` אם הגיע הזמן, ונמנעת מכפילות לפי מפתח (חלון זמן, שבוע או תאריך תפוגה). תדירות ה-cron קובעת רק את העיכוב המרבי.
 
   | משימה | תדירות | מה עושה |
   | --- | --- | --- |
@@ -162,28 +163,32 @@ flowchart TD
   | `job_invoke_push_worker` | כל דקה | `net.http_post` ל-`<app_url>/api/jobs/push`, עם `Authorization: Bearer <cron_secret>` מ-Vault ו-`timeout_milliseconds` מפורש. בלי ערכים ב-Vault, לא עושה כלום |
   | `job_complete_events` | כל 5 דקות | מפגש שהסתיים ← `completed`, הרשמות ← `completed`, והוספת תנועות `use` (AD-14) |
   | `job_refresh_credit_options` | כל 15 דקות | השלמה והחלפה של חלופות זיכוי (בנוסף לקריאה מתוך RPC) |
+  | `job_marketing_reminders` | כל 5 דקות | לכל מועד בלוח שב-`business_settings.marketing_reminder_schedule` שהגיע (שעון ישראל) ועוד לא נשלח: בוחר את הנוסח הפעיל עם `last_sent_at` הישן ביותר, מעדכן אותו, ומכניס `marketing_reminder` לכל אדמין (discriminator = תאריך ושעת המועד) |
+  | `job_expiry_alerts` | כל שעה | כרטיסייה עם כניסות פנויות (`entitlement_balances`) שהגיעה לסף טל או לסף הלקוחה ב-`business_settings`: ‏`admin_card_expiring` לכל אדמין ו-`card_expiring` ללקוחה (discriminator = `entitlement_id:expires_on`, כך שהארכה מאפשרת התראה חדשה) |
+  | `job_auto_extend` | כל שעה | לכל שבוע מקומי שהסתיים (`local_week_start`) וחופף לתוקף של כרטיסייה, בלי מפגש `published` שהכרטיסייה מתאימה לו (`private.week_has_eligible_session`): ‏`entitlement_corrections` עם actor מערכת ו-`week_start` ייחודי לזכות, ‏`expires_on + 7`, יומן והתראת `entitlement_changed`, באותה עסקה (CAP-36). שבוע שנוסף בהארכה נבדק בהרצה שאחריו |
   | `job_cleanup` | יומי | התראות שנקראו לפני 90 יום, משימות שהסתיימו לפני 30 יום, ‏`idempotency_results` בני יותר מ-7 ימים, ‏`cron.job_run_details` ו-`net._http_response` ישנים |
 
   **העובד:** ‏`app/api/jobs/push/route.ts` מקבל רק `POST` ומשווה Bearer עם `crypto.timingSafeEqual`. בלי `CRON_SECRET` ב-env הוא מחזיר 503, ובסוד שגוי 401. ‏`CRON_SECRET` מוגדר רק בסביבת Vercel שה-`app_url` ב-Vault מצביע עליה.
 
 ### AD-12: התראות ותור הפוש [ADOPTED]
 
-- **Binds:** CAP-6, CAP-9, CAP-12, CAP-13, CAP-15, CAP-17, CAP-21, CAP-22, CAP-32
-- **Prevents:** נוסח שמורכב ב-TS, התראה שנבלעת בגלל מפתח זהה, שני שמות לאותו סוג, retry ששולח שוב למכשיר שכבר קיבל, ומשימה שנתקעת ב-`sending`.
+- **Binds:** CAP-6, CAP-9, CAP-12, CAP-13, CAP-15, CAP-17, CAP-21, CAP-22, CAP-32, CAP-35, CAP-36
+- **Prevents:** נוסח שמורכב ב-TS, התראה שנבלעת בגלל מפתח זהה, שני שמות לאותו סוג, retry ששולח שוב למכשיר שכבר קיבל, משימה שנתקעת ב-`sending`, ומערכת התראות שנייה לאדמין עם עובד ומנויים משלה.
 - **Rule:**
-  - **סוגים:** רשימה סגורה (`check`) שמוגדרת פעם אחת, שורה לכל שורה ב-notification-matrix: `purchase_new_card, purchase_repeat, booking_confirmed, reminder, waitlist_spot, booking_cancelled, event_changed, event_cancelled, entitlement_changed, broadcast`. הערוצים לכל סוג קבועים באותה טבלה.
-  - **יצירה:** נקודת כניסה אחת: `private.enqueue_notification(p_customer_id, p_type, p_discriminator, p_vars, p_target_path, p_body_override default null)`. ‏`customer_id` חובה. היא מרנדרת מ-`notification_templates` (או לוקחת את `p_body_override` ב-`event_changed`, ‏`event_cancelled` ו-`broadcast`), שומרת את הנוסח ב-`notifications.payload`, ויוצרת `notification_jobs` לסוגים עם פוש.
-  - **מפתח:** `dedupe_key = type:customer_id:discriminator`, ייחודי, ו-`on conflict do nothing`. ה-discriminator קבוע לכל סוג: `reminder` ← ‏`booking_id:revision`; ‏`event_changed`/`event_cancelled` ← ‏`event_id:revision`; ‏`waitlist_spot` ← ‏`event_id:<party_size>:<cycle>`; ‏`broadcast` ← ‏`broadcast_id`; ושאר הסוגים ← מזהה השורה שה-RPC יצר (`booking_id`, ‏`payment_id`, ‏`entitlement_corrections.id`, ‏`audit_log.id` של הביטול).
+  - **נמענת (החלטת משתמשת):** טבלה אחת לכולן. ‏`notifications.recipient_id` = מזהה משתמשת Auth (ללקוחה זה `profiles.id`, AD-3; לאדמין `admin_roles.user_id`), ‏`recipient_kind in ('customer','admin')`. ‏`push_subscriptions.user_id` באותו אופן. התראת אדמין נוצרת לכל אדמין בנפרד. RLS: ‏`recipient_id = (select auth.uid())`. אין טבלת `admin_notifications` (מתקן את data-model).
+  - **סוגים:** רשימה סגורה (`check`) שמוגדרת פעם אחת, שורה לכל שורה ב-notification-matrix: `purchase_new_card, purchase_repeat, booking_confirmed, reminder, waitlist_spot, booking_cancelled, event_changed, event_cancelled, entitlement_changed, card_expiring, broadcast` (ללקוחה) ו-`admin_card_expiring, marketing_reminder` (לאדמין). הערוצים והנמענת לכל סוג קבועים באותה טבלה.
+  - **יצירה:** נקודת כניסה אחת: `private.enqueue_notification(p_recipient_id, p_type, p_discriminator, p_vars, p_target_path, p_body_override default null)`, ועוטפת `private.enqueue_admin_notification(p_type, …)` שקוראת לה לכל אדמין. הנמענת חובה. היא מרנדרת מ-`notification_templates` (או לוקחת את `p_body_override` ב-`event_changed`, ‏`event_cancelled`, ‏`broadcast` ו-`marketing_reminder`), שומרת את הנוסח ב-`notifications.payload`, ויוצרת `notification_jobs` לסוגים עם פוש.
+  - **מפתח:** `dedupe_key = type:recipient_id:discriminator`, ייחודי, ו-`on conflict do nothing`. ה-discriminator קבוע לכל סוג: `reminder` ← ‏`booking_id:revision`; ‏`event_changed`/`event_cancelled` ← ‏`event_id:revision`; ‏`waitlist_spot` ← ‏`event_id:<party_size>:<cycle>`; ‏`broadcast` ← ‏`broadcast_id`; ‏`card_expiring`/`admin_card_expiring` ← ‏`entitlement_id:expires_on`; ‏`marketing_reminder` ← תאריך ושעת המועד המקומיים; ושאר הסוגים ← מזהה השורה שה-RPC יצר (`booking_id`, ‏`payment_id`, ‏`entitlement_corrections.id`, ‏`audit_log.id` של הביטול).
   - **`events.revision`:** עולה רק ב-trigger, ורק כשמשתנים `starts_at`, ‏`ends_at`, ‏`kind`, או `status` ל-`cancelled`. אף RPC לא כותב אותו.
   - **העובד:** `claim_push_jobs(p_limit)` מסמן `sending` עם `lease_until = now() + 2 דקות`, ולוקח גם משימות `sending` שה-lease שלהן עבר. משימה אחת להתראה. העובד שולח לכל המנויים הפעילים של הלקוחה, ורושם `notification_deliveries(job_id, subscription_id)` ייחודי, כך ש-retry מדלג על מי שכבר קיבלה. ‏404 או 410 מוחקים מנוי. ‏401 ו-403 לא מוחקים. כשל זמני מתוזמן מחדש ב-backoff. אחרי מספר הניסיונות המקסימלי המשימה עוברת ל-`failed` ומופיעה ב"לטיפול". משימת `waitlist_spot` נבדקת שוב לפני שליחה (עדיין יש מקום וההרשמה פתוחה), ואם לא, היא נסגרת בלי שליחה.
-  - **מנויים:** נכתבים רק ב-`register_push_subscription(p_endpoint, p_keys, p_platform)`, שמוחקת את אותו endpoint מכל לקוחה אחרת, וב-`unregister_push_subscription` בהתנתקות. זוג VAPID אחד לכל פרויקט Supabase, זהה בכל סביבת Vercel שמחוברת אליו. ‏`target_path` חייב להתחיל ב-`/me` או ב-`/admin` (`check`).
+  - **מנויים:** נכתבים רק ב-`register_push_subscription(p_endpoint, p_keys, p_platform)`, שמוחקת את אותו endpoint מכל לקוחה אחרת, וב-`unregister_push_subscription` בהתנתקות. זוג VAPID אחד לכל פרויקט Supabase, זהה בכל סביבת Vercel שמחוברת אליו. ‏`target_path` חייב להתחיל ב-`/me` בסוג של לקוחה וב-`/admin` בסוג של אדמין (`check`). העובד שולח למנויים של `recipient_id`, בלי קשר לסוג.
   - **נקרא:** רק `mark_notifications_read(p_ids default null)`, שמסמנת `read_at = now()`. כשל פוש אף פעם לא משנה הרשמה.
 
 ### AD-13: תזכורות נגזרות מהמצב [ADOPTED]
 
 - **Binds:** CAP-12, CAP-16, CAP-20, CAP-21, CAP-34
 - **Prevents:** משימת תזכורת ישנה שנשארת אחרי ביטול, הזזה או שינוי שעה.
-- **Rule:** אין משימות תזכורת מתוזמנות מראש. ‏`private.job_reminders` בוחר הרשמות `confirmed` שבהן `now() >= starts_at - lead`, ‏`now() < starts_at` ו-`confirmed_at < starts_at - lead`, כש-`lead` נלקח מ-`bookings.policy_snapshot`. לכל אחת הוא קורא ל-`enqueue_notification(…, 'reminder', booking_id || ':' || revision, …)`. תיקון תפריט לא משנה revision (AD-12) ולכן לא שולח שוב. שינוי שעה משנה revision, ולכן מחשב את התזכורת מחדש.
+- **Rule:** אין משימות תזכורת מתוזמנות מראש. ‏`private.job_reminders` בוחר הרשמות `confirmed` עם `customer_id is not null` (AD-23) שבהן `now() >= starts_at - lead`, ‏`now() < starts_at` ו-`confirmed_at < starts_at - lead`, כש-`lead` נלקח מ-`bookings.policy_snapshot`. לכל אחת הוא קורא ל-`enqueue_notification(…, 'reminder', booking_id || ':' || revision, …)`. תיקון תיאור או צילום לא משנה revision (AD-12) ולכן לא שולח שוב. שינוי שעה משנה revision, ולכן מחשב את התזכורת מחדש.
 
 ### AD-14: מצב נגזר, יומן תנועות וזמינות
 
@@ -191,17 +196,18 @@ flowchart TD
 - **Prevents:** יתרה, תפוסה, פקיעה או סטטוס פעילות שנשמרים ומתיישנים, יומן תנועות שכל סשן מסכם בסימן אחר, ו-view שעוקף RLS.
 - **Rule:**
   - **יומן תנועות:** `entitlement_movements` הוא append-only. אין הרשאת `update/delete`, ו-trigger זורק שגיאה. ‏`units` עם סימן קבוע לכל פעולה (`check`): ‏`grant`, ‏`opening_balance` ו-`release` חיוביים; ‏`reserve` שלילי; ‏`use` = 0 עם `booking_id` (מסמן שהשריון נוצל); ‏`adjust` ≠ 0. סיום מפגש מוסיף `use` ולא עורך `reserve`. הנוסחה של "זמינות" ו"משוריינות" כתובה פעם אחת, ב-view‏ `entitlement_balances`.
-  - **Views:** כל view ב-`public` נוצר `with (security_invoker = true)`. נתון שחוצה לקוחות (תפוסה, "מלא", "נותרו n", פתיחת הרשמה) מגיע רק מ-`get_event_availability(p_event_ids)` (definer), שמחזירה רק מספרים ומועדים של מפגשים `published`, בלי `customer_id`. בדיקת ה-advisor נקייה.
+  - **Views:** כל view ב-`public` נוצר `with (security_invoker = true)`. נתון שחוצה לקוחות מגיע רק מפונקציות definer. **ללקוחה:** `get_event_availability(p_event_ids)` (‏`authenticated` בלבד, לא `anon`) מחזירה לכל מפגש `published` רק תווית לפי גודל ההרשמה של הלקוחה — `available`, ‏`last_places` (מקומות פנויים ≤ `business_settings.last_places_threshold`) או `full` — ואת `registration_open`. אף פעם לא מספר. **לאורחת:** אין נתון תפוסה בכלל (CAP-1). **לאדמין:** מספרים רק דרך `admin_*`. בדיקת ה-advisor נקייה.
+  - **כרטיסיות פתוחות (CAP-42):** `admin_list_open_cards(p_filter)` נגזרת מ-`entitlement_balances` ומ-`booking_allocations`: כרטיסייה שלא פגה ושיש בה כניסות שלא נוצלו (משוריינת ≠ נוצלה), ולכל כניסה ההרשמה שמימנה אותה או "פנויה". אין טבלה שמורה. סף "עומדת לפוג" נקרא מ-`business_settings` בזמן הקריאה (תצוגה בלבד).
   - **פקיעה ופעילות:** `entitlements.status` שומר רק מצבים שאדמין קבעה (`active`, ‏`revoked`, ‏`refunded`). "פגה" ו"נוצלה" נגזרות ב-`entitlement_balances` (`private.local_day_end(expires_on)`). "לא פעילה" נגזרת ב-`private.customer_activity(customer_id)` בזמן הקריאה, ולא נשמרת. אין `job_mark_inactive`.
   - **השתתפות קודמת:** `profiles.prior_participation_override` נכתב רק ביבוא וב-`admin_correct_prior_participation`. ‏`private.has_participated(customer_id)` = ה-override, או הרשמה שהסתיימה (`completed`). אף משימה לא כותבת אותו.
   - **רשימת המתנה:** `events.waitlist_cycle` עולה ב-`private.notify_waitlist(event_id)` רק במעבר מ"אין מספיק מקומות" ל"יש מספיק" לכל `party_size` (1 או 2), כשהמעבר מחושב לפני השינוי ואחריו באותה עסקה נעולה. הודעה נשלחת רק כש-`now() < registration_closes_at`. כל RPC שמשחרר מקום (ביטול, הזזה, העלאת מכסה) קורא לה באותה עסקה.
-  - **חלופות זיכוי:** `private.refresh_credit_options(credit_id)` נקראת מ-RPC של הרשמה, ביטול ומכסה, ומה-RPC שמציג זיכויים ללקוחה.
+  - **חלופות זיכוי:** `private.refresh_credit_options(credit_id)` נקראת מ-RPC של הרשמה, ביטול ומכסה, ומה-RPC שמציג זיכויים ללקוחה. החלופות נספרות אחרי `starts_at` של מפגש המקור שבוטל (`cancellation_credits.origin_starts_at`), ולא אחרי `now()` (CAP-18).
 
 ### AD-15: ערכים עסקיים ותוכן נקראים מטבלאות ונשמרים ב-snapshot [ADOPTED]
 
 - **Binds:** CAP-3, CAP-12, CAP-16, CAP-18, CAP-20, CAP-21, CAP-27, CAP-29, CAP-34
 - **Prevents:** ברירת מחדל שמקודדת ב-TS, וכלל שקורא את ההגדרה הנוכחית במקום את הערך שנשמר ברגע היצירה.
-- **Rule:** RPC שיוצר ישות קורא את ברירות המחדל מ-`business_settings` או מ-`products` בתוך העסקה (לא מהדפדפן), ושומר אותן על הישות: `bookings.policy_snapshot` (חלון ביטול, זמן תזכורת), ‏`entitlements.eligibility_snapshot`, ‏`payments.product_snapshot`, ‏`cancellation_credits.options_count`, וערכי המפגש. כלל שחל על ישות קיימת קורא רק את ה-snapshot שלה. הזזה (`move_booking`) מעתיקה את `policy_snapshot` של ההרשמה המקורית. קבועים ב-SQL: תוקף קישור של 48 שעות ומגבלות טכניות (ניסיונות פוש, גודל batch). טקסט שיווקי נקרא רק מתוכן שפורסם.
+- **Rule:** RPC שיוצר ישות קורא את ברירות המחדל מ-`business_settings` או מ-`products` בתוך העסקה (לא מהדפדפן), ושומר אותן על הישות: `bookings.policy_snapshot` (חלון ביטול, זמן תזכורת), ‏`entitlements.eligibility_snapshot` (כולל `validity_mode`), ‏`payments.product_snapshot`, ‏`cancellation_credits.options_count`, וערכי המפגש (מכסה לפי סוג המפגש: `default_capacity_adults.{regular,couple}`; ומהקונספט: סוג, תיאור, צילום וערכה). ערכי תצוגה בלבד (סף "מקומות אחרונים", ספי "עומדת לפוג", לוח התזכורות) נקראים מההגדרות בזמן השימוש ולא נשמרים ב-snapshot. כלל שחל על ישות קיימת קורא רק את ה-snapshot שלה. הזזה (`move_booking`) מעתיקה את `policy_snapshot` של ההרשמה המקורית. קבועים ב-SQL: תוקף קישור של 48 שעות ומגבלות טכניות (ניסיונות פוש, גודל batch). טקסט שיווקי נקרא רק מתוכן שפורסם.
 
 ### AD-16: מטמון, PWA, מדיה ונתיבי טוקן
 
@@ -212,6 +218,8 @@ flowchart TD
   - **צורת התוכן:** לכל `content_sections.kind` יש סכמת zod אחת ב-`lib/content/schema.ts`. העורך בודק לפי הסכמה לפני שמירה, `admin_publish_content` שומר רק מה שעבר, והאתר מפרש לפי אותה סכמה ומסתיר בלוק שלא עובר. ‏`content_pages.published_version` עולה בכל פרסום, ו-`profiles.privacy_policy_version` שומר אותו בהסכמה.
   - **מדיה:** ‏`media-drafts` פרטי, לכל העלאה (בדיקת סוג וגודל בהעלאה). ‏`media-public` לקריאה ציבורית. פרסום תמונה (רק עם `alt_text` וסימון הסכמה) עוקב אחרי AD-21: העתקה אידמפוטנטית `media-drafts/<id>` ← ‏`media-public/<id>.<ext>`, ואז `admin_publish_content` בודק שהקובץ קיים (אחרת `MEDIA_NOT_COPIED`). בהסתרה ה-RPC קודם, ואז מחיקת הקובץ. טקסט עשיר מסונן נגד XSS בזמן הרינדור.
   - **Service worker:** ‏`public/sw.js` נכתב ידנית ב-JS עם `// @ts-check`, בלי כלי בנייה, ומוגש עם `Cache-Control: no-cache`. במטמון רק `/_next/static`, אייקונים ו-`/offline`. ניווט network-only עם נפילה ל-`/offline`. אף פעם לא HTML של `/me` או `/admin`, ואף פעם לא `/api`. הוא מטפל ב-`push` וב-`notificationclick` (פתיחת `target_path`).
+  - **קונספטים (CAP-41):** ערכי הערכות (צבע נייר, דיו, גופן) נמצאים רק בקוד: `lib/concepts/themes.ts` ממפה `theme_key` (ו-`generic_paper_key`) למשתני CSS שמוגדרים ב-`app/globals.css` לפי DESIGN.md. המסד שומר רק את המפתח. גופני הקונספט נטענים דרך `next/font/google` עם `subsets: ['hebrew']`, רק ברכיבי המפגש (`components/shared/session-card`, ‏`concept-header`). כותרת המפגש מרונדרת תמיד מ-`concepts.name`; אין `events.title`. ‏`events.concept_id` הוא FK עם `on delete restrict`; ‏`admin_delete_concept` מוחק רק קונספט בלי מפגשים, ואחרת זורק `CONCEPT_IN_USE` וטל משתמשת ב-`admin_archive_concept`.
+  - **דף עבודה ורשימות (CAP-38/39):** דינמיים, אדמין בלבד, בלי `'use cache'`. שורת `work_sheets` של מפגש נוצרת רק ב-`private.ensure_work_sheet(event_id)`, שכל RPC של דף העבודה (קריאה וכתיבה) קורא לה ראשונה; היא מעתיקה את `default_prep_days` מההגדרות. אף RPC אחר לא יוצר אותה. ההדפסה היא `@media print` על אותו דף, בלי נתיב נפרד ובלי PDF בשרת. ייצוא הקניות לוואטסאפ נבנה בדפדפן כ-`wa.me/?text=` מהנתונים שכבר בדף.
   - **נתיבי טוקן:** `/join/[token]` ו-`/reset/[token]` נשלחים עם `Referrer-Policy: no-referrer` ו-`Cache-Control: no-store`, בלי משאבי צד שלישי (גופנים דרך `next/font`), והנתיב לא נרשם בלוגים.
 
 ### AD-17: טיפוסים וגישה ל-RPC מ-TS
@@ -224,7 +232,7 @@ flowchart TD
 
 - **Binds:** CAP-9, CAP-10, CAP-11, CAP-13, CAP-14, CAP-18, CAP-20
 - **Prevents:** גיליון ההרשמה מציג "ינוצל: כרטיסייה A" ובפועל נגרעת B, וכל אחת מהפעולות (הרשמה, רישום ידני, הזזה) בוחרת מימון אחרת.
-- **Rule:** ‏`private.plan_funding(p_customer_id, p_event_id, p_party_size, p_mode)` (`self` / ‏`admin` / ‏`move`) היא הקוד היחיד שמחליט על מימון. היא נקראת מ-`book_session`, ‏`book_sessions`, ‏`admin_book_customer`, ‏`move_booking`, מה-RPC שמציג את גיליון ההרשמה ומכל preview. סדר העדיפות (החלטת משתמשת): (1) זיכוי `available` שהמפגש הזה הוא אחת החלופות הפעילות שלו; (2) זכות שמתאימה בסוג, ביום בשבוע ובהיכרות (`has_participated`), ותקפה ביום המפגש, לפי `expires_on` עולה ואז `id`. כרטיסייה לא מוצעת למפגש זוגי במצב `self`. קיזוז זוגי מכרטיסייה הוא רק `admin_offset_paired`. התוצאה: `{ok, code?, sources: [{kind: 'credit'|'entitlement', id, units}]}`. ל-`booking_allocations` יש `credit_id` אופציונלי עם `check (num_nonnulls(entitlement_id, credit_id) = 1)`.
+- **Rule:** ‏`private.plan_funding(p_customer_id, p_event_id, p_party_size, p_mode)` (`self` / ‏`admin` / ‏`move`) היא הקוד היחיד שמחליט על מימון. היא נקראת מ-`book_session`, ‏`book_sessions`, ‏`admin_book_customer`, ‏`move_booking`, מה-RPC שמציג את גיליון ההרשמה ומכל preview. סדר העדיפות (החלטת משתמשת): (1) זיכוי `available` שהמפגש הזה הוא אחת החלופות הפעילות שלו; (2) זכות שמתאימה בסוג, ביום בשבוע ובהיכרות (`has_participated`), ותקפה ביום המפגש, לפי `expires_on` עולה ואז `id`. כרטיסייה לא מוצעת למפגש זוגי במצב `self`. קיזוז זוגי מכרטיסייה הוא רק `admin_offset_paired`. זכות מוצמדת (`validity_mode = session`, CAP-37) לא נבחרת אף פעם במצב `self`, ומממנת רק את `pinned_event_id` שלה, במצב `admin` מתוך `admin_approve_payment`. אחרי ביטול, המימון עובר לזיכוי (AD-20). התוצאה: `{ok, code?, sources: [{kind: 'credit'|'entitlement', id, units}]}`. ל-`booking_allocations` יש `credit_id` אופציונלי עם `check (num_nonnulls(entitlement_id, credit_id) = 1)`.
 
 ### AD-19: צורת היומן, בלי מידע מזהה
 
@@ -236,7 +244,7 @@ flowchart TD
 
 - **Binds:** CAP-16, CAP-17, CAP-18, CAP-19, CAP-20
 - **Prevents:** בדיקת גבול 48 השעות עם `<` במקום אחד ו-`<=` באחר, בחירה בין החזר לזיכוי ברגע הביטול במסך אחד ואחר כך במסך אחר, ובסיס כספי שמחושב שלוש פעמים אחרת.
-- **Rule:** ‏`private.can_self_cancel(booking_id)` = ‏`now() <= private.cancel_deadline(…)` היא בדיקת הגבול היחידה. היא מוחזרת לקריאה ונבדקת שוב בתוך `cancel_booking` ו-`move_booking`. ביטול עצמי של כניסה בודדת או זוגית מקבל `p_choice in ('refund','credit')` באותה קריאה. ביטול של אדמין בתוך החלון יוצר זיכוי בלי בחירה. ביטול מצד העסק יוצר זיכוי עם `choice_pending = true`, שנסגר ב-`choose_credit_outcome(p_credit_id, p_choice)`. בכרטיסייה אין בחירה: תנועת `release` לאותה כרטיסייה. בכניסה בודדת או זוגית אין `release`: הערך עובר לזיכוי. ‏`monetary_basis_agorot` מחושב פעם אחת, כשהזיכוי נוצר, ב-`private.monetary_basis(booking_id)` מתוך `booking_allocations` ו-`payments.amount_agorot` (integer), ולא מחושב מחדש. הרשמה זוגית שמומנה בקיזוז מכרטיסייה מחזירה `MANUAL_HANDLING_REQUIRED`. ‏`move_booking` משתמש ב-`private.cancel_core` וב-`private.book_core`, כמו הפעולות הבודדות.
+- **Rule:** ‏`private.can_self_cancel(booking_id)` = ‏`now() <= private.cancel_deadline(…)` היא בדיקת הגבול היחידה. היא מוחזרת לקריאה ונבדקת שוב בתוך `cancel_booking` ו-`move_booking`. ביטול עצמי של כניסה בודדת, היכרות או זוגית (מוצמדת) מקבל `p_choice in ('refund','credit')` באותה קריאה. זיכוי נוצר עם `origin_starts_at` של המפגש שבוטל, והחלופות נספרות ממנו (AD-14). ביטול של אדמין בתוך החלון יוצר זיכוי בלי בחירה. ביטול מצד העסק יוצר זיכוי עם `choice_pending = true`, שנסגר ב-`choose_credit_outcome(p_credit_id, p_choice)`. בכרטיסייה אין בחירה: תנועת `release` לאותה כרטיסייה. בכניסה בודדת או זוגית אין `release`: הערך עובר לזיכוי. ‏`monetary_basis_agorot` מחושב פעם אחת, כשהזיכוי נוצר, ב-`private.monetary_basis(booking_id)` מתוך `booking_allocations` ו-`payments.amount_agorot` (integer), ולא מחושב מחדש. הרשמה זוגית שמומנה בקיזוז מכרטיסייה מחזירה `MANUAL_HANDLING_REQUIRED`. ‏`move_booking` משתמש ב-`private.cancel_core` וב-`private.book_core`, כמו הפעולות הבודדות.
 
 ### AD-21: פעולה מוגברת דו-שלבית
 
@@ -257,12 +265,18 @@ flowchart TD
   - **לוגים:** לוג בשרת לא מכיל טוקן, סיסמה, מייל, טלפון או שם. רק מזהים וקודי שגיאה.
   - **CI:** ‏GitHub Actions מריץ על כל push ו-PR את `npm run lint`, ‏`npm run typecheck` ו-`npm test` לבדיקות טהורות. בדיקות מסד רצות מקומית מול פרויקט הפיתוח.
 
+### AD-23: הרשמה בלי לקוחה (מוצר מוצמד שעוד לא מומש)
+
+- **Binds:** CAP-2, CAP-4, CAP-12, CAP-13, CAP-21, CAP-37
+- **Prevents:** שני מקורות לתפוסה (הרשמות ו"שמירות מקום"), הרשמה בלי לקוחה שמופיעה אצל לקוחה אחרת או נבלעת בספירה, ותזכורת או התראה שנשלחות ל-`null`.
+- **Rule (החלטת משתמשת):** המקום שנשמר באישור מוצר מוצמד ללקוחה חדשה הוא שורת `bookings` רגילה עם `status = confirmed`, ‏`payment_id` ו-`customer_id = null`. היא נספרת במכסה כמו כל הרשמה. ‏`join_complete` ו-`claim_join` ממלאים את `customer_id` באותה עסקה שבה הם משייכים את התשלום והזכות. כללים: כל קריאה או policy של לקוחה מסננות `customer_id = private.current_customer_id()` (‏`null` לא מתאים אף פעם); אינדקסים ייחודיים חלקיים עם `where customer_id is not null`; ‏`job_reminders`, ‏`enqueue_notification` ו-`notify_waitlist` מדלגים על `null`; באדמין השורה מוצגת כ"לקוחה חדשה · ממתינה להצטרפות" עם סטטוס הקישור. ביטול שלה עובר את אותו `admin_cancel_booking`. אין טבלת שמירת מקום נפרדת.
+
 ## Consistency Conventions
 
 | Concern | Convention |
 | --- | --- |
 | שמות ב-DB | טבלאות ברבים `snake_case`, עמודות `snake_case`, ‏`id uuid default gen_random_uuid()`, ‏FK בשם `<entity>_id`, זמן `<verb>_at timestamptz`, תאריך `<name>_on date`, כסף `<name>_agorot integer` |
-| אוצר סטטוסים | `text` עם `check`, ורק הערכים האלה: `events.status` draft, published, cancelled, completed · ‏`bookings.status` confirmed, cancelled, completed · ‏`activation_tokens.state` כמו ב-AD-10 · ‏`waitlist_entries.status` active, left, booked, closed · ‏`cancellation_credits.status` awaiting_options, available, used, refund_pending, refunded, expired, ועוד `choice_pending boolean` נפרד · ‏`credit_options.state` active, used, lapsed, replaced · ‏`payments.status` approved, voided · ‏`refund_requests.status` requested, completed · ‏`entitlements.status` active, revoked, refunded · ‏`notification_jobs.status` queued, sending, sent, failed. סטטוס חדש מתווסף כאן קודם |
+| אוצר סטטוסים | `text` עם `check`, ורק הערכים האלה: `events.status` draft, published, cancelled, completed · ‏`bookings.status` confirmed, cancelled, completed · ‏`activation_tokens.state` כמו ב-AD-10 · ‏`waitlist_entries.status` active, left, booked, closed · ‏`cancellation_credits.status` awaiting_options, available, used, refund_pending, refunded, expired, ועוד `choice_pending boolean` נפרד · ‏`credit_options.state` active, used, lapsed, replaced · ‏`payments.status` approved, voided · ‏`refund_requests.status` requested, completed · ‏`entitlements.status` active, revoked, refunded · ‏`notification_jobs.status` queued, sending, sent, failed · ‏`notifications.recipient_kind` customer, admin · ‏`products.validity_mode` days, session · ‏`events.kind` / ‏`concepts.default_kind` regular, couple · ‏`concepts.theme_key` mothers, couples, grandma, grandpa, greek, generic · ‏`concepts.generic_paper_key` olive, plum, jade, mustard, slate, clay. סטטוס חדש מתווסף כאן קודם |
 | טבלאות פנימיות | טוקנים, תורי שליחה, idempotency, יבוא והערות פנימיות בלי policy ללקוחה (טבלאות העזר הטכניות ב-`private`) |
 | שמות ב-TS | קבצים `kebab-case.ts(x)`, רכיבים `PascalCase`, Server Actions ב-`actions.ts` ליד הנתיב, בשם `<verb><Noun>Action` |
 | Migrations | ‏`npx supabase migration new <verb>_<subject>`. migration שמוסיפה טבלה מוסיפה באותו קובץ RLS, policies, אינדקסים ו-grants (AD-5) |
@@ -315,14 +329,16 @@ app/
     bookings/                # ההרשמות שלי, זיכויים, החזרים, רשימות המתנה
     notifications/
     profile/ profile/entitlements/ profile/entitlements/[id]/ settings/notifications/
-  admin/(shell)/             # bottom-tab-bar / side-nav. layout: אדמין
-    page.tsx                 # /admin בית
+  admin/(shell)/             # bottom-tab-bar / side-nav + פעמון בסרגל העליון. layout: אדמין
+    page.tsx                 # /admin בית (+ reminder-strip)
+    notifications/           # מרכז ההתראות של טל (CAP-35)
     more/                    # "עוד" בטלפון
     sessions/ sessions/new/ sessions/[id]/ sessions/[id]/edit/ sessions/[id]/day/
-    customers/ customers/[id]/ customers/[id]/entitlements/[entitlementId]/
+    sessions/[id]/work/      # דף עבודה (CAP-38), @media print
+    customers/ customers/open-cards/ customers/[id]/ customers/[id]/entitlements/[entitlementId]/
     payments/ payments/new/ links/
-    products/ content/ content/[page]/ content/[page]/preview/
-    broadcast/ import/ audit/ settings/ settings/templates/
+    products/ concepts/ notes/ content/ content/[page]/ content/[page]/preview/
+    broadcast/ import/ audit/ settings/ settings/templates/ settings/marketing/
   api/
     jobs/push/route.ts       # עובד הפוש, POST בלבד, נקרא רק מ-pg_cron
     admin/export/route.ts    # ייצוא CSV, אדמין בלבד, רשימת עמודות סגורה, מוגן מנוסחאות
@@ -336,6 +352,7 @@ lib/
   supabase/{client,server,public,proxy}.ts  database.types.ts
   rpc.ts errors.ts money.ts time.ts
   content/schema.ts          # סכמות zod לתוכן
+  concepts/themes.ts         # theme_key ← משתני CSS וגופן (AD-16), לפי DESIGN.md
   copy/                      # מיקרו-קופי לפי משטח
   admin/sensitive-actions.ts
   server/privileged/         # server-only: service-client.ts, join.ts, reset.ts, account-admin.ts, media.ts, push-worker.ts
@@ -425,7 +442,7 @@ flowchart LR
 
 | Capability / Area | Lives in | Governed by |
 | --- | --- | --- |
-| CAP-1 אתר ציבורי | `app/(public)`, `lib/supabase/public.ts`, `get_event_availability` | AD-2, AD-14, AD-15, AD-16 |
+| CAP-1 אתר ציבורי | `app/(public)`, `lib/supabase/public.ts` (בלי נתוני תפוסה) | AD-2, AD-14, AD-15, AD-16 |
 | CAP-2, CAP-6 אישור תשלום | `app/admin/(shell)/payments`, `admin_approve_payment` | AD-1, AD-5, AD-7, AD-9, AD-10 |
 | CAP-3 מוצרים | `app/admin/(shell)/products`, `admin_*_product` | AD-1, AD-7, AD-15 |
 | CAP-4, CAP-5 הצטרפות וכפילויות | `app/(auth)/join`, `lib/server/privileged/join.ts`, `join_*`, `claim_join`, `find_identity` | AD-3, AD-4, AD-10, AD-21 |
@@ -447,6 +464,14 @@ flowchart LR
 | CAP-31 יבוא | `app/admin/(shell)/import`, `admin_import_*`, `claim_*` | AD-3, AD-7, AD-10 |
 | CAP-32 הודעה כללית | `admin_send_broadcast` | AD-7, AD-12 |
 | CAP-34 הגדרות ותבניות | `app/admin/(shell)/settings`, `business_settings`, `notification_templates` | AD-12, AD-15 |
+| CAP-35 התראות לטל ותזכורות שיווק | `notifications` (נמענת אדמין), `app/admin/(shell)/notifications`, `private.job_marketing_reminders`, `private.job_expiry_alerts`, `marketing_reminder_texts` | AD-11, AD-12 |
+| CAP-36 הארכה אוטומטית | `private.job_auto_extend`, `private.week_has_eligible_session`, `entitlement_corrections` | AD-8, AD-11, AD-14, AD-19 |
+| CAP-37 מוצר מוצמד | `admin_approve_payment(p_event_id)`, `private.book_core`, `join_complete`, `plan_funding` | AD-10, AD-18, AD-20, AD-23 |
+| CAP-38 דף עבודה | `app/admin/(shell)/sessions/[id]/work`, `work_sheets`, `work_dishes`, `work_tasks`, `shopping_items`, `admin_*` | AD-1, AD-5, AD-8, AD-16 |
+| CAP-39 רשימות | `app/admin/(shell)/notes`, `note_topics`, `notes` | AD-1, AD-5 |
+| CAP-40 אישור תמונות | `set_photo_consent`, `profiles.photo_consent*`, `join_complete`/`claim_complete` | AD-1, AD-10, AD-19 |
+| CAP-41 קונספטים | `concepts`, `app/admin/(shell)/concepts`, `lib/concepts/themes.ts` | AD-15, AD-16 |
+| CAP-42 כרטיסיות פתוחות | `app/admin/(shell)/customers/open-cards`, `admin_list_open_cards` | AD-14 |
 
 ## Deferred
 
@@ -459,3 +484,5 @@ flowchart LR
 - **פרויקט Supabase לפרודקשן, שדרוג Vercel ו-repo פרטי:** החלטות תשלום של המשתמשת, לפני השקה ציבורית (תוכנית Hobby מיועדת לשימוש לא מסחרי), ולפני יבוא או תוכן אמיתי.
 - **תבנית ה-CSV של היבוא ופענוח Excel:** ב-E6, אחרי שיתברר איפה נמצאים נתוני הלקוחות.
 - **כלים לתצפית (Sentry או דומה):** לא בשלב הזה. הכשלים מופיעים ב"לטיפול" (AD-22).
+- **ערכי העיצוב של הקונספטים** (צבעים וגופנים): עשויים להשתנות אחרי בדיקה עם צילומים אמיתיים. הם בבעלות DESIGN.md וממומשים רק ב-`lib/concepts/themes.ts` וב-CSS (AD-16), כך ששינוי לא נוגע במסד.
+- **סימון הקשר בין צילום מפגש לאישור התמונות של נרשמות:** לא קיים. אישור בהעלאה (CAP-27) ואישור הלקוחה (CAP-40) נפרדים, וטל מצליבה ידנית בדף העבודה.

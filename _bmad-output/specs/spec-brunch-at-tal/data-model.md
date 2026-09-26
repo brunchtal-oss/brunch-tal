@@ -31,7 +31,7 @@
 | credit_options | credit_id, event_id, state, assigned_at, replaced_reason. ההיסטוריה נשמרת. לכל היותר options_count הזדמנויות פעילות או מנוצלות |
 | refund_requests | customer_id, payment_id, booking_id, amount_agorot, status, requested_at, completed_at, reference, handled_by |
 | notifications | customer_id, type, payload (כולל הנוסח שנשלח בפועל), target_path, dedupe_key, created_at, read_at |
-| admin_notifications | type (card_expiring, marketing_reminder), payload, target_path, dedupe_key, created_at, read_at. מרכז ההתראות של טל (CAP-35). לקוחה אין גישה. נקרא על ידי כל אדמין |
+| (התראות לטל) | אין טבלה נפרדת (ארכיטקטורה AD-12, החלטת משתמשת): `notifications` עם `recipient_id` (מזהה משתמשת Auth) ו-`recipient_kind` (customer / admin). התראת אדמין נוצרת לכל אדמין. סוגי אדמין: admin_card_expiring, marketing_reminder |
 | marketing_reminder_texts | body, sort_order, active, last_sent_at. מאגר הנוסחים של תזכורות השיווק. הבא בסבב: active עם last_sent_at הישן ביותר |
 | notification_templates | type (סוג אירוע ב-notification-matrix), body, version, updated_by, updated_at. נוסח התחלתי מהמקור. עריכה חלה על התראות חדשות |
 | broadcasts | id, audience (all או active), body, created_by, created_at |
