@@ -7,7 +7,7 @@ paradigm: 'database-centric domain core (transaction scripts in Postgres) + thin
 scope: 'כל המערכת: אתר ציבורי, אזור אישי ופאנל ניהול על מסד Supabase אחד, כולל משימות רקע ופוש'
 status: final
 created: '2026-09-24'
-updated: '2026-09-26'
+updated: '2026-09-29'
 binds: [CAP-1, CAP-2, CAP-3, CAP-4, CAP-5, CAP-6, CAP-7, CAP-8, CAP-9, CAP-10, CAP-11, CAP-12, CAP-13, CAP-14, CAP-15, CAP-16, CAP-17, CAP-18, CAP-19, CAP-20, CAP-21, CAP-22, CAP-23, CAP-24, CAP-25, CAP-26, CAP-27, CAP-28, CAP-29, CAP-30, CAP-31, CAP-32, CAP-33, CAP-34, CAP-35, CAP-36, CAP-37, CAP-38, CAP-39, CAP-40, CAP-41, CAP-42]
 sources:
   - ../../../../brunch_at_tal_charecter.md
@@ -17,6 +17,7 @@ sources:
   - ../../../specs/spec-brunch-at-tal/notification-matrix.md
   - ../../../specs/spec-brunch-at-tal/cancellation-rules.md
   - ../../../specs/spec-brunch-at-tal/site-map.md
+  - ../../../specs/spec-brunch-at-tal/online-payments.md
   - ../ux-designs/ux-brunch-at-tals-2026-09-23/EXPERIENCE.md
   - ../ux-designs/ux-brunch-at-tals-2026-09-23/DESIGN.md
   - ../../../../AGENTS.md
@@ -140,7 +141,8 @@ flowchart TD
 - **Rule:**
   - **טוקן:** נוצר רק ב-SQL, ב-`private.issue_token(p_purpose, …)`: ‏32 בייט מ-`gen_random_bytes`, ב-base64url בלי ריפוד. במסד נשמר `token_hash = encode(digest(raw,'sha256'),'hex')`. החיפוש רק דרך `private.find_token(p_raw)`. שום קוד TS לא מגבב טוקן, ושום RPC לא מקבל גיבוב. הטוקן הגולמי מוחזר פעם אחת בלבד, בתשובה של ה-RPC שהנפיק אותו, ו-`idempotent_finish` שומר את התוצאה בלעדיו. קריאה חוזרת מחזירה `reissue_required`. במסך הקישורים אין "העתקה" מאוחרת, רק סטטוס ו"הפקת קישור חלופי", שמעביר את הקודם ל-`revoked` באותה עסקה. תוקף של 48 שעות, קבוע ב-SQL.
   - **מצבים:** `pending`, ‏`awaiting_login`, ‏`claiming`, ‏`consumed`, ‏`revoked`, ‏`conflict`. ‏`expired` נגזר (`now() > expires_at` ו-`state in (pending, awaiting_login)`) ולא נשמר. ‏`claiming` שהתחיל לפני התפוגה רשאי להסתיים.
-  - **אישור תשלום:** ללקוחה חדשה, `admin_approve_payment` יוצר בעסקה אחת `payments` ו-`entitlements` עם `customer_id = null`, וטוקן `join`. במוצר מוצמד (CAP-37) הוא מקבל גם `p_event_id` ויוצר באותה עסקה הרשמה דרך `private.book_core` במצב `admin` (AD-23). התראת הרכישה נוצרת ב-`join_complete`, לא כאן. ‏`join_complete` ו-`claim_join` משייכים את התשלום, הזכות **וההרשמה** ללקוחה.
+  - **ליבת אישור אחת:** ‏`private.approve_payment_core(p_source, …)` היא הקוד היחיד שיוצר תשלום, זכות, טוקן `join` והרשמה של מוצר מוצמד. ‏`admin_approve_payment` מבצע בדיקת אדמין ו-idempotency, ואז קורא לה עם `source = manual`. בסבב הסליקה, RPC של service role יקרא לאותה ליבה עם `source = online` (Deferred). ‏`payments.recorded_by` חובה ב-`manual`. אמצעי התשלום הוא `payment_method_id` מ-`payment_methods`, שנכתבת רק ב-RPC ‏`admin_*`. אמצעי שכבר שימש עובר לארכיון ולא נמחק, וה-RPC לא מאפשר להסתיר את האמצעי הגלוי האחרון.
+  - **אישור תשלום:** ללקוחה חדשה, `admin_approve_payment` יוצר (דרך הליבה) בעסקה אחת `payments` ו-`entitlements` עם `customer_id = null`, וטוקן `join`. במוצר מוצמד (CAP-37) הוא מקבל גם `p_event_id` ויוצר באותה עסקה הרשמה דרך `private.book_core` במצב `admin` (AD-23). התראת הרכישה נוצרת ב-`join_complete`, לא כאן. ‏`join_complete` ו-`claim_join` משייכים את התשלום, הזכות **וההרשמה** ללקוחה.
   - **הצטרפות (`purpose = join`),** מתוזמרת ב-`lib/server/privileged/join.ts`:
     1. `join_begin(p_token, p_email, p_phone)` (service role) נועל את הטוקן וקורא ל-`find_identity`. ‏`existing_account` ← ‏`state = awaiting_login` עם `bound_user_id`. ‏`conflict` ← ‏`state = conflict`, שמופיע ב"לטיפול". אחרת ← ‏`state = claiming` עם `pending_user_id` חדש ו-`input_hash = sha256(email|phone)`. כניסה חוזרת במצב `claiming` עם `input_hash` אחר זורקת `LINK_IN_USE`.
     2. `getUserById(pending_user_id)`: אם היא קיימת ← `updateUserById` לסיסמה (רק במצב `claiming` עם אותו id ובלי פרופיל מופעל). אם לא ← `createUser({ id, email, password, email_confirm: true })`. ‏`email_exists` כשה-id לא קיים ← ‏`conflict`.
@@ -276,7 +278,7 @@ flowchart TD
 | Concern | Convention |
 | --- | --- |
 | שמות ב-DB | טבלאות ברבים `snake_case`, עמודות `snake_case`, ‏`id uuid default gen_random_uuid()`, ‏FK בשם `<entity>_id`, זמן `<verb>_at timestamptz`, תאריך `<name>_on date`, כסף `<name>_agorot integer` |
-| אוצר סטטוסים | `text` עם `check`, ורק הערכים האלה: `events.status` draft, published, cancelled, completed · ‏`bookings.status` confirmed, cancelled, completed · ‏`activation_tokens.state` כמו ב-AD-10 · ‏`waitlist_entries.status` active, left, booked, closed · ‏`cancellation_credits.status` awaiting_options, available, used, refund_pending, refunded, expired, ועוד `choice_pending boolean` נפרד · ‏`credit_options.state` active, used, lapsed, replaced · ‏`payments.status` approved, voided · ‏`refund_requests.status` requested, completed · ‏`entitlements.status` active, revoked, refunded · ‏`notification_jobs.status` queued, sending, sent, failed · ‏`notifications.recipient_kind` customer, admin · ‏`products.validity_mode` days, session · ‏`events.kind` / ‏`concepts.default_kind` regular, couple · ‏`concepts.theme_key` mothers, couples, grandma, grandpa, greek, generic · ‏`concepts.generic_paper_key` olive, plum, jade, mustard, slate, clay. סטטוס חדש מתווסף כאן קודם |
+| אוצר סטטוסים | `text` עם `check`, ורק הערכים האלה: `events.status` draft, published, cancelled, completed · ‏`bookings.status` confirmed, cancelled, completed · ‏`activation_tokens.state` כמו ב-AD-10 · ‏`waitlist_entries.status` active, left, booked, closed · ‏`cancellation_credits.status` awaiting_options, available, used, refund_pending, refunded, expired, ועוד `choice_pending boolean` נפרד · ‏`credit_options.state` active, used, lapsed, replaced · ‏`payments.status` approved, voided · ‏`payments.source` manual, online (בגרסה הראשונה רק manual) · ‏`refund_requests.status` requested, completed · ‏`entitlements.status` active, revoked, refunded · ‏`notification_jobs.status` queued, sending, sent, failed · ‏`notifications.recipient_kind` customer, admin · ‏`products.validity_mode` days, session · ‏`events.kind` / ‏`concepts.default_kind` regular, couple · ‏`concepts.theme_key` mothers, couples, grandma, grandpa, greek, generic · ‏`concepts.generic_paper_key` olive, plum, jade, mustard, slate, clay. סטטוס חדש מתווסף כאן קודם |
 | טבלאות פנימיות | טוקנים, תורי שליחה, idempotency, יבוא והערות פנימיות בלי policy ללקוחה (טבלאות העזר הטכניות ב-`private`) |
 | שמות ב-TS | קבצים `kebab-case.ts(x)`, רכיבים `PascalCase`, Server Actions ב-`actions.ts` ליד הנתיב, בשם `<verb><Noun>Action` |
 | Migrations | ‏`npx supabase migration new <verb>_<subject>`. migration שמוסיפה טבלה מוסיפה באותו קובץ RLS, policies, אינדקסים ו-grants (AD-5) |
@@ -338,7 +340,7 @@ app/
     customers/ customers/open-cards/ customers/[id]/ customers/[id]/entitlements/[entitlementId]/
     payments/ payments/new/ links/
     products/ concepts/ notes/ content/ content/[page]/ content/[page]/preview/
-    broadcast/ import/ audit/ settings/ settings/templates/ settings/marketing/
+    broadcast/ import/ audit/ settings/ settings/templates/ settings/marketing/ settings/payment-methods/
   api/
     jobs/push/route.ts       # עובד הפוש, POST בלבד, נקרא רק מ-pg_cron
     admin/export/route.ts    # ייצוא CSV, אדמין בלבד, רשימת עמודות סגורה, מוגן מנוסחאות
@@ -443,7 +445,7 @@ flowchart LR
 | Capability / Area | Lives in | Governed by |
 | --- | --- | --- |
 | CAP-1 אתר ציבורי | `app/(public)`, `lib/supabase/public.ts` (בלי נתוני תפוסה) | AD-2, AD-14, AD-15, AD-16 |
-| CAP-2, CAP-6 אישור תשלום | `app/admin/(shell)/payments`, `admin_approve_payment` | AD-1, AD-5, AD-7, AD-9, AD-10 |
+| CAP-2, CAP-6 אישור תשלום | `app/admin/(shell)/payments`, `admin_approve_payment` ← `private.approve_payment_core`, `payment_methods` (`app/admin/(shell)/settings/payment-methods`) | AD-1, AD-5, AD-7, AD-9, AD-10 |
 | CAP-3 מוצרים | `app/admin/(shell)/products`, `admin_*_product` | AD-1, AD-7, AD-15 |
 | CAP-4, CAP-5 הצטרפות וכפילויות | `app/(auth)/join`, `lib/server/privileged/join.ts`, `join_*`, `claim_join`, `find_identity` | AD-3, AD-4, AD-10, AD-21 |
 | CAP-7 התחברות, איפוס, שינוי מייל או טלפון | `app/(auth)`, `lib/server/privileged/{reset,account-admin}.ts` | AD-3, AD-10, AD-21 |
@@ -477,6 +479,7 @@ flowchart LR
 
 - **הסכמה המפורטת** (עמודות, אינדקסים, שמות constraints): נקבעת ב-migrations לפי `data-model.md`, עם התיקונים שב-AD-3, ‏AD-5, ‏AD-12, ‏AD-14, ‏AD-18 ו-AD-19. הקוד הוא הבעלים.
 - **רשימת קודי השגיאה המלאה:** נבנית ב-`lib/errors.ts` תוך כדי, לפי AD-5.
+- **סליקה מקוונת (סבב נפרד, אחרי שייבחר ספק; ההחלטות העסקיות ב-`online-payments.md`):** נתיב `app/api/payments/<provider>/route.ts` (רק `POST`, אימות חתימה, פטור מ-`SITE_LOCKED` כמו `/api/jobs/push`, ‏AD-22). ‏RPC של service role מאמת את העסקה וקורא ל-`private.approve_payment_core` עם `source = online`, ‏`actor_scope = provider:<name>` ומזהה העסקה כמפתח idempotency (AD-5). הרשמה במצב "מקום שמור בזמן תשלום" עם `hold_until`, שנספרת במכסה ומשתחררת ב-cron (הרחבה של AD-23). הגדרות חדשות: חלון תשלום, תוספת השמירה ואופן ההחזר (ספק או ידני). סוד הספק רק ב-env של השרת. המצבים והשמות ייקבעו בסבב, מול ממשק הספק.
 - **ספק מייל, אימות מייל ואיפוס אוטומטי:** מחוץ לשלב 1. אם יתווסף, ‏`purpose = reset` נשאר ומתווסף מסלול.
 - **מנגנון הגבלת הקצב** להצטרפות, להפעלה, לאיפוס ולהתחברות: נקבע ב-E2, לפי IP ומזהה טוקן, עם הודעות שלא חושפות אם חשבון קיים. חובה לפני ש-`SITE_LOCKED` מוסר.
 - **גיבוי חיצוני ושחזור:** לפני שימוש עסקי (E6).
