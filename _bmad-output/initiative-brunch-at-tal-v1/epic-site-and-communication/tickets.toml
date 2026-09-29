@@ -1,0 +1,180 @@
+# E5 — epic-site-and-communication. Table order is the build order.
+
+[[entry]]
+id = 15
+type = "story"
+title = "Lift the site lock — הסרת נעילת האתר"
+description = "SITE_LOCKED=false ב-preview וב-production (המנגנון ב-proxy.ts נשאר), app/robots.ts ו-X-Robots-Tag: noindex לכל האתר עד הפתיחה ב-6.9, ובדיקה שהגבלת הקצב של 2.8 פעילה על /login ו-/admin/login; באתר רק נתונים בדויים."
+verify = "כתובת ה-production נפתחת בלי סיסמה, כל תשובה נושאת X-Robots-Tag: noindex, /me ו-/admin עדיין דורשים התחברות, וניסיונות התחברות רבים ל-/admin/login נחסמים."
+covers = []
+after = ["2.8", "4.13"]
+hitl = true
+risk = "medium"
+references = ["ARCHITECTURE-SPINE.md#ad-22", "ARCHITECTURE-SPINE.md, Deferred (מנגנון הגבלת הקצב)"]
+
+[[entry]]
+id = 1
+type = "story"
+title = "Publish hero to home tracer — פרסום ההירו לבית"
+description = "CAP-27, CAP-1: content_pages ו-content_sections (מרחיבים את הטבלה ואת רשומת פרטי העסק של 2.2), סכמות zod ב-lib/content/schema.ts, admin_publish_content עם גרסה, קריאה ב-'use cache' דרך lib/supabase/public.ts עם cacheTag ו-updateTag, פרטי העסק בטיוטה ופרסום עם קישור אליהם מ-/admin/settings, ו-/admin/content/home עם עריכת ההירו ותצוגה מקדימה."
+verify = "בטלפון: טל משנה את כותרת ההירו, רואה אותה בתצוגה מקדימה, מפרסמת, והבית מציג אותה בלי פריסה; טיוטה לא מופיעה בבית; בלוק שלא עובר את הסכמה לא מוצג."
+covers = ["CAP-27", "CAP-1"]
+after = ["2.2", "1.5"]
+hitl = true
+risk = "medium"
+references = ["ARCHITECTURE-SPINE.md#ad-16 (Next, צורת התוכן)", "admin-configurable-parameters.md, תוכן האתר הציבורי", "mockups/key-public-home.html"]
+
+[[entry]]
+id = 2
+type = "story"
+title = "Public pages and shared session page — עמודים ציבוריים ועמוד מפגש"
+description = "CAP-1, CAP-41, CAP-12: העמודים /, /sessions ו-/sessions/[id] (דינמיים, בלי 'use cache', ועם הרכיב המשותף מ-3.2), /about, /how-it-works, /gallery, /contact, ה-top-bar, התפריט, פס הוואטסאפ והפוטר, עם \"כניסה לאזור האישי\" ו\"להצטרפות צרי קשר עם טל\" למספר מפרטי העסק, מחיר תצוגה או מחיר המוצר בעמוד המפגש, בלי תווית סוג, בלי תפריט ובלי נתון תפוסה."
+verify = "בדיקות: אורחת מגיעה לכל עמוד בלי התחברות; מפגש בטיוטה לא מופיע; תשובת הקריאה הציבורית למפגשים לא מכילה שום שדה תפוסה; שינוי מספר הוואטסאפ או הכתובת בפרטי העסק משנה כל קישור ותצוגה באתר; מחיר התצוגה מוצג ולא משנה תשלום; סקשן בלי תוכן שפורסם לא מוצג."
+covers = ["CAP-1", "CAP-41", "CAP-12"]
+after = [1]
+hitl = false
+risk = "medium"
+references = ["site-map.md, אתר ציבורי", "ARCHITECTURE-SPINE.md#ad-2", "mockups/key-public-session.html"]
+
+[[entry]]
+id = 3
+type = "story"
+title = "Full content editor and testimonials — עורך התוכן המלא והמלצות"
+description = "CAP-27: עריכת כל הבלוקים (כותרות סקשנים, הסבר קצר, איך זה עובד, אודות, שאלות נפוצות, גלריה, המלצות כטקסט או כתמונה, נוסח בקשת אישור התמונות, פרטי העסק, הוראות תשלום והגעה, פוטר) עם סידור, הסתרה, טיוטה, תצוגה מקדימה ופרסום, וסינון XSS בטקסט עשיר."
+verify = "בדיקות: המלצה נוספת כטקסט עם שם או כתמונה עם טקסט חלופי, ונערכת, מסודרת, מוסתרת ונמחקת; תוכן מוסתר לא מופיע באף נתיב ציבורי; חיפוש בקוד לא מוצא טקסט שיווקי בעמודים הציבוריים."
+covers = ["CAP-27"]
+after = [2]
+hitl = false
+risk = "medium"
+references = ["admin-configurable-parameters.md, תוכן האתר הציבורי", "ARCHITECTURE-SPINE.md#ad-16 (צורת התוכן)"]
+
+[[entry]]
+id = 4
+type = "story"
+title = "Media upload and publish — העלאת תמונות ופרסומן"
+description = "CAP-27, CAP-12, CAP-41: buckets media-drafts ו-media-public ומדיניות האחסון ב-migration, media_assets עם publish_state, העלאה עם בדיקת סוג וגודל, טקסט חלופי, חיתוך לטלפון וסימון הסכמה, פרסום דו-שלבי (copying, העתקה, סגירה) והסתרה שמוחקת את הקובץ הציבורי, copying תקוע ב\"לטיפול\", שדות התמונה של המפגש ושל הקונספט עם הבורר שלהם, והגשה בגודל מותאם בלי טעינת כל הגלריה מראש; בבדיקות רק תמונות סינתטיות."
+verify = "בדיקות: תמונה בלי טקסט חלופי לא מתפרסמת; תמונה מזוהה בלי סימון הסכמה לא מתפרסמת; קובץ ב-media-drafts לא נגיש בכתובת ציבורית; תקלה באמצע ההעתקה ממשיכה ב-retry ולא משאירה קובץ יתום."
+covers = ["CAP-27", "CAP-12", "CAP-41"]
+after = [3]
+hitl = true
+risk = "medium"
+references = ["ARCHITECTURE-SPINE.md#ad-16 (מדיה)", "ARCHITECTURE-SPINE.md#ad-21", "site-map.md, תמונות"]
+
+[[entry]]
+id = 5
+type = "story"
+title = "Privacy policy and accessibility statement — מדיניות פרטיות והצהרת נגישות"
+description = "CAP-29, CAP-33, CAP-40: /privacy ו-/accessibility מתוכן שפורסם, עריכה בטיוטה, תצוגה מקדימה ופרסום עם published_version שנשמרת בהסכמה (וגם גרסת נוסח בקשת התמונות), כללי ההצהרה מ-EXPERIENCE (שדות חובה שחוסמים פרסום, \"עודכן לאחרונה\" אוטומטי, אי אפשר להסתיר אחרי פרסום, קישורים מהתפריט, מההתחברות, מהפרופיל ומ\"עוד\"), מצב לפני פרסום ראשון שמציג רק פרטי קשר קיימים, ופריט ב\"לטיפול\" כל עוד ההצהרה לא פורסמה. בא אחרי 5.4 כי שניהם משנים את העורך."
+verify = "בדיקות: לפני הפרסום הראשון /accessibility מציג רק פרטי קשר קיימים; כל פרסום של המדיניות מעלה גרסה, והצטרפות אחריו נשמרת עם הגרסה החדשה; שני העמודים נגישים בלי התחברות ומקושרים מהפוטר."
+covers = ["CAP-29", "CAP-33", "CAP-40"]
+after = [4, "4.1"]
+hitl = false
+risk = "low"
+references = ["EXPERIENCE.md, הצהרת נגישות", "ARCHITECTURE-SPINE.md#ad-16", "ARCHITECTURE-SPINE.md#ad-22 (\"לטיפול\")"]
+
+[[entry]]
+id = 6
+type = "story"
+title = "Waitlist — רשימת המתנה"
+description = "CAP-15, CAP-12: waitlist_entries, join_waitlist ו-leave_waitlist ללקוחה מחוברת גם בלי יתרה, private.notify_waitlist עם waitlist_cycle לכל גודל הרשמה, ב-migration חדשה שמגדירה מחדש את פונקציות E3 שמשחררות מקום (cancel_booking, admin_cancel_booking, move_booking, העלאת מכסה, בקשת החזר) ואת אלה שמוציאות מההמתנה (book_session, book_sessions, admin_book_customer, bind_purchase), הרצה חוזרת של בדיקות E3, ממתינות בפרטי המפגש ובהרשמות שלי, הרחבת הסרת הפרטים (4.6), והתראת waitlist_spot."
+verify = "בדיקות: אי אפשר להיות פעמיים ברשימה או גם רשומה וגם ממתינה; הרשמה מוצלחת מוציאה מהרשימה; מקום בודד לא מזמין זוג; פינוי אחד לא שולח שתי התראות לאותה ממתינה; לקוחה בלי כניסה מצטרפת להמתנה אבל לא נרשמת; אורחת לא יכולה להצטרף."
+covers = ["CAP-15", "CAP-12"]
+after = [2, "3.14"]
+hitl = false
+risk = "high"
+references = ["ARCHITECTURE-SPINE.md#ad-14 (רשימת המתנה)", "ARCHITECTURE-SPINE.md#ad-12 (waitlist_spot)", "brunch_at_tal_charecter.md, §5 רשימת המתנה"]
+
+[[entry]]
+id = 7
+type = "story"
+title = "In-app notification centers — מרכזי התראות בתוך האפליקציה"
+description = "CAP-21, CAP-35: /me/notifications ו-/admin/notifications (פעמון בסרגל העליון) מתוך notifications לפי recipient_id, mark_notifications_read, מונה לא-נקראו בבית האזור האישי, ויעד (target_path) לכל התראה."
+verify = "בדיקות: לקוחה לא רואה התראת אדמין גם בפנייה ישירה ל-API; סימון נקרא מתעדכן בשני המכשירים; לחיצה על התראה מובילה ליעד שלה."
+covers = ["CAP-21", "CAP-35"]
+after = ["4.12", "2.12"]
+hitl = false
+risk = "low"
+references = ["ARCHITECTURE-SPINE.md#ad-12", "notification-matrix.md"]
+
+[[entry]]
+id = 9
+type = "story"
+title = "PWA install and offline — התקנה ואופליין"
+description = "CAP-23: app/manifest.ts ואייקונים, public/sw.js שנכתב ידנית (מטמון רק ל-/_next/static, אייקונים ו-/offline, ניווט network-only, push ו-notificationclick), /offline, ו-/install עם הדרכת התקנה והסבר ל-iPhone."
+verify = "בדיקות: אחרי ניווט ב-/me וב-/admin, ה-Cache Storage לא מכיל HTML שלהם או /api; באופליין מוצג /offline ואי אפשר להירשם או לבטל; האפליקציה ניתנת להתקנה בטלפון."
+covers = ["CAP-23"]
+after = [2]
+hitl = true
+risk = "medium"
+references = ["ARCHITECTURE-SPINE.md#ad-16 (Service worker)", "EXPERIENCE.md"]
+
+[[entry]]
+id = 8
+type = "story"
+title = "Push pipeline and permission flow — פוש והרשאה"
+description = "CAP-22, CAP-21, CAP-35: הפעלת pg_net ו-Vault (app_url של כתובת production קבועה, cron_secret), private.invoke_push_worker ו-job_invoke_push_worker, /api/jobs/push עם Bearer ו-timingSafeEqual, claim_push_jobs ו-finish_push_job עם lease, notification_deliveries, backoff ומחיקת מנוי ב-404/410, בדיקה חוזרת של waitlist_spot לפני שליחה, register/unregister_push_subscription (כולל בהתנתקות), בקשת הרשאה רק אחרי הסבר ולחיצה ב-/me וב-/admin של טל, הסבר למכשיר שלא תומך, הרחבת הסרת הפרטים למנויים, ו-notification_jobs שנכשלו ב\"לטיפול\"."
+verify = "בטלפון (Android ו-iPhone עם האפליקציה במסך הבית): התראה שנכנסה לתור מגיעה תוך דקה כשהאפליקציה סגורה, גם לטל; retry לא שולח שוב למכשיר שקיבל; כשל פוש לא משנה את ההרשמה; בקשה בלי סוד מקבלת 401; מי שסירבה לא נשאלת בכל כניסה; waitlist_spot שהמקום שלו נתפס נסגר בלי שליחה."
+covers = ["CAP-22", "CAP-21", "CAP-35"]
+after = [5, 6, 7, 9, "4.1", 15]
+hitl = true
+risk = "high"
+references = ["ARCHITECTURE-SPINE.md#ad-11", "ARCHITECTURE-SPINE.md#ad-12 (העובד, מנויים)", "ARCHITECTURE-SPINE.md#ad-22"]
+
+[[entry]]
+id = 10
+type = "story"
+title = "Scheduled jobs: reminders, expiry alerts, auto-extend, cleanup — משימות מתוזמנות"
+description = "CAP-21, CAP-22, CAP-35, CAP-36, CAP-18: job_reminders לפי policy_snapshot ו-revision (לא להרשמה בלי לקוחה), job_expiry_alerts (card_expiring ללקוחה ו-admin_card_expiring לטל), job_auto_extend שמפעיל את כלל 3.14, job_refresh_credit_options ו-job_cleanup, פריט ב\"לטיפול\" למשימה שנכשלה או שלא רצה בזמן ולערכי Vault חסרים, ובדיקה האם pg_cron מונע השהיה של הפרויקט החינמי."
+verify = "בטלפון: לקוחה בדויה עם הרשמה מקבלת תזכורת בפוש כשהאפליקציה סגורה. בדיקות: תזכורת נשלחת פעם אחת, לא להרשמה שבוטלה ולא להרשמה שנוצרה אחרי זמן התזכורת, ומחושבת מחדש אחרי שינוי שעה; שינוי זמן התזכורת בהגדרות לא משנה הרשמות קיימות; התראות 21 ו-10 ימים פעם אחת כל אחת ושוב אחרי הארכה; job_refresh_credit_options מחליף חלופה שהתמלאה; job_cleanup מוחק רק מה שעבר את הזמן."
+covers = ["CAP-21", "CAP-22", "CAP-35", "CAP-36", "CAP-18"]
+after = [8, "3.14", "4.7"]
+hitl = true
+risk = "medium"
+references = ["ARCHITECTURE-SPINE.md#ad-11", "ARCHITECTURE-SPINE.md#ad-13", "notification-matrix.md"]
+
+[[entry]]
+id = 11
+type = "story"
+title = "Marketing reminders for Tal — תזכורות שיווק לטל"
+description = "CAP-35, CAP-34: /admin/settings/marketing עם לוח הזמנים (א׳, ג׳, ד׳ ב-09:00, ב׳ וה׳ ב-20:00) ומאגר נוסחים שנערך, marketing_reminder_texts עם המאגר ההתחלתי מ-notification-matrix כנתוני seed ב-migration, job_marketing_reminders שבוחר את הנוסח הישן ביותר ושולח פעם אחת לכל מועד (בלי נוסח פעיל לא נשלח כלום), ופס התזכורת (reminder-strip) בבית האדמין עד שטל סוגרת אותו."
+verify = "בדיקות: בהרצה כפולה באותו מועד נשלחת תזכורת אחת; שני מועדים רצופים מקבלים נוסחים שונים; המועד נכון בשבוע מעבר שעון קיץ; לקוחה לא יכולה לקרוא את ההתראות האלה."
+covers = ["CAP-35", "CAP-34"]
+after = [10]
+hitl = false
+risk = "low"
+references = ["ARCHITECTURE-SPINE.md#ad-11 (job_marketing_reminders)", "notification-matrix.md, התראות לטל"]
+
+[[entry]]
+id = 13
+type = "story"
+title = "Inactive customers — לקוחות לא פעילות"
+description = "CAP-28, CAP-25: private.customer_activity שנגזרת בזמן הקריאה (תקופה מההגדרות, ספירה ממועד יצירת החשבון למי שלא השתתפה), סינון פעילה או לא פעילה ברשימת הלקוחות, והסתרה של לא פעילות כברירת מחדל."
+verify = "בדיקות: לקוחה עם הרשמה עתידית, זכות תקפה, זיכוי פתוח או החזר ממתין לא מסומנת; לקוחה שלא השתתפה מעולם נספרת ממועד יצירת החשבון; רכישה חדשה מחזירה לפעילה; הסימון לא מוחק ולא חוסם."
+covers = ["CAP-28", "CAP-25"]
+after = [11, "4.2", "4.7"]
+hitl = false
+risk = "low"
+references = ["ARCHITECTURE-SPINE.md#ad-14 (פקיעה ופעילות)"]
+
+[[entry]]
+id = 12
+type = "story"
+title = "Broadcast message — הודעה כללית"
+description = "CAP-32: /admin/broadcast עם preview_admin_send_broadcast ו-admin_send_broadcast רגישים, בחירה בין כל הלקוחות לפעילות בלבד (לקוחות שהופעלו ולא הוסרו), נוסח שטל עורכת, והודעה אחת לכל נמענת באזור האישי ובפוש."
+verify = "בדיקות: שליחה חוזרת עם אותו מפתח לא יוצרת הודעה שנייה לאף נמענת; שליחה בלי צ׳קבוקס נדחית; \"פעילות בלבד\" לא כולל לקוחה לא פעילה."
+covers = ["CAP-32"]
+after = [13]
+hitl = false
+risk = "low"
+references = ["ARCHITECTURE-SPINE.md#ad-7", "ARCHITECTURE-SPINE.md#ad-12 (broadcast)"]
+
+[[entry]]
+id = 14
+type = "story"
+title = "Refactor sweep — ניקוי סוף אפיק"
+description = "ניקוי בלבד, לפי רשומות הבנייה וממצאי הביקורת שנדחו במהלך האפיק; ההיקף נקבע כשהסיפור נשלף."
+verify = "lint, typecheck ו-test עוברים, grants.test.ts וה-advisor נקיים, וה-preview עולה מאחורי הנעילה."
+covers = []
+after = [5, 6, 12]
+hitl = false
+risk = "low"

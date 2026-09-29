@@ -1,0 +1,85 @@
+# E1 — epic-foundation. Table order is the build order.
+
+[[entry]]
+id = 1
+type = "story"
+title = "Phone activation and login tracer — ניסוי הפעלה והתחברות בטלפון"
+description = "בסיס ל-CAP-7 ול-CAP-4: migration 0001 (ביטול הרשאות ברירת מחדל, schema private), profiles מינימלי, admin_roles, is_admin, current_customer_id ו-get_my_session_role, טבלת activation_tokens עם issue_token/find_token/token_view, reset_begin/reset_complete, מעבר service-client ל-lib/server/privileged עם server-only, lib/server/privileged/reset.ts, והמסכים /reset/[token] (עם Referrer-Policy: no-referrer, no-store ובלי משאבי צד שלישי), /login ו-/me מינימלי. סקריפט dev בלבד (service role, מחוץ ל-app) יוצר אדמין ולקוחה בדויות ב-Auth ומנפיק קישור reset; הוא מוחלף בכפתור admin_issue_link ב-2.8. המשתמשת מכבה ב-Supabase הרשמה ציבורית, Confirm email ו-Automatically expose new tables, ובודקת בטלפון שלה. אין push ל-main לפני 1.6."
+verify = "בטלפון ברשת המקומית: סקריפט dev מפיק קישור ללקוחה בדויה, היא בוחרת סיסמה, מגיעה ל-/me, נשארת מחוברת אחרי סגירה ופתיחה, ופתיחה חוזרת של הקישור מציגה שהוא כבר מומש."
+covers = ["E1-R4", "E1-R3", "E1-R1"]
+after = []
+hitl = true
+risk = "high"
+unknown = "האם cookies של Supabase SSR נשמרים בדפדפן של iPhone ברשת מקומית בלי https; אם לא, הניסוי עובר ל-preview נעול אחרי סיפור 6."
+references = ["ARCHITECTURE-SPINE.md#ad-10", "ARCHITECTURE-SPINE.md#ad-4", "ARCHITECTURE-SPINE.md#ad-5", "security-and-rpc-rules.md, הקמת חשבון וקישור", "ARCHITECTURE-SPINE.md#ad-16 (נתיבי טוקן)"]
+
+[[entry]]
+id = 2
+type = "story"
+title = "Tooling, lint rules and CI — כלים, כללי lint ו-CI"
+description = "סוגר את שאר פערי E1 מול הקוד: zod, server-only ו-web-push כתלויות, shadcn ל-devDependencies, engines node 24 ו-@types/node ^24 (היום ^26), הסרת --turbopack מ-dev, lib/supabase/public.ts, כללי no-restricted-imports, וכללי no-restricted-syntax החדשים ממוזגים לתוך רשומת ה-RTL הקיימת ב-eslint.config.mjs (רשומה שנייה מחליפה את הראשונה); הפרדת `npm test` (בדיקות טהורות, ב-CI) מ-`npm run test:db` (supabase/tests, מקומית מול dev); ו-GitHub Actions עם lint, typecheck, test ו-npm audit."
+verify = "ה-CI עובר על PR בלי גישה למסד; קובץ עם \"use client\" שמייבא את lib/server/privileged נכשל ב-lint; margin-left עדיין נחסם ב-lint."
+covers = ["E1-R1", "E1-R5"]
+after = [1]
+hitl = false
+risk = "low"
+references = ["ARCHITECTURE-SPINE.md, Stack", "ARCHITECTURE-SPINE.md, Consistency Conventions (אכיפה)", "ARCHITECTURE-SPINE.md#ad-22"]
+
+[[entry]]
+id = 3
+type = "story"
+title = "Time, money and phone helpers — עזרי זמן, כסף וטלפון"
+description = "בסיס ל-CAP-2, CAP-9, CAP-14, CAP-16: עזרי SQL טהורים ב-private (local_day_end, registration_closes_at, cancel_deadline, local_week_start, prep_day, normalize_phone), lib/money.ts ו-lib/time.ts לתצוגה בלבד, ותשתית בדיקות המסד המשותפת (חיבור Postgres ישיר עם pg כ-devDependency ומחרוזת חיבור של dev ב-.env.local בלבד, קידומת test_<run-id> ומחיקה, server-only ממופה לריק ב-Vitest) שכל בדיקת RPC מאוחרת משתמשת בה."
+verify = "בדיקות מול מסד הפיתוח עוברות לבדיוק 48 שעות, ל-20:00 ביום שלפני בשבוע מעבר שעון קיץ, לסוף היום המקומי ה-49, ולטלפון 054... ו-+972... כאותו E.164; בדיקות טהורות ל-formatAgorot ו-parseShekelsToAgorot עוברות."
+covers = ["E1-R3"]
+after = [1]
+hitl = false
+risk = "medium"
+references = ["ARCHITECTURE-SPINE.md#ad-8", "ARCHITECTURE-SPINE.md#ad-9"]
+
+[[entry]]
+id = 4
+type = "story"
+title = "RPC contract: idempotency, audit, errors, types — חוזה RPC"
+description = "בסיס לכל RPC ול-CAP-26: private.idempotency_results עם idempotent_begin/finish, audit_log עם private.audit ו-audit_diff שמסתירים מידע מזהה, lib/errors.ts, lib/rpc.ts (callRpc), יצירת database.types.ts, ו-supabase/tests/grants.test.ts; ב-migration חדשה הוא מחיל את החוזה גם על reset_begin/reset_complete מ-1.1."
+verify = "בדיקות מסד מקומיות: קריאה כפולה עם אותו מפתח מחזירה את אותה תוצאה, מפתח עם קלט אחר זורק IDEMPOTENCY_KEY_REUSED, שורת היומן מכילה \"<changed>\" במקום שם, reset_complete נרשם ביומן בלי טוקן, grants.test.ts נכשל על grant שנוסף בלי כוונה, ולקוחה אחת לא קוראת שורה של אחרת."
+covers = ["E1-R3"]
+after = [3]
+hitl = false
+risk = "medium"
+references = ["ARCHITECTURE-SPINE.md#ad-5", "ARCHITECTURE-SPINE.md#ad-17", "ARCHITECTURE-SPINE.md#ad-19"]
+
+[[entry]]
+id = 5
+type = "story"
+title = "Design tokens, fonts and the three shells — טוקנים, גופנים ומעטפות"
+description = "טוקני הצבע והגופנים מ-DESIGN.md ב-globals.css, ושלוש המעטפות (ציבורית, /me, /admin/(shell)) עם בדיקת תפקיד ב-Suspense דרך get_my_session_role (מ-1.1), /admin/login, תפריט \"עוד\" (/admin/more) בטלפון, וניווט שמציג רק מסכים קיימים."
+verify = "בטלפון: /me מפנה ל-/login כשאין התחברות, /admin מפנה ל-/admin/login ללקוחה, והמעטפות מוצגות RTL בגופנים ובצבעים של DESIGN.md."
+covers = ["E1-R2"]
+after = [1]
+hitl = false
+risk = "low"
+references = ["ARCHITECTURE-SPINE.md#ad-2", "ARCHITECTURE-SPINE.md#ad-16", "DESIGN.md", "EXPERIENCE.md, Information Architecture"]
+
+[[entry]]
+id = 6
+type = "story"
+title = "Site lock, environments and preview deploy — נעילת אתר וסביבות"
+description = "SITE_LOCKED עם Basic Auth ב-proxy.ts ורשימת prefixes פטורים (/api/jobs/), env.example בלי סודות (כולל הסרת AI_GATEWAY_API_KEY), seed.sql בדוי, README עם checklist של Auth, Vault ו-Vercel ועם הפקודות test ו-test:db, ופריסה ראשונה ל-preview ול-production מאחורי הנעילה, באישור push מהמשתמשת."
+verify = "כתובות ה-preview וה-production דורשות סיסמה בכל נתיב חוץ מ-/api/jobs/, והניסוי של 1.1 עובר גם דרכן בטלפון."
+covers = ["E1-R5"]
+after = [1]
+hitl = true
+risk = "low"
+references = ["ARCHITECTURE-SPINE.md#ad-22", "build-sequence.md, למסור בסוף כל שלב"]
+
+[[entry]]
+id = 7
+type = "story"
+title = "Refactor sweep — ניקוי סוף אפיק"
+description = "ניקוי בלבד, לפי רשומות הבנייה וממצאי הביקורת שנדחו במהלך האפיק; ההיקף נקבע כשהסיפור נשלף."
+verify = "lint, typecheck ו-test עוברים, וה-advisor נקי."
+covers = []
+after = [2, 3, 4, 5, 6]
+hitl = false
+risk = "low"

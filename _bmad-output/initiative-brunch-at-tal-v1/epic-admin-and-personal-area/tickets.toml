@@ -1,0 +1,158 @@
+# E4 — epic-admin-and-personal-area. Table order is the build order.
+
+[[entry]]
+id = 1
+type = "story"
+title = "Admin home tracer with attention items — בית האדמין ו\"לטיפול\""
+description = "CAP-24: /admin עם מפגשים קרובים ותפוסה, בקשות החזר פתוחות, תשלומים אחרונים, כרטיסיות שעומדות לפוג לפי הסף בהגדרות, admin_get_attention_items כמקור יחיד (טוקנים ב-conflict או תקועים, BIND_CONFLICT, רכישה בלי קישור חי, \"שולם בלי מקום\" של park, email_change_pending תקוע, choice_pending, החזרים, הרשמות שנפגעו מתיקון), והסכום \"תשלומים שאושרו פחות החזרים שבוצעו\" שמחושב ב-SQL לתקופה שב-EXPERIENCE."
+verify = "בטלפון, על נתונים בדויים מ-E2 ו-E3: כל רשימה בבית תואמת את מה שבמסד, והמילים \"רווח\" ו\"הכנסה\" לא מופיעות; בדיקה: לקוחה שקוראת ל-admin_get_attention_items מקבלת NOT_AUTHORIZED."
+covers = ["CAP-24"]
+after = ["3.13"]
+hitl = true
+risk = "medium"
+references = ["ARCHITECTURE-SPINE.md#ad-22 (\"לטיפול\")", "ARCHITECTURE-SPINE.md#ad-9", "mockups/key-admin-home.html"]
+
+[[entry]]
+id = 2
+type = "story"
+title = "Customers list and customer card — רשימת לקוחות וכרטיס לקוחה"
+description = "CAP-25, CAP-9, CAP-40: admin_list_customers ו-admin_get_customer (חיפוש לפי שם או טלפון, סינון לפי תאריך פעילות אחרון), ו-/admin/customers/[id] שמתרחב מחלק החשבון של E2 לפרופיל, היסטוריה, יתרות ותוקף, התראות, אישור תמונות והערות פנימיות שהלקוחה לא רואה."
+verify = "בדיקות: חיפוש לפי חלק מהשם או לפי טלפון בכל פורמט מוצא את הלקוחה; סינון לפי תאריך פעילות אחרון מחזיר רק את המתאימות; אישור התמונות מוצג כפי שנשמר; הערה פנימית לא מוחזרת לשום קריאה של הלקוחה; היתרות בכרטיס זהות ל-entitlement_balances."
+covers = ["CAP-25", "CAP-9", "CAP-40"]
+after = [1]
+hitl = false
+risk = "medium"
+references = ["ARCHITECTURE-SPINE.md#ad-3 (מייל רק דרך admin_get_customer)", "site-map.md, פאנל ניהול › לקוחות"]
+
+[[entry]]
+id = 3
+type = "story"
+title = "Open cards overview — כרטיסיות פתוחות"
+description = "CAP-42: admin_list_open_cards מ-entitlement_balances ומ-booking_allocations (כרטיסיות בתוקף בימים ויתרות פתיחה מיבוא, לא זכויות מוצמדות), /admin/customers/open-cards עם מיון לפי תפוגה וסינונים \"יש כניסות פנויות\" ו\"עומדת לפוג\", ולכל כניסה תאריך המפגש והסטטוס או \"פנויה\"; אותה תצוגה בכרטיס הלקוחה עם הרשמות שבוטלו, קישורים לפרופיל ולרישום למפגש (3.4), וקישור מ\"עומדות לפוג\" בבית האדמין לתצוגה המסוננת."
+verify = "בדיקות: כרטיסייה ששלוש כניסות בה נוצלו ואחת משוריינת מופיעה, ואחרי סיום המפגש הרביעי יורדת ונשארת בכרטיס הלקוחה; כרטיסייה שפגה, בוטלה או הוחזרה יורדת; לקוחה מקבלת NOT_AUTHORIZED."
+covers = ["CAP-42"]
+after = [2]
+hitl = false
+risk = "medium"
+references = ["ARCHITECTURE-SPINE.md#ad-14 (כרטיסיות פתוחות)"]
+
+[[entry]]
+id = 4
+type = "story"
+title = "CSV export — ייצוא לקוחות"
+description = "CAP-25: /api/admin/export לאדמין בלבד, עם רשימת עמודות סגורה, בחירה בין מלא לחלקי (הרשימה המסוננת ו/או עמודות שנבחרו), הגנה מפני נוסחאות בתאים, ובלי סודות, טוקנים או מזהי פוש."
+verify = "בדיקות: ייצוא חלקי מכיל רק את השורות המסוננות ואת העמודות שנבחרו; תא שמתחיל ב-= נשמר כטקסט; לקוחה מקבלת 403; שם אמצעי התשלום בייצוא הוא השם מיום האישור."
+covers = ["CAP-25"]
+after = [2]
+hitl = false
+risk = "low"
+unknown = "רשימת העמודות הסגורה לייצוא, וקידוד שנפתח נכון בעברית ב-Excel (UTF-8 עם BOM); נקבעים בסיפור."
+references = ["ARCHITECTURE-SPINE.md, Structural Seed (api/admin/export)", "acceptance-criteria.md, פרופיל, פעילות ותוכן"]
+
+[[entry]]
+id = 5
+type = "story"
+title = "Audit log viewer — מסך יומן הפעולות"
+description = "CAP-26: /admin/audit עם סינון לפי מפגש, לקוחה ותאריך, תצוגת ערך קודם וחדש וסיבה, בלי סיסמה, טוקן או קישור מלא."
+verify = "בדיקות: סינון לפי מפגש ולפי טווח תאריכים מחזיר רק את הפעולות המתאימות; אף שורה לא מכילה טוקן או קישור; לקוחה לא יכולה לקרוא את audit_log."
+covers = ["CAP-26"]
+after = [1]
+hitl = false
+risk = "low"
+references = ["ARCHITECTURE-SPINE.md#ad-19"]
+
+[[entry]]
+id = 6
+type = "story"
+title = "Remove personal details on request — הסרת פרטים אישיים"
+description = "CAP-30: admin_anonymize_customer רגיש ודו-שלבי (ניקוי וסימון anonymization_pending, מחיקת משתמשת Auth, סגירה), שמנקה שם, טלפון, מייל, תינוקות, אלרגיות, payload של התראות, idempotency, guest_details והערות פנימיות, ומשאיר תשלומים והרשמות אנונימיים; anonymization_pending תקוע נוסף ל\"לטיפול\". טבלאות שנוצרות אחר כך (מנויי פוש ב-5.8, המתנה ב-5.6, נתוני יבוא ב-6.2) מוסיפות את עצמן לפונקציה ולבדיקה שלה. בא אחרי 4.3 כי שניהם משנים את כרטיס הלקוחה. ההסרה חסומה כל עוד יש ללקוחה הרשמה עתידית: טל רואה את ההרשמות, מבטלת אותן בעצמה (החזר או זיכוי), ורק אז מסירה."
+verify = "בדיקות: אחרי ההסרה אין בשום טבלה או ביומן מידע מזהה של הלקוחה, וסכום הבית ודוח ההחזרים לא השתנו; תקלה אחרי הצעד הראשון ממשיכה ב-retry ומופיעה ב\"לטיפול\" אחרי 15 דקות. הסרה ללקוחה עם הרשמה עתידית נדחית ומציגה את ההרשמות."
+covers = ["CAP-30"]
+after = [3]
+hitl = false
+risk = "high"
+references = ["ARCHITECTURE-SPINE.md#ad-19", "ARCHITECTURE-SPINE.md#ad-21"]
+
+[[entry]]
+id = 7
+type = "story"
+title = "Business settings and notification templates — הגדרות ותבניות התראה"
+description = "CAP-34, CAP-21: /admin/settings עם כל ברירות המחדל (תוקף, סגירת הרשמה, מכסה לפי סוג, חלון ביטול, חלופות זיכוי, סף מקומות אחרונים, ימי הכנה, זמן תזכורת, ספי עומדת לפוג, תקופת חוסר פעילות) דרך value-change-row, ו-/admin/settings/templates לעריכת נוסח לכל סוג התראה; הקישור לפרטי העסק נוסף ב-5.1. שינוי חלון הביטול חל רק על הרשמות חדשות, וליד השדה מוצגת תזכורת לטל לעדכן את נוסח המדיניות."
+verify = "בדיקות: שינוי מכסת ברירת המחדל משנה רק מפגש חדש; שינוי תבנית משנה רק התראה חדשה; כל שינוי נרשם ביומן עם ערך קודם וחדש; תוקף הקישור (48 שעות) לא מופיע כהגדרה."
+covers = ["CAP-34", "CAP-21"]
+after = [5]
+hitl = false
+risk = "low"
+references = ["admin-configurable-parameters.md", "ARCHITECTURE-SPINE.md#ad-15", "notification-matrix.md"]
+
+[[entry]]
+id = 8
+type = "story"
+title = "Concepts admin and themes — קונספטים וערכות עיצוב"
+description = "CAP-41: /admin/concepts עם הוספה, עריכה, ארכיון ומחיקה רק לקונספט בלי מפגשים, בחירת ערכה מהרשימה הסגורה, lib/concepts/themes.ts ומשתני CSS לפי DESIGN.md, גופני הקונספט דרך next/font, וערכת הקונספט בראש עמוד המפגש ובפס כרטיס המפגש; לקוחה מקבלת שם קונספט רק דרך RPC של מפגשים; תמונת ברירת המחדל נוספת ב-5.4."
+verify = "בדיקות: קונספט עם מפגשים עובר לארכיון ולא נמחק (CONCEPT_IN_USE), ומפגשי העבר שומרים אותו; בדיקה אוטומטית מוצאת ניגודיות 4.5:1 לפחות בכל ערכה; שינוי שדה במפגש לא משנה את הקונספט; לקוחה לא רואה קונספט בארכיון."
+covers = ["CAP-41"]
+after = [1]
+hitl = false
+risk = "medium"
+unknown = "ערכי הערכות עשויים להשתנות אחרי צילומים אמיתיים (spine Deferred); הם רק בקוד ובקובץ ה-CSS."
+references = ["ARCHITECTURE-SPINE.md#ad-16 (קונספטים)", "DESIGN.md", "mockups/concept-themes-3.html"]
+
+[[entry]]
+id = 9
+type = "story"
+title = "Work tab: dishes, tasks and prep days — דף עבודה: מנות, משימות וימי הכנה"
+description = "CAP-38: work_sheets, work_dishes ו-work_tasks עם private.ensure_work_sheet שמעתיקה את ימי ההכנה מההגדרות, prep_day לעמודות, \"+ יום הכנה\" והסרה רק למפגש הזה, ו-/admin/sessions/[id]/work עם טבלת מנות × ימים (כרטיס לכל מנה בטלפון), הוספה, עריכה, סידור, מחיקה וסימון בוצע, וקישור ישיר מכרטיס המפגש הבא בבית האדמין."
+verify = "בדיקות: דף עבודה של בראנץ׳ ביום ה׳ מציג ד׳ וה׳ ושל יום ב׳ מציג א׳ וב׳; יום הכנה שנוסף מופיע רק במפגש הזה; לקוחה לא יכולה לקרוא work_sheets."
+covers = ["CAP-38"]
+after = [8]
+hitl = false
+risk = "medium"
+references = ["ARCHITECTURE-SPINE.md#ad-16 (דף עבודה ורשימות)", "mockups/key-admin-worksheet.html"]
+
+[[entry]]
+id = 10
+type = "story"
+title = "Work tab: registrants, diet, photo consent, shopping, print — דף עבודה: נרשמות, קניות והדפסה"
+description = "CAP-38, CAP-40, CAP-41: רשימת הנרשמות, העדפות תזונה ואלרגיות כולל המלווה (בלי מי שלא כתבה), אישור התמונות לכל נרשמת, shopping_items עם סימון נקנה, הדפסה ב-@media print עם כותרת בערכת הקונספט, בלי עמודה ריקה ועם קו מחיקה לפריט שסומן, וייצוא הקניות ל-wa.me עם כל הפריטים."
+verify = "בטלפון ובהדפסה לדפדפן: ההדפסה כוללת מנות ומשימות, נרשמות, תזונה (כולל מלווה), אישור תמונות ורשימת קניות, בלי עמודה ריקה; הייצוא פותח וואטסאפ עם הודעה שמכילה את כל הפריטים; הדף מוגש בלי מטמון."
+covers = ["CAP-38", "CAP-40", "CAP-41"]
+after = [9]
+hitl = false
+risk = "low"
+references = ["ARCHITECTURE-SPINE.md#ad-16 (דף עבודה ורשימות)", "mockups/key-admin-worksheet.html"]
+
+[[entry]]
+id = 11
+type = "story"
+title = "Notes tab — לשונית רשימות"
+description = "CAP-39: note_topics ו-notes, /admin/notes עם יצירה, עריכה, סידור ומחיקה של נושאים ופתקים, נעיצה, סימון בוצע, וארכיון שמוסתר כברירת מחדל וניתן לשחזור."
+verify = "בדיקות: פתק שנמחק לא חוזר; פתק בארכיון לא מוצג כברירת מחדל ואפשר להחזיר אותו; לקוחה לא יכולה לקרוא notes."
+covers = ["CAP-39"]
+after = [1]
+hitl = false
+risk = "low"
+references = ["ARCHITECTURE-SPINE.md#ad-5 (פטורים, set_*)"]
+
+[[entry]]
+id = 12
+type = "story"
+title = "Personal area home and entitlement screens — בית האזור האישי ומסכי זכויות"
+description = "CAP-9, CAP-13: /me עם המפגש הקרוב והיתרות ותוקפן, ו-/me/profile/entitlements ו-[id] עם זמינות, משוריינות ותפוגה, מתוך אותן RPC של E3; ההרשמות, הזיכויים והחזרים ב-/me/bookings נבנו ב-E3."
+verify = "בטלפון: אחרי שריון, ביטול וסיום מפגש, מסך היתרה זהה למסך הכרטיסיות הפתוחות של טל; סכומים מוצגים ב-₪."
+covers = ["CAP-9", "CAP-13"]
+after = [3]
+hitl = false
+risk = "low"
+references = ["site-map.md, אזור אישי", "mockups/key-customer-home.html"]
+
+[[entry]]
+id = 13
+type = "story"
+title = "Refactor sweep — ניקוי סוף אפיק"
+description = "ניקוי בלבד, לפי רשומות הבנייה וממצאי הביקורת שנדחו במהלך האפיק; ההיקף נקבע כשהסיפור נשלף."
+verify = "lint, typecheck ו-test עוברים, grants.test.ts וה-advisor נקיים, וה-preview עולה מאחורי הנעילה."
+covers = []
+after = [4, 6, 7, 10, 11, 12]
+hitl = false
+risk = "low"

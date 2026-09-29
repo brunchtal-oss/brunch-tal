@@ -1,0 +1,194 @@
+# E3 — epic-sessions-and-booking. Table order is the build order.
+
+[[entry]]
+id = 1
+type = "story"
+title = "Concepts and session management — קונספטים וניהול מפגשים"
+description = "CAP-12, CAP-41, CAP-34: טבלת concepts עם חמשת הקונספטים ההתחלתיים, טבלת events (שם מהקונספט, מכסה לפי סוג מההגדרות, registration_closes_at עם trigger, revision), admin_create/duplicate/update/publish של מפגש, ו-/admin/sessions עם יצירה, שכפול לטיוטה, עריכה ופרסום; שינוי מכסה, סגירה ומחיר תצוגה דרך value-change-row. שדות התמונה של המפגש ושל הקונספט והבורר שלהם נוספים ב-5.4, עם טבלת המדיה."
+verify = "בדיקות: מפגש מהקונספט \"עם סבתוש\" נוצר זוגי עם מכסה 14; מפגש רגיל מקבל 12; טיוטה לא מוחזרת לאף קריאה של לקוחה; שינוי מכסה נרשם ביומן עם ערך קודם וחדש; למפגש אין שדה תפריט."
+covers = ["CAP-12", "CAP-41", "CAP-34"]
+after = ["2.6", "2.1"]
+hitl = false
+risk = "medium"
+references = ["ARCHITECTURE-SPINE.md#ad-8 (registration_closes_at)", "ARCHITECTURE-SPINE.md#ad-15", "ARCHITECTURE-SPINE.md#ad-16 (קונספטים)", "site-map.md, פאנל ניהול › מפגשים"]
+
+[[entry]]
+id = 2
+type = "story"
+title = "Self-booking tracer with a card — הרשמה עצמית בכרטיסייה"
+description = "CAP-13, CAP-9: טבלאות bookings ו-booking_allocations (עם האינדקסים הייחודיים החלקיים where customer_id is not null), private.occupied_places ו-is_real_booking, private.plan_funding, private.book_core ו-book_session עם סדר הנעילה של AD-6, שריון ביומן והתראת booking_confirmed, הרחבת private.bind_purchase ו-bind-purchase.test.ts ל-bookings, get_event_availability ל-authenticated בלבד שמחזירה רק תווית, הרכיב המשותף components/shared (כרטיס מפגש וכותרת קונספט), ו-/me/sessions, /me/sessions/[id] וגיליון הרשמה שמציג מה ינוצל, תוקף, מועד הביטול האחרון, וכשהפעולה חסומה את הסיבה ומה אפשר לעשות."
+verify = "בטלפון: לקוחה בדויה עם כרטיסייה נרשמת ורואה 3 כניסות זמינות ואחת משוריינת, בלי תווית רגיל/זוגי; בדיקת מסד מקבילה של שתי לקוחות על המקום האחרון נותנת אישור אחד; מפגש מחוץ לתוקף הכרטיסייה נחסם עם סיבה; anon לא יכול לקרוא ל-get_event_availability; בדיקת pg_proc.prosrc מוצאת סכימת party_size רק ב-occupied_places."
+covers = ["CAP-13", "CAP-9"]
+after = [1]
+hitl = true
+risk = "high"
+unknown = "איך מריצים בדיקת מקביליות אמיתית (שתי עסקאות בו-זמנית) מול מסד הפיתוח דרך תשתית הבדיקות של 1.3."
+references = ["ARCHITECTURE-SPINE.md#ad-6", "ARCHITECTURE-SPINE.md#ad-14", "ARCHITECTURE-SPINE.md#ad-18", "mockups/key-booking-sheet.html"]
+
+[[entry]]
+id = 3
+type = "story"
+title = "Multi-date booking and registration close — בחירה מרובה וסגירת הרשמה"
+description = "CAP-13, CAP-14: book_sessions(p_items) שנועלת את כל המפגשים מראש לפי סדר המזהים ומחזירה תוצאה לכל תאריך, סגירת ההרשמה העצמית לפי registration_closes_at וזמן השרת, והבחירה המרובה בגיליון ההרשמה."
+verify = "בדיקות: בקשה שנשלחה לפני 20:00 ביום הקודם ועובדה אחריה נדחית לפי זמן השרת, גם בשבוע מעבר שעון קיץ; בחירה של שלושה תאריכים כשאחד מלא מחזירה הצלחה לשניים וסיבה לשלישי, בלי לגרוע עליו כניסה."
+covers = ["CAP-13", "CAP-14"]
+after = [2]
+hitl = false
+risk = "medium"
+references = ["ARCHITECTURE-SPINE.md#ad-5 (book_sessions)", "ARCHITECTURE-SPINE.md#ad-8"]
+
+[[entry]]
+id = 4
+type = "story"
+title = "Session details and manual booking — פרטי מפגש ורישום ידני"
+description = "CAP-12, CAP-14, CAP-6: /admin/sessions/[id] עם נרשמות, מקומות פנויים, תינוקות, אלרגיות והעדפות (זוגי כשני מקומות; ממתינות נוספות ב-5.6), admin_book_customer לכל תאריך ובכל זמן עם אותן בדיקות מימון ומכסה והתראת booking_confirmed, כניסה לרישום ממסך התשלום אחרי אישור כרטיסייה ומעמוד הלקוחה (היעד של \"רישום למפגש\" ב-4.3), ותצוגת בוקר המפגש (/day) אונליין בלבד לפי EXPERIENCE."
+verify = "בדיקות: טל רושמת לקוחה אחרי הסגירה ומצליחה; רישום ידני למפגש מלא נדחה עד שמעלים מכסה; אחרי אישור כרטיסייה טל ממשיכה ישר לרישום לתאריך; דף בוקר המפגש מוגש עם Cache-Control: private, no-store."
+covers = ["CAP-12", "CAP-14", "CAP-6"]
+after = [3]
+hitl = false
+risk = "medium"
+references = ["site-map.md, פאנל ניהול › פרטי מפגש", "ARCHITECTURE-SPINE.md#ad-16", "EXPERIENCE.md, Flow 5 (בוקר המפגש)"]
+
+[[entry]]
+id = 11
+type = "story"
+title = "Pinned product approval and placement — אישור מוצר מוצמד ושריון המקום"
+description = "CAP-37, CAP-2, CAP-6, CAP-4, CAP-10, CAP-11: הסרת PINNED_NOT_AVAILABLE, private.place_pinned_booking, בחירת מפגש במסך אישור התשלום ללקוחה חדשה וקיימת, הרשמה עם customer_id ריק שנספרת במכסה ומוצגת \"ממתינה להצטרפות\", מעבר שלה ב-bind_purchase, בדיקות השיוך להיכרות (השתתפה בעבר, זכות היכרות פעילה אחת באינדקס ייחודי), זכות זוגית עם 2 מבוגרים, מצב park שנבדק, ו-/me שמציג אחרי ההצטרפות את המפגש שהיא רשומה אליו עם ההודעה והכפתור של המוצר."
+verify = "בדיקות: אישור מוצמד בלי מפגש או למפגש מלא נכשל בלי ליצור כלום; retry לא מכפיל; ההרשמה השמורה נספרת במכסה לפני ההצטרפות ועוברת ללקוחה בה; קישור היכרות ללקוחה שהשתתפה, או לקוחה קיימת שכבר רשומה לאותו מפגש, מסתיים ב-conflict ומופיע לטל; היכרות שנייה בזמן שיש פעילה נדחית; park שומר תשלום וזכות בלי הרשמה."
+covers = ["CAP-37", "CAP-2", "CAP-6", "CAP-4", "CAP-10", "CAP-11"]
+after = [4, "2.3", "2.5", "2.9"]
+hitl = false
+risk = "high"
+references = ["ARCHITECTURE-SPINE.md#ad-23", "ARCHITECTURE-SPINE.md#ad-10 (ליבת אישור אחת, שיוך רכישה)", "acceptance-criteria.md, השלמות › תשלום, אמצעי תשלום ושיוך רכישה"]
+
+[[entry]]
+id = 5
+type = "story"
+title = "Couple and intro bookings — הרשמה זוגית והיכרות"
+description = "CAP-11, CAP-10, CAP-21: הרשמה זוגית שתופסת 2 מקומות ורק בזכות או בזיכוי זוגיים, שדה תזונה למלווה בפרטי ההרשמה ב-/me/bookings (גם להרשמה שטל יצרה באישור התשלום), התראת booking_confirmed להרשמה זוגית שמובילה לפרטי ההרשמה ומזכירה לעדכן שם את תזונת המלווה (באזור האישי עכשיו, ובפוש מ-5.8), admin_offset_paired כחריגה רגישה (כרטיסייה, כניסות ותוספת), ובדיקות היכרות בהרשמה (הרשמת היכרות פעילה אחת)."
+verify = "בדיקות: מפגש זוגי עם מקום אחד מציג \"מלא\" ללקוחה; כרטיסייה לא מוצעת ללקוחה למפגש זוגי; אחרי שטל מאשרת מוצר זוגי הלקוחה מקבלת התראה אחת שמובילה לפרטי ההרשמה, ושם היא שומרת את תזונת המלווה; קיזוז של טל נשמר עם הרכב המימון ונרשם ביומן; שתי הרשמות היכרות פעילות במקביל נדחות."
+covers = ["CAP-11", "CAP-10", "CAP-21"]
+after = [11]
+hitl = false
+risk = "medium"
+references = ["ARCHITECTURE-SPINE.md#ad-18", "ARCHITECTURE-SPINE.md#ad-7"]
+
+[[entry]]
+id = 6
+type = "story"
+title = "Self-cancel within 48 hours and admin cancel — ביטול עצמי וביטול דרך טל"
+description = "CAP-16, CAP-17, CAP-10: private.can_self_cancel ו-cancel_deadline מה-policy_snapshot, cancel_booking בחתימה הסופית (כולל p_choice) עם release לאותה כרטיסייה והתראת booking_cancelled, admin_cancel_booking גם בתוך החלון, ו-/me/bookings עם כפתור ביטול או פנייה לטל; הענף של כניסה בודדת, היכרות וזוגית מתווסף ב-3.7."
+verify = "בדיקות: ביטול בדיוק 48 שעות לפני מצליח ורגע אחרי נחסם בשרת; אחרי ביטול כרטיסייה של 4 כניסות מציגה יתרה נכונה בלי הארכה; שינוי חלון הביטול בהגדרות לא משנה הרשמה קיימת; הרשמת היכרות שבוטלה לפני המפגש לא הופכת את הלקוחה ל\"השתתפה\"."
+covers = ["CAP-16", "CAP-17", "CAP-10"]
+after = [5]
+hitl = false
+risk = "medium"
+references = ["ARCHITECTURE-SPINE.md#ad-20", "cancellation-rules.md, טבלת תוצאות"]
+
+[[entry]]
+id = 7
+type = "story"
+title = "Cancellation credits, alternatives and refund requests — זיכויים, חלופות ובקשות החזר"
+description = "CAP-18, CAP-17, CAP-19: cancellation_credits ו-credit_options, private.refresh_credit_options שסופרת מ-origin_starts_at (נקראת גם מהעלאת המכסה של 3.1), ענף הביטול של כניסה בודדת, היכרות וזוגית עם בחירה בין החזר לזיכוי, refund_requests ו-private.monetary_basis שמחושב פעם אחת ביצירת הזיכוי, מימון הרשמה מזיכוי לפני זכות, options_count מההגדרות ברגע היצירה, והרחבת bind_purchase ו-bind-purchase.test.ts לזיכויים ולבקשות החזר."
+verify = "בדיקות: זיכוי מוצמד שבוטל ביום א׳ למפגש של יום ה׳ לא מציע את יום ב׳ ומציע את שני המפגשים המתאימים שאחרי יום ה׳; חלופה שהתמלאה מוחלפת בבאה; בלי מפגשים עתידיים הזיכוי נשאר ממתין; ביטול נוסף מחזיר את אותו זיכוי; כשהלקוחה עצמה תפסה את המקום האחרון הזיכוי לא מתארך; בחירת החזר פותחת בקשה ומבטלת את השימוש בזכות; שינוי מספר החלופות בהגדרות לא משנה זיכוי קיים."
+covers = ["CAP-18", "CAP-17", "CAP-19"]
+after = [6]
+hitl = false
+risk = "high"
+references = ["cancellation-rules.md, זיכוי למפגשים חלופיים", "ARCHITECTURE-SPINE.md#ad-14 (חלופות זיכוי)", "ARCHITECTURE-SPINE.md#ad-20"]
+
+[[entry]]
+id = 8
+type = "story"
+title = "Business cancels or changes a session — ביטול או שינוי מפגש מצד העסק"
+description = "CAP-12, CAP-17, CAP-18: preview ו-admin_cancel_event רגישים שנועלים לפי AD-6 (פרופילי הנרשמות, אחר כך המפגש) ומציגים את מי שעלולה להישאר עם זכות שאי אפשר לממש, זיכוי עם choice_pending ו-choose_credit_outcome בלי מועד אחרון עם מסך הבחירה ללקוחה, שינוי תאריך או שעה עם תצוגת השפעה, ונוסח הודעה מהתבנית שטל עורכת לפני השליחה (event_cancelled, event_changed), גם להרשמה שמורה שעוד לא הצטרפה."
+verify = "בדיקות: ה-preview מציג לפני האישור את מי שתישאר עם זכות שאי אפשר לממש; ביטול מפגש יוצר לכל נרשמת זיכוי או release לפי סוג הזכות והתראה אחת; מי שלא בחרה מופיעה לטל; מפגש מוצמד שבוטל לפני ההצטרפות מופיע אצל הלקוחה אחרי ההצטרפות עם זיכוי, בחירה והתראה; cancel_booking ו-admin_cancel_event במקביל לא נתקעים; ביטול בלי צ׳קבוקס נדחה."
+covers = ["CAP-12", "CAP-17", "CAP-18"]
+after = [7]
+hitl = false
+risk = "high"
+references = ["ARCHITECTURE-SPINE.md#ad-7 (נוסח מתבנית)", "ARCHITECTURE-SPINE.md#ad-12 (events.revision)", "cancellation-rules.md"]
+
+[[entry]]
+id = 9
+type = "story"
+title = "Refund completion — השלמת החזר"
+description = "CAP-19: admin_complete_refund רגיש עם תאריך, סכום ואסמכתה אופציונלית, תקרה לפי מה ששולם, רשימת בקשות פתוחות באדמין, וסטטוס \"הוחזר\" רק אחרי האישור של טל."
+verify = "בדיקות: בקשה מוצגת \"התבקש\" עד האישור של טל; החזר מעל הסכום ששולם נדחה; סך כמה החזרים לא עובר את התשלום; הרשמה זוגית שמומנה בקיזוז מחזירה MANUAL_HANDLING_REQUIRED."
+covers = ["CAP-19"]
+after = [8]
+hitl = false
+risk = "medium"
+references = ["cancellation-rules.md, החזר כספי", "ARCHITECTURE-SPINE.md#ad-20"]
+
+[[entry]]
+id = 10
+type = "story"
+title = "Move a booking — הזזת מועד"
+description = "CAP-20: move_booking ללקוחה בתוך החלון ולטל בכל זמן, שנועל פרופיל ואז את שני המפגשים לפי סדר המזהים, בודק מקום וזכות ביעד, ומבצע cancel_core ו-book_core בפעולה אחת עם העתקת policy_snapshot והתראות."
+verify = "בדיקות: הזזה למפגש מלא נכשלת וההרשמה המקורית נשארת בדיוק כפי שהייתה; הזזה מוצלחת לא מעניקה כניסה נוספת; הזזה של מוצר מוצמד מותרת רק לאחת מחלופות הזיכוי."
+covers = ["CAP-20"]
+after = [9]
+hitl = false
+risk = "medium"
+references = ["cancellation-rules.md, הזזת מועד", "ARCHITECTURE-SPINE.md#ad-6"]
+
+[[entry]]
+id = 16
+type = "story"
+title = "Admin credit adjustments — שינוי חלופות והארכת זיכוי בידי טל"
+description = "CAP-18: פעולה רגישה (plan, preview וצ׳קבוקס) שבה טל משנה את החלופות של זיכוי או מאריכה אותו ידנית, עם יומן והתראה ללקוחה, מתוך עמוד הלקוחה או ההרשמה באדמין."
+verify = "בדיקות: שינוי חלופות בלי צ׳קבוקס נדחה; אחרי שינוי הלקוחה רואה רק את החלופות החדשות ויכולה להירשם לאחת מהן; השינוי נרשם ביומן עם ערך קודם וחדש."
+covers = ["CAP-18"]
+after = [10]
+hitl = false
+risk = "medium"
+references = ["cancellation-rules.md, זיכוי למפגשים חלופיים", "admin-configurable-parameters.md", "ARCHITECTURE-SPINE.md#ad-7"]
+
+[[entry]]
+id = 12
+type = "story"
+title = "Session completion job — סיום מפגש וניצול"
+description = "CAP-9, CAP-10: הפעלת pg_cron ו-private.job_complete_events שמעבירה מפגש שהסתיים ל-completed, הרשמות ל-completed ומוסיפה תנועות use, כך שאי-הגעה בלי ביטול נחשבת השתתפות."
+verify = "בדיקות: אחרי סיום מפגש הכניסה נוצלה והיתרה תואמת את יומן התנועות; לקוחה שלא הגיעה ולא ביטלה לא זכאית עוד להיכרות; הרצה כפולה של המשימה לא מוסיפה תנועה."
+covers = ["CAP-9", "CAP-10"]
+after = [16]
+hitl = false
+risk = "medium"
+unknown = "האם pg_cron מונע השהיה של פרויקט Supabase חינמי (spine Deferred); נבדק שוב ב-5.10."
+references = ["ARCHITECTURE-SPINE.md#ad-11", "ARCHITECTURE-SPINE.md#ad-14"]
+
+[[entry]]
+id = 13
+type = "story"
+title = "Entitlement corrections — תיקונים בזכות מסוימת"
+description = "CAP-9: admin_correct_entitlement (תוקף, יתרה עם קישור אופציונלי למפגש המקורי, ימי מימוש או סוג מפגש) כפעולה רגישה נפרדת לכל תיקון, entitlement_corrections, אזהרה ברשימת ההרשמות העתידיות שכבר לא מתאימות, התראת entitlement_changed, ועמוד הזכות באדמין."
+verify = "בדיקות: תיקון בלי צ׳קבוקס נדחה; הרשמה אחרי תיקון נבדקת לפי הערכים החדשים; הרשמות עתידיות שלא מתאימות מוצגות לפני האישור ונשארות בדיוק כפי שהיו אחריו; היתרה לא יורדת מתחת לאפס."
+covers = ["CAP-9"]
+after = [12]
+hitl = false
+risk = "medium"
+references = ["ARCHITECTURE-SPINE.md#ad-7", "admin-configurable-parameters.md"]
+
+[[entry]]
+id = 14
+type = "story"
+title = "Auto-extend rule for empty weeks — כלל ההארכה בשבוע בלי מפגש"
+description = "CAP-36: private.week_has_eligible_session (מפגש published או completed, לא טיוטה ולא בוטל) ופונקציית הארכה אידמפוטנטית לכל שבוע מקומי שהסתיים (7 ימים, week_start ייחודי לזכות, יומן כפעולת מערכת והתראת entitlement_changed), כולל כרטיסייה שהתפוגה שלה נפלה בתוך השבוע הריק; התזמון ב-5.10."
+verify = "בדיקות: שבוע בלי מפגש מתאים מאריך פעם אחת גם בהרצה חוזרת; שבוע שיש בו רק מפגש זוגי מאריך כרטיסייה רגילה; שבוע שהמפגש היחיד בו בוטל מאריך; שבוע עם מפגש מתאים מלא, או שכבר הסתיים, לא מאריך; שבוע שנוסף בהארכה נבדק גם הוא."
+covers = ["CAP-36"]
+after = [13]
+hitl = false
+risk = "medium"
+references = ["ARCHITECTURE-SPINE.md#ad-11 (job_auto_extend)", "ARCHITECTURE-SPINE.md#ad-8 (local_week_start)"]
+
+[[entry]]
+id = 15
+type = "story"
+title = "Refactor sweep — ניקוי סוף אפיק"
+description = "ניקוי בלבד, לפי רשומות הבנייה וממצאי הביקורת שנדחו במהלך האפיק; ההיקף נקבע כשהסיפור נשלף."
+verify = "lint, typecheck ו-test עוברים, grants.test.ts וה-advisor נקיים, וה-preview עולה מאחורי הנעילה."
+covers = []
+after = [14]
+hitl = false
+risk = "low"
