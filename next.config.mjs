@@ -21,6 +21,9 @@ const nextConfig = {
 
   allowedDevOrigins: privateIPv4Addresses(),
 
+  // AGENTS.md is curated by hand; `next dev` must not append its own rules.
+  agentRules: false,
+
   // Token routes are never logged (AD-16). The dev logger also prints Server
   // Function arguments (token, form data), so that log is off.
   logging: {

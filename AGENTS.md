@@ -29,7 +29,7 @@
 ## הרצה ובדיקה
 
 - כל שינוי בסכמה מתחיל בקובץ חדש: `npx supabase migration new <name>` (ה-CLI לא מותקן גלובלית, לכן `npx`). אחרי שכותבים את ה-SQL בקובץ, מחילים אותו על המסד עם `apply_migration` של ה-MCP, עם אותו תוכן. לא משנים סכמה ב-`execute_sql`.
-- אחרי כל מיגרציה להריץ את ה-security advisor של Supabase (`get_advisors` ב-MCP). הוא מזהה טבלה בלי RLS ופונקציה בלי search_path.
+- אחרי כל מיגרציה להריץ את ה-security advisor של Supabase (`get_advisors` ב-MCP). הוא מזהה טבלה בלי RLS ופונקציה בלי search_path. ‏WARN ‏`0029` על RPC מסוג definer עם grant ל-`authenticated` מאושר (AD-5). כל WARN או ERROR אחר חוסם.
 - `npm test` מריץ את Vitest על קבצי `*.test.ts(x)`. בדיקות של RPC ו-RLS רצות מול פרויקט ה-Supabase של הפיתוח, לא מול mock.
 ## מוסכמות שונות מברירת המחדל
 

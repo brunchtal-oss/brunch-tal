@@ -7,7 +7,7 @@ export const ERROR_MESSAGES = {
   // Raised by RPCs.
   NOT_AUTHORIZED: "אין הרשאה לפעולה הזאת",
   INVALID_INPUT: "חלק מהפרטים לא תקינים",
-  LINK_EXPIRED: "תוקף הקישור עבר. טל תשמח לשלוח קישור חדש",
+  LINK_EXPIRED: "תוקף הקישור פג. צרי קשר עם טל לקבלת קישור חדש",
   LINK_USED: "הקישור הזה כבר שימש לאיפוס סיסמה",
   RESET_TARGET_INVALID: "אי אפשר להפיק קישור איפוס לחשבון הזה",
   // Raised by the adapter (never by SQL).
