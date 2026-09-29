@@ -50,3 +50,11 @@
 - עברית שמועברת כארגומנט דרך PowerShell או Bash משתבשת (כך קרה ב-memlog של ה-SPEC). קבצים עם עברית כותבים בכלי Write או Edit, לא ב-echo ולא בארגומנט shell.
 
 <!-- /bmad:context -->
+
+## מצב הקוד ופקודות
+
+- הבנייה עוד לא התחילה. הקוד הוא שלד של הטמפלייט: `app/page.tsx` יחיד, רכיבי shadcn ב-`components/ui/`, ואין עדיין מיגרציות. כל התכנון נמצא ב-`_bmad-output/`. ה-README.md הוא של הטמפלייט ולא מתאר את הפרויקט.
+- `lib/supabase/public.ts` ו-`lib/server/privileged/service-client.ts` עוד לא קיימים. אלה נתיבים שנקבעו בארכיטקטורה (AD-4, AD-16), ויוצרים אותם ב-E1. בינתיים `createServiceClient` יושב ב-`lib/supabase/server.ts`. לא לייבא אותו משם בקוד חדש. קודם מעבירים אותו לנתיב המיועד, עם `import "server-only"`.
+- `npm run dev`: שרת פיתוח. `npm run build`: בנייה לפרודקשן. כדאי להריץ אותה לפני סיום עבודה, כי push ל-main מפעיל פריסה.
+- `npm run typecheck`: בדיקת טיפוסים (`tsc --noEmit`). `npm run format`: Prettier עם הפלאגין של Tailwind.
+- הרצה של בדיקה אחת: `npx vitest run path/to/file.test.ts`, או `npx vitest run -t "<שם הבדיקה>"`.
