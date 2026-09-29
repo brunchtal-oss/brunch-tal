@@ -1,5 +1,5 @@
 <!-- bmad:context -->
-<!-- Verified 2026-09-24 against ee41cf1. Managed by bmad-project-context; edits inside this block are replaced on refresh. Keep anything you want preserved outside the markers. -->
+<!-- Verified 2026-09-29 against 548869d. Managed by bmad-project-context; edits inside this block are replaced on refresh. Keep anything you want preserved outside the markers. -->
 
 ## בראנץ׳ אצל טל
 
@@ -20,10 +20,11 @@
 
 ## איפה דברים נמצאים
 
-- החלטות הארכיטקטורה המחייבות (נתיבים, חוזה RPC והרשאות, סדר נעילה, תזמון ופוש, יצירת חשבון, זמן וכסף): `_bmad-output/planning-artifacts/architecture/architecture-brunch-at-tals-2026-09-24/ARCHITECTURE-SPINE.md`. לקרוא לפני כל עבודת בנייה. בשאלה טכנית הוא גובר על `data-model.md`.
+- החלטות הארכיטקטורה המחייבות (נתיבים, חוזה RPC והרשאות, סדר נעילה, תזמון ופוש, יצירת חשבון, זמן וכסף): `_bmad-output/planning-artifacts/architecture/architecture-brunch-at-tals-2026-09-24/ARCHITECTURE-SPINE.md`. לקרוא לפני כל עבודת בנייה. בשאלה טכנית הוא גובר על `data-model.md` ועל כל קובץ נלווה אחר של ה-SPEC.
 - לפני כתיבת מיגרציה, policy או RPC לקרוא את `security-and-rpc-rules.md`, את `data-model.md` שב-SPEC ואת החלטות AD-3, AD-5, AD-6 ו-AD-14 בארכיטקטורה.
 - ערכים עסקיים שנערכים באדמין (ולכן לא נכתבים בקוד): `admin-configurable-parameters.md`. תוצאות ביטול: `cancellation-rules.md`.
-- לקוחות Supabase: `lib/supabase/client.ts` לדפדפן, `lib/supabase/server.ts` לשרת (מכבד RLS), ו-`lib/supabase/proxy.ts` לרענון session (נקרא מ-`proxy.ts` שבשורש).
+- לקוחות Supabase: `lib/supabase/client.ts` לדפדפן, `lib/supabase/server.ts` לשרת (מכבד RLS), `lib/supabase/public.ts` לתוכן ציבורי במטמון (בלי cookies), ו-`lib/supabase/proxy.ts` לרענון session (נקרא מ-`proxy.ts` שבשורש). לקוח ה-service role רק ב-`lib/server/privileged/service-client.ts` (AD-4).
+- סליקה עתידית: ההכנה וההחלטות ב-`_bmad-output/specs/spec-brunch-at-tal/online-payments.md`. בגרסה הראשונה אין סליקה, וכל תשלום נוצר רק דרך ליבת האישור (AD-10).
 
 ## הרצה ובדיקה
 
@@ -34,11 +35,11 @@
 
 - כסף נשמר כ-integer באגורות (`*_agorot`), ILS, ומוצג ב-₪. אסור לחשב סכומים בנקודה צפה.
 - זמנים נשמרים כ-`timestamptz`, ושעון השרת קובע, לא שעון הדפדפן. חישובי לוח שנה (סגירת הרשמה, תוקף עד סוף היום, גבול 48 השעות) נעשים לפי `Asia/Jerusalem`, כולל שעון קיץ.
-- RLS פעיל בכל טבלה ב-`public`. ב-policy כותבים `(select auth.uid())` ולא `auth.uid()` ישירות, ושמים אינדקס על העמודה.
-- שינוי בכסף, בזכויות או בהרשמות (הרשימה המלאה ב-`security-and-rpc-rules.md`) עובר רק דרך RPC או פונקציית שרת. הדפדפן לא כותב ל-`bookings`, `payments` או `entitlement_movements`. את `customer_id` גוזרים מ-`auth.uid()`, לא מהקלט.
-- פונקציית `security definer`: `set search_path = ''`, בדיקת הקוראת והרשאת האדמין בתוך הפונקציה, ו-`revoke execute ... from public, anon`. אחרת Postgres מאפשר לכל אחד להריץ אותה.
+- RLS פעיל בכל טבלה ב-`public`. ב-policy של לקוחה כותבים `customer_id = (select private.current_customer_id())`, בהתראות `recipient_id = (select auth.uid())`, ובאדמין `(select private.is_admin())`. אף פעם לא `auth.uid()` בלי `select`. שמים אינדקס על העמודה.
+- שינוי בכסף, בזכויות או בהרשמות (הרשימה המלאה ב-`security-and-rpc-rules.md`) עובר רק דרך RPC או פונקציית שרת. הדפדפן לא כותב ל-`bookings`, `payments` או `entitlement_movements`. את `customer_id` גוזרים רק מ-`private.current_customer_id()` (ריק ללקוחה שלא הופעלה או שפרטיה הוסרו), אף פעם לא מהקלט.
+- פונקציית `security definer`: `set search_path = ''`, בדיקת הקוראת והרשאת האדמין בשורה הראשונה, ו-`revoke execute ... from public, anon, authenticated, service_role` ואחריו `grant execute` אחד בדיוק (ל-`authenticated` או ל-`service_role`). הרשאות לטבלאות תמיד מפורשות, גם ל-`service_role`, ולא נשענות על ברירות המחדל של Supabase (AD-5).
 - בדיקה, שריון, גריעה, ספירת מקומות, רישום ב-`audit_log` (before/after) והתראה מתבצעים בעסקה אחת. נועלים תמיד באותו סדר: קודם המפגש ואז הזכות. בהזזה נועלים את שני המפגשים לפי סדר המזהים.
-- אישור תשלום, צריכת קישור, יצירת חשבון והתראות מקבלים מפתח idempotency ייחודי. קריאה חוזרת עם אותו מפתח מחזירה את התוצאה הקודמת.
+- כל RPC שמשנה נתונים מקבל מפתח idempotency (הפטורים ב-AD-5). קריאה חוזרת עם אותו מפתח מחזירה את התוצאה הקודמת.
 - יצירת חשבון ב-Auth Admin API ושיוך הרכישה במסד הם לא עסקה אחת. צריך מצבי ביניים וניסיון חוזר, בלי לאבד תשלום ובלי לצרוך קישור שלא שויך.
 - פוש לא נשלח מתוך עסקת הרשמה. הוא נכנס לתור (`notification_jobs`), וכשל פוש לא מבטל את ההרשמה.
 - ערכים עסקיים וטקסט שיווקי לא נכתבים בקוד. הם מגיעים מטבלאות ההגדרות והתוכן. רק מיקרו-קופי של המערכת (כפתורים, שגיאות) נשאר בקוד.

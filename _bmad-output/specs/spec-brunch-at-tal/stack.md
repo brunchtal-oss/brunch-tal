@@ -1,6 +1,6 @@
 # סטאק (הצעת יישום)
 
-- **Next.js + TypeScript:** לממשק ולפעולות שרת. זה כבר קיים בפרויקט: shadcn/ui ב-`components/ui`, ולקוחות Supabase ב-`lib/supabase/{client,server,proxy}.ts`.
+- **Next.js + TypeScript:** לממשק ולפעולות שרת. זה כבר קיים בפרויקט: shadcn/ui ב-`components/ui`, ולקוחות Supabase ב-`lib/supabase/{client,server,public,proxy}.ts` (ולקוח ה-service role ב-`lib/server/privileged/service-client.ts`, AD-4). הגרסאות ומדיניות העדכון: ARCHITECTURE-SPINE › Stack.
 - **Supabase:** Postgres לנתונים, Auth להתחברות במייל וסיסמה, Storage למדיה.
 - **Vercel:** לאירוח. הפריסה נעשית דרך git push.
 - **Web Push:** עם מפתחות VAPID.
