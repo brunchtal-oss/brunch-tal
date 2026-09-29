@@ -83,6 +83,8 @@ context:
 
 ## Spec Change Log
 
+- 2026-09-29, אחרי הסקירה, החלטת המשתמשת (ממצא 9 בטבלה): איפוס סיסמה מנתק את כל שאר ה-sessions של המשתמשת. אחרי ההתחברות עם הסיסמה החדשה נקרא `signOut({ scope: "others" })`. אם ההתחברות נכשלה, אין ניתוק. access tokens שכבר הונפקו במכשירים אחרים תקפים עד שהם פגים.
+
 ## Review Triage Log
 
 סבב 1 (blind-hunter, edge-case-hunter, verification-gap, intent-alignment).

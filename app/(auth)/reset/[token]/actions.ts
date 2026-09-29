@@ -36,7 +36,9 @@ export async function completeResetAction(
       : { ok: false, code: result.code }
   }
 
-  // Sign in with the new password so the customer lands in /me.
+  // Sign in with the new password so the customer lands in /me, then end
+  // every other session of this user (other devices, old logins). Access
+  // tokens already issued elsewhere stay valid until they expire (JWT expiry).
   let signedIn = false
   if (result.data.email) {
     const supabase = await createClient()
@@ -49,6 +51,15 @@ export async function completeResetAction(
       console.error("reset.sign_in_failed", {
         authCode: error.code ?? "unknown",
       })
+    } else {
+      const { error: signOutError } = await supabase.auth.signOut({
+        scope: "others",
+      })
+      if (signOutError) {
+        console.error("reset.sign_out_others_failed", {
+          authCode: signOutError.code ?? "unknown",
+        })
+      }
     }
   }
 

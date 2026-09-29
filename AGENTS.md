@@ -53,8 +53,10 @@
 
 ## מצב הקוד ופקודות
 
-- הבנייה עוד לא התחילה. הקוד הוא שלד של הטמפלייט: `app/page.tsx` יחיד, רכיבי shadcn ב-`components/ui/`, ואין עדיין מיגרציות. כל התכנון נמצא ב-`_bmad-output/`. ה-README.md הוא של הטמפלייט ולא מתאר את הפרויקט.
-- `lib/supabase/public.ts` ו-`lib/server/privileged/service-client.ts` עוד לא קיימים. אלה נתיבים שנקבעו בארכיטקטורה (AD-4, AD-16), ויוצרים אותם ב-E1. בינתיים `createServiceClient` יושב ב-`lib/supabase/server.ts`. לא לייבא אותו משם בקוד חדש. קודם מעבירים אותו לנתיב המיועד, עם `import "server-only"`.
+- הבנייה התחילה בסיפור 1.1: המיגרציות הראשונות ב-`supabase/migrations/`, איפוס סיסמה בקישור חד-פעמי, והמסכים `/reset/[token]`, `/login` ו-`/me`. מעקב הסיפורים ב-`_bmad-output/implementation-artifacts/`. ה-README.md הוא של הטמפלייט ולא מתאר את הפרויקט.
+- לקוח ה-service role נמצא ב-`lib/server/privileged/service-client.ts` (עם `server-only`). ב-`lib/supabase/server.ts` נשאר רק `createClient`. הקובץ `lib/supabase/public.ts` (AD-16) עוד לא קיים.
+- טיפוסי המסד ב-`lib/supabase/database.types.ts`. אחרי כל מיגרציה יוצרים אותם מחדש עם `generate_typescript_types` של ה-MCP.
 - `npm run dev`: שרת פיתוח. `npm run build`: בנייה לפרודקשן. כדאי להריץ אותה לפני סיום עבודה, כי push ל-main מפעיל פריסה.
+- `npm run dev:reset-link`: יוצר או מוצא לקוחה בדויה במסד הפיתוח ומדפיס קישור איפוס סיסמה למחשב ולטלפון ברשת הביתית (`-- --admin` לאדמין).
 - `npm run typecheck`: בדיקת טיפוסים (`tsc --noEmit`). `npm run format`: Prettier עם הפלאגין של Tailwind.
 - הרצה של בדיקה אחת: `npx vitest run path/to/file.test.ts`, או `npx vitest run -t "<שם הבדיקה>"`.

@@ -5,10 +5,6 @@
   evidence: `requireCustomer` מפנה כל תפקיד שאינו customer ל-`/login?next=/me`, ומסך ההצלחה באיפוס תמיד מקשר ל-`/me`. אזור האדמין עוד לא קיים (1.5).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-1-1-phone-activation-and-login-tracer.md`
-  summary: איפוס סיסמה לא מנתק sessions קיימים של המשתמשת. צריך החלטה אם לנתק את כל ה-sessions האחרים אחרי איפוס.
-  evidence: `supabase.auth.admin.updateUserById` משנה סיסמה ולא מבטל refresh tokens שכבר הונפקו.
-
-- source_spec: `_bmad-output/implementation-artifacts/spec-1-1-phone-activation-and-login-tracer.md`
   summary: ניסיון חוזר באיפוס עובר דרך `reset_begin`. לכן קישור שפג בין הניסיונות, או תשובה של `reset_complete` שנשמרה אבל לא הגיעה, מציגים "פג" או "כבר שימש" אחרי שהסיסמה כבר השתנתה. הענפים `already_consumed` ו"מסיים גם אם פג" ב-`reset_complete` לא נגישים מהאפליקציה.
   evidence: `completeReset` תמיד קורא ל-`reset_begin`, שמעלה `LINK_EXPIRED` או `LINK_USED`. תיקון דורש מצב ביניים או סימון, בניגוד ל-Design Notes של 1.1. כדאי לבדוק ב-1.4 (idempotency).
 
@@ -19,10 +15,6 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-1-1-phone-activation-and-login-tracer.md`
   summary: `alter default privileges for role postgres revoke execute on functions from public` גלובלי עלול לחסום מ-anon ומ-authenticated פונקציות של הרחבות שייווצרו בעתיד.
   evidence: לא אומת. כדי להכריע צריך לבדוק באיזה תפקיד Supabase יוצר הרחבות מהדשבורד, ואם פונקציות ההרחבה נקראות ישירות מהתפקידים האלה.
-
-- source_spec: `_bmad-output/implementation-artifacts/spec-1-1-phone-activation-and-login-tracer.md`
-  summary: לעדכן את `AGENTS.md` (שורה 57): `lib/server/privileged/service-client.ts` כבר קיים, ו-`createServiceClient` כבר לא ב-`lib/supabase/server.ts`.
-  evidence: 1.1 העבירה את הלקוח. `AGENTS.md` הוא קובץ הקשר של סוכנים, ולכן לא נערך בתוך הסיפור.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-1-1-phone-activation-and-login-tracer.md`
   summary: לבדוק אם ביומני הבקשות של Vercel מופיע `/reset/<token>`, בניגוד ל-AD-16.

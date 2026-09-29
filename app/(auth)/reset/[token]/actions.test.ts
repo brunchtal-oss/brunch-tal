@@ -4,12 +4,13 @@ import { completeResetAction } from "./actions"
 
 const completeReset = vi.fn()
 const signInWithPassword = vi.fn()
+const signOut = vi.fn()
 
 vi.mock("@/lib/server/privileged/reset", () => ({
   completeReset: (...args: unknown[]) => completeReset(...args),
 }))
 vi.mock("@/lib/supabase/server", () => ({
-  createClient: async () => ({ auth: { signInWithPassword } }),
+  createClient: async () => ({ auth: { signInWithPassword, signOut } }),
 }))
 
 const TOKEN = "t".repeat(43)
@@ -23,6 +24,8 @@ function form(fields: Record<string, string>) {
 beforeEach(() => {
   completeReset.mockReset()
   signInWithPassword.mockReset()
+  signOut.mockReset()
+  signOut.mockResolvedValue({ error: null })
   vi.spyOn(console, "error").mockImplementation(() => {})
 })
 
@@ -91,6 +94,27 @@ describe("completeResetAction", () => {
       email: "dev-customer@example.com",
       password: "Test-pass-123",
     })
+    expect(signOut).toHaveBeenCalledWith({ scope: "others" })
+  })
+
+  it("keeps the saved result when ending other sessions fails", async () => {
+    completeReset.mockResolvedValue({
+      ok: true,
+      data: { email: "dev-customer@example.com" },
+    })
+    signInWithPassword.mockResolvedValue({ error: null })
+    signOut.mockResolvedValue({ error: { code: "unexpected_failure" } })
+
+    await expect(
+      completeResetAction(
+        null,
+        form({
+          token: TOKEN,
+          password: "Test-pass-123",
+          confirm: "Test-pass-123",
+        })
+      )
+    ).resolves.toEqual({ ok: true, data: { signedIn: true } })
   })
 
   it("returns signedIn false when the sign-in fails", async () => {
@@ -112,6 +136,7 @@ describe("completeResetAction", () => {
         })
       )
     ).resolves.toEqual({ ok: true, data: { signedIn: false } })
+    expect(signOut).not.toHaveBeenCalled()
   })
 
   it.each(["LINK_USED", "LINK_EXPIRED", "SERVER_ERROR"])(
