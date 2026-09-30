@@ -83,6 +83,7 @@ context:
 - `proxy.test.ts` מריץ את `proxy()` עצמו, עם `updateSession` מדומה.
 - 2026-09-30, preview (‏`ae2a07d`): ‏`vercel curl` החזיר 401 עם `realm="brunch-at-tals"` ל-`/`, ‏`/login`, ‏`/reset/x`, ‏`/api/jobsx`, ו-404 ל-`/api/jobs/x`. בלי `SITE_LOCKED`, כלומר `VERCEL_ENV` זמין בזמן ריצה. הבדיקה בטלפון (נעילה, קישור, סיסמה, `/me`, נשארת מחוברת, "כבר שימש") עברה אצל המשתמשת.
 - ב-PowerShell ‏`npm run dev:reset-link -- --url ...` נכשל, כי PowerShell מוחק את `--`. עובד: `node scripts/dev-reset-link.mjs --url ...`.
+- 2026-09-30, production (‏`cda9a2b`): ‏curl החזיר 401 בכל נתיב ו-404 ל-`/api/jobs/x`, והבדיקה בטלפון עברה אצל המשתמשת. בקשת הסיסמה בדף ה-404 באה מקבצי `/_next/static` הנעולים, וזה תקין.
 
 ## Spec Change Log
 

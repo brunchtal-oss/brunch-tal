@@ -1,0 +1,39 @@
+# Pure checks only (AD-22): no .env, no secrets, no database.
+# Database tests (`npm run test:db`) run locally against the dev project.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v5
+        with:
+          # Reads engines.node ("24.x") from package.json.
+          node-version-file: package.json
+          cache: npm
+
+      - run: npm ci
+
+      # next-env.d.ts and .next/types are generated, not committed.
+      - run: npx next typegen
+
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm audit --omit=dev --audit-level=high
