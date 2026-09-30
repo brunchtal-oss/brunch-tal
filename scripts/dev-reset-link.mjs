@@ -4,6 +4,9 @@
 //
 //   npm run dev:reset-link            # customer
 //   npm run dev:reset-link -- --admin # admin
+//   npm run dev:reset-link -- --url https://<preview-or-production-host>
+//                                     # also print a link for that deploy
+//                                     # (only deploys wired to the DEV project)
 //
 // The account gets a random password that is never printed; the link is the
 // only way in. Running it again reuses the same account and revokes the
@@ -27,6 +30,29 @@ if (!url || !secretKey) {
 }
 
 const asAdmin = process.argv.includes("--admin")
+
+// --url <base> or --url=<base>: a deployed origin (preview / production).
+function parseBaseUrl(argv) {
+  const index = argv.findIndex(
+    (arg) => arg === "--url" || arg.startsWith("--url=")
+  )
+  if (index < 0) return null
+  const raw = argv[index].startsWith("--url=")
+    ? argv[index].slice("--url=".length)
+    : argv[index + 1]
+  let parsed
+  try {
+    parsed = new URL(raw ?? "")
+  } catch {
+    parsed = null
+  }
+  if (!parsed || !["http:", "https:"].includes(parsed.protocol)) {
+    console.error("--url צריך כתובת מלאה, למשל https://example.vercel.app")
+    process.exit(1)
+  }
+  return parsed.origin
+}
+const baseUrl = parseBaseUrl(process.argv.slice(2))
 const account = asAdmin
   ? { email: "dev-admin@example.com", label: "אדמין בדויה" }
   : {
@@ -96,16 +122,14 @@ async function main() {
           { user_id: user.id },
           { onConflict: "user_id", ignoreDuplicates: true }
         )
-    : supabase
-        .from("profiles")
-        .upsert(
-          {
-            id: user.id,
-            full_name: account.fullName,
-            activated_at: new Date().toISOString(),
-          },
-          { onConflict: "id", ignoreDuplicates: true }
-        )
+    : supabase.from("profiles").upsert(
+        {
+          id: user.id,
+          full_name: account.fullName,
+          activated_at: new Date().toISOString(),
+        },
+        { onConflict: "id", ignoreDuplicates: true }
+      )
   const { error: rowError } = await row
   if (rowError) throw new Error(`profile/admin row failed: ${rowError.code}`)
 
@@ -126,6 +150,7 @@ async function main() {
   for (const address of lanAddresses()) {
     console.log(`בטלפון: http://${address}:${port}${path}`)
   }
+  if (baseUrl) console.log(`בפריסה: ${baseUrl}${path}`)
 }
 
 main().catch((error) => {

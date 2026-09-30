@@ -14,7 +14,8 @@
 - לא לערוך את `brunch_at_tal_charecter.md`. טעות או חוסר שנמצאו בו מציגים למשתמשת.
 - לא לעשות git push בלי בקשה מפורשת, כי push ל-main מפעיל פריסה לפרודקשן ב-Vercel.
 - לפני כל פעולה של ניהול קוד (commit, push, יצירת branch, PR, merge, rebase, revert): להסביר למשתמשת בעברית פשוטה מה הפעולה עושה ולמה זו ההמלצה, ולחכות לאישור שלה. זה חל גם כשסקיל (למשל bmad-build) מבצע commit אוטומטי. במקרה כזה עוצרים לפני הביצוע ומסבירים.
-- עד שנעילת האתר (סיפור 1.6) עובדת, לא ממזגים ל-main. PR #1 (סיפור 1.1) ממוזג לפני ה-PR של 1.6.
+- עד שנעילת האתר (סיפור 1.6) עובדת, לא ממזגים ל-main. סדר המיזוג: קודם ה-PR של 1.6 לתוך `story-1-1-phone-activation-tracer`, ואז PR #1 ל-main, כדי ש-production ייפרס נעול מהרגע הראשון.
+- האתר נעול ב-Basic Auth עד ההשקה (`proxy.ts`, ‏`lib/site-lock.ts`, ‏AD-22). ב-Vercel הוא נעול אלא אם `SITE_LOCKED=false`. נתיב חדש שצריך להיות פטור (מכונה-למכונה) נכנס רק לרשימה `SITE_LOCK_EXEMPT_PREFIXES` ומאמת סוד או חתימה משלו.
 - פרויקט ה-Supabase המחובר (`.env.local` ו-MCP) הוא סביבת פיתוח: רק נתונים בדויים, אף פעם לא נתוני לקוחות אמיתיים. פרודקשן יהיה פרויקט נפרד.
 - ה-repo ציבורי עד ההשקה (מגבלה של התוכנית החינמית ב-Vercel). לכן אסור להכניס אליו נתוני לקוחות אמיתיים, תמונות אמיתיות של נשים או תינוקות, או סודות. תוכן כזה נשמר רק ב-Supabase.
 - `SUPABASE_SECRET_KEY` וכל סוד אחר נשארים בשרת בלבד. אסור לשים אותם בקוד שרץ בדפדפן או במשתנה `NEXT_PUBLIC_*`.
@@ -55,7 +56,7 @@
 
 ## מצב הקוד ופקודות
 
-- הבנייה התחילה בסיפור 1.1: המיגרציות הראשונות ב-`supabase/migrations/`, איפוס סיסמה בקישור חד-פעמי, והמסכים `/reset/[token]`, `/login` ו-`/me`. מעקב הסיפורים ב-`_bmad-output/implementation-artifacts/`. ה-README.md הוא של הטמפלייט ולא מתאר את הפרויקט.
+- הבנייה התחילה בסיפור 1.1: המיגרציות הראשונות ב-`supabase/migrations/`, איפוס סיסמה בקישור חד-פעמי, והמסכים `/reset/[token]`, `/login` ו-`/me`. מעקב הסיפורים ב-`_bmad-output/implementation-artifacts/`. ה-README.md מתאר הרצה, פקודות, הנעילה ו-checklist ההגדרות לכל סביבה.
 - לקוח ה-service role נמצא ב-`lib/server/privileged/service-client.ts` (עם `server-only`). ב-`lib/supabase/server.ts` נשאר רק `createClient`. הקובץ `lib/supabase/public.ts` (AD-16) עוד לא קיים.
 - טיפוסי המסד ב-`lib/supabase/database.types.ts`. אחרי כל מיגרציה יוצרים אותם מחדש עם `generate_typescript_types` של ה-MCP.
 - `npm run dev`: שרת פיתוח. `npm run build`: בנייה לפרודקשן. כדאי להריץ אותה לפני סיום עבודה, כי push ל-main מפעיל פריסה.

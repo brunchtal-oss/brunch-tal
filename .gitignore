@@ -42,6 +42,7 @@ next-env.d.ts
 context-practice-files/
 .vercel
 .env*
+!.env.example
 
 # BMAD skill render cache (generated)
 _bmad/render/
