@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>דף עבודה וכרטיסיות פתוחות · פאנל ניהול · בראנץ׳ אצל טל</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@200;300;400&family=Assistant:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/*
+  KEY SCREEN — admin work sheet (CAP-38), open punch-cards (CAP-42), admin bell (CAP-35)
+  Governing: EXPERIENCE › IA › פאנל ניהול › מפגשים (פרטים | עבודה), לקוחות (לקוחות | כרטיסיות פתוחות); UX memlog 77-79.
+  Session theme here: Greek (accent #3E6E8E) — only the header band/dot use it.
+  Tokens from DESIGN.md. Light mode only. No shadows. No JS.
+*/
+:root{
+  --background:#FAF6EE;--card:#FFFDF8;--muted:#F2ECDF;--ink:#2E2A1F;--ink-muted:#6B6450;--border:#E6DFCF;
+  --accent:#8A875A;--primary:#4A4A2A;--on-primary:#FAF6EE;
+  --success:#4E6B34;--success-tint:#E7EDDC;--success-dot:#8FA874;
+  --warning:#8C5E14;--warning-tint:#F4E8D0;--warning-dot:#C9A060;
+  --pending:#4A5A6A;--pending-tint:#E6EAEC;--pending-dot:#8C9AA8;
+  --expired:#676154;--expired-tint:#EDE9E0;--expired-dot:#B0A998;
+  --theme-accent:#3E6E8E;--theme-tint:#E3EDF3;
+  --display:'Heebo',"Segoe UI",Arial,sans-serif;--body:'Assistant',"Segoe UI",Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#EFE9DC;color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px;box-shadow:0 0 0 2px var(--on-primary)}
+.board-head{max-width:1200px;margin:0 auto;padding:32px 16px 8px}
+.board-head h1{font-family:var(--display);font-weight:300;font-size:26px;line-height:1.2}
+.board-head p{color:var(--ink-muted);font-size:15px;margin-top:6px;max-width:760px}
+.grid{max-width:1200px;margin:0 auto;padding:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(390px,1fr));gap:40px;align-items:start}
+.col-title{font-family:var(--display);font-weight:300;font-size:22px;margin-bottom:4px}
+.col-note{color:var(--ink-muted);font-size:15px;margin-bottom:16px}
+.phone{width:390px;max-width:100%;margin:0 auto;border:10px solid #2E2A1F;border-radius:40px;overflow:hidden;background:var(--background);min-height:844px;display:flex;flex-direction:column}
+.status-bar{height:36px;display:flex;justify-content:space-between;align-items:center;padding:0 24px;font-size:13px;font-weight:600}
+.screen{flex:1;padding:4px 16px 32px}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:8px 0}
+.wordmark{font-family:var(--display);font-weight:300;font-size:20px}
+.bell{position:relative;width:44px;height:44px;display:grid;place-items:center;border-radius:4px;border:0;background:transparent;color:var(--ink)}
+.bell .count{position:absolute;top:4px;inset-inline-end:2px;background:var(--primary);color:var(--on-primary);font-size:13px;font-weight:600;border-radius:9999px;min-width:20px;height:20px;display:grid;place-items:center;padding:0 5px}
+.h1{font-family:var(--display);font-weight:300;font-size:26px;line-height:1.2}
+.h2{font-family:var(--display);font-weight:300;font-size:22px;line-height:1.25}
+.label{font-size:13px}.muted{color:var(--ink-muted)}.strong{font-weight:600}.body-sm{font-size:15px}
+.section{margin-top:28px}
+.theme-head{background:var(--theme-tint);border-radius:8px;padding:14px 16px;margin-top:4px}
+.theme-head .dot{display:inline-block;width:8px;height:8px;border-radius:9999px;background:var(--theme-accent);margin-inline-end:6px}
+.seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--ink-muted);border-radius:4px;margin-top:16px;overflow:hidden}
+.seg a{min-height:44px;display:grid;place-items:center;text-decoration:none;font-weight:600;font-size:15px}
+.seg a[aria-current="page"]{background:var(--primary);color:var(--on-primary)}
+.tools{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.btn{min-height:44px;padding:0 14px;border-radius:4px;font:600 15px var(--body);display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.btn-2{background:transparent;border:1px solid var(--ink);color:var(--ink)}
+.btn-1{background:var(--primary);color:var(--on-primary);border:0;min-height:48px}
+.btn-link{background:none;border:0;text-decoration:underline;text-underline-offset:3px;min-height:44px;font:400 15px var(--body);color:var(--ink)}
+.dish{background:var(--card);border:1px solid var(--border);border-radius:8px;margin-top:12px;padding:12px 16px}
+.dish-head{display:flex;justify-content:space-between;align-items:center}
+.day{margin-top:8px;border-top:1px solid var(--border);padding-top:8px}
+.day h4{font-size:13px;font-weight:600;color:var(--ink-muted)}
+.task{display:flex;gap:10px;align-items:flex-start;min-height:44px;padding-top:6px}
+.box{width:24px;height:24px;border:1.5px solid var(--ink-muted);border-radius:4px;flex:none;margin-top:2px}
+.box.on{background:var(--primary);border-color:var(--primary)}
+.done{color:var(--ink-muted);text-decoration:line-through}
+.status{display:inline-flex;align-items:center;gap:6px;border-radius:9999px;padding:3px 10px;font-size:13px;font-weight:600;white-space:nowrap}
+.status::before{content:"";width:7px;height:7px;border-radius:9999px}
+.st-success{color:var(--success);background:var(--success-tint)}.st-success::before{background:var(--success-dot)}
+.st-warning{color:var(--warning);background:var(--warning-tint)}.st-warning::before{background:var(--warning-dot)}
+.st-pending{color:var(--pending);background:var(--pending-tint)}.st-pending::before{background:var(--pending-dot)}
+.st-expired{color:var(--expired);background:var(--expired-tint)}.st-expired::before{background:var(--expired-dot)}
+.att{border-top:1px solid var(--border);padding:12px 0}
+.diet{background:var(--warning-tint);color:var(--warning);border-radius:4px;padding:4px 8px;font-size:15px;margin-top:4px;display:inline-block}
+.shop li{list-style:none;display:flex;gap:10px;align-items:center;min-height:44px;border-top:1px solid var(--border)}
+.add{display:flex;gap:8px;margin-top:8px}
+.input{flex:1;min-height:48px;border:1px solid var(--ink-muted);border-radius:4px;background:var(--card);padding:0 12px;font:16px var(--body)}
+.wa{background:var(--success);color:var(--on-primary);border:0}
+
+/* desktop / print table */
+.desk{grid-column:1/-1;background:#fff;border:1px solid var(--border);border-radius:8px;padding:24px}
+.print-head{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--theme-accent);padding-bottom:8px}
+table{width:100%;border-collapse:collapse;margin-top:16px;font-size:15px}
+caption{text-align:start;font-weight:600;padding-bottom:6px}
+th,td{border:1px solid var(--border);padding:8px;text-align:start;vertical-align:top}
+th{background:var(--muted);font-weight:600}
+.addcol{border:1px dashed var(--ink-muted);color:var(--ink-muted);text-align:center;width:120px}
+.print-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:16px;font-size:15px}
+.print-grid h3{font-size:15px;font-weight:600;border-bottom:1px solid var(--border);padding-bottom:4px;margin-bottom:6px}
+
+/* open cards */
+.oc{background:var(--card);border:1px solid var(--border);border-radius:8px;margin-top:12px;padding:12px 16px}
+.oc-head{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.entries{margin-top:8px}
+.entries li{list-style:none;display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-top:1px solid var(--border);font-size:15px}
+.filters{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.fchip{min-height:44px;padding:0 12px;border-radius:9999px;border:1px solid var(--ink-muted);background:var(--card);font:13px var(--body);display:inline-flex;align-items:center}
+.fchip[aria-pressed="true"]{background:var(--muted);border-color:var(--ink);font-weight:600}
+.strip{background:var(--muted);border-radius:8px;padding:12px 16px;margin-top:8px;display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+</style>
+</head>
+<body>
+<div class="board-head">
+  <h1>דף עבודה, כרטיסיות פתוחות ופעמון ההתראות</h1>
+  <p>דף העבודה הוא לשונית בתוך המפגש ("פרטים | עבודה"). בטלפון כל מנה היא כרטיס, בדסקטופ ובהדפסה זו טבלה. הכרטיסיות הפתוחות הן מתג בתוך "לקוחות". הפעמון בסרגל העליון של האדמין.</p>
+</div>
+
+<div class="grid">
+
+  <!-- phone: work sheet -->
+  <div>
+    <h2 class="col-title">דף עבודה בטלפון</h2>
+    <p class="col-note">מפגש יום ה׳ ← עמודות ברירת מחדל ד׳ וה׳. טל הוסיפה יום ג׳ למפגש הזה.</p>
+    <div class="phone">
+      <div class="status-bar"><span>07:40</span><span>●●●</span></div>
+      <div class="screen">
+        <header class="topbar"><span class="wordmark">בראנץ׳ אצל טל</span>
+          <button class="bell" aria-label="התראות, 2 שלא נקראו"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="count" aria-hidden="true">2</span></button>
+        </header>
+        <div class="theme-head"><div class="label muted"><span class="dot" aria-hidden="true"></span>יווני · חמישי 22.10 · 10:00</div><h1 class="h1">בוקר בכיקלדים</h1></div>
+        <nav class="seg" aria-label="תצוגת המפגש"><a href="#">פרטים</a><a href="#" aria-current="page">עבודה</a></nav>
+        <div class="tools"><button class="btn btn-2">+ מנה</button><button class="btn btn-2">+ יום הכנה</button><button class="btn btn-2">הדפסה</button></div>
+
+        <div class="dish">
+          <div class="dish-head"><span class="strong">שקשוקה ירוקה עם פטה</span><button class="btn-link" aria-label="פעולות למנה">עריכה</button></div>
+          <div class="day"><h4>ג׳ 20.10 · יום נוסף <button class="btn-link" style="min-height:auto;font-size:13px">הסרת היום</button></h4>
+            <div class="task"><span class="box on" aria-hidden="true"></span><span class="done">להזמין פטה כבשים</span></div></div>
+          <div class="day"><h4>ד׳ 21.10 · יום לפני</h4>
+            <div class="task"><span class="box" aria-hidden="true"></span><span>לקצוץ עשבים ותרד</span></div>
+            <div class="task"><span class="box" aria-hidden="true"></span><span>רוטב עגבניות לבסיס</span></div></div>
+          <div class="day"><h4>ה׳ 22.10 · יום המפגש</h4>
+            <div class="task"><span class="box" aria-hidden="true"></span><span>לבשל ולהגיש במחבתות</span></div></div>
+        </div>
+
+        <div class="dish">
+          <div class="dish-head"><span class="strong">עוגת יוגורט ולימון</span><button class="btn-link">עריכה</button></div>
+          <div class="day"><h4>ד׳ 21.10 · יום לפני</h4><div class="task"><span class="box" aria-hidden="true"></span><span>לאפות ולקרר</span></div></div>
+          <div class="day"><h4>ה׳ 22.10 · יום המפגש</h4><div class="task"><span class="box" aria-hidden="true"></span><span>סירופ לימון לפני ההגשה</span></div></div>
+        </div>
+
+        <section class="section" aria-labelledby="att"><h2 class="h2" id="att">נרשמות (10)</h2>
+          <div class="att"><div class="strong">דנה כהן</div><div class="body-sm muted">עומר, 4 חודשים</div><span class="diet">ללא גלוטן</span><div style="margin-top:6px"><span class="status st-success">אישרה תמונות</span></div></div>
+          <div class="att"><div class="strong">מיכל לוי ×2</div><div class="body-sm muted">נועם, 3 חודשים</div><span class="diet">מלווה: צמחונית</span><div style="margin-top:6px"><span class="status st-expired">לא אישרה תמונות</span></div></div>
+        </section>
+
+        <section class="section" aria-labelledby="shop"><h2 class="h2" id="shop">רשימת קניות</h2>
+          <ul class="shop"><li><span class="box on" aria-hidden="true"></span><span class="done">פטה כבשים · 1 ק״ג</span></li><li><span class="box" aria-hidden="true"></span><span>לימונים · 8</span></li><li><span class="box" aria-hidden="true"></span><span>לחם ללא גלוטן</span></li></ul>
+          <div class="add"><input class="input" aria-label="פריט חדש" placeholder="פריט חדש"><button class="btn btn-2">הוספה</button></div>
+          <button class="btn btn-1 wa" style="width:100%;margin-top:12px;justify-content:center">שליחת הרשימה בוואטסאפ</button>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- phone: open cards + bell strip -->
+  <div>
+    <h2 class="col-title">כרטיסיות פתוחות</h2>
+    <p class="col-note">לקוחות › "כרטיסיות פתוחות". פתוחה = לא פגה ועוד לא נוצלו כל הכניסות. משוריינת ≠ נוצלה.</p>
+    <div class="phone">
+      <div class="status-bar"><span>09:02</span><span>●●●</span></div>
+      <div class="screen">
+        <header class="topbar"><span class="wordmark">בראנץ׳ אצל טל</span>
+          <button class="bell" aria-label="התראות, 2 שלא נקראו"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="count" aria-hidden="true">2</span></button>
+        </header>
+        <div class="strip" role="status"><span class="body-sm">״לא, לסדר את המגירה זה לא שיווק. סטורי אחד. קדימה.״</span><button class="btn-link" style="min-height:44px">סגירה</button></div>
+        <nav class="seg" aria-label="לקוחות"><a href="#">לקוחות</a><a href="#" aria-current="page">כרטיסיות פתוחות</a></nav>
+        <div class="filters"><button class="fchip" aria-pressed="true">יש כניסות פנויות</button><button class="fchip" aria-pressed="false">עומדת לפוג</button><button class="fchip" aria-pressed="false">מיון: תפוגה</button></div>
+
+        <div class="oc">
+          <div class="oc-head"><span class="strong">רוני שלום</span><span class="status st-warning">עומדת לפוג</span></div>
+          <div class="label muted">נרכשה 01.09 · בתוקף עד 26.10 · עוד 18 ימים</div>
+          <ul class="entries">
+            <li><span>כניסה 1 · ב׳ 08.09</span><span class="status st-expired">נוצלה</span></li>
+            <li><span>כניסה 2 · ה׳ 18.09</span><span class="status st-expired">נוצלה</span></li>
+            <li><span>כניסה 3 · ב׳ 12.10</span><span class="status st-success">משוריינת</span></li>
+            <li><span>כניסה 4</span><span class="status st-pending">פנויה</span></li>
+          </ul>
+          <div class="tools"><button class="btn btn-2">לרישום למפגש</button><button class="btn-link">לפרופיל</button></div>
+        </div>
+
+        <div class="oc">
+          <div class="oc-head"><span class="strong">אורית בן דוד</span></div>
+          <div class="label muted">נרכשה 20.09 · בתוקף עד 15.11 (כולל הארכה של שבוע)</div>
+          <ul class="entries">
+            <li><span>כניסה 1 · ה׳ 25.09</span><span class="status st-expired">נוצלה</span></li>
+            <li><span>כניסה 2 · ב׳ 13.10</span><span class="status st-success">משוריינת</span></li>
+            <li><span>כניסה 3</span><span class="status st-pending">פנויה</span></li>
+            <li><span>כניסה 4</span><span class="status st-pending">פנויה</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- desktop / print -->
+  <section class="desk" aria-labelledby="print">
+    <div class="print-head"><div><div class="label muted">יווני · חמישי 22.10 · 10:00 · 10 נרשמות</div><h2 class="h2" id="print">דף עבודה · בוקר בכיקלדים</h2></div><span class="label muted">גרסת הדפסה (A4). עמודה ריקה לא מודפסת</span></div>
+    <table>
+      <caption>מנות ומשימות</caption>
+      <thead><tr><th scope="col">מנה</th><th scope="col">ג׳ 20.10</th><th scope="col">ד׳ 21.10 · יום לפני</th><th scope="col">ה׳ 22.10 · יום המפגש</th><th scope="col" class="addcol">+ יום הכנה<br><span class="label">(במסך בלבד)</span></th></tr></thead>
+      <tbody>
+        <tr><th scope="row">שקשוקה ירוקה עם פטה</th><td><s>☑ להזמין פטה כבשים</s></td><td>☐ לקצוץ עשבים ותרד<br>☐ רוטב עגבניות לבסיס</td><td>☐ לבשל ולהגיש במחבתות</td><td class="addcol"></td></tr>
+        <tr><th scope="row">עוגת יוגורט ולימון</th><td></td><td>☐ לאפות ולקרר</td><td>☐ סירופ לימון לפני ההגשה</td><td class="addcol"></td></tr>
+      </tbody>
+    </table>
+    <div class="print-grid">
+      <div><h3>נרשמות ואישור תמונות</h3>דנה כהן · אישרה<br>מיכל לוי ×2 · לא אישרה<br>…</div>
+      <div><h3>תזונה ואלרגיות</h3>דנה כהן: ללא גלוטן<br>מיכל לוי · מלווה: צמחונית<br><span class="label muted">(מי שלא כתבה כלום לא מופיעה כאן)</span><br>…</div>
+      <div><h3>רשימת קניות</h3><s>☑ פטה כבשים · 1 ק״ג</s><br>☐ לימונים · 8<br>☐ לחם ללא גלוטן</div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>
