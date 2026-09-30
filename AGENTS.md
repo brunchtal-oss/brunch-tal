@@ -14,7 +14,6 @@
 - לא לערוך את `brunch_at_tal_charecter.md`. טעות או חוסר שנמצאו בו מציגים למשתמשת.
 - לא לעשות git push בלי בקשה מפורשת, כי push ל-main מפעיל פריסה לפרודקשן ב-Vercel.
 - לפני כל פעולה של ניהול קוד (commit, push, יצירת branch, PR, merge, rebase, revert): להסביר למשתמשת בעברית פשוטה מה הפעולה עושה ולמה זו ההמלצה, ולחכות לאישור שלה. זה חל גם כשסקיל (למשל bmad-build) מבצע commit אוטומטי. במקרה כזה עוצרים לפני הביצוע ומסבירים.
-- עד שנעילת האתר (סיפור 1.6) עובדת, לא ממזגים ל-main. סדר המיזוג: קודם ה-PR של 1.6 לתוך `story-1-1-phone-activation-tracer`, ואז PR #1 ל-main, כדי ש-production ייפרס נעול מהרגע הראשון.
 - האתר נעול ב-Basic Auth עד ההשקה (`proxy.ts`, ‏`lib/site-lock.ts`, ‏AD-22). ב-Vercel הוא נעול אלא אם `SITE_LOCKED=false`. נתיב חדש שצריך להיות פטור (מכונה-למכונה) נכנס רק לרשימה `SITE_LOCK_EXEMPT_PREFIXES` ומאמת סוד או חתימה משלו.
 - פרויקט ה-Supabase המחובר (`.env.local` ו-MCP) הוא סביבת פיתוח: רק נתונים בדויים, אף פעם לא נתוני לקוחות אמיתיים. פרודקשן יהיה פרויקט נפרד.
 - ה-repo ציבורי עד ההשקה (מגבלה של התוכנית החינמית ב-Vercel). לכן אסור להכניס אליו נתוני לקוחות אמיתיים, תמונות אמיתיות של נשים או תינוקות, או סודות. תוכן כזה נשמר רק ב-Supabase.
@@ -33,7 +32,10 @@
 
 - כל שינוי בסכמה מתחיל בקובץ חדש: `npx supabase migration new <name>` (ה-CLI לא מותקן גלובלית, לכן `npx`). אחרי שכותבים את ה-SQL בקובץ, מחילים אותו על המסד עם `apply_migration` של ה-MCP, עם אותו תוכן. לא משנים סכמה ב-`execute_sql`.
 - אחרי כל מיגרציה להריץ את ה-security advisor של Supabase (`get_advisors` ב-MCP). הוא מזהה טבלה בלי RLS ופונקציה בלי search_path. ‏WARN ‏`0029` על RPC מסוג definer עם grant ל-`authenticated` מאושר (AD-5). כל WARN או ERROR אחר חוסם.
-- `npm test` מריץ את Vitest על קבצי `*.test.ts(x)`. בדיקות של RPC ו-RLS רצות מול פרויקט ה-Supabase של הפיתוח, לא מול mock.
+- `npm test` מריץ את הבדיקות הטהורות (פרויקט `unit` ב-Vitest: כל `*.test.ts(x)` חוץ מ-`supabase/tests/`), בלי מסד ובלי `.env`. בדיקות של RPC ו-RLS נכתבות ב-`supabase/tests/**/*.test.ts` ורצות ב-`npm run test:db` (פרויקט `db`, קובץ אחרי קובץ) מול פרויקט ה-Supabase של הפיתוח, לא מול mock.
+- ‏CI (`.github/workflows/ci.yml`) רץ על כל push ו-PR: ‏`npm ci`, ‏lint, ‏typecheck, ‏`npm test` ו-`npm audit --omit=dev --audit-level=high`, בלי סודות ובלי מסד. לכן `npm test` לא ניגש לרשת או למסד.
+- ‏`npm run lint` אוכף את כיוון התלות (`eslint.config.mjs`, נבדק ב-`test/eslint-rules.test.ts`): קובץ `"use client"` לא מייבא `lib/server/**`; ‏`lib/server/privileged` מיובא רק מתוכו, מ-`app/**/actions.ts`, מ-`app/api/**` ומ-`page.tsx` של נתיבי הטוקן; ‏`.from(...).insert/update/delete/upsert` מותר רק ל-`profiles` ול-`babies` (קובצי בדיקה פטורים); אין `parseFloat` ב-`lib/money.ts`. כלל `no-restricted-syntax` חדש מוסיפים לקבוצות שבקובץ, כי ב-flat config רשומה מאוחרת מחליפה את כל הרשימה.
+
 ## מוסכמות שונות מברירת המחדל
 
 - כסף נשמר כ-integer באגורות (`*_agorot`), ILS, ומוצג ב-₪. אסור לחשב סכומים בנקודה צפה.
@@ -57,9 +59,9 @@
 ## מצב הקוד ופקודות
 
 - הבנייה התחילה בסיפור 1.1: המיגרציות הראשונות ב-`supabase/migrations/`, איפוס סיסמה בקישור חד-פעמי, והמסכים `/reset/[token]`, `/login` ו-`/me`. מעקב הסיפורים ב-`_bmad-output/implementation-artifacts/`. ה-README.md מתאר הרצה, פקודות, הנעילה ו-checklist ההגדרות לכל סביבה.
-- לקוח ה-service role נמצא ב-`lib/server/privileged/service-client.ts` (עם `server-only`). ב-`lib/supabase/server.ts` נשאר רק `createClient`. הקובץ `lib/supabase/public.ts` (AD-16) עוד לא קיים.
+- לקוח ה-service role נמצא ב-`lib/server/privileged/service-client.ts` (עם `server-only`). ב-`lib/supabase/server.ts` נשאר רק `createClient`. ‏`lib/supabase/public.ts` (‏`createPublicClient`, AD-16) הוא לקוח anon בלי cookies ובלי session, לתוכן שפורסם בלבד.
 - טיפוסי המסד ב-`lib/supabase/database.types.ts`. אחרי כל מיגרציה יוצרים אותם מחדש עם `generate_typescript_types` של ה-MCP.
 - `npm run dev`: שרת פיתוח. `npm run build`: בנייה לפרודקשן. כדאי להריץ אותה לפני סיום עבודה, כי push ל-main מפעיל פריסה.
 - `npm run dev:reset-link`: יוצר או מוצא לקוחה בדויה במסד הפיתוח ומדפיס קישור איפוס סיסמה למחשב ולטלפון ברשת הביתית. עם דגלים מריצים `node scripts/dev-reset-link.mjs --admin` (אדמין) או `--url <כתובת פריסה>`, כי PowerShell מוחק את `--` של `npm run`.
 - `npm run typecheck`: בדיקת טיפוסים (`tsc --noEmit`). `npm run format`: Prettier עם הפלאגין של Tailwind.
-- הרצה של בדיקה אחת: `npx vitest run path/to/file.test.ts`, או `npx vitest run -t "<שם הבדיקה>"`.
+- הרצה של בדיקה אחת: `npx vitest run path/to/file.test.ts`, או `npx vitest run -t "<שם הבדיקה>"`. ‏`--project unit` או `--project db` מגבילים לפרויקט אחד.

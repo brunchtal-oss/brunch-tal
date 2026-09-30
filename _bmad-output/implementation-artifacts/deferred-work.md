@@ -31,3 +31,11 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-1-6-site-lock-environments-and-preview-deploy.md`
   summary: כשיתווספו manifest ו-service worker (פוש), לבדוק שהם עובדים מאחורי הנעילה. הדפדפן לא שולח Basic Auth בבקשת manifest בלי `crossorigin="use-credentials"`.
   evidence: ה-matcher נועל כל נתיב, כולל קבצים סטטיים. היום אין manifest, ולכן זה לא שובר כלום עדיין.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-2-tooling-lint-rules-and-ci.md`
+  summary: ב-AGENTS.md להמליץ על `npx vitest run --project unit ...` להרצת בדיקה בודדת, כי בלי `--project` ‏Vitest מריץ גם את בדיקות המסד.
+  evidence: ממצא 11 בסקירת 1.2. עם שני projects, `npx vitest run -t "<שם>"` מריץ את שניהם. התיקון הוא בקובץ הנחיות לסוכנים, ולכן נדחה.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-2-tooling-lint-rules-and-ci.md`
+  summary: לעדכן את מסמכי התכנון אחרי 1.2 ו-1.6: טבלת האכיפה ב-ARCHITECTURE-SPINE (דפי הטוקן רשאים לייבא privileged), רשומת "פערי E1 מול הקוד" ב-Deferred של ה-SPINE (נסגרו), `epic-1-context.md` ("אין push ל-main לפני 1.6"), והפריט של 1.1 ב-deferred-work שנשאר "לבדוק ב-1.6".
+  evidence: ממצא 12 בסקירת 1.2. ה-SPINE גובר על שאר המסמכים, ולכן החריגה לדפי הטוקן צריכה להופיע בו.

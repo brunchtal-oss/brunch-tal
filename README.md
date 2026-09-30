@@ -24,14 +24,26 @@
 | `npm run dev` | שרת פיתוח |
 | `npm run build` | בנייה לפרודקשן. כדאי להריץ לפני כל push |
 | `npm run start` | הרצת הבנייה מקומית |
-| `npm run lint` | ESLint, כולל חסימת כיוונים לא לוגיים (`ml-`, ‏`left-` וכו׳) |
+| `npm run lint` | ESLint, כולל חסימת כיוונים לא לוגיים (`ml-`, ‏`left-` וכו׳) וכללי הארכיטקטורה (ראו למטה) |
 | `npm run typecheck` | בדיקת טיפוסים |
 | `npm run format` | Prettier |
-| `npm test` | בדיקות Vitest טהורות (בלי מסד) |
-| `npm run test:db` | בדיקות מסד מול פרויקט הפיתוח (עוד לא קיים. יתווסף בסיפור 1.2) |
+| `npm test` | בדיקות Vitest טהורות, בלי מסד ובלי `.env` (הכול חוץ מ-`supabase/tests/`) |
+| `npm run test:db` | בדיקות המסד שב-`supabase/tests/`, מול פרויקט הפיתוח, קובץ אחרי קובץ. רק מקומית |
 | `npm run dev:reset-link` | לקוחה בדויה וקישור איפוס. עם דגלים מריצים ישירות: `node scripts/dev-reset-link.mjs --admin` לאדמין, ‏`--url https://<כתובת>` מדפיס גם קישור לפריסה. (ב-PowerShell ‏`npm run ... -- --flag` לא עובד, כי PowerShell מוחק את `--`.) |
 
 שינוי בסכמה מתחיל תמיד ב-`npx supabase migration new <name>`. הפירוט ב-`AGENTS.md`.
+
+## CI וכללי lint
+
+‏GitHub Actions (`.github/workflows/ci.yml`) רץ על כל push ועל כל PR, מ-checkout נקי, בלי `.env`, בלי סודות ובלי מסד: ‏`npm ci`, ‏`npm run lint`, ‏`npm run typecheck`, ‏`npm test` ו-`npm audit --omit=dev --audit-level=high`. בדיקות המסד (`npm run test:db`) רצות רק מקומית.
+
+כללי ה-lint שמעבר ל-Next (ב-`eslint.config.mjs`, ונבדקים ב-`test/eslint-rules.test.ts`):
+
+- קובץ `"use client"` לא מייבא שום דבר מ-`lib/server/`.
+- ‏`lib/server/privileged/` (לקוח ה-service role) מיובא רק מתוכו, מ-`app/**/actions.ts`, מ-`app/api/**` ומדף ה-`page.tsx` של `/reset/[token]` ושל `/join/[token]`.
+- כתיבה ישירה לטבלה (`.from(...).insert/update/delete/upsert`) מותרת רק ל-`profiles` ול-`babies`. כל השאר עובר דרך RPC. קובצי בדיקה פטורים.
+- אין `parseFloat` ב-`lib/money.ts`, כי כסף נשמר באגורות שלמות.
+- כיוונים לוגיים בלבד בכל מקום חוץ מ-`components/ui/`.
 
 ## נעילת האתר עד ההשקה
 
