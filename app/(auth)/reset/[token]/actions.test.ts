@@ -126,6 +126,20 @@ describe("completeResetAction", () => {
     expect(signOut).toHaveBeenCalledWith({ scope: "others" })
   })
 
+  it("strips invisible direction marks from a pasted token", async () => {
+    completeReset.mockResolvedValue({ ok: true, data: { email: null } })
+    await completeResetAction(
+      null,
+      form({
+        token: `\u200F${TOKEN}\u200E`,
+        idempotencyKey: KEY,
+        password: "Test-pass-123",
+        confirm: "Test-pass-123",
+      })
+    )
+    expect(completeReset).toHaveBeenCalledWith(TOKEN, "Test-pass-123", KEY)
+  })
+
   it("keeps the saved result when ending other sessions fails", async () => {
     completeReset.mockResolvedValue({
       ok: true,

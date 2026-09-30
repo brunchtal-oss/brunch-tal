@@ -3,6 +3,7 @@ import { Suspense } from "react"
 import type { Metadata } from "next"
 
 import { PageHeading } from "@/components/shared/page-heading"
+import { cleanToken } from "@/lib/auth/clean-token"
 import { authCopy } from "@/lib/copy/auth"
 import { getResetTokenView } from "@/lib/server/privileged/reset"
 
@@ -40,7 +41,8 @@ async function ResetContent({
 }: {
   params: Promise<{ token: string }>
 }) {
-  const { token } = await params
+  // Invisible marks from a pasted Hebrew message would read as "expired".
+  const token = cleanToken((await params).token)
   // Opening the link only reads its public state; it never consumes it.
   const state = await getResetTokenView(token)
   // One idempotency key per page load (AD-5), sent with every attempt, so a

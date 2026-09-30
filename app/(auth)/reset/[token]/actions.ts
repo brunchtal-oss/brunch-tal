@@ -1,5 +1,6 @@
 "use server"
 
+import { cleanToken } from "@/lib/auth/clean-token"
 import type { ErrorCode } from "@/lib/errors"
 import { completeReset } from "@/lib/server/privileged/reset"
 import { createClient } from "@/lib/supabase/server"
@@ -17,7 +18,8 @@ export async function completeResetAction(
   _previous: ResetFormState,
   formData: FormData
 ): Promise<ResetFormState> {
-  const token = formData.get("token")
+  const rawToken = formData.get("token")
+  const token = typeof rawToken === "string" ? cleanToken(rawToken) : null
   const password = formData.get("password")
   const idempotencyKey = formData.get("idempotencyKey")
   if (typeof token !== "string") return { ok: false, code: "LINK_EXPIRED" }
