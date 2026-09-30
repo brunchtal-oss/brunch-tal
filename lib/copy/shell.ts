@@ -31,7 +31,7 @@ export const shellCopy = {
   },
   gate: {
     // Signed in, but not allowed on this login page's area.
-    customerOnAdmin: "את מחוברת כלקוחה. הכניסה כאן היא למנהלת בלבד",
+    customerOnAdmin: "כניסה לא מורשית",
     goToMe: "לאזור האישי",
   },
 } as const
