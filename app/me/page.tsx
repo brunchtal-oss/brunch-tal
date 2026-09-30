@@ -1,36 +1,27 @@
 import { Suspense } from "react"
 import type { Metadata } from "next"
 
-import { Button } from "@/components/ui/button"
-import { authCopy } from "@/lib/copy/auth"
+import { PageHeading } from "@/components/shared/page-heading"
+import { SignOutButton } from "@/components/shared/sign-out-button"
+import { shellCopy } from "@/lib/copy/shell"
 import { createClient } from "@/lib/supabase/server"
 
-import { signOutAction } from "./actions"
-
 export const metadata: Metadata = {
-  title: authCopy.me.title,
+  title: shellCopy.customer.homeTitle,
 }
 
-// Rendered inside the layout's <Suspense> customer gate.
+// Rendered inside the layout's <Suspense> customer gate. Sign-out stays here
+// until the profile screen exists.
 export default function MePage() {
   return (
-    <main className="mx-auto flex min-h-svh w-full max-w-sm flex-col justify-center gap-6 px-4 py-10">
-      <h1 className="font-heading text-2xl font-semibold">
-        <Suspense fallback={authCopy.me.loading}>
+    <>
+      <PageHeading>
+        <Suspense fallback={shellCopy.customer.greeting("")}>
           <Greeting />
         </Suspense>
-      </h1>
-      <form action={signOutAction}>
-        <Button
-          type="submit"
-          variant="outline"
-          size="lg"
-          className="h-11 w-full text-base"
-        >
-          {authCopy.me.signOut}
-        </Button>
-      </form>
-    </main>
+      </PageHeading>
+      <SignOutButton className="max-w-xs" />
+    </>
   )
 }
 
@@ -42,5 +33,5 @@ async function Greeting() {
     .select("full_name")
     .maybeSingle()
 
-  return authCopy.me.greeting(profile?.full_name ?? "")
+  return shellCopy.customer.greeting(profile?.full_name ?? "")
 }

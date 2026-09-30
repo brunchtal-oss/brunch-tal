@@ -70,6 +70,22 @@ describe("proxy", () => {
     expect(updateSession).not.toHaveBeenCalled()
   })
 
+  it.each([
+    ["/admin/more?x=1", "/admin/more?x=1"],
+    ["/me", "/me"],
+    ["/login", null],
+    ["/reset/abc", null],
+  ])(
+    "sets the request path header on %s (forged values dropped)",
+    async (path, expected) => {
+      const forged = request(path, credentials)
+      forged.headers.set("x-request-path", "/forged")
+      await proxy(forged)
+      const seen = updateSession.mock.calls[0][0] as NextRequest
+      expect(seen.headers.get("x-request-path")).toBe(expected)
+    }
+  )
+
   it("lets /api/jobs/ through without credentials", async () => {
     const response = await proxy(request("/api/jobs/x"))
     expect(response?.status).not.toBe(401)

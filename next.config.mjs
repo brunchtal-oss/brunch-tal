@@ -40,6 +40,8 @@ const nextConfig = {
       },
       { source: "/me", headers: [noStore] },
       { source: "/me/:path*", headers: [noStore] },
+      { source: "/admin", headers: [noStore] },
+      { source: "/admin/:path*", headers: [noStore] },
     ]
   },
 }

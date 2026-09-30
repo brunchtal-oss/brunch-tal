@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto"
 import { Suspense } from "react"
 import type { Metadata } from "next"
 
+import { PageHeading } from "@/components/shared/page-heading"
 import { authCopy } from "@/lib/copy/auth"
 import { getResetTokenView } from "@/lib/server/privileged/reset"
 
@@ -21,10 +22,8 @@ export default function ResetPage({
   params: Promise<{ token: string }>
 }) {
   return (
-    <main className="mx-auto flex min-h-svh w-full max-w-sm flex-col justify-center gap-6 px-4 py-10">
-      <h1 className="font-heading text-2xl font-semibold">
-        {authCopy.reset.title}
-      </h1>
+    <>
+      <PageHeading>{authCopy.reset.title}</PageHeading>
       <Suspense
         fallback={
           <p className="text-muted-foreground">{authCopy.reset.loading}</p>
@@ -32,7 +31,7 @@ export default function ResetPage({
       >
         <ResetContent params={params} />
       </Suspense>
-    </main>
+    </>
   )
 }
 

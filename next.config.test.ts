@@ -18,10 +18,13 @@ describe("next.config", () => {
     expect(headers["Cache-Control"]).toBe("private, no-store")
   })
 
-  it.each(["/me", "/me/:path*"])("sends no-store on %s", async (source) => {
-    const headers = await headersFor(source)
-    expect(headers["Cache-Control"]).toContain("no-store")
-  })
+  it.each(["/me", "/me/:path*", "/admin", "/admin/:path*"])(
+    "sends no-store on %s",
+    async (source) => {
+      const headers = await headersFor(source)
+      expect(headers["Cache-Control"]).toContain("no-store")
+    }
+  )
 
   it("does not log token routes", () => {
     const logging = nextConfig.logging

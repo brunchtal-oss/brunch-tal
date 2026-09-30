@@ -1,10 +1,6 @@
 # Deferred Work
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-1-1-phone-activation-and-login-tracer.md`
-  summary: אדמין אחרי איפוס סיסמה, או משתמשת מחוברת שאינה לקוחה פעילה, נכנסות ללולאה `/me` ← `/login` בלי הודעה. צריך יעד לפי תפקיד (`/admin`) והודעה למי שמחוברת בלי הרשאה.
-  evidence: `requireCustomer` מפנה כל תפקיד שאינו customer ל-`/login?next=/me`, ומסך ההצלחה באיפוס תמיד מקשר ל-`/me`. אזור האדמין עוד לא קיים (1.5).
-
-- source_spec: `_bmad-output/implementation-artifacts/spec-1-1-phone-activation-and-login-tracer.md`
   summary: ניסיון חוזר באיפוס עובר דרך `reset_begin`. לכן קישור שפג בין הניסיונות, או תשובה של `reset_complete` שנשמרה אבל לא הגיעה, מציגים "פג" או "כבר שימש" אחרי שהסיסמה כבר השתנתה. הענפים `already_consumed` ו"מסיים גם אם פג" ב-`reset_complete` לא נגישים מהאפליקציה.
   evidence: `completeReset` תמיד קורא ל-`reset_begin`, שמעלה `LINK_EXPIRED` או `LINK_USED`. תיקון דורש מצב ביניים או סימון, בניגוד ל-Design Notes של 1.1. כדאי לבדוק ב-1.4 (idempotency).
 
