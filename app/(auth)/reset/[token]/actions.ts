@@ -5,6 +5,8 @@ import { completeReset } from "@/lib/server/privileged/reset"
 import { createClient } from "@/lib/supabase/server"
 
 const MIN_PASSWORD_LENGTH = 8
+// The idempotency key comes from the page (randomUUID on the server, AD-5).
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export type ResetFormState =
   | null
@@ -17,7 +19,12 @@ export async function completeResetAction(
 ): Promise<ResetFormState> {
   const token = formData.get("token")
   const password = formData.get("password")
+  const idempotencyKey = formData.get("idempotencyKey")
   if (typeof token !== "string") return { ok: false, code: "LINK_EXPIRED" }
+  // A missing or malformed key means the form did not come from our page.
+  if (typeof idempotencyKey !== "string" || !UUID.test(idempotencyKey)) {
+    return { ok: false, code: "LINK_EXPIRED" }
+  }
 
   const confirm = formData.get("confirm")
 
@@ -29,7 +36,7 @@ export async function completeResetAction(
     return { ok: false, code: "PASSWORDS_DONT_MATCH", field: "confirm" }
   }
 
-  const result = await completeReset(token, password)
+  const result = await completeReset(token, password, idempotencyKey)
   if (!result.ok) {
     return result.code === "PASSWORD_TOO_SHORT"
       ? { ok: false, code: result.code, field: "password" }

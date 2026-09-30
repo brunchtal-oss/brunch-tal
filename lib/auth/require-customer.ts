@@ -2,6 +2,7 @@ import "server-only"
 
 import { redirect } from "next/navigation"
 
+import { callRpc } from "@/lib/rpc"
 import { createClient } from "@/lib/supabase/server"
 
 // /me requires an active customer: get_my_session_role() = 'customer' (AD-2).
@@ -15,6 +16,6 @@ export async function requireCustomer(next = "/me"): Promise<void> {
   const { data: claims } = await supabase.auth.getClaims()
   if (!claims?.claims) redirect(loginUrl)
 
-  const { data: role, error } = await supabase.rpc("get_my_session_role")
-  if (error || role !== "customer") redirect(loginUrl)
+  const role = await callRpc(supabase, "get_my_session_role")
+  if (!role.ok || role.data !== "customer") redirect(loginUrl)
 }

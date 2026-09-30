@@ -1,11 +1,8 @@
 import "server-only"
 
 import type { ResetLinkState } from "@/lib/auth/reset-link-state"
-import {
-  codeFromPostgrestError,
-  type ActionResult,
-  type ErrorCode,
-} from "@/lib/errors"
+import type { ActionResult, ErrorCode } from "@/lib/errors"
+import { callRpc } from "@/lib/rpc"
 import { createServiceClient } from "@/lib/server/privileged/service-client"
 
 // Manual password reset through a one-time link (AD-10, AD-21):
@@ -14,8 +11,10 @@ import { createServiceClient } from "@/lib/server/privileged/service-client"
 // the Auth update; reset_complete locks and re-checks the token again.
 // A retry after a failure in the middle continues from the stored state:
 // the token stays `pending` until reset_complete, and updating the password
-// again is idempotent. Logs carry only ids and error codes, never the token,
-// password or email.
+// again is idempotent. The idempotency key (one per page load, AD-5) makes a
+// retry after a lost reset_complete response succeed: reset_begin answers
+// already_completed and reset_complete returns its stored result. Logs carry
+// only ids and error codes, never the token, password or email.
 
 export type { ResetLinkState }
 
@@ -29,34 +28,37 @@ type TokenViewResult = {
 export async function getResetTokenView(
   token: string
 ): Promise<ResetLinkState> {
-  const supabase = createServiceClient()
-  const { data, error } = await supabase.rpc("token_view", { p_token: token })
-  if (error) {
-    console.error("reset.token_view_failed", {
-      code: codeFromPostgrestError(error),
-    })
-    throw new Error("token_view failed")
-  }
+  const result = await callRpc(createServiceClient(), "token_view", {
+    p_token: token,
+  })
+  if (!result.ok) throw new Error("token_view failed")
 
-  const view = data as TokenViewResult
+  const view = result.data as TokenViewResult
   if (view.purpose !== "reset") return "expired"
   if (view.state_public === "active") return "active"
   if (view.state_public === "used") return "used"
   return "expired"
 }
 
-type BeginResult = { token_id: string; user_id: string }
+type BeginResult = {
+  token_id: string
+  user_id: string
+  already_completed: boolean
+}
 
 export async function completeReset(
   token: string,
-  password: string
+  password: string,
+  idempotencyKey: string
 ): Promise<ActionResult<{ email: string | null }>> {
   const supabase = createServiceClient()
+  const args = { p_token: token, p_idempotency_key: idempotencyKey }
 
-  const begin = await supabase.rpc("reset_begin", { p_token: token })
-  if (begin.error) {
-    return { ok: false, code: codeFromPostgrestError(begin.error) }
-  }
+  const begin = await callRpc(supabase, "reset_begin", args)
+  if (!begin.ok) return begin
+  // already_completed: this key already consumed the link and only the
+  // response was lost. The password update below is repeated (idempotent)
+  // and reset_complete returns its stored result.
   const { token_id: tokenId, user_id: userId } = begin.data as BeginResult
 
   const updated = await supabase.auth.admin.updateUserById(userId, { password })
@@ -68,14 +70,11 @@ export async function completeReset(
     return { ok: false, code }
   }
 
-  const complete = await supabase.rpc("reset_complete", { p_token: token })
-  if (complete.error) {
-    // The password already changed in Auth; the link stays pending, so
-    // submitting again completes it.
-    console.error("reset.complete_failed", {
-      tokenId,
-      code: codeFromPostgrestError(complete.error),
-    })
+  const complete = await callRpc(supabase, "reset_complete", args)
+  if (!complete.ok) {
+    // The password already changed in Auth; the link stays pending (or was
+    // consumed with this key), so submitting again completes it.
+    console.error("reset.complete_failed", { tokenId, code: complete.code })
     return { ok: false, code: "SERVER_ERROR" }
   }
 

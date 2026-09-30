@@ -88,6 +88,59 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_kind: string
+          after: Json
+          before: Json
+          created_at: string
+          customer_id: string | null
+          entity_id: string | null
+          entity_type: string
+          event_id: string | null
+          id: string
+          reason: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_kind: string
+          after?: Json
+          before?: Json
+          created_at?: string
+          customer_id?: string | null
+          entity_id?: string | null
+          entity_type: string
+          event_id?: string | null
+          id?: string
+          reason?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_kind?: string
+          after?: Json
+          before?: Json
+          created_at?: string
+          customer_id?: string | null
+          entity_id?: string | null
+          entity_type?: string
+          event_id?: string | null
+          id?: string
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_log_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           activated_at: string | null
@@ -119,8 +172,14 @@ export type Database = {
     Functions: {
       get_my_session_role: { Args: never; Returns: string }
       issue_reset_token: { Args: { p_user_id: string }; Returns: Json }
-      reset_begin: { Args: { p_token: string }; Returns: Json }
-      reset_complete: { Args: { p_token: string }; Returns: Json }
+      reset_begin: {
+        Args: { p_idempotency_key: string; p_token: string }
+        Returns: Json
+      }
+      reset_complete: {
+        Args: { p_idempotency_key: string; p_token: string }
+        Returns: Json
+      }
       token_view: { Args: { p_token: string }; Returns: Json }
     }
     Enums: {

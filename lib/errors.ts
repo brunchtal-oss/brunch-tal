@@ -10,6 +10,9 @@ export const ERROR_MESSAGES = {
   LINK_EXPIRED: "תוקף הקישור פג. צרי קשר עם טל לקבלת קישור חדש",
   LINK_USED: "הקישור הזה כבר שימש לאיפוס סיסמה",
   RESET_TARGET_INVALID: "אי אפשר להפיק קישור איפוס לחשבון הזה",
+  // The same idempotency key was sent with a different request (AD-5).
+  IDEMPOTENCY_KEY_REUSED:
+    "הפעולה כבר נשלחה עם פרטים אחרים. כדאי לרענן את הדף ולנסות שוב",
   // Raised by the adapter (never by SQL).
   INVALID_CREDENTIALS: "המייל או הסיסמה לא תואמים",
   PASSWORD_TOO_SHORT: "הסיסמה צריכה להיות באורך 8 תווים לפחות",

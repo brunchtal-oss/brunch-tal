@@ -204,3 +204,52 @@ export async function asAuthenticated(db: Db, userId: string): Promise<void> {
     )
   }
 }
+
+/**
+ * Inside an open transaction (inRollback), acts as the service role: role
+ * `service_role` and JWT claims with `role: service_role`, so
+ * `auth.role()` returns it. Both settings are local to the transaction; use
+ * `reset role` to go back to the owner for checks.
+ */
+export async function asServiceRole(db: Db): Promise<void> {
+  const claims = JSON.stringify({ role: "service_role" })
+  await db.query(
+    // claim.sub is cleared so auth.uid() does not keep a previous user.
+    "select set_config('request.jwt.claims', $1, true), set_config('request.jwt.claim.role', 'service_role', true), set_config('request.jwt.claim.sub', '', true)",
+    [claims]
+  )
+  await db.query("set local role service_role")
+  const { rows } = await db.query<{ role: string; jwt_role: string | null }>(
+    "select current_user as role, auth.role() as jwt_role"
+  )
+  if (
+    rows[0]?.role !== "service_role" ||
+    rows[0]?.jwt_role !== "service_role"
+  ) {
+    throw new Error(
+      "asServiceRole must run inside an open transaction (use inRollback)."
+    )
+  }
+}
+
+/**
+ * Runs one statement inside a savepoint and returns its error (`code` is the
+ * SQLSTATE, `message` the raised text, e.g. P0001 / LINK_USED), or null when
+ * it succeeded. The savepoint keeps the surrounding transaction usable.
+ */
+export async function queryError(
+  db: Db,
+  text: string,
+  params: unknown[] = []
+): Promise<{ code: string; message: string } | null> {
+  await db.query("savepoint query_error")
+  try {
+    await db.query(text, params)
+    await db.query("release savepoint query_error")
+    return null
+  } catch (error) {
+    await db.query("rollback to savepoint query_error")
+    const { code, message } = error as { code?: string; message?: string }
+    return { code: code ?? "", message: message ?? "" }
+  }
+}

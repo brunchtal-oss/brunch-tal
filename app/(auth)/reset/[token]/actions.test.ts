@@ -14,6 +14,7 @@ vi.mock("@/lib/supabase/server", () => ({
 }))
 
 const TOKEN = "t".repeat(43)
+const KEY = "22222222-2222-4222-8222-222222222222"
 
 function form(fields: Record<string, string>) {
   const data = new FormData()
@@ -40,11 +41,37 @@ describe("completeResetAction", () => {
     expect(completeReset).not.toHaveBeenCalled()
   })
 
+  it.each([
+    ["missing", undefined],
+    ["not a uuid", "not-a-uuid"],
+    ["empty", ""],
+  ])(
+    "returns LINK_EXPIRED when the idempotency key is %s",
+    async (_label, key) => {
+      const fields: Record<string, string> = {
+        token: TOKEN,
+        password: "Test-pass-123",
+        confirm: "Test-pass-123",
+      }
+      if (key !== undefined) fields.idempotencyKey = key
+      await expect(completeResetAction(null, form(fields))).resolves.toEqual({
+        ok: false,
+        code: "LINK_EXPIRED",
+      })
+      expect(completeReset).not.toHaveBeenCalled()
+    }
+  )
+
   it("rejects a password shorter than 8 without calling Auth", async () => {
     await expect(
       completeResetAction(
         null,
-        form({ token: TOKEN, password: "1234567", confirm: "1234567" })
+        form({
+          token: TOKEN,
+          idempotencyKey: KEY,
+          password: "1234567",
+          confirm: "1234567",
+        })
       )
     ).resolves.toEqual({
       ok: false,
@@ -60,6 +87,7 @@ describe("completeResetAction", () => {
         null,
         form({
           token: TOKEN,
+          idempotencyKey: KEY,
           password: "Test-pass-123",
           confirm: "Test-pass-124",
         })
@@ -84,12 +112,13 @@ describe("completeResetAction", () => {
         null,
         form({
           token: TOKEN,
+          idempotencyKey: KEY,
           password: "Test-pass-123",
           confirm: "Test-pass-123",
         })
       )
     ).resolves.toEqual({ ok: true, data: { signedIn: true } })
-    expect(completeReset).toHaveBeenCalledWith(TOKEN, "Test-pass-123")
+    expect(completeReset).toHaveBeenCalledWith(TOKEN, "Test-pass-123", KEY)
     expect(signInWithPassword).toHaveBeenCalledWith({
       email: "dev-customer@example.com",
       password: "Test-pass-123",
@@ -110,6 +139,7 @@ describe("completeResetAction", () => {
         null,
         form({
           token: TOKEN,
+          idempotencyKey: KEY,
           password: "Test-pass-123",
           confirm: "Test-pass-123",
         })
@@ -131,6 +161,7 @@ describe("completeResetAction", () => {
         null,
         form({
           token: TOKEN,
+          idempotencyKey: KEY,
           password: "Test-pass-123",
           confirm: "Test-pass-123",
         })
@@ -148,6 +179,7 @@ describe("completeResetAction", () => {
           null,
           form({
             token: TOKEN,
+            idempotencyKey: KEY,
             password: "Test-pass-123",
             confirm: "Test-pass-123",
           })
@@ -164,6 +196,7 @@ describe("completeResetAction", () => {
         null,
         form({
           token: TOKEN,
+          idempotencyKey: KEY,
           password: "Test-pass-123",
           confirm: "Test-pass-123",
         })
