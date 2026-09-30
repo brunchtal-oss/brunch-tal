@@ -47,3 +47,11 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-1-3-time-money-and-phone-helpers.md`
   summary: בסיפור הראשון שבודק RLS או RPC עם לקוחה אמיתית, להוסיף ל-`supabase/tests/support/db.ts` יצירה ומחיקה של משתמשות Auth בדויות עם הקידומת `runId`.
   evidence: ARCHITECTURE-SPINE שורה 296 ("כל בדיקה יוצרת משתמשות ונתונים עם קידומת `test_<run-id>` ומוחקת אותם"). היום `asAuthenticated` מקבל uuid אקראי בלי משתמשת Auth, וזה מספיק לעזרים הטהורים.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-4-rpc-contract-idempotency-audit-errors-types.md`
+  summary: בדיקת מקביליות ל-`private.idempotent_begin`: שני חיבורים עם אותו מפתח, השני ממתין ומחזיר את התוצאה השמורה, בלי שגיאה ובלי שורת יומן נוספת.
+  evidence: כל הבדיקות ב-`idempotency.test.ts` רצות על חיבור אחד בתוך `inRollback`, ולכן ההמתנה על ה-PK לא נבדקת. בדיקה כזאת דורשת commit אמיתי וניקוי, מעבר לתשתית של 1.3.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-4-rpc-contract-idempotency-audit-errors-types.md`
+  summary: כלל lint שחוסם `.rpc(` ישיר מחוץ ל-`lib/rpc.ts` (AD-17), כדי שכל קריאה תעבור דרך `callRpc`.
+  evidence: היום שום כלל לא אוכף זאת. `scripts/dev-reset-link.mjs` קורא ל-`rpc` ישירות, וזה מותר לסקריפט. מתאים לסיפור הניקוי (1.7).

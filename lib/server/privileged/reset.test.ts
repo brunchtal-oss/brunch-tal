@@ -11,6 +11,7 @@ vi.mock("@/lib/server/privileged/service-client", () => ({
 
 const TOKEN = "t".repeat(43)
 const USER_ID = "11111111-1111-1111-1111-111111111111"
+const KEY = "22222222-2222-4222-8222-222222222222"
 const p0001 = (code: string) => ({ code: "P0001", message: code })
 
 beforeEach(() => {
@@ -62,9 +63,12 @@ describe("getResetTokenView", () => {
 })
 
 describe("completeReset", () => {
-  const beginOk = { data: { token_id: "tok-1", user_id: USER_ID }, error: null }
+  const beginOk = {
+    data: { token_id: "tok-1", user_id: USER_ID, already_completed: false },
+    error: null,
+  }
   const completeOk = {
-    data: { token_id: "tok-1", user_id: USER_ID, already_consumed: false },
+    data: { token_id: "tok-1", user_id: USER_ID },
     error: null,
   }
   const updateOk = {
@@ -87,11 +91,17 @@ describe("completeReset", () => {
       return updateOk
     })
 
-    const result = await completeReset(TOKEN, "Test-pass-123")
+    const result = await completeReset(TOKEN, "Test-pass-123", KEY)
 
     expect(order).toEqual(["reset_begin", "updateUserById", "reset_complete"])
-    expect(rpc).toHaveBeenCalledWith("reset_begin", { p_token: TOKEN })
-    expect(rpc).toHaveBeenCalledWith("reset_complete", { p_token: TOKEN })
+    expect(rpc).toHaveBeenCalledWith("reset_begin", {
+      p_token: TOKEN,
+      p_idempotency_key: KEY,
+    })
+    expect(rpc).toHaveBeenCalledWith("reset_complete", {
+      p_token: TOKEN,
+      p_idempotency_key: KEY,
+    })
     expect(updateUserById).toHaveBeenCalledWith(USER_ID, {
       password: "Test-pass-123",
     })
@@ -106,10 +116,12 @@ describe("completeReset", () => {
     async (code) => {
       rpc.mockResolvedValue({ data: null, error: p0001(code) })
 
-      await expect(completeReset(TOKEN, "Test-pass-123")).resolves.toEqual({
-        ok: false,
-        code,
-      })
+      await expect(completeReset(TOKEN, "Test-pass-123", KEY)).resolves.toEqual(
+        {
+          ok: false,
+          code,
+        }
+      )
       expect(updateUserById).not.toHaveBeenCalled()
       expect(rpcNames()).toEqual(["reset_begin"])
     }
@@ -120,7 +132,7 @@ describe("completeReset", () => {
       data: null,
       error: { code: "PGRST000", message: "down" },
     })
-    await expect(completeReset(TOKEN, "Test-pass-123")).resolves.toEqual({
+    await expect(completeReset(TOKEN, "Test-pass-123", KEY)).resolves.toEqual({
       ok: false,
       code: "SERVER_ERROR",
     })
@@ -139,10 +151,12 @@ describe("completeReset", () => {
         error: { code: authCode, status: 422, message: "x" },
       })
 
-      await expect(completeReset(TOKEN, "Test-pass-123")).resolves.toEqual({
-        ok: false,
-        code,
-      })
+      await expect(completeReset(TOKEN, "Test-pass-123", KEY)).resolves.toEqual(
+        {
+          ok: false,
+          code,
+        }
+      )
       expect(rpcNames()).toEqual(["reset_begin"])
     }
   )
@@ -158,16 +172,32 @@ describe("completeReset", () => {
     })
     updateUserById.mockResolvedValue(updateOk)
 
-    await expect(completeReset(TOKEN, "Test-pass-123")).resolves.toEqual({
+    await expect(completeReset(TOKEN, "Test-pass-123", KEY)).resolves.toEqual({
       ok: false,
       code: "SERVER_ERROR",
     })
-    await expect(completeReset(TOKEN, "Test-pass-123")).resolves.toEqual({
+    await expect(completeReset(TOKEN, "Test-pass-123", KEY)).resolves.toEqual({
       ok: true,
       data: { email: "dev-customer@example.com" },
     })
     expect(updateUserById).toHaveBeenCalledTimes(2)
     expect(completeCalls).toBe(2)
+  })
+
+  it("continues to the password update when begin answers already_completed (lost response)", async () => {
+    rpc.mockImplementation(async (name: string) =>
+      name === "reset_begin"
+        ? { data: { ...beginOk.data, already_completed: true }, error: null }
+        : completeOk
+    )
+    updateUserById.mockResolvedValue(updateOk)
+
+    await expect(completeReset(TOKEN, "Test-pass-123", KEY)).resolves.toEqual({
+      ok: true,
+      data: { email: "dev-customer@example.com" },
+    })
+    expect(rpcNames()).toEqual(["reset_begin", "reset_complete"])
+    expect(updateUserById).toHaveBeenCalledTimes(1)
   })
 
   it("never logs the token, password or email", async () => {
@@ -177,10 +207,11 @@ describe("completeReset", () => {
       error: { code: "unexpected_failure", status: 500, message: "x" },
     })
 
-    await completeReset(TOKEN, "Test-pass-123")
+    await completeReset(TOKEN, "Test-pass-123", KEY)
 
     const logged = JSON.stringify(vi.mocked(console.error).mock.calls)
     expect(logged).not.toContain(TOKEN)
+    expect(logged).not.toContain(KEY)
     expect(logged).not.toContain("Test-pass-123")
     expect(logged).not.toContain("@example.com")
   })

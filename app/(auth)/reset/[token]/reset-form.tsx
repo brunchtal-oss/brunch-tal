@@ -25,9 +25,11 @@ import { resetView } from "./reset-view"
 // "used" on the server).
 export function ResetForm({
   token,
+  idempotencyKey,
   linkState,
 }: {
   token: string
+  idempotencyKey: string
   linkState: ResetLinkState
 }) {
   const [state, formAction, pending] = useActionState<ResetFormState, FormData>(
@@ -81,6 +83,7 @@ export function ResetForm({
   return (
     <form action={formAction} className="flex flex-col gap-5" noValidate>
       <input type="hidden" name="token" value={token} />
+      <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
       <Field data-invalid={passwordError ? true : undefined}>
         <FieldLabel htmlFor="password">
           {authCopy.reset.newPassword} {authCopy.required}

@@ -27,6 +27,7 @@ const signedIn = {
 beforeEach(() => {
   getClaims.mockReset()
   rpc.mockReset()
+  vi.spyOn(console, "error").mockImplementation(() => {})
 })
 
 describe("requireCustomer", () => {
@@ -52,6 +53,14 @@ describe("requireCustomer", () => {
       url: "/login?next=%2Fme",
     })
     expect(rpc).toHaveBeenCalledWith("get_my_session_role")
+  })
+
+  it("redirects when the RPC call throws (network)", async () => {
+    getClaims.mockResolvedValue(signedIn)
+    rpc.mockRejectedValue(new Error("fetch failed"))
+    await expect(requireCustomer()).rejects.toMatchObject({
+      url: "/login?next=%2Fme",
+    })
   })
 
   it("encodes a next that contains ? and &", async () => {

@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto"
 import { Suspense } from "react"
 import type { Metadata } from "next"
 
@@ -43,6 +44,15 @@ async function ResetContent({
   const { token } = await params
   // Opening the link only reads its public state; it never consumes it.
   const state = await getResetTokenView(token)
+  // One idempotency key per page load (AD-5), sent with every attempt, so a
+  // retry after a lost response completes instead of failing as LINK_USED.
+  const idempotencyKey = randomUUID()
 
-  return <ResetForm token={token} linkState={state} />
+  return (
+    <ResetForm
+      token={token}
+      idempotencyKey={idempotencyKey}
+      linkState={state}
+    />
+  )
 }
