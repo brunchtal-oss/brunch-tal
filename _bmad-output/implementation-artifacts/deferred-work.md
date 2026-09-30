@@ -39,3 +39,11 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-1-2-tooling-lint-rules-and-ci.md`
   summary: לעדכן את מסמכי התכנון אחרי 1.2 ו-1.6: טבלת האכיפה ב-ARCHITECTURE-SPINE (דפי הטוקן רשאים לייבא privileged), רשומת "פערי E1 מול הקוד" ב-Deferred של ה-SPINE (נסגרו), `epic-1-context.md` ("אין push ל-main לפני 1.6"), והפריט של 1.1 ב-deferred-work שנשאר "לבדוק ב-1.6".
   evidence: ממצא 12 בסקירת 1.2. ה-SPINE גובר על שאר המסמכים, ולכן החריגה לדפי הטוקן צריכה להופיע בו.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-3-time-money-and-phone-helpers.md`
+  summary: כשנבנות `business_settings` ו-`policy_snapshot`, להוסיף check constraints: ימים לפני הסגירה ושעות חלון הביטול אי-שליליים, ושעת הסגירה לא בין 00:00 ל-03:00 (שעה שנעלמת או כפולה במעבר שעון).
+  evidence: `registration_closes_at` ו-`cancel_deadline` טהורים ולא בודקים קלט. ערך שלילי יקבע סגירה אחרי תחילת המפגש. המקום הנכון לאכוף הוא הטבלה שמזינה אותם.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-3-time-money-and-phone-helpers.md`
+  summary: בסיפור הראשון שבודק RLS או RPC עם לקוחה אמיתית, להוסיף ל-`supabase/tests/support/db.ts` יצירה ומחיקה של משתמשות Auth בדויות עם הקידומת `runId`.
+  evidence: ARCHITECTURE-SPINE שורה 296 ("כל בדיקה יוצרת משתמשות ונתונים עם קידומת `test_<run-id>` ומוחקת אותם"). היום `asAuthenticated` מקבל uuid אקראי בלי משתמשת Auth, וזה מספיק לעזרים הטהורים.
