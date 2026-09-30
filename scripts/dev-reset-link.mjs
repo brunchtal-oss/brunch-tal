@@ -3,8 +3,9 @@
 // one-time password-reset link for localhost and for the home network.
 //
 //   npm run dev:reset-link            # customer
-//   npm run dev:reset-link -- --admin # admin
-//   npm run dev:reset-link -- --url https://<preview-or-production-host>
+//   node scripts/dev-reset-link.mjs --admin # admin
+//   node scripts/dev-reset-link.mjs --url https://<preview-or-production-host>
+//   (PowerShell strips the `--` of `npm run dev:reset-link -- --flag`)
 //                                     # also print a link for that deploy
 //                                     # (only deploys wired to the DEV project)
 //

@@ -29,7 +29,7 @@
 | `npm run format` | Prettier |
 | `npm test` | בדיקות Vitest טהורות (בלי מסד) |
 | `npm run test:db` | בדיקות מסד מול פרויקט הפיתוח (עוד לא קיים. יתווסף בסיפור 1.2) |
-| `npm run dev:reset-link` | לקוחה בדויה וקישור איפוס. ‏`-- --admin` לאדמין, ‏`-- --url https://<כתובת>` מדפיס גם קישור לפריסה |
+| `npm run dev:reset-link` | לקוחה בדויה וקישור איפוס. עם דגלים מריצים ישירות: `node scripts/dev-reset-link.mjs --admin` לאדמין, ‏`--url https://<כתובת>` מדפיס גם קישור לפריסה. (ב-PowerShell ‏`npm run ... -- --flag` לא עובד, כי PowerShell מוחק את `--`.) |
 
 שינוי בסכמה מתחיל תמיד ב-`npx supabase migration new <name>`. הפירוט ב-`AGENTS.md`.
 

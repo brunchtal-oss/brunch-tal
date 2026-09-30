@@ -60,6 +60,6 @@
 - לקוח ה-service role נמצא ב-`lib/server/privileged/service-client.ts` (עם `server-only`). ב-`lib/supabase/server.ts` נשאר רק `createClient`. הקובץ `lib/supabase/public.ts` (AD-16) עוד לא קיים.
 - טיפוסי המסד ב-`lib/supabase/database.types.ts`. אחרי כל מיגרציה יוצרים אותם מחדש עם `generate_typescript_types` של ה-MCP.
 - `npm run dev`: שרת פיתוח. `npm run build`: בנייה לפרודקשן. כדאי להריץ אותה לפני סיום עבודה, כי push ל-main מפעיל פריסה.
-- `npm run dev:reset-link`: יוצר או מוצא לקוחה בדויה במסד הפיתוח ומדפיס קישור איפוס סיסמה למחשב ולטלפון ברשת הביתית (`-- --admin` לאדמין).
+- `npm run dev:reset-link`: יוצר או מוצא לקוחה בדויה במסד הפיתוח ומדפיס קישור איפוס סיסמה למחשב ולטלפון ברשת הביתית. עם דגלים מריצים `node scripts/dev-reset-link.mjs --admin` (אדמין) או `--url <כתובת פריסה>`, כי PowerShell מוחק את `--` של `npm run`.
 - `npm run typecheck`: בדיקת טיפוסים (`tsc --noEmit`). `npm run format`: Prettier עם הפלאגין של Tailwind.
 - הרצה של בדיקה אחת: `npx vitest run path/to/file.test.ts`, או `npx vitest run -t "<שם הבדיקה>"`.

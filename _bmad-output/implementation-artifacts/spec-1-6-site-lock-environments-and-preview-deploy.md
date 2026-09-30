@@ -81,6 +81,8 @@ context:
 - סוכן הבנייה נעצר באמצע בגלל מגבלת שימוש. את `AGENTS.md`, את הבדיקות ואת תיקוני הסקירה השלים הסשן הראשי.
 - `next start` מקומי, נעול עם פרטים זמניים: ‏`/`, ‏`/reset/x`, ‏`/login`, ‏`/_next/static/x.js`, ‏`/api/jobsx` החזירו 401. ‏`/api/jobs/x` החזיר 404, כלומר עבר את הנעילה. עם פרטים נכונים החזירו 200, ו-`/reset/x` שמר על `no-referrer` ו-`private, no-store`.
 - `proxy.test.ts` מריץ את `proxy()` עצמו, עם `updateSession` מדומה.
+- 2026-09-30, preview (‏`ae2a07d`): ‏`vercel curl` החזיר 401 עם `realm="brunch-at-tals"` ל-`/`, ‏`/login`, ‏`/reset/x`, ‏`/api/jobsx`, ו-404 ל-`/api/jobs/x`. בלי `SITE_LOCKED`, כלומר `VERCEL_ENV` זמין בזמן ריצה. הבדיקה בטלפון (נעילה, קישור, סיסמה, `/me`, נשארת מחוברת, "כבר שימש") עברה אצל המשתמשת.
+- ב-PowerShell ‏`npm run dev:reset-link -- --url ...` נכשל, כי PowerShell מוחק את `--`. עובד: `node scripts/dev-reset-link.mjs --url ...`.
 
 ## Spec Change Log
 
