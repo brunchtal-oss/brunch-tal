@@ -37,6 +37,9 @@ export default defineConfig({
           include: [DB_TESTS],
           exclude: [...configDefaults.exclude],
           fileParallelism: false,
+          // Loads .env.local, checks DEV_DATABASE_URL before connecting,
+          // runs cleanups and closes the pool after each file.
+          setupFiles: ["supabase/tests/support/setup.ts"],
         },
       },
     ],

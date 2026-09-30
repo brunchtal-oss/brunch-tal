@@ -28,10 +28,16 @@
 | `npm run typecheck` | בדיקת טיפוסים |
 | `npm run format` | Prettier |
 | `npm test` | בדיקות Vitest טהורות, בלי מסד ובלי `.env` (הכול חוץ מ-`supabase/tests/`) |
-| `npm run test:db` | בדיקות המסד שב-`supabase/tests/`, מול פרויקט הפיתוח, קובץ אחרי קובץ. רק מקומית |
+| `npm run test:db` | בדיקות המסד שב-`supabase/tests/`, מול פרויקט הפיתוח, קובץ אחרי קובץ. רק מקומית, ודורש `DEV_DATABASE_URL` (ראו למטה) |
 | `npm run dev:reset-link` | לקוחה בדויה וקישור איפוס. עם דגלים מריצים ישירות: `node scripts/dev-reset-link.mjs --admin` לאדמין, ‏`--url https://<כתובת>` מדפיס גם קישור לפריסה. (ב-PowerShell ‏`npm run ... -- --flag` לא עובד, כי PowerShell מוחק את `--`.) |
 
 שינוי בסכמה מתחיל תמיד ב-`npx supabase migration new <name>`. הפירוט ב-`AGENTS.md`.
+
+### בדיקות המסד
+
+‏`npm run test:db` מתחבר ישירות (`pg`) לפרויקט הפיתוח, דרך `DEV_DATABASE_URL` שב-`.env.local`: מחרוזת ה-Session pooler (פורט 5432) מ-Dashboard → Connect. לפני כל חיבור נבדק שהמחרוזת מכילה את ה-ref של `NEXT_PUBLIC_SUPABASE_URL`, כדי שהבדיקות לא ירוצו אף פעם מול מסד אחר. בלי המשתנה, או עם ref אחר, הבדיקות נכשלות בהודעה ברורה ולא מתחברות.
+
+העזרים ב-`supabase/tests/support/db.ts`: ‏`inRollback` (עסקה שתמיד מתגלגלת אחורה), ‏`asAuthenticated` (תפקיד `authenticated` ו-`auth.uid()` של משתמשת נתונה, בתוך העסקה), ‏`testName` (קידומת `test_<run-id>` לכל נתון בדוי) ו-`onCleanup` (מחיקה בסוף הקובץ).
 
 ## CI וכללי lint
 
