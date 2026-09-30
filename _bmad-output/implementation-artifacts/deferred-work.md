@@ -19,3 +19,15 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-1-1-phone-activation-and-login-tracer.md`
   summary: לבדוק אם ביומני הבקשות של Vercel מופיע `/reset/<token>`, בניגוד ל-AD-16.
   evidence: לא אומת. `logging.incomingRequests.ignore` משפיע רק על הקונסול של `next dev`. צריך לבדוק ב-1.6 מול פריסת preview.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-6-site-lock-environments-and-preview-deploy.md`
+  summary: לפני ההשקה להחליט מה עושים עם `/reset/<token>` ו-`/join/<token>` ביומני הבקשות של Vercel (להוציא את הטוקן מהנתיב, או לקבל עם תוקף קצר ויומן מוגבל).
+  evidence: Vercel רושם את נתיב הבקשה ואי אפשר לכבות את זה בקוד. החלטת המשתמשת ב-1.6 (2026-09-29): מקבלים בינתיים, כי הנתונים בדויים, הטוקן חד-פעמי ל-48 שעות, ורק בעלת החשבון רואה את היומן.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-6-site-lock-environments-and-preview-deploy.md`
+  summary: לוודא שהנעילה לא נפתחת אם `VERCEL_ENV` חסר בזמן ריצה ב-Vercel (למשל אם מכבים "Automatically expose System Environment Variables").
+  evidence: לא אומת (maybe-false, medium). `isSiteLocked` מזהה Vercel רק לפי `VERCEL_ENV`. הבדיקה בטלפון מול preview ו-production מאשרת את המצב הנוכחי. כדי להכריע: לבדוק בתיעוד של Vercel אם `VERCEL_ENV` זמין תמיד בזמן ריצה.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-6-site-lock-environments-and-preview-deploy.md`
+  summary: כשיתווספו manifest ו-service worker (פוש), לבדוק שהם עובדים מאחורי הנעילה. הדפדפן לא שולח Basic Auth בבקשת manifest בלי `crossorigin="use-credentials"`.
+  evidence: ה-matcher נועל כל נתיב, כולל קבצים סטטיים. היום אין manifest, ולכן זה לא שובר כלום עדיין.
