@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { loginAction } from "./actions"
 
 const signInWithPassword = vi.fn()
+const signOut = vi.fn(async () => ({ error: null }))
+const rpc = vi.fn()
 
 // next/navigation's redirect() throws to stop rendering; the mock does too.
 class RedirectSignal extends Error {
@@ -17,7 +19,7 @@ vi.mock("next/navigation", () => ({
   },
 }))
 vi.mock("@/lib/supabase/server", () => ({
-  createClient: async () => ({ auth: { signInWithPassword } }),
+  createClient: async () => ({ auth: { signInWithPassword, signOut }, rpc }),
 }))
 
 function form(fields: Record<string, string>) {
@@ -40,8 +42,15 @@ const credentials = {
   password: "Test-pass-123",
 }
 
+function signedInAs(role: string) {
+  signInWithPassword.mockResolvedValue({ error: null })
+  rpc.mockResolvedValue({ data: role, error: null })
+}
+
 beforeEach(() => {
   signInWithPassword.mockReset()
+  signOut.mockClear()
+  rpc.mockReset()
   vi.spyOn(console, "error").mockImplementation(() => {})
 })
 
@@ -90,8 +99,8 @@ describe("loginAction", () => {
     }
   )
 
-  it("redirects to an internal next after a successful sign-in", async () => {
-    signInWithPassword.mockResolvedValue({ error: null })
+  it("redirects a customer to an internal next", async () => {
+    signedInAs("customer")
     await expect(
       redirectTarget(
         loginAction(
@@ -101,18 +110,58 @@ describe("loginAction", () => {
       )
     ).resolves.toBe("/me/bookings?tab=credits")
     expect(signInWithPassword).toHaveBeenCalledWith(credentials)
+    expect(rpc).toHaveBeenCalledWith("get_my_session_role")
+    expect(signOut).not.toHaveBeenCalled()
   })
 
   it.each([
     ["missing", undefined],
     ["external", "https://evil.example"],
-    ["protocol-relative", "//evil.example"],
-  ])("redirects to /me when next is %s", async (_label, next) => {
-    signInWithPassword.mockResolvedValue({ error: null })
+    ["protocol-relative", "//evil.com"],
+    ["inside /admin", "/admin"],
+  ])("redirects a customer to /me when next is %s", async (_label, next) => {
+    signedInAs("customer")
     const fields: Record<string, string> = { ...credentials }
     if (next) fields.next = next
     await expect(redirectTarget(loginAction(null, form(fields)))).resolves.toBe(
       "/me"
     )
+  })
+
+  it.each([
+    ["missing", undefined, "/admin"],
+    ["/me", "/me", "/admin"],
+    ["/admin/more", "/admin/more", "/admin/more"],
+    ["protocol-relative", "//evil.com", "/admin"],
+  ])("redirects an admin with next %s", async (_label, next, expected) => {
+    signedInAs("admin")
+    const fields: Record<string, string> = { ...credentials }
+    if (next) fields.next = next
+    await expect(redirectTarget(loginAction(null, form(fields)))).resolves.toBe(
+      expected
+    )
+  })
+
+  it("signs out a user with no active profile (ACCOUNT_NOT_ACTIVE)", async () => {
+    signedInAs("none")
+    await expect(
+      loginAction(null, form({ ...credentials, next: "/me" }))
+    ).resolves.toEqual({
+      ok: false,
+      code: "ACCOUNT_NOT_ACTIVE",
+      email: "dev-customer@example.com",
+    })
+    expect(signOut).toHaveBeenCalledTimes(1)
+  })
+
+  it("signs out and returns SERVER_ERROR when the role lookup fails", async () => {
+    signInWithPassword.mockResolvedValue({ error: null })
+    rpc.mockRejectedValue(new Error("fetch failed"))
+    await expect(loginAction(null, form(credentials))).resolves.toEqual({
+      ok: false,
+      code: "SERVER_ERROR",
+      email: "dev-customer@example.com",
+    })
+    expect(signOut).toHaveBeenCalledTimes(1)
   })
 })

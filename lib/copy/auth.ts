@@ -1,4 +1,5 @@
-// System microcopy for the auth surfaces (/login, /reset/[token], /me).
+// System microcopy for the auth surfaces (/login, /admin/login,
+// /reset/[token]).
 // Error messages live in lib/errors.ts.
 
 export const authCopy = {
@@ -6,6 +7,7 @@ export const authCopy = {
   showPassword: "הצגת סיסמה",
   login: {
     title: "התחברות",
+    adminTitle: "כניסת מנהלת",
     email: "מייל",
     password: "סיסמה",
     submit: "להתחברות",
@@ -26,11 +28,5 @@ export const authCopy = {
     used: "הקישור הזה כבר שימש לאיפוס סיסמה",
     expired: "תוקף הקישור פג. צרי קשר עם טל לקבלת קישור חדש",
     loading: "בודקת את הקישור…",
-  },
-  me: {
-    title: "האזור האישי",
-    greeting: (name: string) => `שלום, ${name}`,
-    signOut: "התנתקות",
-    loading: "טוען…",
   },
 } as const

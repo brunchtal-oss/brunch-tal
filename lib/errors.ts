@@ -15,6 +15,8 @@ export const ERROR_MESSAGES = {
     "הפעולה כבר נשלחה עם פרטים אחרים. כדאי לרענן את הדף ולנסות שוב",
   // Raised by the adapter (never by SQL).
   INVALID_CREDENTIALS: "המייל או הסיסמה לא תואמים",
+  // Correct password, but no active customer profile and not an admin.
+  ACCOUNT_NOT_ACTIVE: "החשבון הזה עוד לא פעיל. אפשר לפנות לטל",
   PASSWORD_TOO_SHORT: "הסיסמה צריכה להיות באורך 8 תווים לפחות",
   PASSWORDS_DONT_MATCH: "הסיסמאות לא תואמות",
   FIELD_REQUIRED: "צריך למלא את השדה הזה",
