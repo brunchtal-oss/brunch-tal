@@ -57,17 +57,17 @@ context:
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `eslint.config.mjs`, `test/eslint-rules.test.ts` -- קבוצה `RPC_DIRECT` (`CallExpression[callee.property.name="rpc"]`, הודעה עם AD-17) בכל רשומות ts/tsx חוץ מבדיקות ו-`lib/rpc.ts`; בדיקות לשורות ה-lint במטריצה.
-- [ ] `supabase/tests/session-role-and-token-view.test.ts` -- שורות "תפקיד session" ו"מצב קישור".
-- [ ] `supabase/tests/idempotency-concurrency.test.ts` -- שורת המקביליות: שני חיבורים מה-Pool, commit אמיתי, `onCleanup` מוחק.
-- [ ] `login-form.tsx:40,66`, `components/auth/password-input.tsx:21`, `reset-form.tsx:53,63,140`, `link-state-notice.tsx:19` -- `h-11` ← `h-12`. כפתורי outline ב-`min-h-11` נשארים.
-- [ ] `app/globals.css`, `app/globals.test.ts` -- כלל המסגרת ובדיקה.
-- [ ] מחיקות לפי ה-Decisions.
-- [ ] `AGENTS.md:68` -- בדיקה בודדת עם `--project unit` (קובץ או `-t`), ולמה.
-- [ ] `README.md:82` (Vercel) -- לא לכבות "Automatically expose System Environment Variables", כי הנעילה מזהה Vercel לפי `VERCEL_ENV`.
-- [ ] `ARCHITECTURE-SPINE.md:235,295,494`, `.memlog.md` -- התיקונים ורשומת `(decision) USER 2026-10-01` באנגלית.
-- [ ] `epic-1-context.md:59-60` -- 1.1–1.6 הושלמו; הלולאה נסגרה ב-1.5.
-- [ ] `deferred-work.md` -- לפי ה-Decisions; לפריט שעבר מוסיפים `target:`.
+- [x] `eslint.config.mjs`, `test/eslint-rules.test.ts` -- קבוצה `RPC_DIRECT` (`CallExpression[callee.property.name="rpc"]`, הודעה עם AD-17) בכל רשומות ts/tsx חוץ מבדיקות ו-`lib/rpc.ts`; בדיקות לשורות ה-lint במטריצה.
+- [x] `supabase/tests/session-role-and-token-view.test.ts` -- שורות "תפקיד session" ו"מצב קישור".
+- [x] `supabase/tests/idempotency-concurrency.test.ts` -- שורת המקביליות: שני חיבורים מה-Pool, commit אמיתי, `onCleanup` מוחק.
+- [x] `login-form.tsx:40,66`, `components/auth/password-input.tsx:21`, `reset-form.tsx:53,63,140`, `link-state-notice.tsx:19` -- `h-11` ← `h-12`. כפתורי outline ב-`min-h-11` נשארים.
+- [x] `app/globals.css`, `app/globals.test.ts` -- כלל המסגרת ובדיקה.
+- [x] מחיקות לפי ה-Decisions.
+- [x] `AGENTS.md:68` -- בדיקה בודדת עם `--project unit` (קובץ או `-t`), ולמה.
+- [x] `README.md:82` (Vercel) -- לא לכבות "Automatically expose System Environment Variables", כי הנעילה מזהה Vercel לפי `VERCEL_ENV`.
+- [x] `ARCHITECTURE-SPINE.md:235,295,494`, `.memlog.md` -- התיקונים ורשומת `(decision) USER 2026-10-01` באנגלית.
+- [x] `epic-1-context.md:59-60` -- 1.1–1.6 הושלמו; הלולאה נסגרה ב-1.5.
+- [x] `deferred-work.md` -- לפי ה-Decisions; לפריט שעבר מוסיפים `target:`.
 
 **Acceptance Criteria:**
 - Given ה-branch, then lint, typecheck, `npm test` ו-build עוברים.

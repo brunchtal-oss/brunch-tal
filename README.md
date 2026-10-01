@@ -26,7 +26,8 @@
 | `npm run start` | הרצת הבנייה מקומית |
 | `npm run lint` | ESLint, כולל חסימת כיוונים לא לוגיים (`ml-`, ‏`left-` וכו׳) וכללי הארכיטקטורה (ראו למטה) |
 | `npm run typecheck` | בדיקת טיפוסים |
-| `npm run format` | Prettier |
+| `npm run format` | Prettier (חוץ מ-`components/ui/`) |
+| `npm run format:check` | בדיקת Prettier בלי לכתוב. רץ ב-CI |
 | `npm test` | בדיקות Vitest טהורות, בלי מסד ובלי `.env` (הכול חוץ מ-`supabase/tests/`) |
 | `npm run test:db` | בדיקות המסד שב-`supabase/tests/`, מול פרויקט הפיתוח, קובץ אחרי קובץ. רק מקומית, ודורש `DEV_DATABASE_URL` (ראו למטה) |
 | `npm run dev:reset-link` | לקוחה בדויה וקישור איפוס. עם דגלים מריצים ישירות: `node scripts/dev-reset-link.mjs --admin` לאדמין, ‏`--url https://<כתובת>` מדפיס גם קישור לפריסה. (ב-PowerShell ‏`npm run ... -- --flag` לא עובד, כי PowerShell מוחק את `--`.) |
@@ -41,7 +42,7 @@
 
 ## CI וכללי lint
 
-‏GitHub Actions (`.github/workflows/ci.yml`) רץ על כל push ועל כל PR, מ-checkout נקי, בלי `.env`, בלי סודות ובלי מסד: ‏`npm ci`, ‏`npm run lint`, ‏`npm run typecheck`, ‏`npm test` ו-`npm audit --omit=dev --audit-level=high`. בדיקות המסד (`npm run test:db`) רצות רק מקומית.
+‏GitHub Actions (`.github/workflows/ci.yml`) רץ על כל push ועל כל PR, מ-checkout נקי, בלי `.env`, בלי סודות ובלי מסד: ‏`npm ci`, ‏`npm run lint`, ‏`npm run format:check`, ‏`npm run typecheck`, ‏`npm test` ו-`npm audit --omit=dev --audit-level=high`. בדיקות המסד (`npm run test:db`) רצות רק מקומית.
 
 כללי ה-lint שמעבר ל-Next (ב-`eslint.config.mjs`, ונבדקים ב-`test/eslint-rules.test.ts`):
 
@@ -51,9 +52,9 @@
 - אין `parseFloat` ב-`lib/money.ts`, כי כסף נשמר באגורות שלמות.
 - כיוונים לוגיים בלבד בכל מקום חוץ מ-`components/ui/`.
 
-## נעילת האתר עד ההשקה
+## נעילת האתר עד תחילת E5
 
-עד ההשקה כל האתר נעול בסיסמה (HTTP Basic Auth), כולל קבצים סטטיים. הנעילה ב-`proxy.ts`, וההחלטה ב-`lib/site-lock.ts`.
+עד תחילת E5 כל האתר נעול בסיסמה (HTTP Basic Auth), כולל קבצים סטטיים. הנעילה מוסרת בסיפור 5.15, אחרי שתהיה הגבלת קצב (2.8). עד ההשקה עצמה האתר נשאר מחוץ למנועי החיפוש (noindex). הנעילה ב-`proxy.ts`, וההחלטה ב-`lib/site-lock.ts`.
 
 - **ב-Vercel** (production ו-preview) האתר נעול תמיד, אלא אם מגדירים `SITE_LOCKED=false`.
 - **במחשב המקומי** הוא נעול רק כש-`SITE_LOCKED=true`.
