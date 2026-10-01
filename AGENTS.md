@@ -14,11 +14,14 @@
 - לא לערוך את `brunch_at_tal_charecter.md`. טעות או חוסר שנמצאו בו מציגים למשתמשת.
 - לא לעשות git push בלי בקשה מפורשת, כי push ל-main מפעיל פריסה לפרודקשן ב-Vercel.
 - לפני כל פעולה של ניהול קוד (commit, push, יצירת branch, PR, merge, rebase, revert): להסביר למשתמשת בעברית פשוטה מה הפעולה עושה ולמה זו ההמלצה, ולחכות לאישור שלה. זה חל גם כשסקיל (למשל bmad-build) מבצע commit אוטומטי. במקרה כזה עוצרים לפני הביצוע ומסבירים.
-- האתר נעול ב-Basic Auth עד ההשקה (`proxy.ts`, ‏`lib/site-lock.ts`, ‏AD-22). ב-Vercel הוא נעול אלא אם `SITE_LOCKED=false`. נתיב חדש שצריך להיות פטור (מכונה-למכונה) נכנס רק לרשימה `SITE_LOCK_EXEMPT_PREFIXES` ומאמת סוד או חתימה משלו.
+- האתר נעול ב-Basic Auth עד תחילת E5 (הנעילה מוסרת בסיפור 5.15; החלטה משותפת 2026-09-29 ב-memlog של הארכיטקטורה) (`proxy.ts`, ‏`lib/site-lock.ts`, ‏AD-22). ב-Vercel הוא נעול אלא אם `SITE_LOCKED=false`. נתיב חדש שצריך להיות פטור (מכונה-למכונה) נכנס רק לרשימה `SITE_LOCK_EXEMPT_PREFIXES` ומאמת סוד או חתימה משלו.
 - פרויקט ה-Supabase המחובר (`.env.local` ו-MCP) הוא סביבת פיתוח: רק נתונים בדויים, אף פעם לא נתוני לקוחות אמיתיים. פרודקשן יהיה פרויקט נפרד.
 - ה-repo ציבורי עד ההשקה (מגבלה של התוכנית החינמית ב-Vercel). לכן אסור להכניס אליו נתוני לקוחות אמיתיים, תמונות אמיתיות של נשים או תינוקות, או סודות. תוכן כזה נשמר רק ב-Supabase.
 - `SUPABASE_SECRET_KEY` וכל סוד אחר נשארים בשרת בלבד. אסור לשים אותם בקוד שרץ בדפדפן או במשתנה `NEXT_PUBLIC_*`.
 - לא ליצור משאבים בתשלום ולא לפרסם אתר חי עם נתוני דוגמה בלי החלטה מפורשת של המשתמשת.
+- סוכן משנה לא מבצע git push, יצירת PR, merge, מחיקת קבצים (`git rm`, ‏`rm`) או כתיבה ל-`.env*`. הוא מסיים את שאר העבודה ומדווח מה נשאר. הסשן הראשי מבצע אחרי הסבר ואישור של המשתמשת. ב-spec מסמנים משימה כזו "סשן ראשי". מערכת ההגנה חוסמת את הפעולות האלה אצל סוכן גם אחרי שהמשתמשת אישרה בשיחה.
+- ב-Review Triage Log של spec כותבים שורה מלאה רק לממצא שמנותב ל-patch או ל-defer. כל ה-reject מסוכמים בשורה אחת אחרי הטבלה: מספרים וסיבה במילים ספורות. כך ה-spec נשאר קרוב ליעד של bmad-build.
+- לפני ביקורת קוד מעבירים למבקרים את `_bmad-output/implementation-artifacts/review-accepted.md`, רשימת ממצאים שכבר הוחלטו ולא מסמנים שוב. ממצא שנדחה בפעם השנייה מאותה סיבה נוסף אליה.
 
 ## איפה דברים נמצאים
 
@@ -31,10 +34,10 @@
 ## הרצה ובדיקה
 
 - כל שינוי בסכמה מתחיל בקובץ חדש: `npx supabase migration new <name>` (ה-CLI לא מותקן גלובלית, לכן `npx`). אחרי שכותבים את ה-SQL בקובץ, מחילים אותו על המסד עם `apply_migration` של ה-MCP, עם אותו תוכן. לא משנים סכמה ב-`execute_sql`.
-- אחרי כל מיגרציה להריץ את ה-security advisor של Supabase (`get_advisors` ב-MCP). הוא מזהה טבלה בלי RLS ופונקציה בלי search_path. ‏WARN ‏`0029` על RPC מסוג definer עם grant ל-`authenticated` מאושר (AD-5). כל WARN או ERROR אחר חוסם.
+- אחרי כל מיגרציה להריץ את ה-security advisor של Supabase (`get_advisors` ב-MCP). הוא מזהה טבלה בלי RLS ופונקציה בלי search_path. ‏WARN ‏`0029` על RPC מסוג definer עם grant ל-`authenticated` מאושר (AD-5). גם WARN ‏`auth_leaked_password_protection` מאושר בפרויקט הפיתוח (החלטת המשתמשת 2026-10-01; ההחלטה ל-production ב-`deferred-work.md`, יעד 6.9). כל WARN או ERROR אחר חוסם.
 - `npm test` מריץ את הבדיקות הטהורות (פרויקט `unit` ב-Vitest: כל `*.test.ts(x)` חוץ מ-`supabase/tests/`), בלי מסד ובלי `.env`. בדיקות של RPC ו-RLS נכתבות ב-`supabase/tests/**/*.test.ts` ורצות ב-`npm run test:db` (פרויקט `db`, קובץ אחרי קובץ) מול פרויקט ה-Supabase של הפיתוח, לא מול mock. הן מתחברות ב-`pg` דרך `DEV_DATABASE_URL` שב-`.env.local` (Session pooler, פורט 5432, חייב להכיל את ה-ref של `NEXT_PUBLIC_SUPABASE_URL`). משתמשים בעזרים של `supabase/tests/support/db.ts`: ‏`inRollback` לכל שינוי, ‏`asAuthenticated` בתוכו, ‏`testName` לכל נתון בדוי ו-`onCleanup` למחיקה.
 - עזרי הזמן והטלפון (AD-8, ‏AD-9) ב-`private`: ‏`local_day_end`, ‏`registration_closes_at`, ‏`cancel_deadline`, ‏`local_week_start`, ‏`prep_day`, ‏`normalize_phone`. טהורים (בלי `now()`), והקורא משווה מול `now()`. אין להם grant, הם נקראים מפונקציות definer. תצוגה בלבד ב-`lib/time.ts` ו-`lib/money.ts`.
-- ‏CI (`.github/workflows/ci.yml`) רץ על כל push ו-PR: ‏`npm ci`, ‏lint, ‏typecheck, ‏`npm test` ו-`npm audit --omit=dev --audit-level=high`, בלי סודות ובלי מסד. לכן `npm test` לא ניגש לרשת או למסד.
+- ‏CI (`.github/workflows/ci.yml`) רץ על כל push ו-PR: ‏`npm ci`, ‏lint, ‏`npm run format:check`, ‏typecheck, ‏`npm test` ו-`npm audit --omit=dev --audit-level=high`, בלי סודות ובלי מסד. לכן `npm test` לא ניגש לרשת או למסד.
 - ‏`npm run lint` אוכף את כיוון התלות (`eslint.config.mjs`, נבדק ב-`test/eslint-rules.test.ts`): קובץ `"use client"` לא מייבא `lib/server/**`; ‏`lib/server/privileged` מיובא רק מתוכו, מ-`app/**/actions.ts`, מ-`app/api/**` ומ-`page.tsx` של נתיבי הטוקן; ‏`.from(...).insert/update/delete/upsert` מותר רק ל-`profiles` ול-`babies` (קובצי בדיקה פטורים); אין `parseFloat` ב-`lib/money.ts`; אין גישה ל-`.rpc` (קריאה, `bind`, `["rpc"]` או פירוק) מחוץ ל-`lib/rpc.ts`, וכל RPC עובר ב-`callRpc` (קובצי בדיקה ו-`scripts/*.mjs` פטורים). כלל `no-restricted-syntax` חדש מוסיפים לקבוצות שבקובץ, כי ב-flat config רשומה מאוחרת מחליפה את כל הרשימה.
 
 ## מוסכמות שונות מברירת המחדל
@@ -54,6 +57,7 @@
 ## מלכודות ידועות
 
 - עברית שמועברת כארגומנט דרך PowerShell או Bash משתבשת (כך קרה ב-memlog של ה-SPEC). קבצים עם עברית כותבים בכלי Write או Edit, לא ב-echo ולא בארגומנט shell.
+- תווים בלתי נראים (U+200B–U+200F, ‏U+202A–U+202E, ‏U+2060–U+2069, ‏U+FEFF) נכנסו לקבצים שלוש פעמים ב-E1: כלי הכתיבה הופך `\uXXXX` לתו עצמו, וטקסט שמועתק מעברית מביא תווי כיווניות. `test/invisible-chars.test.ts` (בתוך `npm test` וה-CI) נכשל עליהם. בקוד אסור אף אחד מהם; ב-md מותר רק U+200F. ב-regex או במחרוזת כותבים escape (`\u200E`), ואחרי כתיבה בודקים שהקובץ עדיין עובר.
 
 <!-- /bmad:context -->
 
@@ -64,5 +68,5 @@
 - טיפוסי המסד ב-`lib/supabase/database.types.ts`. אחרי כל מיגרציה יוצרים אותם מחדש עם `generate_typescript_types` של ה-MCP.
 - `npm run dev`: שרת פיתוח. `npm run build`: בנייה לפרודקשן. כדאי להריץ אותה לפני סיום עבודה, כי push ל-main מפעיל פריסה.
 - `npm run dev:reset-link`: יוצר או מוצא לקוחה בדויה במסד הפיתוח ומדפיס קישור איפוס סיסמה למחשב ולטלפון ברשת הביתית. עם דגלים מריצים `node scripts/dev-reset-link.mjs --admin` (אדמין) או `--url <כתובת פריסה>`, כי PowerShell מוחק את `--` של `npm run`.
-- `npm run typecheck`: בדיקת טיפוסים (`tsc --noEmit`). `npm run format`: Prettier עם הפלאגין של Tailwind.
+- `npm run typecheck`: בדיקת טיפוסים (`tsc --noEmit`). `npm run format`: Prettier עם הפלאגין של Tailwind, ו-`npm run format:check` בודק בלי לכתוב (רץ ב-CI). ‏`components/ui/` מוחרג ב-`.prettierignore`, כי לא עורכים אותו.
 - הרצה של בדיקה אחת: `npx vitest run --project unit path/to/file.test.ts`, או `npx vitest run --project unit -t "<שם הבדיקה>"`. בלי `--project` ‏Vitest מריץ את שני הפרויקטים, ו-`-t` מריץ גם את בדיקות המסד (שדורשות `.env.local` ורשת). לבדיקת מסד אחת: `--project db`.
