@@ -81,6 +81,7 @@ context:
 - ב-SPINE נוספה לשורת האכיפה גם `.upsert(`, שכבר נאכף בקוד מאז 1.2.
 - נבדק: lint, ‏typecheck, ‏`npm test` (413), ‏`npm run test:db` (129, ‏9 קבצים), build. אין שורות `test_%` במסד. ‏`get_advisors`: רק `auth_leaked_password_protection` (WARN) ו-INFO קיימים של `rls_enabled_no_policy` על טבלאות פנימיות.
 - אחרי תיקוני הסקירה: lint, typecheck, `npm test` (416), `npm run test:db` (132, 9 קבצים) ו-build עוברים. אין שורות `test_%` ב-`profiles`, ב-`idempotency_results` וב-`audit_log`. ה-advisor ללא שינוי. בקוד אין תווים בלתי נראים; במסמכים רק U+200F, וב-`epic-1-context.md` גם 10 תווי U+200E שהיו שם לפני הסיפור.
+- הבדיקה בטלפון מול ה-preview עברה: 48px, מסגרת בפוקוס, שגיאה, שמירה והתחברות. בעקבותיה, החלטת המשתמשת: מסכי ההתחברות מוצמדים למעלה (`pt-16`) במקום ממורכזים, כי הטופס הממורכז נראה נמוך ו"קופץ" כשהמקלדת נפתחת. שינוי ב-`app/(auth)/layout.tsx`, נרשם ב-memlog של ה-UX.
 - בדיקת המקביליות קוראת ל-`pg_stat_clear_snapshot()` לפני כל קריאה של `pg_stat_activity`, כי בתוך עסקה Postgres שומר את התמונה הראשונה.
 - ‏Prettier מתריע על `test/eslint-rules.test.ts`, ‏`app/globals.test.ts` ו-`app/globals.css`. ההתרעה קיימת כבר ב-HEAD (כנראה סופי שורות), ולכן לא נגעתי.
 
