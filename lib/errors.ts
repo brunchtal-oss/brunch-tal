@@ -13,6 +13,14 @@ export const ERROR_MESSAGES = {
   // The same idempotency key was sent with a different request (AD-5).
   IDEMPOTENCY_KEY_REUSED:
     "הפעולה כבר נשלחה עם פרטים אחרים. כדאי לרענן את הדף ולנסות שוב",
+  // Payment approval (story 2.1).
+  PRODUCT_NOT_AVAILABLE: "המוצר הזה לא זמין כרגע. בחרי מוצר אחר",
+  PINNED_NOT_AVAILABLE: "אישור מוצר למפגש מסוים עוד לא זמין",
+  PINNED_EVENT_REQUIRED: "צריך לבחור מפגש למוצר הזה",
+  EVENT_NOT_ALLOWED: "למוצר הזה לא בוחרים מפגש",
+  PAYMENT_METHOD_NOT_SELECTABLE: "אמצעי התשלום הזה הוסתר. בחרי אחר",
+  // A sensitive action was sent without its confirmation (AD-7).
+  CONFIRM_REQUIRED: "צריך לאשר את השינוי לפני שממשיכים",
   // Raised by the adapter (never by SQL).
   INVALID_CREDENTIALS: "המייל או הסיסמה לא תואמים",
   // Correct password, but no active customer profile and not an admin.

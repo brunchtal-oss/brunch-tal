@@ -13,10 +13,28 @@ import { describe, expect, it } from "vitest"
 import { inRollback, sql, type Db } from "./support/db"
 
 const EXPECTED_GRANTS = [
+  "column public.entitlement_movements.action authenticated SELECT",
+  "column public.entitlement_movements.booking_id authenticated SELECT",
+  "column public.entitlement_movements.created_at authenticated SELECT",
+  "column public.entitlement_movements.entitlement_id authenticated SELECT",
+  "column public.entitlement_movements.id authenticated SELECT",
+  "column public.entitlement_movements.reverses_id authenticated SELECT",
+  "column public.entitlement_movements.units authenticated SELECT",
+  "column public.payments.amount_agorot authenticated SELECT",
+  "column public.payments.created_at authenticated SELECT",
+  "column public.payments.customer_id authenticated SELECT",
+  "column public.payments.id authenticated SELECT",
+  "column public.payments.paid_on authenticated SELECT",
+  "column public.payments.product_id authenticated SELECT",
+  "column public.payments.product_snapshot authenticated SELECT",
+  "column public.payments.source authenticated SELECT",
+  "column public.payments.status authenticated SELECT",
   "function private.current_customer_id() authenticated EXECUTE",
   "function private.is_admin() authenticated EXECUTE",
+  "function public.admin_approve_payment(p_product_id uuid, p_event_id uuid, p_amount_agorot integer, p_amount_override_reason text, p_paid_on date, p_payment_method_id uuid, p_reference text, p_note text, p_confirmed boolean, p_idempotency_key uuid) authenticated EXECUTE",
   "function public.get_my_session_role() authenticated EXECUTE",
   "function public.issue_reset_token(p_user_id uuid) service_role EXECUTE",
+  "function public.preview_admin_approve_payment(p_product_id uuid, p_event_id uuid, p_amount_agorot integer, p_paid_on date) authenticated EXECUTE",
   "function public.reset_begin(p_token text, p_idempotency_key uuid) service_role EXECUTE",
   "function public.reset_complete(p_token text, p_idempotency_key uuid) service_role EXECUTE",
   "function public.token_view(p_token text) service_role EXECUTE",
@@ -24,9 +42,14 @@ const EXPECTED_GRANTS = [
   "table public.admin_roles service_role INSERT",
   "table public.admin_roles service_role SELECT",
   "table public.audit_log authenticated SELECT",
+  "table public.business_settings authenticated SELECT",
+  "table public.entitlements authenticated SELECT",
+  "table public.payment_methods authenticated SELECT",
+  "table public.products authenticated SELECT",
   "table public.profiles authenticated SELECT",
   "table public.profiles service_role INSERT",
   "table public.profiles service_role SELECT",
+  "view public.entitlement_balances authenticated SELECT",
 ]
 
 type Query = (text: string) => Promise<Array<Record<string, unknown>>>

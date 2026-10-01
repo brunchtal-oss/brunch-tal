@@ -1,0 +1,77 @@
+# Epic 2 Context: E2 חשבונות וכסף: מאישור תשלום ללקוחה מחוברת
+
+<!-- Compiled from planning artifacts. Edit freely. Regenerate with compile-epic-context if planning docs change. -->
+
+## Goal
+
+לבנות את שכבת החשבונות והכסף: מוצרים, אמצעי תשלום, תשלומים, זכויות ויומן תנועות, הצטרפות בקישור חד-פעמי, חשבון קיים והתנגשויות, איפוס ושינוי פרטים דרך טל, פרופיל ותינוקות, וליבת ההתראות (בלי תצוגה ופוש). בסוף האפיק טל מאשרת תשלום בטלפון, רואה את התפוגה לפני האישור, מעתיקה קישור, והלקוחה מצטרפת ומגיעה מחוברת ל-`/me` עם היתרה והתפוגה הנכונות, בלי כפילויות ובלי לאבד תשלום, גם בחשבון קיים, בקישור שפג ובתקלה באמצע. כאן נבנית גם ההכנה לסליקה: ליבת אישור אחת בחתימתה הסופית ועמודות הספק ב-`payments`. מפגשים, הרשמות ומוצר מוצמד בפועל שייכים ל-E3.
+
+## Stories
+
+- Story 2.1: Money schema and payment approval core
+- Story 2.12: Notification core
+- Story 2.2: Join tracer: approve, link, join, personal area
+- Story 2.3: Existing account and identity conflicts
+- Story 2.4: Link lifecycle and mid-join recovery
+- Story 2.5: Repeat purchase and amount override
+- Story 2.6: Product catalog admin
+- Story 2.7: Payment methods admin
+- Story 2.8: Admin-assisted reset, email and phone change, rate limit
+- Story 2.9: Prior participation
+- Story 2.10: Customer profile, babies and photo consent
+- Story 2.11: Refactor sweep
+
+## Requirements & Constraints
+
+- תשלום מתקבל מחוץ לאתר; רק אישור של טל יוצר זכות. כל אישור יוצר בדיוק תשלום אחד וזכות אחת. לחיצה כפולה או retry לא מכפילים תשלום, זכות, טוקן או חשבון.
+- **לקוחה חדשה:** טל לא מזינה פרט של הלקוחה. היא בוחרת מוצר, סכום (מהמחיר, ניתן לשינוי), תאריך רכישה (ברירת מחדל היום), אמצעי תשלום, ואסמכתה והערה לא חובה. נוצרת רכישה שלא שויכה וקישור הצטרפות. **לקוחה קיימת:** חיפוש לפי שם או טלפון, זכות נפרדת מיד, בלי קישור, והתראת `purchase_repeat` לתור. כרטיסייה חדשה לא מתמזגת עם הקודמת ולא משנה את תוקפה.
+- שינוי סכום הוא "שינוי מחיר" ולכן פעולה רגישה: צ׳קבוקס חובה. כל שדה סיבה בפלטפורמה לא חובה, והפעולה תמיד נרשמת ביומן.
+- **תוקף כרטיסייה:** נספר מתאריך הרכישה שטל הזינה (לא מהזנה ולא ממילוי הטופס), ומסתיים בסוף היום המקומי (Asia/Jerusalem) שחל 49 ימים אחריו. התפוגה מוצגת לטל לפני האישור. כרטיסייה שפגה עד ההצטרפות לא מוארכת; מוצגת פנייה לטל. ההארכה האוטומטית (CAP-36) לא ב-E2.
+- **מוצר מוצמד** (בודד, היכרות, זוגי) נדחה ב-E2 ב-`PINNED_NOT_AVAILABLE`; בחירת המפגש, `park`, היכרות פעילה אחת והזוגי נבנים ב-E3.
+- **קישור:** תקף 48 שעות (קבוע, לא הגדרה), פעם אחת, פתיחה או תצוגה מקדימה לא צורכות, חלופי מבטל את הקודם בלי תשלום נוסף, ותפוגה לא מבטלת תשלום ולא משנה תוקף.
+- **חשבון קיים והתנגשות:** התאמה במייל או בטלפון לא יוצרת חשבון; השיוך רק אחרי התחברות לחשבון הקיים. טלפון בלבד לא מוכיח בעלות. טלפון ומייל של שני חשבונות, או פרופיל מיובא שלא הופעל, עוצרים ומופנים לטל ("טל תחזור אלייך"). אין מיזוג אוטומטי.
+- **טופס ההצטרפות:** המוצר והסכום נעולים מהשרת. שם מלא, טלפון, מייל (שם המשתמש), שם התינוק/ת ותאריך לידה (+ תינוק נוסף), אלרגיות והעדפות בשדה טקסט אחד, סיסמה ואישור, צ׳קבוקס מדיניות חובה וצ׳קבוקס תמונות לא חובה (ברירת מחדל: לא אישרה). ההסכמות נשמרות עם מועד וגרסה מפורסמת (0 עד שיתפרסם נוסח, מותר רק כל עוד האתר נעול).
+- **פרופיל:** הלקוחה עורכת רק שם, תינוקות ואלרגיות; טלפון ומייל לקריאה בלבד, ומשתנים רק דרך טל אחרי בדיקת זהות וכפילות, עם יומן. שדה ריק לא מוצג בשום מקום. גיל התינוק מחושב בתצוגה, בלי כתיבה יומית.
+- **איפוס:** אין ספק מייל. טל מפיקה קישור איפוס אישי. מייל שהוזן לא מוצג כמאומת בשום מסך. התחברות ופעולות טוקן מוגבלות בקצב, בהודעות שלא חושפות אם חשבון או טלפון קיימים.
+- לקוחה לא יכולה לשנות role, תשלום, יתרה או תוקף, ולא לקרוא נתונים של אחרת, גם בפנייה ישירה ל-API.
+- Done when של האפיק: הזרימה המלאה בטלפון; חשבון קיים, קישור שפג ותקלה באמצע בלי אובדן או כפילות; רכישה חוזרת עם התראה בתור; `grants.test.ts` וה-advisor נקיים; preview נעול עם נתונים בדויים בלבד.
+
+## Technical Decisions
+
+- **ליבת אישור אחת:** `private.approve_payment_core(p_source, p_actor_id, p_actor_kind, p_customer_id, p_product_id, p_event_id, p_amount_agorot, p_amount_override_reason, p_paid_on, p_payment_method_id, p_reference, p_note, p_provider, p_provider_transaction_id, p_on_seat_failure)` בחתימה סופית מ-2.1. הקוד היחיד שיוצר `payments` והזכות שנגזרת ממנו, דרך `private.record_payment`, `private.grant_from_payment`, `private.place_pinned_booking`. לא בודקת קוראת ולא קוראת `auth.uid()`/`is_admin()`; המבצעת עוברת כפרמטר ל-`private.audit`. לא מנפיקה טוקן, מחזירה `payment_id`. שינוי חתימה = `drop` ואז `create` באותה migration.
+- **המעטפת:** `admin_approve_payment` משרתת חדשה וקיימת: בדיקת אדמין, idempotency, נעילות בסדר הגלובלי, ליבה עם `source = manual` ו-`raise`. ללקוחה חדשה, באותה עסקה, `private.issue_token('join', payment_id)` והטוקן הגולמי מוחזר פעם אחת; קריאה חוזרת מחזירה `reissue_required`. לכל תשלום לכל היותר טוקן `join` אחד שלא בוטל. `preview_admin_approve_payment` מחזירה את `private.plan_approve_payment` (זכות, כניסות, תפוגה, `price_changed`), ו-`p_confirmed` נדרש רק כש-`price_changed`. אין RPC אחר שכותב ל-`payments`.
+- **עמודות `payments`:** `source` (manual/online, בלי ברירת מחדל), `provider`, `provider_transaction_id`, `recorded_by`, `payment_method_id` (FK `on delete restrict`), `amount_agorot`, `paid_on`, `reference`, `note`, `amount_override_reason`, `status` (approved; `voided` שמור), `product_snapshot` (כולל `payment_method_name`; תצוגת עבר קוראת ממנו). checks: manual ⇔ `recorded_by` ו-`payment_method_id` מלאים; online ⇔ provider ומזהה העסקה מלאים. אינדקס ייחודי חלקי על `(provider, provider_transaction_id)`. אין עמודת `idempotency_key`.
+- **אמצעי תשלום:** `payment_methods(name, sort_order, hidden)`, seed: ביט, פייבוקס, העברה בנקאית, מזומן. "ניתן לבחירה" רק ב-`private.payment_method_selectable`; הליבה דוחה `PAYMENT_METHOD_NOT_SELECTABLE`. כתיבה רק ב-`admin_add/rename/hide/show/delete_payment_method` ו-`admin_set_payment_method_order(p_ids)` (`CONCURRENT_CHANGE` כשהרשימה לא זהה). מחיקה רק כשלא שימש (`PAYMENT_METHOD_IN_USE`). כל הקטנה של הרשימה הגלויה לוקחת קודם `pg_advisory_xact_lock(hashtext('payment_methods'))` וזורקת `LAST_PAYMENT_METHOD`.
+- **מוצרים:** `name, type, price_agorot, units, validity_mode (days|session), validity_days, allowed_weekdays, eligible_event_kind, party_size, intro_only, post_join_message, post_join_button_label, active`. seed: רגיל 128 ₪, היכרות 118 ₪, זוגי 250 ₪ (שלושתם `session`), כרטיסייה 472 ₪, 4 כניסות, 49 ימים, שני וחמישי. עריכת מוצר לא משנה זכויות שניתנו; מוצר מוסתר לא מוצע ונשאר בהיסטוריה.
+- **זכויות:** ב-`entitlements` ה-`customer_id` ריק עד השיוך, `pinned_event_id` עם check מוצמד ⇔ מלא, `eligibility_snapshot` כולל `validity_mode`, ו-`status` רק active/revoked/refunded. "פגה" ו"נוצלה" נגזרות (`private.local_day_end(expires_on)`). `entitlement_movements` append-only (בלי grant ל-update/delete ו-trigger זורק), סימן קבוע לכל action: `grant`/`opening_balance`/`release` חיוביים, `reserve` שלילי, `use` = 0, `adjust` ≠ 0. היתרה רק ב-view `entitlement_balances` (`security_invoker = true`). ב-E2 רק `grant`.
+- **`business_settings`:** default_validity_days, registration_close_rule (ימים לפני + שעה), default_capacity_adults (regular 12, couple 14), cancel_window_hours (48), credit_options_count (2), reminder_lead_hours (24), admin_expiring_days (21), customer_expiring_days (10), last_places_threshold (4), default_prep_days ([-1, 0]), marketing_reminder_schedule, inactivity_months (3). checks: ימים לפני הסגירה ושעות החלון אי-שליליים, שעת הסגירה לא בין 00:00 ל-03:00. RPC קורא ברירות מחדל בתוך העסקה ושומר snapshot על הישות.
+- **זהות:** `private.find_identity(p_email, p_phone)` היא בדיקת הכפילות היחידה (הצטרפות, שינוי מייל וטלפון, חיפוש לקוחה): מנרמלת מייל (`lower(trim())`) וטלפון (`private.normalize_phone`) ובודקת מול `auth.users.email`, `profiles.phone_e164`, `profiles.pending_email`. תוצאות: אין; חשבון אחד (בלי לחשוף באיזה שדה); `conflict`. `phone_e164` ייחודי. מייל רק ב-`auth.users`; אדמין קוראת אותו רק דרך `admin_get_customer`/`admin_list_customers`.
+- **טוקנים:** רק `private.issue_token`/`find_token`; `activation_tokens.state` הוא pending, awaiting_login, claiming, consumed, revoked, conflict (`expired` נגזר ולא נשמר), ונוספים `payment_id`, `conflict_reason`, `pending_user_id`, `bound_user_id`, `input_hash`. אף RPC של `authenticated` לא מקבל טוקן שאינו `join`. הטוקן מנוקה ב-`lib/auth/clean-token.ts` לפני כל שימוש (תווי כיווניות מוואטסאפ).
+- **הצטרפות (AD-21, ב-`lib/server/privileged/join.ts`):** (1) `join_begin(p_token, p_email, p_phone)` (service role) ← `awaiting_login` עם `bound_user_id`, `conflict`, או `claiming` עם `pending_user_id` ו-`input_hash`; כניסה חוזרת עם קלט אחר ← `LINK_IN_USE`. (2) `getUserById` ← `updateUserById` או `createUser({ id, email, password, email_confirm: true })`; `email_exists` ← conflict. (3) `join_complete(p_token, p_profile)` בעסקה אחת: פרופיל עם `activated_at`, תינוקות, הסכמות עם גרסה, `private.bind_purchase`, `consumed`, יומן; idempotent. (4) `signInWithPassword` בשרת ← `/me`. חשבון קיים: `/login?next=/join/<token>` ואז `claim_join(p_token)` (authenticated, רק `bound_user_id = auth.uid()`, אחרת `NOT_AUTHORIZED`). `claiming` מעל 15 דקות מופיע ב"לטיפול", וכניסה חוזרת ממשיכה מצעד 2. תצוגה רק דרך `token_view` (service role): `{state_public, purpose, product_name, amount_agorot, expires_on}`.
+- **שיוך:** רק `private.bind_purchase(p_payment_id, p_customer_id)`. נועלת את `profiles`, בודקת שוב אינווריאנטים; בהפרה לא משייכת כלום, טוקן ← `conflict` ו-`BIND_CONFLICT` (אף 23505 גולמי). אחרת ממלאת `customer_id` בכל שורה שנגזרת מהתשלום ומכניסה לתור את ההתראות שדולגו (`purchase_new_card` וכו׳). `supabase/tests/bind-purchase.test.ts` עובר על כל טבלה עם `customer_id`.
+- **סדר נעילה:** `activation_tokens` ← `profiles` ← `events` ← `bookings` ← `entitlements` ← … ← `payments` ← … ← `notification_jobs`, ובתוך טבלה לפי `id`. שורת `profiles` היא ה-mutex של הלקוחה. RPC מורכב לוקח את כל הנעילות בתחילתו, לפני `plan_*`/`*_core`.
+- **התראות (2.12):** `notifications(recipient_id, recipient_kind, type, payload, target_path, dedupe_key, read_at)`, `notification_templates`, `notification_jobs`. כניסה אחת: `private.enqueue_notification(p_recipient_id, p_type, p_discriminator, p_vars, p_target_path, p_body_override)` ו-`enqueue_admin_notification`. `dedupe_key = type:recipient_id:discriminator` עם `on conflict do nothing`; discriminator של רכישה = `payment_id`. נמענת חובה; `target_path` של לקוחה מתחיל ב-`/me`. סוגים: רשימה סגורה ב-check.
+- **פעולה רגישה:** `private.plan_<name>` אחת ל-preview ולביצוע; `preview_<name>` עם אותה הרשאה; הביצוע מקבל `p_confirmed` וזורק `CONFIRM_REQUIRED`. רגישים ב-E2: שינוי סכום באישור, שינוי מחיר בקטלוג, תיקון "השתתפה בעבר" (`admin_correct_prior_participation`; `private.has_participated` = override או הרשמה `completed`). שאר השינויים (שדות מוצר, אמצעי תשלום) עוברים "ישן ← חדש" בלי צ׳קבוקס, עם יומן.
+- **עדכון עצמי:** ל-`authenticated` רק `update` לפי עמודות על `profiles` (`full_name`, `dietary_notes`) ועל `babies`. `set_photo_consent` הוא RPC (פטור מ-idempotency) שרושם מועד, גרסה ויומן. שינוי מייל דו-שלבי (`email_change_pending` ב-`profiles.account_op_state`); חסימת `auth.updateUser` עצמי ומנגנון הגבלת קצב אחד נקבעים ב-2.8.
+- **תוכן:** 2.2 יוצר `content_pages` לרשומות המדיניות ונוסח בקשת התמונות (`published_version`) ורשומת פרטי העסק עם 0544256456. E5 מרחיב.
+
+## UX & Interaction Patterns
+
+- מערכת העיצוב, המעטפות והנגישות כבר ב-`epic-1-context.md` ובקוד. כאן רק מה שמסכי E2 צריכים.
+- **`/admin/payments/new`** (מוקאפ `key-admin-payment.html`): `radio-card` "לקוחה חדשה" / "לקוחה קיימת"; בחדשה הסבר "את הפרטים שלה היא תמלא בעצמה בקישור ההצטרפות". מוצר ← סכום מהמחיר ("מהמוצר: {ערך}"); אמצעי תשלום כ-`radio-card` לפי הסדר של טל, הראשון מסומן; אסמכתה והערה בקיפול "פרטים נוספים (לא חובה)". "מה ייווצר" (מוצר, כניסות, תפוגה) לפני האישור. שינוי סכום פותח "סיבת שינוי המחיר (לא חובה)" ו-`sensitive-confirm-dialog`. כפתור: "אישור תשלום ויצירת קישור" / "לאישור התשלום", ננעל (busy) עד תשובה. אחרי: "התשלום אושר. הקישור מוכן לשליחה" + "שליחה בוואטסאפ" + "העתקת הקישור". אמצעי שהוסתר בינתיים: "אמצעי התשלום הזה הוסתר. בחרי אחר" ורענון.
+- **`/admin/links`:** סטטוסים "ממתין למימוש" / "מומש" / "פג תוקף" / "בוטל", שורה "לקוחה חדשה · הקישור מחכה להצטרפות" ואחרי מימוש שם הלקוחה; "ביטול הקישור" ו"הפקת קישור חלופי". אין העתקה מאוחרת של קישור קיים.
+- **`/join/[token]`:** מוצר וסכום `readonly` בראש, השדות בסדר שבדרישות, הסבר ליד המייל "המייל ישמש לכניסה לאזור האישי", "+ תינוק נוסף" שפותח זוג שדות. צ׳קבוקס התמונות בלי "(חובה)" ובלי `aria-required`. מצבים: תקף, כבר מומש ("הקישור הזה כבר שימש ליצירת חשבון" + התחברות), פג/בוטל ("תוקף הקישור פג. צרי קשר עם טל לקבלת קישור חדש" + וואטסאפ), חשבון קיים (הפניה להתחברות), התנגשות והתנגשות בשיוך ("טל תחזור אלייך", בלי פרטים טכניים), הזכות כבר פגה (`inline-notice` warning + "לכתוב לטל").
+- **`/me` בית:** "היי {שם}", אישור הרכישה ("{מוצר} · {סכום} ₪ · נרכשה ב-{DD.MM}"), `balance-card` לכל כרטיסייה (זמינות, משוריינות, "בתוקף עד DD.MM"), וההודעה והכפתור מהמוצר (תוכן, לא מיקרו-קופי). סכומים בשקלים בלי אגורות ("472 ₪").
+- **`/admin/settings/payment-methods`:** `ol` של `content-section-row` עם "מוסתר", סידור, שינוי שם, הסתרה/הצגה, ומחיקה רק לאמצעי שלא שימש; כל שינוי ב-`value-change-row`. האחרון הגלוי: `aria-disabled` עם "חייב להישאר לפחות אמצעי תשלום אחד".
+- **`/admin/products`:** הערה "השינוי חל על רכישות חדשות בלבד"; מחיר ב-`sensitive-confirm-dialog`, שאר השדות ב-`value-change-row`.
+- **`sensitive-confirm-dialog`:** כותרת בצורת שאלה ("האם לאשר שינוי מחיר?"), תיבת השפעה, צ׳קבוקס "אני מאשרת ש…" חובה, "סיבה (לא חובה)". `value-change-row`: "{שדה}: {ישן} ← {חדש}" + "לשמור את השינוי".
+- **`/admin/customers/[id]`** (חלק החשבון בלבד): הפקת קישור איפוס עם וואטסאפ, שינוי טלפון ומייל (ערך שכבר בחשבון אחר נחסם), תיקון "השתתפה בעבר". **`/me/profile`:** טלפון ומייל לקריאה בלבד עם "לשינוי … — פנייה לטל"; מתג אישור התמונות.
+- תוצאה ב-`inline-notice`, אין אישור אופטימי. מפתח idempotency נוצר ב-`crypto.randomUUID()` בפתיחת הטופס ונשלח בכל ניסיון.
+
+## Cross-Story Dependencies
+
+- 2.1 קודם לכול (אחרי 1.3 ו-1.4), ואחריו 2.12, ואז ה-tracer 2.2 (גם אחרי 1.5). 2.3 ← 2.4 בטור, כי שניהם משנים את `join.ts`. 2.5 ו-2.10 אחרי 2.2; 2.6 אחרי 2.5; 2.7 אחרי 2.6; 2.8 אחרי 2.4; 2.9 אחרי 2.5 ו-2.8; 2.11 אחרון. migrations מוחלים בידי סשן אחד בכל זמן, ו-`database.types.ts` ו-`grants.test.ts` נפתרים במיזוג.
+- רכיבים משותפים נוצרים פעם אחת: `sensitive-confirm-dialog.tsx` ו-`lib/admin/sensitive-actions.ts` ב-2.5, `value-change-row.tsx` ב-2.6. E3–E6 משתמשים בהם.
+- `/admin/customers/[id]` נוצר ב-2.8 עם חלק החשבון; E4 מוסיף היסטוריה, יתרות, הערות וייצוא. `admin_issue_link` ב-2.4/2.8 מחליף את `npm run dev:reset-link`.
+- deferred מ-E1: ה-checks של `business_settings` ב-2.1; עזר יצירת משתמשות Auth בדויות ב-`supabase/tests/support/db.ts` בסיפור הראשון שבודק RLS עם לקוחה אמיתית (2.1 או 2.2).
+- ל-E3: מוצר מוצמד (`PINNED_NOT_AVAILABLE` מוסר), `park` ב-3.11, שריון/ניצול/שחרור ותיקונים בזכות, היכרות פעילה אחת ובדיקות ההיכרות בשיוך. ל-E5: תצוגת ההתראות ופוש, עריכת התוכן, הסרת הנעילה (5.15) אחרי שהגבלת הקצב של 2.8 קיימת. 6.9 בודק שפורסמה גרסת מדיניות אמיתית.
