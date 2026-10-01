@@ -29,3 +29,38 @@
   target: סיפור היבוא
   summary: ‏`entitlements.payment_id` הוא `not null`. סיפור יבוא הלקוחות צריך להתיר `import_batch_id` במקומו (אחד מהשניים חובה) לפני שיתרות פתיחה נכנסות.
   evidence: ‏data-model.md כותב "payment_id (או import_batch_id)", ויומן התנועות כבר כולל `opening_balance`. נמצא בביקורת של 2.1 (blind-hunter).
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-12-notification-core.md`
+  target: 3.6, ‏3.13/3.14
+  summary: ב-2.12 יש תבנית אחת לכל סוג. ‏3.6 מחליט על נוסח לכל מקרה ב-`booking_cancelled` (זיכוי, החזר, ביטול בלי החזר), ו-3.13/3.14 ב-`entitlement_changed` (הארכה, החזרת כניסה, תיקון). אפשרות: שדה `{outcome}` שהקורא מעצב, או תבניות נוספות בטבלה.
+  evidence: החלטת המשתמשת ב-2.12: תבנית אחת לסוג, ונוסח לכל מקרה נדחה לסיפורים שיוצרים את ההתראות.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-12-notification-core.md`
+  target: 5.8
+  summary: משימות `queued` ב-`notification_jobs` מצטברות מ-2.2 ועד שיש עובד פוש. ‏5.8 מחליט מה עושים בהן כשהעובד עולה (לשלוח, לסגור בלי שליחה את מה שהתיישן, או לפי גיל המשימה), כדי שלקוחה לא תקבל בבת אחת פוש ישן.
+  evidence: ‏`private.enqueue_notification` יוצרת משימה לכל סוג עם פוש, ואין עדיין `claim_push_jobs` או עובד.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-12-notification-core.md`
+  target: 3.5
+  summary: ‏`booking_confirmed` מוגדר בתבנית כאזור אישי בלבד (`push = false`), אבל ב-memlog של ה-SPEC (שורה 264) התראת אישור להרשמה זוגית נשלחת גם בפוש "כשיש פוש". ‏3.5 צריך להחליט: סוג נפרד, ערוץ שנקבע לפי הקריאה, או לוותר על הפוש.
+  evidence: ב-2.12 הערוץ קבוע לסוג (AD-12, "הערוצים והנמענת לכל סוג קבועים באותה טבלה").
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-12-notification-core.md`
+  target: 2.5
+  summary: הערכים ב-`p_vars` הם טקסט שהקורא עיצב (תאריך DD.MM, סכום ב-₪). כשהקורא הראשון שמעצב תאריך או סכום נבנה (`purchase_repeat`), ליצור עזר SQL אחד לכל עיצוב ב-`private`, כדי שכל RPC יעצב אותו דבר.
+  evidence: ‏`private.enqueue_notification` מחליפה `{key}` בערך כמו שהוא. ב-2.12 עוד אין קורא.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-12-notification-core.md`
+  target: 4.7
+  summary: עריכת תבנית צריכה להיבדק בשמירה: רק שדות `{…}` שהסוג מעביר, וסוגריים מאוזנים. אחרת כל enqueue של הסוג זורק `INVALID_INPUT` ומבטל את ה-RPC של התשלום או ההרשמה.
+  evidence: ‏`private.render_notification_text` בודקת רק בזמן ה-enqueue, ואין בטבלה רשימת שדות מותרים לכל סוג. ביקורת 2.12, ממצא 5.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-12-notification-core.md`
+  target: 4.7
+  summary: ‏RPC העריכה (או trigger) מעלה את `version` ואת `updated_at`, קובע את `updated_by`, ומשנה רק `title` ו-`body`. ‏`push`, ‏`body_mode` ו-`recipient_kind` קבועים.
+  evidence: ב-2.12 אין שום אכיפה במסד לאלה, ובבדיקה הגרסה עולה ידנית. ביקורת 2.12, ממצא 6.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-12-notification-core.md`
+  target: 5.8
+  summary: הודעה כללית עד 2000 תווים בעברית (כ-4000 בייט) עלולה לעבור את מגבלת ה-payload של Web Push (כ-4KB). העובד מקצר את הגוף לפוש (ההתראה באזור האישי נשארת מלאה), או ש-`admin_send_broadcast` מגביל את האורך.
+  evidence: ‏`enqueue_notification` מקבלת override עד 2000 תווים, ואין גבול אחרי הרינדור. ביקורת 2.12, ממצא 7.

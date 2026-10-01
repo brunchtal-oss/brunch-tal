@@ -44,6 +44,7 @@ const EXPECTED_GRANTS = [
   "table public.audit_log authenticated SELECT",
   "table public.business_settings authenticated SELECT",
   "table public.entitlements authenticated SELECT",
+  "table public.notifications authenticated SELECT",
   "table public.payment_methods authenticated SELECT",
   "table public.products authenticated SELECT",
   "table public.profiles authenticated SELECT",

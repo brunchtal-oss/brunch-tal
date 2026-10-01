@@ -335,6 +335,133 @@ export type Database = {
           },
         ]
       }
+      notification_jobs: {
+        Row: {
+          attempt_count: number
+          created_at: string
+          finished_at: string | null
+          id: string
+          last_error: string | null
+          lease_until: string | null
+          next_attempt_at: string
+          notification_id: string
+          scheduled_at: string
+          status: string
+        }
+        Insert: {
+          attempt_count?: number
+          created_at?: string
+          finished_at?: string | null
+          id?: string
+          last_error?: string | null
+          lease_until?: string | null
+          next_attempt_at?: string
+          notification_id: string
+          scheduled_at?: string
+          status?: string
+        }
+        Update: {
+          attempt_count?: number
+          created_at?: string
+          finished_at?: string | null
+          id?: string
+          last_error?: string | null
+          lease_until?: string | null
+          next_attempt_at?: string
+          notification_id?: string
+          scheduled_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_jobs_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: true
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_templates: {
+        Row: {
+          body: string | null
+          body_mode: string
+          push: boolean
+          recipient_kind: string
+          title: string
+          type: string
+          updated_at: string
+          updated_by: string | null
+          version: number
+        }
+        Insert: {
+          body?: string | null
+          body_mode: string
+          push: boolean
+          recipient_kind: string
+          title: string
+          type: string
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Update: {
+          body?: string | null
+          body_mode?: string
+          push?: boolean
+          recipient_kind?: string
+          title?: string
+          type?: string
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          dedupe_key: string
+          id: string
+          payload: Json
+          read_at: string | null
+          recipient_id: string
+          recipient_kind: string
+          target_path: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          dedupe_key: string
+          id?: string
+          payload: Json
+          read_at?: string | null
+          recipient_id: string
+          recipient_kind: string
+          target_path: string
+          type: string
+        }
+        Update: {
+          created_at?: string
+          dedupe_key?: string
+          id?: string
+          payload?: Json
+          read_at?: string | null
+          recipient_id?: string
+          recipient_kind?: string
+          target_path?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_type_recipient_kind_fkey"
+            columns: ["type", "recipient_kind"]
+            isOneToOne: false
+            referencedRelation: "notification_templates"
+            referencedColumns: ["type", "recipient_kind"]
+          },
+        ]
+      }
       payment_methods: {
         Row: {
           created_at: string

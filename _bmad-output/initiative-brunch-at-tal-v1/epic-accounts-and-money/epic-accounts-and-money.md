@@ -6,6 +6,7 @@ covers: [CAP-2, CAP-3, CAP-4, CAP-5, CAP-6, CAP-7, CAP-8, CAP-9, CAP-10, CAP-29,
 after: []
 assignee: ""
 risk: high
+status: in-progress
 ---
 
 # E2 חשבונות וכסף: מאישור תשלום ללקוחה מחוברת

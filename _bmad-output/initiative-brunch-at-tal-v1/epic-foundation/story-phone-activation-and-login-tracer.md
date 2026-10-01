@@ -6,6 +6,7 @@ parent: epic-foundation
 covers: [E1-R4, E1-R3, E1-R1]
 hitl: true
 risk: high
+status: done
 ---
 
 # Phone activation and login tracer — ניסוי הפעלה והתחברות בטלפון
