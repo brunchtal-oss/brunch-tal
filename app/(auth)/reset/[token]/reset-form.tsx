@@ -50,7 +50,7 @@ export function ResetForm({
             href="/me"
             className={buttonVariants({
               size: "lg",
-              className: "h-11 text-base",
+              className: "h-12 text-base",
             })}
           >
             {authCopy.reset.goToMe}
@@ -60,7 +60,7 @@ export function ResetForm({
             href="/login?next=/me"
             className={buttonVariants({
               size: "lg",
-              className: "h-11 text-base",
+              className: "h-12 text-base",
             })}
           >
             {authCopy.reset.goToLogin}
@@ -137,7 +137,7 @@ export function ResetForm({
       <Button
         type="submit"
         size="lg"
-        className="h-11 text-base"
+        className="h-12 text-base"
         disabled={pending}
       >
         {pending ? authCopy.reset.submitting : authCopy.reset.submit}

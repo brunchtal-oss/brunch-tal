@@ -63,6 +63,19 @@ const NO_PARSE_FLOAT = [
   { selector: 'CallExpression[callee.property.name="parseFloat"]', message: MONEY_MESSAGE },
 ];
 
+// Every RPC goes through callRpc in lib/rpc.ts (AD-17), which maps errors to
+// codes and logs only ids. Test files and scripts/*.mjs (not linted for
+// syntax) are exempt. Any access to `.rpc` counts, so `s.rpc.bind(s)`,
+// `s["rpc"]` and `const { rpc } = s` are caught too.
+const RPC_MESSAGE =
+  'Call an RPC through callRpc(client, name, args) from "@/lib/rpc", not client.rpc() directly (AD-17).';
+const RPC_DIRECT = [
+  'MemberExpression[computed=false][property.name="rpc"]',
+  'MemberExpression[computed=true][property.value="rpc"]',
+  'ObjectPattern > Property[key.name="rpc"]',
+  'ObjectPattern > Property[key.value="rpc"]',
+].map((selector) => ({ selector, message: RPC_MESSAGE }));
+
 const restrictSyntax = (...groups) => ({
   "no-restricted-syntax": ["error", ...groups.flat()],
 });
@@ -94,11 +107,11 @@ const eslintConfig = defineConfig([
   ...nextTs,
   {
     files: TS_FILES,
-    rules: restrictSyntax(RTL, CLIENT_IMPORTS, TABLE_WRITES, PRIVILEGED_DYNAMIC),
+    rules: restrictSyntax(RTL, CLIENT_IMPORTS, TABLE_WRITES, PRIVILEGED_DYNAMIC, RPC_DIRECT),
   },
   {
     files: UI_FILES,
-    rules: restrictSyntax(CLIENT_IMPORTS, TABLE_WRITES, PRIVILEGED_DYNAMIC),
+    rules: restrictSyntax(CLIENT_IMPORTS, TABLE_WRITES, PRIVILEGED_DYNAMIC, RPC_DIRECT),
   },
   {
     files: TEST_FILES,
@@ -111,12 +124,24 @@ const eslintConfig = defineConfig([
   },
   {
     files: ["lib/money.ts"],
-    rules: restrictSyntax(RTL, CLIENT_IMPORTS, TABLE_WRITES, NO_PARSE_FLOAT, PRIVILEGED_DYNAMIC),
+    rules: restrictSyntax(
+      RTL,
+      CLIENT_IMPORTS,
+      TABLE_WRITES,
+      NO_PARSE_FLOAT,
+      PRIVILEGED_DYNAMIC,
+      RPC_DIRECT,
+    ),
+  },
+  {
+    // The one place that calls client.rpc() (AD-17).
+    files: ["lib/rpc.ts"],
+    rules: restrictSyntax(RTL, CLIENT_IMPORTS, TABLE_WRITES, PRIVILEGED_DYNAMIC),
   },
   {
     files: PRIVILEGED_ALLOWED,
     ignores: TEST_FILES,
-    rules: restrictSyntax(RTL, CLIENT_IMPORTS, TABLE_WRITES),
+    rules: restrictSyntax(RTL, CLIENT_IMPORTS, TABLE_WRITES, RPC_DIRECT),
   },
   {
     // Test files inside the allowed places (both globs must match).

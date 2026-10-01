@@ -16,7 +16,7 @@ export function LinkStateNotice({ state }: { state: "used" | "expired" }) {
           href="/login"
           className={buttonVariants({
             size: "lg",
-            className: "h-11 text-base",
+            className: "h-12 text-base",
           })}
         >
           {authCopy.reset.goToLogin}
