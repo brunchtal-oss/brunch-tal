@@ -6,6 +6,7 @@ covers: []
 after: []
 assignee: ""
 risk: medium
+status: done
 ---
 
 # E1 תשתית: הפעלה והתחברות בטלפון
