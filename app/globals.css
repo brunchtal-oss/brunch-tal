@@ -162,6 +162,18 @@
 :focus-visible:not([aria-invalid="true"]) {
   box-shadow: none;
 }
+/*
+ * A focused field keeps its --input border (DESIGN.md: the ring marks focus,
+ * the border does not change colour). Unlayered, so it wins over the
+ * `focus-visible:border-ring` of the shadcn fields; a field with an error
+ * keeps its destructive border.
+ */
+[data-slot="input"]:focus-visible:not([aria-invalid="true"]),
+[data-slot="textarea"]:focus-visible:not([aria-invalid="true"]),
+[data-slot="native-select"]:focus-visible:not([aria-invalid="true"]),
+[data-slot="select-trigger"]:focus-visible:not([aria-invalid="true"]) {
+  border-color: var(--input);
+}
 
 /*
  * Room for the fixed bottom-tab-bar (64px + safe area, plus 16px air): the

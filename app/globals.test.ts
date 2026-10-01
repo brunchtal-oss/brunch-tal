@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest"
 const css = readFileSync(
   fileURLToPath(new URL("./globals.css", import.meta.url)),
   "utf8"
-)
+).replace(/\r\n/g, "\n") // a Windows checkout may have CRLF
 
 function block(selector: string) {
   const start = css.indexOf(`${selector} {`)
@@ -78,5 +78,19 @@ describe("globals.css", () => {
     const focus = block(":focus-visible")
     expect(value(focus, "outline")).toBe("2px solid var(--ring)")
     expect(value(focus, "outline-offset")).toBe("2px")
+  })
+
+  it("keeps the --input border of a valid field on focus, not of an invalid one", () => {
+    const selectors = ["input", "textarea", "native-select", "select-trigger"]
+      .map(
+        (slot) =>
+          `[data-slot="${slot}"]:focus-visible:not([aria-invalid="true"])`
+      )
+      .join(",\n")
+    const field = block(selectors)
+    expect(value(field, "border-color")).toBe("var(--input)")
+    // Unlayered, so it wins over shadcn's focus-visible:border-ring.
+    const layer = css.indexOf("@layer base {")
+    expect(css.indexOf(field)).toBeGreaterThan(css.indexOf("\n}\n", layer))
   })
 })

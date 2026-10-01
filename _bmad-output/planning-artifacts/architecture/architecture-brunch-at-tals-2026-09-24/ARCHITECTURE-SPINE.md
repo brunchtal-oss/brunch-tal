@@ -232,7 +232,7 @@ flowchart TD
 
 - **Binds:** כל קוד TS שקורא למסד
 - **Prevents:** שמות עמודות ופרמטרים שמוקלדים ידנית ונשברים בשקט אחרי migration.
-- **Rule:** אחרי כל migration נוצר מחדש `lib/supabase/database.types.ts` (‏`generate_typescript_types` ב-MCP), וכל לקוחות Supabase מקבלים `Database` כגנרי. קריאה ל-RPC עוברת דרך `lib/rpc.ts` (`callRpc(name, args)`), שממפה שגיאת `P0001` ל-`{ ok: false, code }`.
+- **Rule:** אחרי כל migration נוצר מחדש `lib/supabase/database.types.ts` (‏`generate_typescript_types` ב-MCP), וכל לקוחות Supabase מקבלים `Database` כגנרי. קריאה ל-RPC עוברת דרך `lib/rpc.ts` (`callRpc(client, name, args)`), שממפה שגיאת `P0001` ל-`{ ok: false, code }`.
 
 ### AD-18: מימון הרשמה נקבע בפונקציה אחת [ADOPTED]
 
@@ -292,7 +292,7 @@ flowchart TD
 | תאריכים בתצוגה | רק `lib/time.ts`: ‏`DD.MM`, ‏`HH:mm`, יום בשבוע בעברית, ב-`<time datetime>` ו-`<bdi>` |
 | טקסט | מיקרו-קופי ב-`lib/copy/*.ts` לפי משטח, קודי שגיאה ב-`lib/errors.ts`, בלי טקסט שיווקי או ערך עסקי בקוד |
 | סודות ו-env | שרת בלבד: `SUPABASE_SECRET_KEY`, ‏`VAPID_PRIVATE_KEY`, ‏`VAPID_SUBJECT`, ‏`CRON_SECRET`, ‏`SITE_LOCKED`, ‏`SITE_LOCK_USER`/`SITE_LOCK_PASSWORD`. ציבורי: `NEXT_PUBLIC_SUPABASE_URL`, ‏`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, ‏`NEXT_PUBLIC_VAPID_PUBLIC_KEY`, ‏`NEXT_PUBLIC_APP_URL`. ב-Vault של Supabase: `app_url`, ‏`cron_secret`. ‏`AI_GATEWAY_API_KEY` יוצא מ-`.env.example` |
-| אכיפה (ESLint) | `no-restricted-imports`: ‏`lib/server/privileged/**` רק מתוך `lib/server/privileged`, ‏`app/**/actions.ts` ו-`app/api/**`, ו-`@/lib/server/**` אף פעם לא מקובץ `"use client"`. ‏`no-restricted-syntax`: ‏`parseFloat` ב-`lib/money.ts`, ‏`.insert(`/`.update(`/`.delete(` מחוץ לפרופיל ולתינוקות |
+| אכיפה (ESLint) | `no-restricted-imports`: ‏`lib/server/privileged/**` רק מתוך `lib/server/privileged`, ‏`app/**/actions.ts`, ‏`app/api/**` ו-`page.tsx` של נתיבי הטוקן (`/reset/[token]`, ‏`/join/[token]`), ו-`@/lib/server/**` אף פעם לא מקובץ `"use client"`. ‏`no-restricted-syntax`: ‏`parseFloat` ב-`lib/money.ts`, ‏`.insert(`/`.update(`/`.delete(`/`.upsert(` מחוץ לפרופיל ולתינוקות, ו-`.rpc(` ישיר מחוץ ל-`lib/rpc.ts` (AD-17; קובצי בדיקה ו-`scripts/*.mjs` פטורים) |
 | בדיקות | בדיקות RPC ו-RLS ב-`supabase/tests/*.test.ts` מול פרויקט הפיתוח. כל בדיקה יוצרת משתמשות ונתונים עם קידומת `test_<run-id>` ומוחקת אותם. בדיקות גבול זמן בודקות את העזרים הטהורים (AD-8). בדיקות טהורות ליד הקובץ (`lib/money.test.ts`). ‏`server-only` יותקן כתלות ב-E1, ו-Vitest ממפה אותו לריק |
 
 ## Stack
@@ -491,7 +491,6 @@ flowchart LR
 - **מנגנון הגבלת הקצב** להצטרפות, להפעלה, לאיפוס ולהתחברות: נקבע ב-E2, לפי IP ומזהה טוקן, עם הודעות שלא חושפות אם חשבון קיים. חובה לפני ש-`SITE_LOCKED` מוסר. מנגנון אחד בלבד (`private.rate_limit_hit` או `lib/server/privileged/rate-limit.ts`) לכל פעולות הטוקן וההתחברות.
 - **גיבוי חיצוני ושחזור:** לפני שימוש עסקי (E6).
 - **השהיית פרויקט Supabase חינמי:** לא ברור ש-pg_cron מונע אותה. לבדוק לפני ההשקה, ולשקול שדרוג. העובד קורא ל-`claim_push_jobs` בכל דקה גם כשהתור ריק, ולכן כנראה משמש גם keep-alive.
-- **פערי E1 מול הקוד (2026-09-29):** ‏`createServiceClient` עובר מ-`lib/supabase/server.ts` ל-`lib/server/privileged/service-client.ts` (AD-4), והתקנה של `server-only`, ‏`zod` כתלות ישירה ו-`web-push`. נוספים גם `lib/supabase/public.ts` ו-`no-restricted-imports` ל-`lib/server/**`. ‏`shadcn` (ה-CLI) עובר ל-`devDependencies`, ומוסר הדגל `--turbopack` המיותר. ב-package.json: `"engines": { "node": "24.x" }` ו-`@types/node` ‏`^24`.
 - **פרויקט Supabase לפרודקשן, שדרוג Vercel ו-repo פרטי:** החלטות תשלום של המשתמשת, לפני השקה ציבורית (תוכנית Hobby מיועדת לשימוש לא מסחרי), ולפני יבוא או תוכן אמיתי.
 - **תבנית ה-CSV של היבוא ופענוח Excel:** ב-E6, אחרי שיתברר איפה נמצאים נתוני הלקוחות.
 - **כלים לתצפית (Sentry או דומה):** לא בשלב הזה. הכשלים מופיעים ב"לטיפול" (AD-22).

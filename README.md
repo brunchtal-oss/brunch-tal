@@ -86,6 +86,7 @@
 - [ ] ‏`CRON_SECRET` (כשיהיו נתיבי `/api/jobs/`).
 - [ ] זוג מפתחות VAPID (כשתהיה שליחת פוש).
 - [ ] אף סוד לא במשתנה `NEXT_PUBLIC_*`.
+- [ ] לא לכבות את "Automatically expose System Environment Variables", כי הנעילה מזהה שהיא רצה ב-Vercel לפי `VERCEL_ENV`.
 
 ## סביבות
 

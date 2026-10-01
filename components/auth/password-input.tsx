@@ -18,7 +18,7 @@ export function PasswordInput(
       <Input
         {...props}
         type={visible ? "text" : "password"}
-        className="h-11 pe-11 text-base"
+        className="h-12 pe-11 text-base"
       />
       <Button
         type="button"

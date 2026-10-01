@@ -186,6 +186,59 @@ describe("direct table writes", () => {
   })
 })
 
+describe("direct RPC calls", () => {
+  const DIRECT = 'export const f = (s: any) => s.rpc("x")'
+
+  it.each([
+    "app/me/actions.ts",
+    "app/me/page.tsx",
+    "lib/auth/require-role.ts",
+    "lib/server/privileged/reset.ts",
+    "app/(auth)/reset/[token]/page.tsx",
+    "components/ui/thing.tsx",
+    "lib/money.ts",
+  ])("forbids supabase.rpc() in %s", async (file) => {
+    expect(await violations(file, DIRECT)).toContain("no-restricted-syntax")
+  })
+
+  it.each([
+    'export const f = (s: any) => s.rpc.bind(s)("x")',
+    'export const f = (s: any) => s["rpc"]("x")',
+    'export const f = (s: any) => { const { rpc } = s; return rpc("x") }',
+  ])("forbids the bypass %s", async (code) => {
+    expect(await violations("app/me/actions.ts", code)).toContain(
+      "no-restricted-syntax"
+    )
+  })
+
+  it.each([
+    "lib/rpc.ts",
+    "app/me/actions.test.ts",
+    "lib/server/privileged/reset.test.ts",
+    "supabase/tests/reset.test.ts",
+  ])("allows it in %s", async (file) => {
+    expect(await violations(file, DIRECT)).toEqual([])
+  })
+
+  it("allows it in scripts/*.mjs", async () => {
+    expect(
+      await violations(
+        "scripts/dev-reset-link.mjs",
+        'export const f = (s) => s.rpc("x")'
+      )
+    ).toEqual([])
+  })
+
+  it("still applies the other rules in lib/rpc.ts", async () => {
+    expect(
+      await violations(
+        "lib/rpc.ts",
+        'export const f = (s: any) => s.from("bookings").insert({})'
+      )
+    ).toContain("no-restricted-syntax")
+  })
+})
+
 describe("RTL classes", () => {
   // Whole snippets, so this file's own string literals do not trip the rule.
   it.each([

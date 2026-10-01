@@ -37,7 +37,7 @@ export function LoginForm({ next }: { next: string | null }) {
           defaultValue={state?.email}
           required
           aria-required
-          className="h-11 text-base"
+          className="h-12 text-base"
         />
       </Field>
 
@@ -63,7 +63,7 @@ export function LoginForm({ next }: { next: string | null }) {
       <Button
         type="submit"
         size="lg"
-        className="h-11 text-base"
+        className="h-12 text-base"
         disabled={pending}
       >
         {pending ? authCopy.login.submitting : authCopy.login.submit}
