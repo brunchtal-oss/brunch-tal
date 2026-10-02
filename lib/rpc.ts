@@ -2,7 +2,11 @@ import "server-only"
 
 import type { SupabaseClient } from "@supabase/supabase-js"
 
-import { codeFromPostgrestError, type ActionResult } from "@/lib/errors"
+import {
+  codeFromPostgrestError,
+  detailFromPostgrestError,
+  type ActionResult,
+} from "@/lib/errors"
 import type { Database } from "@/lib/supabase/database.types"
 
 // The single way TS calls an RPC (AD-17). Typed by the generated
@@ -28,7 +32,7 @@ type ArgsParam<N extends RpcName> = [RpcArgs<N>] extends [never]
 
 type RawResult = {
   data: unknown
-  error: { code?: string; message?: string } | null
+  error: { code?: string; message?: string; details?: string | null } | null
 }
 
 export async function callRpc<N extends RpcName>(
@@ -61,7 +65,12 @@ export async function callRpc<N extends RpcName>(
         dbCode: result.error.code ?? "unknown",
       })
     }
-    return { ok: false, code }
+    // detail (field, index) only for a known business code.
+    const detail =
+      code === "SERVER_ERROR"
+        ? undefined
+        : detailFromPostgrestError(result.error)
+    return detail ? { ok: false, code, detail } : { ok: false, code }
   }
 
   return { ok: true, data: result.data as RpcReturns<N> }

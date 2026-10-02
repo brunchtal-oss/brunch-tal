@@ -64,3 +64,28 @@
   target: 5.8
   summary: הודעה כללית עד 2000 תווים בעברית (כ-4000 בייט) עלולה לעבור את מגבלת ה-payload של Web Push (כ-4KB). העובד מקצר את הגוף לפוש (ההתראה באזור האישי נשארת מלאה), או ש-`admin_send_broadcast` מגביל את האורך.
   evidence: ‏`enqueue_notification` מקבלת override עד 2000 תווים, ואין גבול אחרי הרינדור. ביקורת 2.12, ממצא 7.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-2-join-tracer.md`
+  target: 2.3
+  summary: התנגשות אחרי שלב 2 (‏`phone_taken` או `bind_conflict` ב-`join_complete`) משאירה משתמשת Auth עם מייל וסיסמה בלי פרופיל. קישור עתידי עם אותו מייל ייכנס ל-`identity_match`, וההתחברות שלה תיתן `ACCOUNT_NOT_ACTIVE`. צריך לרשום אותה לטיפול של טל (או למחוק אותה) כשהקישור עובר ל-conflict.
+  evidence: ‏`pending_user_id` נשאר על הטוקן, ושום קוד לא מנקה את משתמשת ה-Auth. ביקורת 2.2 (edge-case, blind-hunter).
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-2-join-tracer.md`
+  target: 2.4
+  summary: קישור ב-`claiming` נעול ל-`input_hash` הראשון. אם שלב ה-Auth נכשל (מייל ש-Auth דוחה, `email_exists`, תקלה) והלקוחה מתקנת מייל או טלפון, היא מקבלת `LINK_IN_USE` לתמיד. ‏2.4 (המשך ממצב claiming) מחליט: לאפשר claim מחדש כשאין עדיין משתמשת Auth ל-`pending_user_id`, או להעביר ל"לטיפול". גם `email_exists` משאיר את הקישור `claiming` ו-`token_view` מציג אותו כפעיל.
+  evidence: ‏`join_begin` זורק `LINK_IN_USE` לכל hash אחר במצב claiming (החלטה ב-spec). ביקורת 2.2, edge-case 1–3.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-2-join-tracer.md`
+  target: E3
+  summary: ‏`private.bind_purchase` ו-`token_view` לא בודקים `payments.status = 'approved'` ו-`entitlements.status = 'active'`. כשתהיה פעולה שמבטלת תשלום או שוללת זכות, קישור פתוח ישייך ויתריע על רכישה שבוטלה.
+  evidence: היום אף RPC לא קובע `voided`, ‏`revoked` או `refunded`, ולכן זה לא קורה. ביקורת 2.2, edge-case 6–7.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-2-join-tracer.md`
+  target: 2.10
+  summary: ‏`babies` פתוחה לכתיבה ישירה של הלקוחה (insert/update לפי עמודות), אבל רק `join_complete` בודק תאריך לידה לא בעתיד ומספר תינוקות. ‏2.10 מוסיף את הבדיקות (trigger או RPC) לפני שמסך הפרופיל כותב.
+  evidence: check לא יכול להשוות ל-`now()`. ביקורת 2.2, blind-hunter 6.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-2-join-tracer.md`
+  target: 6.9
+  summary: ‏`weak_password` של Auth ממופה תמיד ל"סיסמה קצרה מדי". אם יופעל leaked password protection בפרודקשן, סיסמה ארוכה שדלפה תקבל הודעה מטעה. ההחלטה על ההגנה ב-6.9 קובעת גם את הנוסח (`reasons: ["pwned"]`).
+  evidence: ‏`ensureAuthUser` ב-`lib/server/privileged/join.ts`. ביקורת 2.2, blind-hunter 7.

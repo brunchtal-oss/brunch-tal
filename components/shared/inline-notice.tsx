@@ -1,4 +1,9 @@
-import { CircleAlertIcon, InfoIcon, TriangleAlertIcon } from "lucide-react"
+import {
+  CircleAlertIcon,
+  CircleCheckIcon,
+  InfoIcon,
+  TriangleAlertIcon,
+} from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -9,6 +14,10 @@ const TONES = {
     Icon: TriangleAlertIcon,
   },
   error: { className: "bg-error-tint text-error", Icon: CircleAlertIcon },
+  success: {
+    className: "bg-success-tint text-success",
+    Icon: CircleCheckIcon,
+  },
 } as const
 
 // DESIGN.md › inline-notice: status tint with text in the status colour,

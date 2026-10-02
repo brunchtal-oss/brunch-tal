@@ -38,6 +38,10 @@ const nextConfig = {
         source: "/reset/:path*",
         headers: [{ key: "Referrer-Policy", value: "no-referrer" }, noStore],
       },
+      {
+        source: "/join/:path*",
+        headers: [{ key: "Referrer-Policy", value: "no-referrer" }, noStore],
+      },
       { source: "/me", headers: [noStore] },
       { source: "/me/:path*", headers: [noStore] },
       { source: "/admin", headers: [noStore] },

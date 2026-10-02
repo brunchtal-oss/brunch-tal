@@ -7,7 +7,7 @@
 // session state. Fictitious data only; every row a test creates is prefixed
 // with `runId` and removed in `onCleanup`.
 
-import { randomBytes } from "node:crypto"
+import { randomBytes, randomUUID } from "node:crypto"
 
 import pg from "pg"
 
@@ -230,6 +230,31 @@ export async function asServiceRole(db: Db): Promise<void> {
       "asServiceRole must run inside an open transaction (use inRollback)."
     )
   }
+}
+
+/**
+ * Inside an open transaction (inRollback), as the owner: a fictitious Auth
+ * user (a row in auth.users) with the email `test_<runId>_<label>@example.test`,
+ * so it is rolled back with the transaction and never reaches Auth. `id`
+ * defaults to a new uuid (pass join_begin's pending_user_id to stand in for
+ * the Admin API's createUser).
+ */
+export async function insertAuthUser(
+  db: Db,
+  label: string,
+  { id = randomUUID() }: { id?: string } = {}
+): Promise<{ id: string; email: string }> {
+  const email = `${testName(label)}@example.test`.toLowerCase()
+  await db.query(
+    `insert into auth.users (
+       id, instance_id, aud, role, email, encrypted_password,
+       email_confirmed_at, created_at, updated_at,
+       raw_app_meta_data, raw_user_meta_data)
+     values ($1, '00000000-0000-0000-0000-000000000000', 'authenticated',
+       'authenticated', $2, '', now(), now(), now(), '{}', '{}')`,
+    [id, email]
+  )
+  return { id, email }
 }
 
 /**

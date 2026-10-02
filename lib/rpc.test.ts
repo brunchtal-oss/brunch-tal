@@ -49,6 +49,36 @@ describe("callRpc", () => {
     ).resolves.toEqual({ ok: false, code: "LINK_USED" })
   })
 
+  it("passes the detail of a known code through", async () => {
+    rpc.mockResolvedValue({
+      data: null,
+      error: {
+        code: "P0001",
+        message: "INVALID_INPUT",
+        details: '{"field": "phone"}',
+      },
+    })
+    await expect(
+      callRpc(client, "reset_begin", { p_token: TOKEN, p_idempotency_key: KEY })
+    ).resolves.toEqual({
+      ok: false,
+      code: "INVALID_INPUT",
+      detail: { field: "phone" },
+    })
+  })
+
+  it("drops the detail of an unknown code", async () => {
+    rpc.mockResolvedValue({
+      data: null,
+      error: { code: "23505", message: "dup", details: '{"field": "x"}' },
+    })
+    const result = await callRpc(client, "reset_begin", {
+      p_token: TOKEN,
+      p_idempotency_key: KEY,
+    })
+    expect(result).toStrictEqual({ ok: false, code: "SERVER_ERROR" })
+  })
+
   it("maps IDEMPOTENCY_KEY_REUSED", async () => {
     rpc.mockResolvedValue({
       data: null,
