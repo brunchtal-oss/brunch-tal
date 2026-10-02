@@ -21,6 +21,13 @@ export const ERROR_MESSAGES = {
   PAYMENT_METHOD_NOT_SELECTABLE: "אמצעי התשלום הזה הוסתר. בחרי אחר",
   // A sensitive action was sent without its confirmation (AD-7).
   CONFIRM_REQUIRED: "צריך לאשר את השינוי לפני שממשיכים",
+  // Join (story 2.2). INVALID_INPUT of join_begin / join_complete carries
+  // detail.field (email | phone | full_name | photo_consent | dietary_notes |
+  // babies | baby_name | birth_date) and, for a baby, detail.index.
+  CONSENT_REQUIRED: "צריך לאשר את מדיניות הפרטיות כדי להמשיך",
+  LINK_IN_USE: "הקישור הזה כבר בשימוש עם פרטים אחרים. טל תבדוק ותחזור אלייך",
+  // Raised by private.bind_purchase; the join RPCs turn it into a conflict.
+  BIND_CONFLICT: "טל תבדוק את הפרטים ותחזור אלייך",
   // Raised by the adapter (never by SQL).
   INVALID_CREDENTIALS: "המייל או הסיסמה לא תואמים",
   // Correct password, but no active customer profile and not an admin.
@@ -33,8 +40,12 @@ export const ERROR_MESSAGES = {
 
 export type ErrorCode = keyof typeof ERROR_MESSAGES
 
+// The machine-readable part of an error (`detail` of the SQL exception):
+// which field was refused and, in a list, at which index. Never a value.
+export type ErrorDetail = { field?: string; index?: number }
+
 export type ActionResult<T = undefined> =
-  { ok: true; data: T } | { ok: false; code: ErrorCode }
+  { ok: true; data: T } | { ok: false; code: ErrorCode; detail?: ErrorDetail }
 
 export function isErrorCode(value: unknown): value is ErrorCode {
   return typeof value === "string" && Object.hasOwn(ERROR_MESSAGES, value)
@@ -52,4 +63,26 @@ export function codeFromPostgrestError(
     return error.message
   }
   return "SERVER_ERROR"
+}
+
+// PostgREST returns the exception's DETAIL as `details` (a JSON string in
+// our RPCs). Only `field` and `index` are kept.
+export function detailFromPostgrestError(
+  error: { details?: string | null } | null | undefined
+): ErrorDetail | undefined {
+  if (!error?.details) return undefined
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(error.details)
+  } catch {
+    return undefined
+  }
+  if (typeof parsed !== "object" || parsed === null) return undefined
+  const { field, index } = parsed as Record<string, unknown>
+  const detail: ErrorDetail = {}
+  if (typeof field === "string") detail.field = field
+  if (Number.isSafeInteger(index)) detail.index = index as number
+  return detail.field === undefined && detail.index === undefined
+    ? undefined
+    : detail
 }

@@ -12,11 +12,14 @@ async function headersFor(source: string) {
 }
 
 describe("next.config", () => {
-  it("sends no-referrer and no-store on token routes (AD-16)", async () => {
-    const headers = await headersFor("/reset/:path*")
-    expect(headers["Referrer-Policy"]).toBe("no-referrer")
-    expect(headers["Cache-Control"]).toBe("private, no-store")
-  })
+  it.each(["/reset/:path*", "/join/:path*"])(
+    "sends no-referrer and no-store on the token route %s (AD-16)",
+    async (source) => {
+      const headers = await headersFor(source)
+      expect(headers["Referrer-Policy"]).toBe("no-referrer")
+      expect(headers["Cache-Control"]).toBe("private, no-store")
+    }
+  )
 
   it.each(["/me", "/me/:path*", "/admin", "/admin/:path*"])(
     "sends no-store on %s",

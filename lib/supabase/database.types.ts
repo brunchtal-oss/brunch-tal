@@ -151,6 +151,38 @@ export type Database = {
           },
         ]
       }
+      babies: {
+        Row: {
+          birth_date: string
+          created_at: string
+          customer_id: string
+          id: string
+          name: string
+        }
+        Insert: {
+          birth_date: string
+          created_at?: string
+          customer_id: string
+          id?: string
+          name: string
+        }
+        Update: {
+          birth_date?: string
+          created_at?: string
+          customer_id?: string
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "babies_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_settings: {
         Row: {
           admin_expiring_days: number
@@ -210,6 +242,92 @@ export type Database = {
           version?: number
         }
         Relationships: []
+      }
+      content_pages: {
+        Row: {
+          created_at: string
+          draft_content: Json | null
+          published_at: string | null
+          published_content: Json | null
+          published_version: number
+          slug: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          draft_content?: Json | null
+          published_at?: string | null
+          published_content?: Json | null
+          published_version?: number
+          slug: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          draft_content?: Json | null
+          published_at?: string | null
+          published_content?: Json | null
+          published_version?: number
+          slug?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      content_sections: {
+        Row: {
+          created_at: string
+          draft_content: Json | null
+          hidden: boolean
+          id: string
+          key: string
+          kind: string
+          page_slug: string
+          published_at: string | null
+          published_content: Json | null
+          sort_order: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          draft_content?: Json | null
+          hidden?: boolean
+          id?: string
+          key: string
+          kind: string
+          page_slug: string
+          published_at?: string | null
+          published_content?: Json | null
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          draft_content?: Json | null
+          hidden?: boolean
+          id?: string
+          key?: string
+          kind?: string
+          page_slug?: string
+          published_at?: string | null
+          published_content?: Json | null
+          sort_order?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_sections_page_slug_fkey"
+            columns: ["page_slug"]
+            isOneToOne: false
+            referencedRelation: "content_pages"
+            referencedColumns: ["slug"]
+          },
+        ]
       }
       entitlement_movements: {
         Row: {
@@ -624,22 +742,43 @@ export type Database = {
           activated_at: string | null
           anonymized_at: string | null
           created_at: string
+          dietary_notes: string | null
           full_name: string
           id: string
+          phone_e164: string | null
+          photo_consent: boolean
+          photo_consent_at: string | null
+          photo_consent_text_version: number | null
+          privacy_consent_at: string | null
+          privacy_policy_version: number | null
         }
         Insert: {
           activated_at?: string | null
           anonymized_at?: string | null
           created_at?: string
+          dietary_notes?: string | null
           full_name: string
           id: string
+          phone_e164?: string | null
+          photo_consent?: boolean
+          photo_consent_at?: string | null
+          photo_consent_text_version?: number | null
+          privacy_consent_at?: string | null
+          privacy_policy_version?: number | null
         }
         Update: {
           activated_at?: string | null
           anonymized_at?: string | null
           created_at?: string
+          dietary_notes?: string | null
           full_name?: string
           id?: string
+          phone_e164?: string | null
+          photo_consent?: boolean
+          photo_consent_at?: string | null
+          photo_consent_text_version?: number | null
+          privacy_consent_at?: string | null
+          privacy_policy_version?: number | null
         }
         Relationships: []
       }
@@ -697,6 +836,19 @@ export type Database = {
       }
       get_my_session_role: { Args: never; Returns: string }
       issue_reset_token: { Args: { p_user_id: string }; Returns: Json }
+      join_begin: {
+        Args: {
+          p_email: string
+          p_idempotency_key: string
+          p_phone: string
+          p_token: string
+        }
+        Returns: Json
+      }
+      join_complete: {
+        Args: { p_idempotency_key: string; p_profile: Json; p_token: string }
+        Returns: Json
+      }
       preview_admin_approve_payment: {
         Args: {
           p_amount_agorot: number

@@ -43,11 +43,13 @@ describe("navigation", () => {
   })
 
   it("marks the longest matching item as current", () => {
-    const [home, more] = adminNav
+    const [home, payments, more] = adminNav
     expect(isCurrent(adminNav, home, "/admin")).toBe(true)
     expect(isCurrent(adminNav, more, "/admin")).toBe(false)
     expect(isCurrent(adminNav, more, "/admin/more")).toBe(true)
     expect(isCurrent(adminNav, home, "/admin/more")).toBe(false)
+    expect(isCurrent(adminNav, payments, "/admin/payments/new")).toBe(true)
+    expect(isCurrent(adminNav, home, "/admin/payments/new")).toBe(false)
     expect(isCurrent(adminNav, home, "/admin/sessions")).toBe(true)
     expect(isCurrent(adminNav, home, "/administration")).toBe(false)
   })

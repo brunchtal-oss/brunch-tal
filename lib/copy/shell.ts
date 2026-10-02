@@ -15,6 +15,8 @@ export const shellCopy = {
     adminLabel: "ניווט בפאנל הניהול",
     footerLabel: "קישורים",
     home: "בית",
+    sessions: "מפגשים",
+    payments: "תשלומים",
     more: "עוד",
   },
   public: {
