@@ -4,10 +4,18 @@ import { Button } from "@/components/ui/button"
 import { signOutAction } from "@/lib/auth/sign-out"
 import { shellCopy } from "@/lib/copy/shell"
 
-// button-secondary: transparent, 1px ink border, 44px.
-export function SignOutButton({ className }: { className?: string }) {
+// button-secondary: transparent, 1px ink border, 44px. `next`: where the
+// login after signing out goes (passes safeNext in signOutAction).
+export function SignOutButton({
+  className,
+  next,
+}: {
+  className?: string
+  next?: string
+}) {
   return (
     <form action={signOutAction} className={className}>
+      {next && <input type="hidden" name="next" value={next} />}
       <Button
         type="submit"
         variant="outline"

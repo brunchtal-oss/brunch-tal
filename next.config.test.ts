@@ -2,7 +2,11 @@ import { describe, expect, it } from "vitest"
 
 import nextConfig from "./next.config.mjs"
 
-type HeaderRule = { source: string; headers: { key: string; value: string }[] }
+type HeaderRule = {
+  source: string
+  has?: { type: string; key: string; value?: string }[]
+  headers: { key: string; value: string }[]
+}
 
 async function headersFor(source: string) {
   const rules = (await nextConfig.headers!()) as HeaderRule[]
@@ -29,6 +33,24 @@ describe("next.config", () => {
     }
   )
 
+  it("sends no-referrer and no-store on /login only when next is a join link", async () => {
+    const rules = (await nextConfig.headers!()) as HeaderRule[]
+    const login = rules.filter((r) => r.source === "/login")
+    expect(login).toHaveLength(1)
+    const [rule] = login
+    expect(rule.headers).toEqual([
+      { key: "Referrer-Policy", value: "no-referrer" },
+      { key: "Cache-Control", value: "private, no-store" },
+    ])
+    expect(rule.has).toHaveLength(1)
+    const has = rule.has![0]
+    expect(has).toMatchObject({ type: "query", key: "next" })
+    // Next anchors the value as ^value$ against the decoded query value.
+    const matcher = new RegExp(`^${has.value}$`)
+    expect(matcher.test("/join/abc")).toBe(true)
+    expect(matcher.test("/me")).toBe(false)
+  })
+
   it("does not log token routes", () => {
     const logging = nextConfig.logging
     const incoming =
@@ -43,5 +65,15 @@ describe("next.config", () => {
       expect(ignore.some((pattern) => pattern.test(path))).toBe(true)
     }
     expect(ignore.some((pattern) => pattern.test("/login"))).toBe(false)
+    expect(ignore.some((pattern) => pattern.test("/login?next=/me"))).toBe(
+      false
+    )
+    for (const path of [
+      `/login?next=/join/${token}`,
+      `/login?next=%2Fjoin%2F${token}`,
+      `/login?x=1&next=%2Fjoin%2F${token}`,
+    ]) {
+      expect(ignore.some((pattern) => pattern.test(path))).toBe(true)
+    }
   })
 })

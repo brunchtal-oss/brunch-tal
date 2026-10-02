@@ -13,6 +13,7 @@ import {
   testName,
   type Db,
 } from "./support/db"
+import { approve, seedMoney } from "./support/money"
 
 // As the owner. `anonymized` marks a customer whose details were removed;
 // `activated: false` leaves activated_at null.
@@ -174,6 +175,113 @@ describe("token_view state_public", () => {
       expect(await view(db, "x".repeat(43))).toMatchObject({
         state_public: "not_found",
       })
+    })
+  })
+
+  it("is awaiting_login with the product for a join link waiting for an account, and expired once it passed", async () => {
+    await inRollback(async (db) => {
+      const f = await seedMoney(db)
+      await asAuthenticated(db, f.admin)
+      const r = await approve(db, {
+        productId: f.card,
+        amount: 47200,
+        paidOn: f.today,
+        methodId: f.method,
+        key: randomUUID(),
+      })
+      await db.query("reset role")
+      await db.query(
+        "update public.activation_tokens set state = 'awaiting_login', bound_user_id = $2 where id = $1",
+        [r.token_id, f.customerA]
+      )
+      await asServiceRole(db)
+      const awaiting = await view(db, r.token as string)
+      expect(awaiting).toMatchObject({
+        state_public: "awaiting_login",
+        purpose: "join",
+        product_name: testName("card"),
+        amount_agorot: 47200,
+      })
+      expect(awaiting.expires_on).not.toBeNull()
+      // Server-only: the page compares it with the session user.
+      expect(awaiting.bound_user_id).toBe(f.customerA)
+
+      await db.query("reset role")
+      await db.query(
+        "update public.activation_tokens set expires_at = now() - interval '1 second' where id = $1",
+        [r.token_id]
+      )
+      await asServiceRole(db)
+      expect(await view(db, r.token as string)).toMatchObject({
+        state_public: "expired",
+        product_name: null,
+        expires_on: null,
+      })
+    })
+  })
+
+  it("returns bound_user_id only for a join link in awaiting_login", async () => {
+    await inRollback(async (db) => {
+      const f = await seedMoney(db)
+      await asAuthenticated(db, f.admin)
+      const r = await approve(db, {
+        productId: f.card,
+        amount: 47200,
+        paidOn: f.today,
+        methodId: f.method,
+        key: randomUUID(),
+      })
+      await db.query("reset role")
+      const token = r.token as string
+
+      const boundOf = async () => {
+        await asServiceRole(db)
+        const v = await view(db, token)
+        await db.query("reset role")
+        expect(v).toHaveProperty("bound_user_id")
+        return v.bound_user_id
+      }
+
+      // active (pending)
+      expect(await boundOf()).toBeNull()
+
+      await db.query(
+        "update public.activation_tokens set state = 'awaiting_login', bound_user_id = $2 where id = $1",
+        [r.token_id, f.customerA]
+      )
+      expect(await boundOf()).toBe(f.customerA)
+
+      // conflict, with the bound account still on the row
+      await db.query(
+        "update public.activation_tokens set state = 'conflict', conflict_reason = 'bind_conflict' where id = $1",
+        [r.token_id]
+      )
+      expect(await boundOf()).toBeNull()
+
+      // used
+      await db.query(
+        "update public.activation_tokens set state = 'consumed', consumed_at = now(), conflict_reason = null where id = $1",
+        [r.token_id]
+      )
+      expect(await boundOf()).toBeNull()
+
+      // expired awaiting_login
+      await db.query(
+        "update public.activation_tokens set state = 'awaiting_login', consumed_at = null, expires_at = now() - interval '1 second' where id = $1",
+        [r.token_id]
+      )
+      expect(await boundOf()).toBeNull()
+    })
+  })
+
+  it("never returns bound_user_id for a reset link", async () => {
+    await inRollback(async (db) => {
+      const userId = await createProfile(db, "view_reset_bound")
+      await asServiceRole(db)
+      const { token } = await issue(db, userId)
+      const v = await view(db, token)
+      expect(v).toMatchObject({ state_public: "active", purpose: "reset" })
+      expect(v.bound_user_id).toBeNull()
     })
   })
 })

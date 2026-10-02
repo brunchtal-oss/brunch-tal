@@ -25,9 +25,11 @@ export const ERROR_MESSAGES = {
   // detail.field (email | phone | full_name | photo_consent | dietary_notes |
   // babies | baby_name | birth_date) and, for a baby, detail.index.
   CONSENT_REQUIRED: "צריך לאשר את מדיניות הפרטיות כדי להמשיך",
-  LINK_IN_USE: "הקישור הזה כבר בשימוש עם פרטים אחרים. טל תבדוק ותחזור אלייך",
+  // User decision 2026-10-02 (round 2); on /join the last phrase links to
+  // Tal's WhatsApp.
+  LINK_IN_USE: "הלינק מומש. צרי קשר לפרטים נוספים",
   // Raised by private.bind_purchase; the join RPCs turn it into a conflict.
-  BIND_CONFLICT: "טל תבדוק את הפרטים ותחזור אלייך",
+  BIND_CONFLICT: "לא ניתן להוסיף את הרכישה לחשבון. צרי קשר לפרטים נוספים",
   // Raised by the adapter (never by SQL).
   INVALID_CREDENTIALS: "המייל או הסיסמה לא תואמים",
   // Correct password, but no active customer profile and not an admin.

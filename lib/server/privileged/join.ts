@@ -1,6 +1,10 @@
 import "server-only"
 
-import type { JoinLinkState } from "@/lib/auth/join-link-state"
+import {
+  toConflictReason,
+  type ConflictReason,
+  type JoinLinkState,
+} from "@/lib/auth/join-link-state"
 import type { ActionResult, ErrorCode } from "@/lib/errors"
 import { callRpc } from "@/lib/rpc"
 import { createServiceClient } from "@/lib/server/privileged/service-client"
@@ -9,26 +13,37 @@ import { createServiceClient } from "@/lib/server/privileged/service-client"
 // join_begin (intent: claiming + pending_user_id) -> Auth Admin
 // (getUserById, then updateUserById or createUser with that id) ->
 // join_complete (profile, babies, consents, bind_purchase, consumed) ->
-// the action signs in. A failure in the middle leaves the link `claiming`; a
+// the action signs in. Details that match an existing account stop at step 1
+// (existing_account: the link waits for that account to log in and confirm
+// through claim_join, story 2.3); no Auth user is created for them. A failure in the middle leaves the link `claiming`; a
 // retry with the same input gets the same pending_user_id from join_begin and
 // continues from step 2, so no second Auth user and no second binding. The
 // idempotency key (one per page load, AD-5) makes a retry after a lost
 // join_complete response return the stored result. Logs carry only ids and
 // error codes, never the token, password, email, phone or name.
 
-export type { JoinLinkState }
+export type { ConflictReason, JoinLinkState }
 
+// conflictReason: only for a link in conflict (null for an unknown reason).
+// boundUserId: the account an awaiting_login link waits for. Server only:
+// the page compares it with the session user and passes on only the screen
+// choice, never the id.
 export type JoinTokenView = {
   state: JoinLinkState
   productName: string | null
   amountAgorot: number | null
+  conflictReason: ConflictReason | null
+  boundUserId: string | null
 }
 
 type TokenViewResult = {
-  state_public: "active" | "used" | "expired" | "conflict" | "not_found"
+  state_public:
+    "active" | "awaiting_login" | "used" | "expired" | "conflict" | "not_found"
   purpose: string | null
   product_name: string | null
   amount_agorot: number | null
+  conflict_reason?: string | null
+  bound_user_id?: string | null
 }
 
 // Opening the link never changes its state. Unknown, revoked, expired and
@@ -40,19 +55,34 @@ export async function getJoinTokenView(token: string): Promise<JoinTokenView> {
   if (!result.ok) throw new Error("token_view failed")
 
   const view = result.data as TokenViewResult
-  const closed = { productName: null, amountAgorot: null }
+  const closed = {
+    productName: null,
+    amountAgorot: null,
+    conflictReason: null,
+    boundUserId: null,
+  }
   if (view.purpose !== "join") return { state: "expired", ...closed }
   switch (view.state_public) {
     case "active":
+    case "awaiting_login":
       return {
-        state: "active",
+        state: view.state_public,
         productName: view.product_name,
         amountAgorot: view.amount_agorot,
+        conflictReason: null,
+        boundUserId:
+          view.state_public === "awaiting_login"
+            ? (view.bound_user_id ?? null)
+            : null,
       }
     case "used":
       return { state: "used", ...closed }
     case "conflict":
-      return { state: "conflict", ...closed }
+      return {
+        state: "conflict",
+        ...closed,
+        conflictReason: toConflictReason(view.conflict_reason),
+      }
     default:
       return { state: "expired", ...closed }
   }
@@ -70,23 +100,37 @@ export type JoinInput = {
 }
 
 // joined: the account exists and the purchase is bound; `email` is the
-// normalized address to sign in with. conflict: Tal handles it.
+// normalized address to sign in with. existing_account: the details belong to
+// an account, which logs in and confirms (the result never says which field
+// matched). identity_retry: the details matched two accounts, the link stays
+// open for another attempt (with a new idempotency key). conflict: the link
+// stopped, with the reason for the wording (null when unknown).
 export type JoinOutcome =
-  { outcome: "joined"; email: string } | { outcome: "conflict" }
+  | { outcome: "joined"; email: string }
+  | { outcome: "existing_account" }
+  | { outcome: "identity_retry" }
+  | { outcome: "conflict"; reason: ConflictReason | null }
 
 type BeginResult =
   | { outcome: "claiming"; token_id: string; pending_user_id: string }
-  | { outcome: "conflict"; token_id: string }
+  | { outcome: "existing_account"; token_id: string }
+  | { outcome: "identity_retry"; token_id: string }
+  | { outcome: "conflict"; token_id: string; reason?: string | null }
   | { outcome: "joined"; token_id: string }
 
 type CompleteResult =
   | { outcome: "joined"; token_id: string }
-  | { outcome: "conflict"; token_id: string }
+  | { outcome: "conflict"; token_id: string; reason?: string | null }
 
 type ServiceClient = ReturnType<typeof createServiceClient>
 
 type AuthStep =
   { kind: "ready" } | { kind: "conflict" } | { kind: "error"; code: ErrorCode }
+
+const conflict = (reason: unknown): ActionResult<JoinOutcome> => ({
+  ok: true,
+  data: { outcome: "conflict", reason: toConflictReason(reason) },
+})
 
 // Step 2: the Auth user pending_user_id exists with this password. Called
 // after join_begin answered `claiming` for this input, but a parallel
@@ -166,6 +210,33 @@ async function ensureAuthUser(
   return { kind: "error", code: "SERVER_ERROR" }
 }
 
+// A conflict in join_complete (phone taken, BIND_CONFLICT) rolled back the
+// profile, so the Auth user of step 2 has no profile and would block a future
+// link with the same email (not_activated). It is deleted; a failure is only
+// logged (the customer still sees the conflict), and a user that is already
+// gone (a retry of the same conflict) is fine.
+async function deleteOrphanUser(
+  supabase: ServiceClient,
+  userId: string,
+  tokenId: string
+): Promise<void> {
+  try {
+    const { error } = await supabase.auth.admin.deleteUser(userId)
+    if (!error || error.status === 404 || error.code === "user_not_found") {
+      return
+    }
+    console.error("join.delete_orphan_failed", {
+      tokenId,
+      authCode: error.code ?? "unknown",
+    })
+  } catch {
+    console.error("join.delete_orphan_failed", {
+      tokenId,
+      authCode: "exception",
+    })
+  }
+}
+
 export async function submitJoin(
   token: string,
   input: JoinInput,
@@ -184,8 +255,12 @@ export async function submitJoin(
   if (!begin.ok) return begin
 
   const started = begin.data as BeginResult
-  if (started.outcome === "conflict") {
-    return { ok: true, data: { outcome: "conflict" } }
+  if (started.outcome === "conflict") return conflict(started.reason)
+  if (started.outcome === "existing_account") {
+    return { ok: true, data: { outcome: "existing_account" } }
+  }
+  if (started.outcome === "identity_retry") {
+    return { ok: true, data: { outcome: "identity_retry" } }
   }
   // This key already completed the join and only the response was lost: no
   // Auth change, just sign in.
@@ -202,9 +277,8 @@ export async function submitJoin(
     input.password,
     tokenId
   )
-  if (auth.kind === "conflict") {
-    return { ok: true, data: { outcome: "conflict" } }
-  }
+  // email_exists in Auth: shown like phone_taken.
+  if (auth.kind === "conflict") return conflict("email_exists")
   if (auth.kind === "error") return { ok: false, code: auth.code }
 
   const complete = await callRpc(supabase, "join_complete", {
@@ -234,7 +308,8 @@ export async function submitJoin(
 
   const done = complete.data as CompleteResult
   if (done.outcome === "conflict") {
-    return { ok: true, data: { outcome: "conflict" } }
+    await deleteOrphanUser(supabase, started.pending_user_id, tokenId)
+    return conflict(done.reason)
   }
   return { ok: true, data: { outcome: "joined", email } }
 }

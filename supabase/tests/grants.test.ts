@@ -61,6 +61,7 @@ const EXPECTED_GRANTS = [
   "function private.current_customer_id() authenticated EXECUTE",
   "function private.is_admin() authenticated EXECUTE",
   "function public.admin_approve_payment(p_product_id uuid, p_event_id uuid, p_amount_agorot integer, p_amount_override_reason text, p_paid_on date, p_payment_method_id uuid, p_reference text, p_note text, p_confirmed boolean, p_idempotency_key uuid) authenticated EXECUTE",
+  "function public.claim_join(p_token text, p_idempotency_key uuid) authenticated EXECUTE",
   "function public.get_my_session_role() authenticated EXECUTE",
   "function public.issue_reset_token(p_user_id uuid) service_role EXECUTE",
   "function public.join_begin(p_token text, p_email text, p_phone text, p_idempotency_key uuid) service_role EXECUTE",

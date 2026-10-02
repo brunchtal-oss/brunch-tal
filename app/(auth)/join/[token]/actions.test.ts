@@ -1,19 +1,26 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { submitJoinAction } from "./actions"
+import { claimJoinAction, submitJoinAction } from "./actions"
 import { validateJoin } from "./join-input"
 
 const submitJoin = vi.fn()
+const getJoinTokenView = vi.fn()
 const signInWithPassword = vi.fn()
+const rpc = vi.fn()
+const getClaims = vi.fn()
 const redirect = vi.fn((path: string) => {
   throw new Error(`REDIRECT:${path}`)
 })
 
 vi.mock("@/lib/server/privileged/join", () => ({
   submitJoin: (...args: unknown[]) => submitJoin(...args),
+  getJoinTokenView: (...args: unknown[]) => getJoinTokenView(...args),
 }))
 vi.mock("@/lib/supabase/server", () => ({
-  createClient: async () => ({ auth: { signInWithPassword } }),
+  createClient: async () => ({
+    auth: { signInWithPassword, getClaims },
+    rpc,
+  }),
 }))
 vi.mock("next/navigation", () => ({
   redirect: (path: string) => redirect(path),
@@ -57,7 +64,11 @@ function form(
 
 beforeEach(() => {
   submitJoin.mockReset()
+  getJoinTokenView.mockReset()
   signInWithPassword.mockReset()
+  rpc.mockReset()
+  getClaims.mockReset()
+  getClaims.mockResolvedValue({ data: { claims: { sub: "u" } } })
   redirect.mockClear()
   vi.spyOn(console, "error").mockImplementation(() => {})
 })
@@ -222,12 +233,46 @@ describe("submitJoinAction", () => {
     expect(redirect).not.toHaveBeenCalled()
   })
 
-  it("shows the conflict screen", async () => {
-    submitJoin.mockResolvedValue({ ok: true, data: { outcome: "conflict" } })
+  it("sends an existing account back to the page, without signing in", async () => {
+    submitJoin.mockResolvedValue({
+      ok: true,
+      data: { outcome: "existing_account" },
+    })
+    await expect(submitJoinAction(null, form())).rejects.toThrow(
+      `REDIRECT:/join/${TOKEN}`
+    )
+    expect(signInWithPassword).not.toHaveBeenCalled()
+  })
+
+  it("shows the conflict screen with its reason", async () => {
+    submitJoin.mockResolvedValue({
+      ok: true,
+      data: { outcome: "conflict", reason: "not_activated" },
+    })
     await expect(submitJoinAction(null, form())).resolves.toEqual({
       status: "conflict",
+      reason: "not_activated",
     })
     expect(signInWithPassword).not.toHaveBeenCalled()
+  })
+
+  it("keeps the form after identity_retry and hands a new idempotency key", async () => {
+    submitJoin.mockResolvedValue({
+      ok: true,
+      data: { outcome: "identity_retry" },
+    })
+    const result = await submitJoinAction(null, form())
+    expect(result).toEqual({
+      status: "identity_retry",
+      idempotencyKey: expect.stringMatching(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
+      ),
+    })
+    expect(
+      result?.status === "identity_retry" && result.idempotencyKey
+    ).not.toBe(KEY)
+    expect(signInWithPassword).not.toHaveBeenCalled()
+    expect(redirect).not.toHaveBeenCalled()
   })
 
   it.each([
@@ -287,6 +332,117 @@ describe("submitJoinAction", () => {
       status: "error",
       code: "CONSENT_REQUIRED",
       errors: [{ field: "privacy", message: "CONSENT_REQUIRED" }],
+    })
+  })
+})
+
+describe("claimJoinAction", () => {
+  const claimForm = (overrides: Record<string, string | null> = {}) => {
+    const data = new FormData()
+    for (const [name, value] of Object.entries({
+      token: TOKEN,
+      idempotencyKey: KEY,
+      ...overrides,
+    })) {
+      if (value !== null) data.append(name, value)
+    }
+    return data
+  }
+  const notAuthorized = {
+    data: null,
+    error: { code: "P0001", message: "NOT_AUTHORIZED" },
+  }
+
+  it.each([
+    ["the token is missing", { token: null }],
+    ["the key is not a uuid", { idempotencyKey: "nope" }],
+  ])("shows the expired screen when %s", async (_label, overrides) => {
+    await expect(claimJoinAction(null, claimForm(overrides))).resolves.toEqual({
+      status: "expired",
+    })
+    expect(rpc).not.toHaveBeenCalled()
+  })
+
+  it("claims with the session client, then goes to /me", async () => {
+    rpc.mockResolvedValue({
+      data: { outcome: "claimed", payment_id: "pay-1" },
+      error: null,
+    })
+    await expect(
+      claimJoinAction(null, claimForm({ token: `%E2%80%8F${TOKEN}` }))
+    ).rejects.toThrow("REDIRECT:/me")
+    expect(rpc).toHaveBeenCalledWith("claim_join", {
+      p_token: TOKEN,
+      p_idempotency_key: KEY,
+    })
+    expect(getJoinTokenView).not.toHaveBeenCalled()
+  })
+
+  it("shows the conflict screen for a bind conflict", async () => {
+    rpc.mockResolvedValue({ data: { outcome: "conflict" }, error: null })
+    await expect(claimJoinAction(null, claimForm())).resolves.toEqual({
+      status: "conflict",
+      reason: "bind_conflict",
+    })
+    expect(redirect).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    ["used", { status: "used" }],
+    ["expired", { status: "expired" }],
+    ["conflict", { status: "conflict", reason: "two_accounts" }],
+    ["awaiting_login", { status: "other_account" }],
+  ])(
+    "reads the link again after NOT_AUTHORIZED: %s",
+    async (state, expected) => {
+      rpc.mockResolvedValue(notAuthorized)
+      getJoinTokenView.mockResolvedValue({
+        state,
+        productName: null,
+        amountAgorot: null,
+        conflictReason: state === "conflict" ? "two_accounts" : null,
+      })
+      await expect(claimJoinAction(null, claimForm())).resolves.toEqual(
+        expected
+      )
+      expect(getJoinTokenView).toHaveBeenCalledWith(TOKEN)
+    }
+  )
+
+  it("sends an active (unbound) link back to the page", async () => {
+    rpc.mockResolvedValue(notAuthorized)
+    getJoinTokenView.mockResolvedValue({ state: "active" })
+    await expect(claimJoinAction(null, claimForm())).rejects.toThrow(
+      `REDIRECT:/join/${TOKEN}`
+    )
+  })
+
+  it("sends a session that ended since the page opened to the login", async () => {
+    rpc.mockResolvedValue(notAuthorized)
+    getJoinTokenView.mockResolvedValue({ state: "awaiting_login" })
+    getClaims.mockResolvedValue({ data: null })
+    await expect(claimJoinAction(null, claimForm())).rejects.toThrow(
+      `REDIRECT:/login?next=%2Fjoin%2F${TOKEN}`
+    )
+  })
+
+  it("shows a server error when reading the link again fails", async () => {
+    rpc.mockResolvedValue(notAuthorized)
+    getJoinTokenView.mockRejectedValue(new Error("token_view failed"))
+    await expect(claimJoinAction(null, claimForm())).resolves.toEqual({
+      status: "error",
+      code: "SERVER_ERROR",
+    })
+  })
+
+  it("passes other codes through", async () => {
+    rpc.mockResolvedValue({
+      data: null,
+      error: { code: "PGRST000", message: "x" },
+    })
+    await expect(claimJoinAction(null, claimForm())).resolves.toEqual({
+      status: "error",
+      code: "SERVER_ERROR",
     })
   })
 })

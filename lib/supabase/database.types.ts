@@ -23,6 +23,7 @@ export type Database = {
           customer_id: string | null
           expires_at: string
           id: string
+          identity_attempts: number
           input_hash: string | null
           payment_id: string | null
           pending_user_id: string | null
@@ -39,6 +40,7 @@ export type Database = {
           customer_id?: string | null
           expires_at: string
           id?: string
+          identity_attempts?: number
           input_hash?: string | null
           payment_id?: string | null
           pending_user_id?: string | null
@@ -55,6 +57,7 @@ export type Database = {
           customer_id?: string | null
           expires_at?: string
           id?: string
+          identity_attempts?: number
           input_hash?: string | null
           payment_id?: string | null
           pending_user_id?: string | null
@@ -745,6 +748,7 @@ export type Database = {
           dietary_notes: string | null
           full_name: string
           id: string
+          pending_email: string | null
           phone_e164: string | null
           photo_consent: boolean
           photo_consent_at: string | null
@@ -759,6 +763,7 @@ export type Database = {
           dietary_notes?: string | null
           full_name: string
           id: string
+          pending_email?: string | null
           phone_e164?: string | null
           photo_consent?: boolean
           photo_consent_at?: string | null
@@ -773,6 +778,7 @@ export type Database = {
           dietary_notes?: string | null
           full_name?: string
           id?: string
+          pending_email?: string | null
           phone_e164?: string | null
           photo_consent?: boolean
           photo_consent_at?: string | null
@@ -832,6 +838,10 @@ export type Database = {
           p_product_id: string
           p_reference: string
         }
+        Returns: Json
+      }
+      claim_join: {
+        Args: { p_idempotency_key: string; p_token: string }
         Returns: Json
       }
       get_my_session_role: { Args: never; Returns: string }

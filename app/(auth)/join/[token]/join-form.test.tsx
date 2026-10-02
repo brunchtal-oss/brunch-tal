@@ -16,12 +16,20 @@ const PHOTO = {
   no_label: "no label",
 }
 
-function render(linkState: "active" | "used" | "expired" | "conflict") {
+function render(
+  linkState: "active" | "used" | "expired" | "conflict",
+  extra: {
+    conflictReason?: "two_accounts" | "not_activated" | null
+    contactHref?: string | null
+  } = {}
+) {
   return renderToStaticMarkup(
     <JoinForm
       token={TOKEN}
       idempotencyKey={KEY}
       linkState={linkState}
+      conflictReason={extra.conflictReason}
+      contactHref={extra.contactHref}
       productName="Card"
       amountAgorot={47200}
       photoConsent={PHOTO}
@@ -84,10 +92,29 @@ describe("JoinForm", () => {
 
   it.each([
     ["used", joinCopy.used],
-    ["conflict", joinCopy.conflict],
+    ["conflict", joinCopy.conflicts.bind_conflict],
   ] as const)("shows the %s screen instead of the form", (state, text) => {
     const html = render(state)
     expect(html).toContain(text)
     expect(html).not.toContain('name="password"')
+  })
+})
+
+describe("JoinForm conflict reason", () => {
+  it("words a link that opened in conflict by its stored reason, with the WhatsApp link", () => {
+    const href = "https://wa.me/972544256456"
+    const html = render("conflict", {
+      conflictReason: "two_accounts",
+      contactHref: href,
+    })
+    const text = joinCopy.conflicts.two_accounts
+    expect(html).toContain(text.slice(0, text.indexOf(joinCopy.contactPhrase)))
+    expect(html).toContain(`href="${href}"`)
+  })
+
+  it("shows plain text without published business details", () => {
+    const html = render("conflict", { conflictReason: "not_activated" })
+    expect(html).toContain(joinCopy.conflicts.not_activated)
+    expect(html).not.toContain("wa.me")
   })
 })

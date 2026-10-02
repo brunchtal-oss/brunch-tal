@@ -9,12 +9,13 @@ const tokenView = vi.fn()
 const getUserById = vi.fn()
 const updateUserById = vi.fn()
 const createUser = vi.fn()
+const deleteUser = vi.fn()
 
 vi.mock("@/lib/server/privileged/service-client", () => ({
   createServiceClient: () => ({
     rpc: (name: string, args: unknown) =>
       name === "token_view" ? tokenView(name, args) : rpc(name, args),
-    auth: { admin: { getUserById, updateUserById, createUser } },
+    auth: { admin: { getUserById, updateUserById, createUser, deleteUser } },
   }),
 }))
 
@@ -59,9 +60,17 @@ function rpcNames() {
 }
 
 beforeEach(() => {
-  for (const fn of [rpc, tokenView, getUserById, updateUserById, createUser]) {
+  for (const fn of [
+    rpc,
+    tokenView,
+    getUserById,
+    updateUserById,
+    createUser,
+    deleteUser,
+  ]) {
     fn.mockReset()
   }
+  deleteUser.mockResolvedValue({ data: { user: null }, error: null })
   tokenView.mockImplementation((name: string, args: unknown) => rpc(name, args))
   vi.spyOn(console, "error").mockImplementation(() => {})
 })
@@ -71,8 +80,13 @@ describe("getJoinTokenView", () => {
     data: {
       state_public,
       purpose,
-      product_name: state_public === "active" ? "Card" : null,
-      amount_agorot: state_public === "active" ? 47200 : null,
+      product_name: ["active", "awaiting_login"].includes(state_public)
+        ? "Card"
+        : null,
+      amount_agorot: ["active", "awaiting_login"].includes(state_public)
+        ? 47200
+        : null,
+      bound_user_id: state_public === "awaiting_login" ? USER_ID : null,
     },
     error: null,
   })
@@ -83,9 +97,80 @@ describe("getJoinTokenView", () => {
       state: "active",
       productName: "Card",
       amountAgorot: 47200,
+      conflictReason: null,
+      boundUserId: null,
     })
     expect(rpc).toHaveBeenCalledWith("token_view", { p_token: TOKEN })
   })
+
+  it("returns the product of a link waiting for an existing account", async () => {
+    rpc.mockResolvedValue(view("awaiting_login"))
+    await expect(getJoinTokenView(TOKEN)).resolves.toEqual({
+      state: "awaiting_login",
+      productName: "Card",
+      amountAgorot: 47200,
+      conflictReason: null,
+      boundUserId: USER_ID,
+    })
+  })
+
+  it("keeps the bound account only for an awaiting_login link", async () => {
+    for (const state of ["active", "used", "conflict", "expired"]) {
+      rpc.mockResolvedValue({
+        data: {
+          state_public: state,
+          purpose: "join",
+          product_name: null,
+          amount_agorot: null,
+          bound_user_id: USER_ID,
+        },
+        error: null,
+      })
+      await expect(getJoinTokenView(TOKEN)).resolves.toMatchObject({
+        boundUserId: null,
+      })
+    }
+    rpc.mockResolvedValue({
+      data: {
+        state_public: "awaiting_login",
+        purpose: "join",
+        product_name: "Card",
+        amount_agorot: 47200,
+      },
+      error: null,
+    })
+    await expect(getJoinTokenView(TOKEN)).resolves.toMatchObject({
+      boundUserId: null,
+    })
+  })
+
+  it.each([
+    ["two_accounts", "two_accounts"],
+    ["bind_conflict", "bind_conflict"],
+    [null, null],
+    ["identity_match", null],
+  ])(
+    "returns the stored reason %j of a conflict link",
+    async (reason, expected) => {
+      rpc.mockResolvedValue({
+        data: {
+          state_public: "conflict",
+          purpose: "join",
+          product_name: null,
+          amount_agorot: null,
+          conflict_reason: reason,
+        },
+        error: null,
+      })
+      await expect(getJoinTokenView(TOKEN)).resolves.toEqual({
+        state: "conflict",
+        productName: null,
+        amountAgorot: null,
+        conflictReason: expected,
+        boundUserId: null,
+      })
+    }
+  )
 
   it.each([
     ["used", "used"],
@@ -109,6 +194,8 @@ describe("getJoinTokenView", () => {
         state: "expired",
         productName: null,
         amountAgorot: null,
+        conflictReason: null,
+        boundUserId: null,
       })
     }
   )
@@ -242,7 +329,7 @@ describe("submitJoin", () => {
 
     await expect(submitJoin(TOKEN, INPUT, KEY)).resolves.toEqual({
       ok: true,
-      data: { outcome: "conflict" },
+      data: { outcome: "conflict", reason: "email_exists" },
     })
     expect(rpcNames()).toEqual(["join_begin"])
   })
@@ -305,28 +392,166 @@ describe("submitJoin", () => {
 
   it("returns a begin conflict without touching Auth", async () => {
     rpc.mockResolvedValue({
-      data: { outcome: "conflict", token_id: "tok-1" },
+      data: { outcome: "conflict", token_id: "tok-1", reason: "two_accounts" },
       error: null,
     })
     await expect(submitJoin(TOKEN, INPUT, KEY)).resolves.toEqual({
       ok: true,
-      data: { outcome: "conflict" },
+      data: { outcome: "conflict", reason: "two_accounts" },
     })
     expect(getUserById).not.toHaveBeenCalled()
   })
 
-  it("returns a complete conflict (phone taken or BIND_CONFLICT)", async () => {
+  it("returns identity_retry without touching Auth", async () => {
+    rpc.mockResolvedValue({
+      data: { outcome: "identity_retry", token_id: "tok-1" },
+      error: null,
+    })
+    await expect(submitJoin(TOKEN, INPUT, KEY)).resolves.toEqual({
+      ok: true,
+      data: { outcome: "identity_retry" },
+    })
+    expect(getUserById).not.toHaveBeenCalled()
+    expect(rpcNames()).toEqual(["join_begin"])
+  })
+
+  it.each([
+    ["not_activated", "not_activated"],
+    [undefined, null],
+    ["something_else", null],
+  ])("passes the begin conflict reason %j as %j", async (reason, expected) => {
+    rpc.mockResolvedValue({
+      data: { outcome: "conflict", token_id: "tok-1", reason },
+      error: null,
+    })
+    await expect(submitJoin(TOKEN, INPUT, KEY)).resolves.toEqual({
+      ok: true,
+      data: { outcome: "conflict", reason: expected },
+    })
+  })
+
+  it("returns existing_account without touching Auth", async () => {
+    rpc.mockResolvedValue({
+      data: { outcome: "existing_account", token_id: "tok-1" },
+      error: null,
+    })
+    await expect(submitJoin(TOKEN, INPUT, KEY)).resolves.toEqual({
+      ok: true,
+      data: { outcome: "existing_account" },
+    })
+    expect(getUserById).not.toHaveBeenCalled()
+    expect(createUser).not.toHaveBeenCalled()
+    expect(rpcNames()).toEqual(["join_begin"])
+  })
+
+  it("returns a complete conflict (phone taken or BIND_CONFLICT) and deletes the orphan Auth user", async () => {
     rpc.mockImplementation(async (name: string) =>
       name === "join_begin"
         ? claiming
-        : { data: { outcome: "conflict", token_id: "tok-1" }, error: null }
+        : {
+            data: {
+              outcome: "conflict",
+              token_id: "tok-1",
+              reason: "phone_taken",
+            },
+            error: null,
+          }
     )
     getUserById.mockResolvedValue(found)
     updateUserById.mockResolvedValue(ok)
     await expect(submitJoin(TOKEN, INPUT, KEY)).resolves.toEqual({
       ok: true,
-      data: { outcome: "conflict" },
+      data: { outcome: "conflict", reason: "phone_taken" },
     })
+    expect(deleteUser).toHaveBeenCalledWith(USER_ID)
+    expect(console.error).not.toHaveBeenCalled()
+  })
+
+  it("does not delete any Auth user for a begin conflict or an email that exists", async () => {
+    rpc.mockResolvedValue({
+      data: { outcome: "conflict", token_id: "tok-1" },
+      error: null,
+    })
+    await submitJoin(TOKEN, INPUT, KEY)
+
+    rpc.mockResolvedValue(claiming)
+    getUserById.mockResolvedValue(notFound)
+    createUser.mockResolvedValue({
+      data: { user: null },
+      error: { status: 422, code: "email_exists", message: "x" },
+    })
+    await submitJoin(TOKEN, INPUT, KEY)
+
+    expect(deleteUser).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    [
+      "an Auth error",
+      async () => ({
+        data: { user: null },
+        error: { status: 500, code: "unexpected_failure", message: "x" },
+      }),
+      "unexpected_failure",
+    ],
+    [
+      "a thrown request",
+      async () => {
+        throw new Error("fetch failed")
+      },
+      "exception",
+    ],
+  ])(
+    "keeps the conflict when deleting the orphan fails (%s), logging only ids and codes",
+    async (_label, failure, authCode) => {
+      rpc.mockImplementation(async (name: string) =>
+        name === "join_begin"
+          ? claiming
+          : {
+              data: {
+                outcome: "conflict",
+                token_id: "tok-1",
+                reason: "phone_taken",
+              },
+              error: null,
+            }
+      )
+      getUserById.mockResolvedValue(found)
+      updateUserById.mockResolvedValue(ok)
+      deleteUser.mockImplementation(failure)
+
+      await expect(submitJoin(TOKEN, INPUT, KEY)).resolves.toEqual({
+        ok: true,
+        data: { outcome: "conflict", reason: "phone_taken" },
+      })
+      expect(console.error).toHaveBeenCalledWith("join.delete_orphan_failed", {
+        tokenId: "tok-1",
+        authCode,
+      })
+    }
+  )
+
+  it("treats an orphan that is already gone as deleted", async () => {
+    rpc.mockImplementation(async (name: string) =>
+      name === "join_begin"
+        ? claiming
+        : {
+            data: {
+              outcome: "conflict",
+              token_id: "tok-1",
+              reason: "phone_taken",
+            },
+            error: null,
+          }
+    )
+    getUserById.mockResolvedValue(found)
+    updateUserById.mockResolvedValue(ok)
+    deleteUser.mockResolvedValue({
+      data: { user: null },
+      error: { status: 404, code: "user_not_found", message: "x" },
+    })
+    await submitJoin(TOKEN, INPUT, KEY)
+    expect(console.error).not.toHaveBeenCalled()
   })
 
   it.each(["LINK_USED", "LINK_EXPIRED", "LINK_IN_USE"])(
