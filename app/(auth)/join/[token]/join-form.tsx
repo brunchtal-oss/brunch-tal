@@ -21,16 +21,22 @@ import {
 import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"
 import { Textarea } from "@/components/ui/textarea"
-import type { JoinLinkState } from "@/lib/auth/join-link-state"
 import { authCopy } from "@/lib/copy/auth"
+import type { ConflictReason } from "@/lib/auth/join-link-state"
 import { joinCopy, type JoinErrorKey } from "@/lib/copy/join"
 import type { PhotoConsentContent } from "@/lib/content/schema"
 import { errorMessage, type ErrorCode } from "@/lib/errors"
 import { formatAgorot } from "@/lib/money"
 
 import { submitJoinAction, type JoinFormState } from "./actions"
+import { ContactText } from "./contact-text"
 import { MAX_BABIES, type JoinField, type JoinFieldError } from "./join-input"
-import { joinView } from "./join-view"
+import {
+  conflictMessage,
+  joinView,
+  nextIdempotencyKey,
+  type FormLinkState,
+} from "./join-view"
 
 function messageOf(message: ErrorCode | JoinErrorKey): string {
   return Object.hasOwn(joinCopy.errors, message)
@@ -55,6 +61,8 @@ export function JoinForm({
   token,
   idempotencyKey,
   linkState,
+  conflictReason = null,
+  contactHref = null,
   productName,
   amountAgorot,
   photoConsent,
@@ -62,7 +70,11 @@ export function JoinForm({
 }: {
   token: string
   idempotencyKey: string
-  linkState: JoinLinkState
+  linkState: FormLinkState
+  // The reason of a link that opened in conflict.
+  conflictReason?: ConflictReason | null
+  // Tal's WhatsApp for the contact phrase (null: plain text).
+  contactHref?: string | null
   productName: string | null
   amountAgorot: number | null
   photoConsent: PhotoConsentContent
@@ -80,6 +92,11 @@ export function JoinForm({
   // last result no longer match their rows: hide them until the next submit.
   const [babyErrorsClearedFor, setBabyErrorsClearedFor] =
     useState<JoinFormState>(null)
+
+  // identity_retry hands a new key; it stays for every later attempt.
+  const [currentKey, setCurrentKey] = useState(idempotencyKey)
+  const nextKey = nextIdempotencyKey(state, currentKey)
+  if (nextKey !== currentKey) setCurrentKey(nextKey)
 
   const view = joinView(state, linkState)
   const errors: JoinFieldError[] =
@@ -127,9 +144,16 @@ export function JoinForm({
     return (
       <Alert aria-live="polite">
         <AlertTitle className="whitespace-normal">
-          {view === "expired"
-            ? errorMessage("LINK_EXPIRED")
-            : joinCopy.conflict}
+          {view === "expired" ? (
+            errorMessage("LINK_EXPIRED")
+          ) : (
+            <ContactText
+              text={conflictMessage(
+                state?.status === "conflict" ? state.reason : conflictReason
+              )}
+              href={contactHref}
+            />
+          )}
         </AlertTitle>
       </Alert>
     )
@@ -178,7 +202,7 @@ export function JoinForm({
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
       <input type="hidden" name="token" value={token} />
-      <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
+      <input type="hidden" name="idempotencyKey" value={nextKey} />
 
       {productName && amountAgorot !== null && (
         <p className="text-base font-semibold">
@@ -467,9 +491,19 @@ export function JoinForm({
         )}
       </fieldset>
 
+      {state?.status === "identity_retry" && (
+        <Alert variant="destructive">
+          <AlertDescription>
+            <ContactText text={joinCopy.identityRetry} href={contactHref} />
+          </AlertDescription>
+        </Alert>
+      )}
+
       {formError && (
         <Alert variant="destructive">
-          <AlertDescription>{errorMessage(formError)}</AlertDescription>
+          <AlertDescription>
+            <ContactText text={errorMessage(formError)} href={contactHref} />
+          </AlertDescription>
         </Alert>
       )}
 

@@ -46,4 +46,34 @@ describe("signOutAction", () => {
     await expect(signOutAction()).rejects.toMatchObject({ url: "/login" })
     expect(signOut).toHaveBeenCalledTimes(1)
   })
+
+  it("keeps a safe next for the next login", async () => {
+    rpc.mockResolvedValue({ data: "customer", error: null })
+    const data = new FormData()
+    data.set("next", "/join/abc")
+    await expect(signOutAction(data)).rejects.toMatchObject({
+      url: "/login?next=%2Fjoin%2Fabc",
+    })
+  })
+
+  it.each(["https://evil.example/x", "//evil.example", ""])(
+    "drops an unsafe next %j",
+    async (next) => {
+      rpc.mockResolvedValue({ data: "none", error: null })
+      const data = new FormData()
+      data.set("next", next)
+      await expect(signOutAction(data)).rejects.toMatchObject({
+        url: "/login",
+      })
+    }
+  )
+
+  it("sends an admin to /admin/login whatever the next", async () => {
+    rpc.mockResolvedValue({ data: "admin", error: null })
+    const data = new FormData()
+    data.set("next", "/join/abc")
+    await expect(signOutAction(data)).rejects.toMatchObject({
+      url: "/admin/login",
+    })
+  })
 })

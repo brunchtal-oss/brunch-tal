@@ -579,22 +579,25 @@ describe("join", () => {
     })
   })
 
-  it.each(["email", "phone"])(
-    "sends a link whose %s already exists to conflict, creating nothing",
-    async (match) => {
+  it.each([
+    ["the email of an Auth user without a profile", "orphan"],
+    ["the phone of an activated account", "account"],
+  ])(
+    "classifies a link whose details match %s (2.3), creating nothing",
+    async (_label, match) => {
       await inRollback(async (db) => {
         const a = await approveCard(db)
-        const existing = await insertAuthUser(db, "existing")
+        const orphan = await insertAuthUser(db, "existing")
         const phone = testPhone()
         await db.query(
           "update public.profiles set phone_e164 = $1 where id = $2",
           [e164(phone), a.f.customerA]
         )
         const email =
-          match === "email"
-            ? existing.email.toUpperCase()
+          match === "orphan"
+            ? orphan.email.toUpperCase()
             : `${testName("fresh")}@example.test`
-        const usedPhone = match === "phone" ? phone : testPhone()
+        const usedPhone = match === "account" ? phone : testPhone()
 
         const result = await call(db, BEGIN, [
           a.token,
@@ -602,23 +605,42 @@ describe("join", () => {
           usedPhone,
           randomUUID(),
         ])
-        expect(result).toEqual({ outcome: "conflict", token_id: a.tokenId })
-        expect(await tokenRow(db, a.tokenId)).toMatchObject({
-          state: "conflict",
-          conflict_reason: "identity_match",
-          pending_user_id: null,
-        })
-        // Retrying stays a conflict, and complete does not go on.
+        if (match === "orphan") {
+          expect(result).toEqual({
+            outcome: "conflict",
+            token_id: a.tokenId,
+            reason: "not_activated",
+          })
+          expect(await tokenRow(db, a.tokenId)).toMatchObject({
+            state: "conflict",
+            conflict_reason: "not_activated",
+            pending_user_id: null,
+          })
+        } else {
+          expect(result).toEqual({
+            outcome: "existing_account",
+            token_id: a.tokenId,
+          })
+          expect(await tokenRow(db, a.tokenId)).toMatchObject({
+            state: "awaiting_login",
+            bound_user_id: a.f.customerA,
+            pending_user_id: null,
+          })
+        }
+        // Retrying gives the same answer, and complete does not go on.
         expect(
           await call(db, BEGIN, [a.token, email, usedPhone, randomUUID()])
         ).toEqual(result)
-        expect(
-          await call(db, COMPLETE, [
-            a.token,
-            JSON.stringify(profile(email, usedPhone)),
-            randomUUID(),
-          ])
-        ).toEqual(result)
+        const body = JSON.stringify(profile(email, usedPhone))
+        if (match === "orphan") {
+          expect(
+            await call(db, COMPLETE, [a.token, body, randomUUID()])
+          ).toEqual(result)
+        } else {
+          expect(
+            await callError(db, COMPLETE, [a.token, body, randomUUID()])
+          ).toMatchObject({ code: "P0001", message: "LINK_EXPIRED" })
+        }
         expect(
           await count(
             db,
@@ -649,7 +671,11 @@ describe("join", () => {
         JSON.stringify(profile(email, phone)),
         randomUUID(),
       ])
-      expect(done).toEqual({ outcome: "conflict", token_id: a.tokenId })
+      expect(done).toEqual({
+        outcome: "conflict",
+        token_id: a.tokenId,
+        reason: "bind_conflict",
+      })
       expect(await tokenRow(db, a.tokenId)).toMatchObject({
         state: "conflict",
         conflict_reason: "bind_conflict",
@@ -690,7 +716,11 @@ describe("join", () => {
           JSON.stringify(profile(email, phone)),
           randomUUID(),
         ])
-      ).toEqual({ outcome: "conflict", token_id: a.tokenId })
+      ).toEqual({
+        outcome: "conflict",
+        token_id: a.tokenId,
+        reason: "phone_taken",
+      })
       expect(await tokenRow(db, a.tokenId)).toMatchObject({
         state: "conflict",
         conflict_reason: "phone_taken",

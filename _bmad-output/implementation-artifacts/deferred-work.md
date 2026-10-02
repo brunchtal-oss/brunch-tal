@@ -89,3 +89,13 @@
   target: 6.9
   summary: ‏`weak_password` של Auth ממופה תמיד ל"סיסמה קצרה מדי". אם יופעל leaked password protection בפרודקשן, סיסמה ארוכה שדלפה תקבל הודעה מטעה. ההחלטה על ההגנה ב-6.9 קובעת גם את הנוסח (`reasons: ["pwned"]`).
   evidence: ‏`ensureAuthUser` ב-`lib/server/privileged/join.ts`. ביקורת 2.2, blind-hunter 7.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-3-existing-account-and-identity-conflicts.md`
+  target: 2.4
+  summary: קישור ב-`awaiting_login` נשאר קשור לחשבון עד שהוא פג, גם כשהלקוחה הקלידה בטעות מייל או טלפון של לקוחה אחרת או לא מצליחה להתחבר. קלט אחר מקבל `LINK_IN_USE`, ו"לטיפול" לא רואה אותו. ‏2.4 מחליט: קישור חלופי מטל, או סימון ב"לטיפול".
+  evidence: ‏`join_begin` נועל את `awaiting_login` ל-`input_hash` הראשון (החלטה ב-spec, בדיקה אחת לקישור). ביקורת 2.3, edge-case 1.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-3-existing-account-and-identity-conflicts.md`
+  target: הסרת פרטים (`admin_anonymize_customer`)
+  summary: כשלקוחה מוסרת, קישורי `join` שלה במצב `awaiting_login` צריכים לעבור ל-`conflict` (או לבוטל) באותה עסקה. אחרת אף אחת לא יכולה לשייך אותם, ו-`claim_join` מחזיר `NOT_AUTHORIZED` ("חשבון אחר") עד התפוגה.
+  evidence: היום אין RPC שמסיר פרטים, ולכן זה לא קורה. ביקורת 2.3, edge-case 6 ו-blind-hunter.

@@ -14,6 +14,11 @@ function privateIPv4Addresses() {
 
 const noStore = { key: "Cache-Control", value: "private, no-store" }
 
+// /login?next=/join/<token> (an existing account logs in to claim a join
+// link, story 2.3) carries the token in its query: it is neither logged nor
+// sent as a referrer. The value may arrive encoded (%2F).
+const LOGIN_WITH_JOIN_NEXT = /^\/login\?(?:.*&)?next=(?:\/|%2F)join(?:\/|%2F)/i
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Required for 'use cache' / cacheTag / updateTag (architecture spine AD-16).
@@ -27,7 +32,7 @@ const nextConfig = {
   // Token routes are never logged (AD-16). The dev logger also prints Server
   // Function arguments (token, form data), so that log is off.
   logging: {
-    incomingRequests: { ignore: [/\/(reset|join)\//] },
+    incomingRequests: { ignore: [/\/(reset|join)\//, LOGIN_WITH_JOIN_NEXT] },
     serverFunctions: false,
   },
 
@@ -40,6 +45,12 @@ const nextConfig = {
       },
       {
         source: "/join/:path*",
+        headers: [{ key: "Referrer-Policy", value: "no-referrer" }, noStore],
+      },
+      // The query value is decoded before matching (anchored by Next).
+      {
+        source: "/login",
+        has: [{ type: "query", key: "next", value: "/join/.*" }],
         headers: [{ key: "Referrer-Policy", value: "no-referrer" }, noStore],
       },
       { source: "/me", headers: [noStore] },
