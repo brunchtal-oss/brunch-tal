@@ -3,15 +3,17 @@
 export type JoinLinkState =
   "active" | "awaiting_login" | "used" | "expired" | "conflict"
 
-// Why a join link stopped (activation_tokens.conflict_reason), plus
-// email_exists from the Auth step, shown like phone_taken. The screen picks
-// its wording by the reason; never the field that matched.
+// Why a join link stopped (activation_tokens.conflict_reason). The screen
+// picks its wording by the reason; never the field that matched.
+// too_many_attempts: a fourth different input after two corrections (story
+// 2.4). email_exists from the Auth step is not a conflict any more: the link
+// stays open for a corrected email (story 2.4).
 export const CONFLICT_REASONS = [
   "two_accounts",
   "not_activated",
   "phone_taken",
   "bind_conflict",
-  "email_exists",
+  "too_many_attempts",
 ] as const
 
 export type ConflictReason = (typeof CONFLICT_REASONS)[number]

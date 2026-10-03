@@ -411,7 +411,7 @@ describe("join", () => {
     })
   })
 
-  it("refuses other input while claiming with LINK_IN_USE", async () => {
+  it("asks to discard the Auth user for other input while claiming (story 2.4), and join_complete still refuses other input with LINK_IN_USE", async () => {
     await inRollback(async (db) => {
       const a = await approveCard(db)
       const email = `${testName("in_use")}@example.test`
@@ -423,8 +423,12 @@ describe("join", () => {
 
       const otherPhone = testPhone()
       expect(
-        await callError(db, BEGIN, [a.token, email, otherPhone, randomUUID()])
-      ).toMatchObject({ code: "P0001", message: "LINK_IN_USE" })
+        await call(db, BEGIN, [a.token, email, otherPhone, randomUUID()])
+      ).toEqual({
+        outcome: "discard_pending_user",
+        token_id: a.tokenId,
+        pending_user_id: begun.pending_user_id,
+      })
       expect(
         await callError(db, COMPLETE, [
           a.token,
@@ -432,7 +436,11 @@ describe("join", () => {
           randomUUID(),
         ])
       ).toMatchObject({ code: "P0001", message: "LINK_IN_USE" })
-      expect(await tokenRow(db, a.tokenId)).toMatchObject({ state: "claiming" })
+      expect(await tokenRow(db, a.tokenId)).toMatchObject({
+        state: "claiming",
+        pending_user_id: begun.pending_user_id,
+        identity_attempts: 0,
+      })
     })
   })
 

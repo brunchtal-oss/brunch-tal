@@ -112,6 +112,13 @@ describe("JoinForm conflict reason", () => {
     expect(html).toContain(`href="${href}"`)
   })
 
+  it("links the expired screen's contact phrase to WhatsApp", () => {
+    const href = "https://wa.me/972544256456"
+    const html = render("expired", { contactHref: href })
+    expect(html).toContain(`>${joinCopy.expiredContactPhrase}</a>`)
+    expect(html).not.toContain('name="password"')
+  })
+
   it("shows plain text without published business details", () => {
     const html = render("conflict", { conflictReason: "not_activated" })
     expect(html).toContain(joinCopy.conflicts.not_activated)

@@ -1,5 +1,7 @@
 import "server-only"
 
+import { createHash } from "node:crypto"
+
 import {
   toConflictReason,
   type ConflictReason,
@@ -15,9 +17,12 @@ import { createServiceClient } from "@/lib/server/privileged/service-client"
 // join_complete (profile, babies, consents, bind_purchase, consumed) ->
 // the action signs in. Details that match an existing account stop at step 1
 // (existing_account: the link waits for that account to log in and confirm
-// through claim_join, story 2.3); no Auth user is created for them. A failure in the middle leaves the link `claiming`; a
-// retry with the same input gets the same pending_user_id from join_begin and
-// continues from step 2, so no second Auth user and no second binding. The
+// through claim_join, story 2.3); no Auth user is created for them. A failure
+// in the middle leaves the link `claiming`; a retry with the same input gets
+// the same pending_user_id from join_begin and continues from step 2, so no
+// second Auth user and no second binding. Other input on a claiming or
+// awaiting_login link is checked again (story 2.4): join_begin may first ask
+// to delete the Auth user of the previous input (discard_pending_user). The
 // idempotency key (one per page load, AD-5) makes a retry after a lost
 // join_complete response return the stored result. Logs carry only ids and
 // error codes, never the token, password, email, phone or name.
@@ -105,10 +110,13 @@ export type JoinInput = {
 // matched). identity_retry: the details matched two accounts, the link stays
 // open for another attempt (with a new idempotency key). conflict: the link
 // stopped, with the reason for the wording (null when unknown).
+// email_exists: Auth refused the email; the link stays open for a corrected
+// email (story 2.4).
 export type JoinOutcome =
   | { outcome: "joined"; email: string }
   | { outcome: "existing_account" }
   | { outcome: "identity_retry" }
+  | { outcome: "email_exists" }
   | { outcome: "conflict"; reason: ConflictReason | null }
 
 type BeginResult =
@@ -117,6 +125,11 @@ type BeginResult =
   | { outcome: "identity_retry"; token_id: string }
   | { outcome: "conflict"; token_id: string; reason?: string | null }
   | { outcome: "joined"; token_id: string }
+  | {
+      outcome: "discard_pending_user"
+      token_id: string
+      pending_user_id: string
+    }
 
 type CompleteResult =
   | { outcome: "joined"; token_id: string }
@@ -200,8 +213,8 @@ async function ensureAuthUser(
   const again = await exists()
   if (again === null) return { kind: "error", code: "SERVER_ERROR" }
   if (again) return setPassword()
-  // The email belongs to another Auth user: the link stays `claiming` and
-  // Tal handles it (2.4).
+  // The email belongs to another Auth user: the link stays `claiming`, open
+  // for a corrected email (join_begin checks other input again, 2.4).
   if (authCode === "email_exists" || authCode === "user_already_exists") {
     console.error("join.email_exists", { tokenId })
     return { kind: "conflict" }
@@ -210,20 +223,68 @@ async function ensureAuthUser(
   return { kind: "error", code: "SERVER_ERROR" }
 }
 
-// A conflict in join_complete (phone taken, BIND_CONFLICT) rolled back the
-// profile, so the Auth user of step 2 has no profile and would block a future
-// link with the same email (not_activated). It is deleted; a failure is only
-// logged (the customer still sees the conflict), and a user that is already
-// gone (a retry of the same conflict) is fine.
-async function deleteOrphanUser(
+// The idempotency key of one join step (AD-5), derived from the page's key,
+// the input (email lower(trim()), phone digits) and the step, so a resubmit
+// of the same page with the same input repeats the same keys, and other
+// input never reuses a key stored with an earlier input. join_complete runs
+// under the "begin" key: join_begin looks up the join_complete result of the
+// key it was given (a lost response after the link was consumed).
+export function joinStepKey(
+  pageKey: string,
+  email: string,
+  phone: string,
+  step: "begin" | "after_discard"
+): string {
+  const hex = createHash("sha256")
+    .update(
+      [
+        pageKey,
+        email.trim().toLowerCase(),
+        phone.replace(/\D/g, ""),
+        step,
+      ].join("|")
+    )
+    .digest("hex")
+  // UUID layout, version 5 and RFC 4122 variant bits.
+  const variant = ((parseInt(hex[16], 16) & 0x3) | 0x8).toString(16)
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-5${hex.slice(13, 16)}-${variant}${hex.slice(17, 20)}-${hex.slice(20, 32)}`
+}
+
+// Deletes an Auth user of a join link that has no profile, so it does not
+// block a future link with the same email (not_activated). Called only with
+// an id the SQL returned for that purpose: the pending user of a
+// join_complete conflict (the profile was rolled back), of
+// discard_pending_user, or of a claiming link Tal revoked. The profile is
+// read first: a parallel submission (another tab) may have completed the
+// join with this very user since; then nothing is deleted and the flow goes
+// on (the next join_begin answers LINK_USED). A user that is already gone
+// counts as deleted. Returns false on a failure, logged with ids and codes
+// only.
+export async function deleteOrphanUser(
   supabase: ServiceClient,
   userId: string,
   tokenId: string
-): Promise<void> {
+): Promise<boolean> {
   try {
+    const profile = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("id", userId)
+      .maybeSingle()
+    if (profile.error) {
+      console.error("join.delete_orphan_failed", {
+        tokenId,
+        authCode: "profile_read",
+      })
+      return false
+    }
+    if (profile.data) {
+      console.error("join.delete_orphan_skipped", { tokenId, userId })
+      return true
+    }
     const { error } = await supabase.auth.admin.deleteUser(userId)
     if (!error || error.status === 404 || error.code === "user_not_found") {
-      return
+      return true
     }
     console.error("join.delete_orphan_failed", {
       tokenId,
@@ -235,6 +296,7 @@ async function deleteOrphanUser(
       authCode: "exception",
     })
   }
+  return false
 }
 
 export async function submitJoin(
@@ -246,15 +308,39 @@ export async function submitJoin(
   // The same normalization as private.join_identity, for Auth and sign-in.
   const email = input.email.trim().toLowerCase()
 
-  const begin = await callRpc(supabase, "join_begin", {
-    p_token: token,
-    p_email: input.email,
-    p_phone: input.phone,
-    p_idempotency_key: idempotencyKey,
-  })
+  const stepKey = (step: "begin" | "after_discard") =>
+    joinStepKey(idempotencyKey, input.email, input.phone, step)
+  const callBegin = (step: "begin" | "after_discard") =>
+    callRpc(supabase, "join_begin", {
+      p_token: token,
+      p_email: input.email,
+      p_phone: input.phone,
+      p_idempotency_key: stepKey(step),
+    })
+
+  const begin = await callBegin("begin")
   if (!begin.ok) return begin
 
-  const started = begin.data as BeginResult
+  let started = begin.data as BeginResult
+  // A correction while the Auth user of the previous input exists: delete
+  // it, then ask again under the after_discard key (the stored answer of the
+  // begin key is the discard). Once only; a second discard is unexpected.
+  if (started.outcome === "discard_pending_user") {
+    const deleted = await deleteOrphanUser(
+      supabase,
+      started.pending_user_id,
+      started.token_id
+    )
+    if (!deleted) return { ok: false, code: "SERVER_ERROR" }
+    const again = await callBegin("after_discard")
+    if (!again.ok) return again
+    started = again.data as BeginResult
+    if (started.outcome === "discard_pending_user") {
+      console.error("join.discard_repeated", { tokenId: started.token_id })
+      return { ok: false, code: "SERVER_ERROR" }
+    }
+  }
+
   if (started.outcome === "conflict") return conflict(started.reason)
   if (started.outcome === "existing_account") {
     return { ok: true, data: { outcome: "existing_account" } }
@@ -277,8 +363,10 @@ export async function submitJoin(
     input.password,
     tokenId
   )
-  // email_exists in Auth: shown like phone_taken.
-  if (auth.kind === "conflict") return conflict("email_exists")
+  // email_exists in Auth: the form stays open for a corrected email.
+  if (auth.kind === "conflict") {
+    return { ok: true, data: { outcome: "email_exists" } }
+  }
   if (auth.kind === "error") return { ok: false, code: auth.code }
 
   const complete = await callRpc(supabase, "join_complete", {
@@ -295,7 +383,7 @@ export async function submitJoin(
         birth_date: baby.birthDate,
       })),
     },
-    p_idempotency_key: idempotencyKey,
+    p_idempotency_key: stepKey("begin"),
   })
   if (!complete.ok) {
     // The Auth user exists and the link stays `claiming`: submitting again

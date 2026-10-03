@@ -29,21 +29,33 @@ export const joinCopy = {
   // Inside a message, this phrase is a link to Tal's WhatsApp (plain text
   // when no business details are published).
   contactPhrase: "צרי קשר לפרטים נוספים",
+  // The shorter contact phrase of the 2.4 wording (user decision 2026-10-03).
+  contactShortPhrase: "צרי קשר",
+  // The contact phrase of an expired or revoked link (LINK_EXPIRED).
+  expiredContactPhrase: "צרי קשר",
   // two_accounts, attempts 1 and 2 (identity_retry): the form stays.
   identityRetry:
     "לא הצלחנו להשלים את ההרשמה. בדקי שכתובת המייל ומספר הטלפון שהזנת נכונים ונסי שוב או צרי קשר לפרטים נוספים",
+  // Auth refused the email; the link stays open for a corrected email (story
+  // 2.4). The short contact phrase is the link.
+  emailExists:
+    "הפרטים קיימים במערכת. בדקי את כתובת המייל ונסי שוב או צרי קשר לפרטים נוספים",
   // A stopped link, by reason; never says which detail matched.
+  // too_many_attempts reads like the two_accounts lock (story 2.4).
   conflicts: {
     two_accounts: "יותר מדי נסיונות. הלינק ננעל. צרי קשר לפרטים נוספים.",
+    too_many_attempts: "יותר מדי נסיונות. הלינק ננעל. צרי קשר לפרטים נוספים.",
     not_activated: "החשבון לא פעיל. צרי קשר לפרטים נוספים.",
     phone_taken: "הפרטים קיימים במערכת. צרי קשר לפרטים נוספים",
-    email_exists: "הפרטים קיימים במערכת. צרי קשר לפרטים נוספים",
     bind_conflict: "לא ניתן להוסיף את הרכישה לחשבון. צרי קשר לפרטים נוספים",
   },
   // The details belong to an existing account (no page heading on these
   // screens).
   existingAccount: "הפרטים קיימים במערכת. יש להתחבר לחשבון",
   existingAccountLogin: "להתחברות",
+  // Before logging in: the details may be a typo; back to an empty form.
+  notYourAccount: "לא החשבון שלך?",
+  backToForm: "חזרה לטופס",
   // Signed in to that account: confirm before the purchase is added.
   claimNote: "הרכישה תתווסף לחשבונך",
   claimSubmit: "הוספת הרכישה לחשבון שלי",

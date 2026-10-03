@@ -83,7 +83,27 @@ async function JoinContent({ params }: { params: Promise<{ token: string }> }) {
         view.boundUserId != null &&
         session.userId === view.boundUserId
     )
-    if (screen === "login") return <ExistingAccountLogin token={token} />
+    if (screen === "login") {
+      // "Back to form": the same form as an active link, empty.
+      return (
+        <ExistingAccountLogin
+          token={token}
+          form={
+            <>
+              <PageHeading>{joinCopy.title}</PageHeading>
+              <JoinFormContent
+                token={token}
+                linkState="active"
+                conflictReason={null}
+                contactHref={contactHref}
+                productName={view.productName}
+                amountAgorot={view.amountAgorot}
+              />
+            </>
+          }
+        />
+      )
+    }
     if (screen === "other_account") {
       return (
         <ClaimScreen

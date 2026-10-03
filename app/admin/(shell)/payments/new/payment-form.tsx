@@ -7,8 +7,10 @@ import {
   useRef,
   useState,
 } from "react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 
+import { LinkShare } from "@/components/admin/link-share"
 import { RadioCardGroup } from "@/components/admin/radio-card"
 import { InlineNotice } from "@/components/shared/inline-notice"
 import { Button, buttonVariants } from "@/components/ui/button"
@@ -50,11 +52,15 @@ export function PaymentForm({
   methods,
   today,
   idempotencyKey,
+  onApproved,
 }: {
   products: readonly ProductOption[]
   methods: readonly MethodOption[]
   today: string
   idempotencyKey: string
+  // Called once when the approval succeeded (payment-form-host.tsx pushes
+  // the history entry of the success screen).
+  onApproved?: () => void
 }) {
   const router = useRouter()
   const [state, formAction, pending] = useActionState<
@@ -91,6 +97,16 @@ export function PaymentForm({
     }
   }, [state, router])
 
+  // Once per success; the latest callback is read through a ref.
+  const onApprovedRef = useRef(onApproved)
+  useEffect(() => {
+    onApprovedRef.current = onApproved
+  })
+  const approved = state?.ok === true
+  useEffect(() => {
+    if (approved) onApprovedRef.current?.()
+  }, [approved])
+
   if (state?.ok) return <ApprovedLink {...state.data} />
 
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -103,6 +119,12 @@ export function PaymentForm({
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
+      <Link
+        href="/admin/links"
+        className="inline-flex min-h-11 items-center self-start text-[15px] underline underline-offset-4"
+      >
+        {copy.allLinks}
+      </Link>
       <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
       <input
         type="hidden"
@@ -247,34 +269,6 @@ export function PaymentForm({
 }
 
 // The approval's result: the one-time join link, shown once (AD-10).
-// navigator.clipboard exists only in a secure context (https or localhost);
-// on the dev server opened by its LAN address (http://192.168...) it is
-// undefined, so a hidden textarea and execCommand("copy") copy instead.
-async function copyText(text: string): Promise<boolean> {
-  try {
-    if (navigator.clipboard) {
-      await navigator.clipboard.writeText(text)
-      return true
-    }
-  } catch {
-    // fall through to the textarea copy
-  }
-  const area = document.createElement("textarea")
-  area.value = text
-  area.setAttribute("readonly", "")
-  area.style.position = "fixed"
-  area.style.opacity = "0"
-  document.body.appendChild(area)
-  area.select()
-  try {
-    return document.execCommand("copy")
-  } catch {
-    return false
-  } finally {
-    area.remove()
-  }
-}
-
 export function ApprovedLink({
   link,
   linkExpiresAt,
@@ -283,19 +277,10 @@ export function ApprovedLink({
   linkExpiresAt: string
 }) {
   const noticeRef = useRef<HTMLDivElement>(null)
-  const [copied, setCopied] = useState(false)
-  const [copyFailed, setCopyFailed] = useState(false)
 
   useEffect(() => {
     noticeRef.current?.focus()
   }, [])
-
-  const copyLink = async () => {
-    if (!link) return
-    if (await copyText(link)) setCopied(true)
-    // No clipboard access at all: the link is shown for a manual copy.
-    else setCopyFailed(true)
-  }
 
   // A full load, so the next payment gets a new idempotency key.
   const another = (
@@ -344,36 +329,7 @@ export function ApprovedLink({
         </p>
         <p className="text-[15px] text-muted-foreground">{copy.linkOnce}</p>
 
-        <a
-          href={`https://wa.me/?text=${encodeURIComponent(link)}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={buttonVariants({ size: "lg", className: BUTTON })}
-        >
-          {copy.sendWhatsapp}
-        </a>
-        <Button
-          type="button"
-          variant="outline"
-          size="lg"
-          className={BUTTON}
-          onClick={copyLink}
-        >
-          {copy.copyLink}
-        </Button>
-        <p aria-live="polite" className="text-[15px] text-success">
-          {copied ? copy.copied : ""}
-        </p>
-        {copyFailed && (
-          <Input
-            readOnly
-            dir="ltr"
-            value={link}
-            aria-label={copy.copyLink}
-            onFocus={(event) => event.currentTarget.select()}
-            className="h-12 text-start text-base"
-          />
-        )}
+        <LinkShare link={link} />
       </div>
 
       {another}

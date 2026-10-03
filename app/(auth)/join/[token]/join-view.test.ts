@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest"
 
+import { splitContact } from "@/components/shared/contact-text"
 import { joinCopy } from "@/lib/copy/join"
+import { errorMessage } from "@/lib/errors"
 
 import type { JoinFormState } from "./actions"
 
@@ -10,7 +12,6 @@ import {
   existingAccountScreen,
   joinView,
   nextIdempotencyKey,
-  splitContact,
 } from "./join-view"
 
 describe("joinView", () => {
@@ -66,7 +67,7 @@ describe("conflictMessage", () => {
     ["two_accounts", joinCopy.conflicts.two_accounts],
     ["not_activated", joinCopy.conflicts.not_activated],
     ["phone_taken", joinCopy.conflicts.phone_taken],
-    ["email_exists", joinCopy.conflicts.phone_taken],
+    ["too_many_attempts", joinCopy.conflicts.two_accounts],
     ["bind_conflict", joinCopy.conflicts.bind_conflict],
     [null, joinCopy.conflicts.bind_conflict],
   ] as const)("words %s", (reason, text) => {
@@ -78,14 +79,25 @@ describe("conflictMessage", () => {
       ...Object.values(joinCopy.conflicts),
       joinCopy.identityRetry,
     ]) {
-      expect(splitContact(text)).not.toBeNull()
+      expect(splitContact(text, joinCopy.contactPhrase)).not.toBeNull()
     }
+  })
+
+  it("has the contact phrase of each 2.4 message", () => {
+    expect(
+      splitContact(joinCopy.emailExists, joinCopy.contactShortPhrase)
+    ).not.toBeNull()
+    expect(
+      splitContact(errorMessage("LINK_EXPIRED"), joinCopy.expiredContactPhrase)
+    ).not.toBeNull()
   })
 })
 
 describe("splitContact", () => {
   it("cuts a message around the contact phrase, keeping a trailing period", () => {
-    expect(splitContact(joinCopy.conflicts.not_activated)).toEqual({
+    expect(
+      splitContact(joinCopy.conflicts.not_activated, joinCopy.contactPhrase)
+    ).toEqual({
       before: joinCopy.conflicts.not_activated.slice(
         0,
         joinCopy.conflicts.not_activated.indexOf(joinCopy.contactPhrase)
@@ -96,13 +108,19 @@ describe("splitContact", () => {
   })
 
   it("is null without the phrase", () => {
-    expect(splitContact(joinCopy.used)).toBeNull()
+    expect(splitContact(joinCopy.used, joinCopy.contactPhrase)).toBeNull()
   })
 })
 
 describe("nextIdempotencyKey", () => {
   const KEY = "22222222-2222-4222-8222-222222222222"
   const NEW = "33333333-3333-4333-8333-333333333333"
+
+  it("takes the new key of email_exists", () => {
+    expect(
+      nextIdempotencyKey({ status: "email_exists", idempotencyKey: NEW }, KEY)
+    ).toBe(NEW)
+  })
 
   it("takes the new key of identity_retry", () => {
     expect(

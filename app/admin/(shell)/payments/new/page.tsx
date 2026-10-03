@@ -8,7 +8,7 @@ import { shellCopy } from "@/lib/copy/shell"
 import { createClient } from "@/lib/supabase/server"
 import { formatLocalDate } from "@/lib/time"
 
-import { PaymentForm } from "./payment-form"
+import { PaymentFormHost } from "./payment-form-host"
 
 export const metadata: Metadata = {
   title: adminCopy.payments.newTitle,
@@ -56,7 +56,7 @@ async function NewPaymentContent() {
   const today = formatLocalDate(new Date())
 
   return (
-    <PaymentForm
+    <PaymentFormHost
       products={products.data.map((p) => ({
         id: p.id,
         name: p.name,

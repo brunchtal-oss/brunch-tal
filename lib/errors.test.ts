@@ -15,6 +15,13 @@ describe("errors", () => {
     )
   })
 
+  it("maps LINK_IN_PROGRESS (story 2.4) to its microcopy", () => {
+    expect(isErrorCode("LINK_IN_PROGRESS")).toBe(true)
+    expect(errorMessage("LINK_IN_PROGRESS")).toBe(
+      "הלקוחה באמצע הצטרפות. אפשר לבטל או להחליף אחרי 15 דקות"
+    )
+  })
+
   it("shows an unknown code as a server error", () => {
     expect(errorMessage("NOPE")).toBe(ERROR_MESSAGES.SERVER_ERROR)
   })

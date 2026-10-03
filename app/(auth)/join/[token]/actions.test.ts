@@ -275,6 +275,22 @@ describe("submitJoinAction", () => {
     expect(redirect).not.toHaveBeenCalled()
   })
 
+  it("keeps the form after email_exists and hands a new idempotency key", async () => {
+    submitJoin.mockResolvedValue({
+      ok: true,
+      data: { outcome: "email_exists" },
+    })
+    const result = await submitJoinAction(null, form())
+    expect(result).toEqual({
+      status: "email_exists",
+      idempotencyKey: expect.stringMatching(/^[0-9a-f-]{36}$/),
+    })
+    expect(result?.status === "email_exists" && result.idempotencyKey).not.toBe(
+      KEY
+    )
+    expect(signInWithPassword).not.toHaveBeenCalled()
+  })
+
   it.each([
     ["LINK_USED", { status: "used" }],
     ["LINK_EXPIRED", { status: "expired" }],

@@ -1,9 +1,8 @@
 "use server"
 
-import { headers } from "next/headers"
-
 import type { ActionResult, ErrorCode } from "@/lib/errors"
 import { callRpc } from "@/lib/rpc"
+import { joinLinkFor } from "@/lib/server/join-link"
 import { createClient } from "@/lib/supabase/server"
 
 // The admin's own session (RLS and private.is_admin() inside the RPCs); no
@@ -83,18 +82,6 @@ function field(formData: FormData, name: string): string {
   return typeof value === "string" ? value.trim() : ""
 }
 
-// The site's address as the browser sent it (the Origin of this POST), so
-// the link works on every deployment and on the home network in dev.
-async function requestOrigin(): Promise<string | null> {
-  const h = await headers()
-  const origin = h.get("origin")
-  if (origin && /^https?:\/\/[^/]+$/.test(origin)) return origin
-  const host = h.get("x-forwarded-host") ?? h.get("host")
-  if (!host) return null
-  const proto = h.get("x-forwarded-proto") ?? "https"
-  return `${proto}://${host}`
-}
-
 export async function approvePaymentAction(
   _previous: ApprovePaymentState,
   formData: FormData
@@ -137,12 +124,10 @@ export async function approvePaymentAction(
   if (!result.ok) return { ok: false, code: result.code }
 
   const approved = result.data as ApproveResult
-  const origin = approved.token ? await requestOrigin() : null
   return {
     ok: true,
     data: {
-      link:
-        approved.token && origin ? `${origin}/join/${approved.token}` : null,
+      link: approved.token ? await joinLinkFor(approved.token) : null,
       linkExpiresAt: approved.link_expires_at,
     },
   }

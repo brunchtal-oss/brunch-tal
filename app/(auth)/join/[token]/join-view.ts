@@ -51,27 +51,14 @@ export function conflictMessage(reason: ConflictReason | null): string {
   return joinCopy.conflicts[reason ?? "bind_conflict"]
 }
 
-// A message cut around the contact phrase, which the screen turns into a
-// WhatsApp link; null when the message has no such phrase.
-export function splitContact(
-  text: string
-): { before: string; phrase: string; after: string } | null {
-  const phrase = joinCopy.contactPhrase
-  const at = text.indexOf(phrase)
-  if (at < 0) return null
-  return {
-    before: text.slice(0, at),
-    phrase,
-    after: text.slice(at + phrase.length),
-  }
-}
-
-// The idempotency key of the next submission: identity_retry hands a new one
-// (the previous key is stored with the previous input); otherwise the
-// current one stays.
+// The idempotency key of the next submission: identity_retry and
+// email_exists hand a new one (the previous key is stored with the previous
+// input); otherwise the current one stays.
 export function nextIdempotencyKey(
   state: JoinFormState,
   current: string
 ): string {
-  return state?.status === "identity_retry" ? state.idempotencyKey : current
+  return state?.status === "identity_retry" || state?.status === "email_exists"
+    ? state.idempotencyKey
+    : current
 }

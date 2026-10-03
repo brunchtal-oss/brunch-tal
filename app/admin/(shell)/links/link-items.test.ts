@@ -1,0 +1,107 @@
+import { describe, expect, it } from "vitest"
+
+import { adminCopy } from "@/lib/copy/admin"
+
+import { toLinkItem, type LinkRow } from "./link-items"
+
+const copy = adminCopy.links
+
+const row = (overrides: Partial<LinkRow> = {}): LinkRow => ({
+  token_id: "tok-1",
+  payment_id: "pay-1",
+  status: "pending",
+  detail: null,
+  detail_name: null,
+  conflict_reason: null,
+  product_name: "Card",
+  amount_agorot: 47200,
+  paid_on: "2026-10-01",
+  created_at: "2026-10-01T09:00:00Z",
+  // Monday 05.10 at 12:00 in Jerusalem (UTC+3).
+  expires_at: "2026-10-05T09:00:00Z",
+  consumed_at: null,
+  revoked_at: null,
+  customer_name: null,
+  can_revoke: true,
+  can_replace: true,
+  ...overrides,
+})
+
+describe("toLinkItem", () => {
+  it("words a waiting link with its validity and purchase", () => {
+    expect(toLinkItem(row())).toEqual({
+      tokenId: "tok-1",
+      paymentId: "pay-1",
+      title: copy.rowTitle.pending,
+      purchase: copy.purchase("Card", "472 ₪", "01.10"),
+      status: "pending",
+      statusLabel: copy.status.pending,
+      timeAt: "2026-10-05T09:00:00Z",
+      timeLine: copy.validUntil("יום שני", "05.10", "12:00"),
+      detail: null,
+      canRevoke: true,
+      canReplace: true,
+    })
+  })
+
+  it("shows the customer's name and the day of a consumed link", () => {
+    const item = toLinkItem(
+      row({
+        status: "consumed",
+        customer_name: "Dana",
+        consumed_at: "2026-10-02T08:00:00Z",
+        can_revoke: false,
+        can_replace: false,
+      })
+    )
+    expect(item).toMatchObject({
+      title: "Dana",
+      statusLabel: copy.status.consumed,
+      timeLine: copy.consumedOn("02.10"),
+      canRevoke: false,
+      canReplace: false,
+    })
+  })
+
+  it.each([
+    ["expired", copy.rowTitle.expired, copy.expiredOn("05.10")],
+    ["revoked", copy.rowTitle.revoked, copy.revokedOn("03.10")],
+  ] as const)("words a %s link", (status, title, timeLine) => {
+    const item = toLinkItem(row({ status, revoked_at: "2026-10-03T08:00:00Z" }))
+    expect(item).toMatchObject({
+      title,
+      timeLine,
+      statusLabel: copy.status[status],
+    })
+  })
+
+  it("details awaiting_login with the account's name", () => {
+    expect(
+      toLinkItem(row({ detail: "awaiting_login", detail_name: "Noa" })).detail
+    ).toEqual({ text: copy.detail.awaitingLogin("Noa"), attention: false })
+  })
+
+  it("flags a stuck link", () => {
+    expect(toLinkItem(row({ detail: "stuck" })).detail).toEqual({
+      text: copy.detail.stuck,
+      attention: true,
+    })
+  })
+
+  it.each([
+    ["two_accounts", copy.reasons.two_accounts],
+    ["too_many_attempts", copy.reasons.too_many_attempts],
+    ["something_else", copy.reasons.bind_conflict],
+    [null, copy.reasons.bind_conflict],
+  ])("words a conflict with reason %j", (reason, text) => {
+    expect(
+      toLinkItem(row({ detail: "conflict", conflict_reason: reason })).detail
+    ).toEqual({ text: copy.detail.conflict(text), attention: true })
+  })
+
+  it("has no detail once the link is not pending", () => {
+    expect(
+      toLinkItem(row({ status: "revoked", detail: "conflict" })).detail
+    ).toBeNull()
+  })
+})
