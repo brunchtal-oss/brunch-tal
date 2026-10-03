@@ -1,14 +1,16 @@
 import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it, vi } from "vitest"
 
+import { whatsappShareHref } from "@/components/admin/link-share"
 import { adminCopy } from "@/lib/copy/admin"
 import { errorMessage } from "@/lib/errors"
 
 import {
   LinksList,
   ReplacedPanel,
+  canSend,
   rowErrorMessage,
-  withReplaced,
+  resultOf,
   type LinkListItem,
 } from "./links-list"
 
@@ -93,18 +95,27 @@ describe("replacement links", () => {
     linkExpiresAt: "2026-10-05T09:00:00Z",
   })
 
-  it("keeps the replacement of every payment; only a new one of the same payment takes its place", () => {
-    const first = withReplaced([], entry("pay-1", "https://h/join/a"))
-    const both = withReplaced(first, entry("pay-2", "https://h/join/b"))
-    expect(both.map((e) => e.link)).toEqual([
-      "https://h/join/b",
-      "https://h/join/a",
-    ])
-    const again = withReplaced(both, entry("pay-1", "https://h/join/c"))
-    expect(again.map((e) => e.link)).toEqual([
-      "https://h/join/c",
-      "https://h/join/b",
-    ])
+  it("keeps only the latest action's result: a later action replaces the panel", () => {
+    const row = { tokenId: "tok-1", paymentId: "pay-1" }
+    const data = {
+      link: "https://h/join/a",
+      linkExpiresAt: "2026-10-05T09:00:00Z",
+    }
+    expect(resultOf("replace", row, { ok: true, data })).toEqual({
+      kind: "replaced",
+      replaced: { paymentId: "pay-1", ...data },
+    })
+    // The next action, on any row, is the one result shown.
+    expect(
+      resultOf("revoke", { tokenId: "tok-2", paymentId: "pay-2" }, { ok: true })
+    ).toEqual({ kind: "revoked" })
+    expect(
+      resultOf(
+        "replace",
+        { tokenId: "tok-2", paymentId: "pay-2" },
+        { ok: false, code: "LINK_IN_PROGRESS" }
+      )
+    ).toEqual({ kind: "error", tokenId: "tok-2", code: "LINK_IN_PROGRESS" })
   })
 
   it("shows the notice, the validity line and the send buttons", () => {
@@ -137,6 +148,64 @@ describe("rowErrorMessage", () => {
   it("keeps the shared wording of other codes", () => {
     expect(rowErrorMessage("LINK_IN_PROGRESS")).toBe(
       errorMessage("LINK_IN_PROGRESS")
+    )
+  })
+})
+
+describe("send on WhatsApp", () => {
+  const send = adminCopy.payments.sendWhatsapp
+
+  it.each([
+    ["pending", true, true],
+    ["expired", true, true],
+    ["pending", false, false],
+    ["consumed", true, false],
+    ["revoked", true, false],
+  ] as const)(
+    "a %s row with can_replace %s: %s",
+    (status, canReplace, shown) => {
+      expect(canSend({ status, canReplace })).toBe(shown)
+      const html = renderToStaticMarkup(
+        <LinksList
+          items={[
+            item({ status, canReplace, canRevoke: status === "pending" }),
+          ]}
+        />
+      )
+      expect(html.includes(send)).toBe(shown)
+    }
+  )
+
+  it("shows only the sent notice afterwards, never the link", () => {
+    const row = { tokenId: "tok-1", paymentId: "pay-1" }
+    expect(
+      resultOf("send", row, {
+        ok: true,
+        data: {
+          link: "https://h/join/a",
+          linkExpiresAt: "2026-10-05T09:00:00Z",
+        },
+      })
+    ).toEqual({ kind: "sent" })
+    // A repeat of the same key has no link: shown like a replacement whose
+    // link cannot be shown again.
+    expect(
+      resultOf("send", row, {
+        ok: true,
+        data: { link: null, linkExpiresAt: "2026-10-05T09:00:00Z" },
+      })
+    ).toMatchObject({ kind: "replaced" })
+    expect(resultOf("send", row, { ok: false, code: "LINK_USED" })).toEqual({
+      kind: "error",
+      tokenId: "tok-1",
+      code: "LINK_USED",
+    })
+    expect(copy.sent).toBe("נוצר קישור חדש. הקישור הקודם בוטל")
+  })
+
+  it("builds the WhatsApp share like the send button after an approval", () => {
+    expect(whatsappShareHref("https://h/join/a b")).toBe(
+      "https://wa.me/?text=https%3A%2F%2Fh%2Fjoin%2Fa%20b"
     )
   })
 })

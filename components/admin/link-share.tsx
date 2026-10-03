@@ -37,6 +37,11 @@ async function copyText(text: string): Promise<boolean> {
   }
 }
 
+// The WhatsApp share of a link (a message with the link only).
+export function whatsappShareHref(link: string): string {
+  return `https://wa.me/?text=${encodeURIComponent(link)}`
+}
+
 // "Send on WhatsApp" and "Copy the link" for a one-time link that was just
 // issued (the raw link is shown only in this answer, AD-10). Without any
 // clipboard access the link is shown for a manual copy.
@@ -52,7 +57,7 @@ export function LinkShare({ link }: { link: string }) {
   return (
     <>
       <a
-        href={`https://wa.me/?text=${encodeURIComponent(link)}`}
+        href={whatsappShareHref(link)}
         target="_blank"
         rel="noopener noreferrer"
         className={buttonVariants({ size: "lg", className: BUTTON })}

@@ -80,5 +80,8 @@ export const adminCopy = {
     // LINK_USED on revoke or replace: the customer joined while the list was
     // open (user decision 2026-10-03); the list then reloads.
     linkUsed: "הקישור כבר מומש",
+    // "Send on WhatsApp" on a row: a replacement sent at once (user decision
+    // 2026-10-03); no link is shown afterwards.
+    sent: "נוצר קישור חדש. הקישור הקודם בוטל",
   },
 } as const

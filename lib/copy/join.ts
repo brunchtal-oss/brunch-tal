@@ -32,7 +32,7 @@ export const joinCopy = {
   // The shorter contact phrase of the 2.4 wording (user decision 2026-10-03).
   contactShortPhrase: "צרי קשר",
   // The contact phrase of an expired or revoked link (LINK_EXPIRED).
-  expiredContactPhrase: "צרי קשר עם טל",
+  expiredContactPhrase: "צרי קשר",
   // two_accounts, attempts 1 and 2 (identity_retry): the form stays.
   identityRetry:
     "לא הצלחנו להשלים את ההרשמה. בדקי שכתובת המייל ומספר הטלפון שהזנת נכונים ונסי שוב או צרי קשר לפרטים נוספים",

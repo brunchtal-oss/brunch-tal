@@ -52,11 +52,15 @@ export function PaymentForm({
   methods,
   today,
   idempotencyKey,
+  onApproved,
 }: {
   products: readonly ProductOption[]
   methods: readonly MethodOption[]
   today: string
   idempotencyKey: string
+  // Called once when the approval succeeded (payment-form-host.tsx pushes
+  // the history entry of the success screen).
+  onApproved?: () => void
 }) {
   const router = useRouter()
   const [state, formAction, pending] = useActionState<
@@ -92,6 +96,16 @@ export function PaymentForm({
       router.refresh()
     }
   }, [state, router])
+
+  // Once per success; the latest callback is read through a ref.
+  const onApprovedRef = useRef(onApproved)
+  useEffect(() => {
+    onApprovedRef.current = onApproved
+  })
+  const approved = state?.ok === true
+  useEffect(() => {
+    if (approved) onApprovedRef.current?.()
+  }, [approved])
 
   if (state?.ok) return <ApprovedLink {...state.data} />
 
