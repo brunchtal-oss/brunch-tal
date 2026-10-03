@@ -352,22 +352,25 @@ describe("join_begin with an existing account", () => {
     })
   })
 
-  it("answers the same input again with existing_account (another key) and other input with LINK_IN_USE", async () => {
+  it("answers the same input again with existing_account (another key) and checks other input again (story 2.4)", async () => {
     await inRollback(async (db) => {
       const { a, account, phone } = await awaitingLogin(db)
       expect(
         await call(db, BEGIN, [a.token, account.email, phone, randomUUID()])
       ).toEqual({ outcome: "existing_account", token_id: a.tokenId })
+      // The same email with another phone still matches the account.
       expect(
-        await callError(db, BEGIN, [
+        await call(db, BEGIN, [
           a.token,
           account.email,
           testPhone(),
           randomUUID(),
         ])
-      ).toMatchObject({ code: "P0001", message: "LINK_IN_USE" })
+      ).toEqual({ outcome: "existing_account", token_id: a.tokenId })
       expect(await tokenRow(db, a.tokenId)).toMatchObject({
         state: "awaiting_login",
+        bound_user_id: a.f.customerA,
+        identity_attempts: 1,
       })
     })
   })
@@ -828,6 +831,7 @@ describe("checks", () => {
         "not_activated",
         "phone_taken",
         "bind_conflict",
+        "too_many_attempts",
       ]) {
         expect(
           await queryError(
@@ -837,6 +841,14 @@ describe("checks", () => {
           )
         ).toBeNull()
       }
+      // A revoked conflict keeps its reason (story 2.4).
+      expect(
+        await queryError(
+          db,
+          "update public.activation_tokens set state = 'revoked', revoked_at = now() where id = $1",
+          [a.tokenId]
+        )
+      ).toBeNull()
     })
   })
 

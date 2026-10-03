@@ -1,3 +1,4 @@
+import { adminCopy } from "@/lib/copy/admin"
 import { shellCopy } from "@/lib/copy/shell"
 
 // Navigation of each shell. Only screens that already exist are listed
@@ -10,7 +11,15 @@ export type NavItem = {
   href: string
   label: string
   icon: NavIcon
+  // Screens reached from this item (the rows of "more"): the item is current
+  // on them too.
+  covers?: readonly string[]
 }
+
+// The rows of the admin's "more" screen (app/admin/(shell)/more/page.tsx).
+export const adminMoreNav: readonly { href: string; label: string }[] = [
+  { href: "/admin/links", label: adminCopy.links.title },
+]
 
 export const customerNav: readonly NavItem[] = [
   { href: "/me", label: shellCopy.nav.home, icon: "home" },
@@ -25,7 +34,12 @@ export const adminNav: readonly NavItem[] = [
     label: shellCopy.nav.payments,
     icon: "payments",
   },
-  { href: "/admin/more", label: shellCopy.nav.more, icon: "more" },
+  {
+    href: "/admin/more",
+    label: shellCopy.nav.more,
+    icon: "more",
+    covers: adminMoreNav.map((row) => row.href),
+  },
 ]
 
 // An item is current on its own path and below it; a shell's home ("/me",
@@ -35,7 +49,14 @@ export function isCurrent(
   item: NavItem,
   pathname: string
 ): boolean {
+  const under = (href: string) =>
+    pathname === href || pathname.startsWith(`${href}/`)
   if (pathname === item.href) return true
+  if (item.covers?.some(under)) return true
+  // Another item covers this path (a row of "more").
+  if (items.some((other) => other !== item && other.covers?.some(under))) {
+    return false
+  }
   if (!pathname.startsWith(`${item.href}/`)) return false
   // A longer matching item wins (/admin/more over /admin).
   return !items.some(

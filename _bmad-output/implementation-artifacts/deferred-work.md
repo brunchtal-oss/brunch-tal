@@ -99,3 +99,8 @@
   target: הסרת פרטים (`admin_anonymize_customer`)
   summary: כשלקוחה מוסרת, קישורי `join` שלה במצב `awaiting_login` צריכים לעבור ל-`conflict` (או לבוטל) באותה עסקה. אחרת אף אחת לא יכולה לשייך אותם, ו-`claim_join` מחזיר `NOT_AUTHORIZED` ("חשבון אחר") עד התפוגה.
   evidence: היום אין RPC שמסיר פרטים, ולכן זה לא קורה. ביקורת 2.3, edge-case 6 ו-blind-hunter.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-4-link-lifecycle-and-mid-join-recovery.md`
+  target: 2.6
+  summary: ב-toggletip של "תוקף הכרטיסיה פג" ב-`/me` מספר השבועות הוא `Math.round(validity_days / 7)` בלי צורת יחיד או זוגי. כשטל תערוך תוקף שאינו כפולה של 7 (למשל 10 ימים), יוצג "עברו 1 שבועות" או מספר מעוגל. ‏2.6 מחליט: ימים כשאינו כפולה של 7, ונוסח ליחיד ולזוגי (באישור המשתמשת).
+  evidence: ‏`validityWeeks` ב-`app/me/purchase-items.ts` ו-`expiredBeforeBoundInfo` ב-`lib/copy/customer.ts`. היום יש רק כרטיסייה של 49 ימים. ביקורת 2.4, blind-hunter ו-edge-case.

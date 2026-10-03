@@ -36,6 +36,16 @@ describe("ExistingAccountLogin", () => {
     expect(html).toContain(`href="/login?next=%2Fjoin%2F${TOKEN}"`)
     expect(html).not.toMatch(/<h1/)
     expect(claimLoginHref(TOKEN)).toBe(`/login?next=%2Fjoin%2F${TOKEN}`)
+    expect(html).not.toContain(joinCopy.backToForm)
+  })
+
+  it("offers back to the form when the page prepared one, without showing it yet", () => {
+    const html = renderToStaticMarkup(
+      <ExistingAccountLogin token={TOKEN} form={<p>the join form</p>} />
+    )
+    expect(html).toContain(joinCopy.notYourAccount)
+    expect(html).toContain(joinCopy.backToForm)
+    expect(html).not.toContain("the join form")
   })
 })
 
@@ -110,6 +120,22 @@ describe("contact link", () => {
     expect(html).toContain(`href="${HREF}"`)
     expect(html).toContain('rel="noopener noreferrer"')
     expect(html).toContain(`>${joinCopy.contactPhrase}</a>`)
+  })
+
+  it("links the contact phrase of an expired link to WhatsApp", () => {
+    const html = renderToStaticMarkup(
+      <ClaimScreen
+        state={{ status: "expired" }}
+        pending={false}
+        token={TOKEN}
+        idempotencyKey={KEY}
+        productName={null}
+        amountAgorot={null}
+        contactHref={HREF}
+      />
+    )
+    expect(html).toContain(`>${joinCopy.expiredContactPhrase}</a>`)
+    expect(html).toContain(`href="${HREF}"`)
   })
 
   it("keeps plain text without published business details", () => {

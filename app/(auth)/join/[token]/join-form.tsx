@@ -10,6 +10,7 @@ import {
 import Link from "next/link"
 
 import { PasswordInput } from "@/components/auth/password-input"
+import { ContactText } from "@/components/shared/contact-text"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button, buttonVariants } from "@/components/ui/button"
 import {
@@ -29,7 +30,6 @@ import { errorMessage, type ErrorCode } from "@/lib/errors"
 import { formatAgorot } from "@/lib/money"
 
 import { submitJoinAction, type JoinFormState } from "./actions"
-import { ContactText } from "./contact-text"
 import { MAX_BABIES, type JoinField, type JoinFieldError } from "./join-input"
 import {
   conflictMessage,
@@ -145,13 +145,18 @@ export function JoinForm({
       <Alert aria-live="polite">
         <AlertTitle className="whitespace-normal">
           {view === "expired" ? (
-            errorMessage("LINK_EXPIRED")
+            <ContactText
+              text={errorMessage("LINK_EXPIRED")}
+              href={contactHref}
+              phrase={joinCopy.expiredContactPhrase}
+            />
           ) : (
             <ContactText
               text={conflictMessage(
                 state?.status === "conflict" ? state.reason : conflictReason
               )}
               href={contactHref}
+              phrase={joinCopy.contactPhrase}
             />
           )}
         </AlertTitle>
@@ -494,7 +499,23 @@ export function JoinForm({
       {state?.status === "identity_retry" && (
         <Alert variant="destructive">
           <AlertDescription>
-            <ContactText text={joinCopy.identityRetry} href={contactHref} />
+            <ContactText
+              text={joinCopy.identityRetry}
+              href={contactHref}
+              phrase={joinCopy.contactPhrase}
+            />
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {state?.status === "email_exists" && (
+        <Alert variant="destructive">
+          <AlertDescription>
+            <ContactText
+              text={joinCopy.emailExists}
+              href={contactHref}
+              phrase={joinCopy.contactShortPhrase}
+            />
           </AlertDescription>
         </Alert>
       )}
@@ -502,7 +523,11 @@ export function JoinForm({
       {formError && (
         <Alert variant="destructive">
           <AlertDescription>
-            <ContactText text={errorMessage(formError)} href={contactHref} />
+            <ContactText
+              text={errorMessage(formError)}
+              href={contactHref}
+              phrase={joinCopy.contactPhrase}
+            />
           </AlertDescription>
         </Alert>
       )}

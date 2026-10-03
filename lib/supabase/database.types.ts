@@ -17,6 +17,7 @@ export type Database = {
       activation_tokens: {
         Row: {
           bound_user_id: string | null
+          claiming_at: string | null
           conflict_reason: string | null
           consumed_at: string | null
           created_at: string
@@ -34,6 +35,7 @@ export type Database = {
         }
         Insert: {
           bound_user_id?: string | null
+          claiming_at?: string | null
           conflict_reason?: string | null
           consumed_at?: string | null
           created_at?: string
@@ -51,6 +53,7 @@ export type Database = {
         }
         Update: {
           bound_user_id?: string | null
+          claiming_at?: string | null
           conflict_reason?: string | null
           consumed_at?: string | null
           created_at?: string
@@ -393,6 +396,7 @@ export type Database = {
       entitlements: {
         Row: {
           allowed_weekdays: number[] | null
+          bound_at: string | null
           created_at: string
           customer_id: string | null
           eligibility_snapshot: Json
@@ -409,6 +413,7 @@ export type Database = {
         }
         Insert: {
           allowed_weekdays?: number[] | null
+          bound_at?: string | null
           created_at?: string
           customer_id?: string | null
           eligibility_snapshot: Json
@@ -425,6 +430,7 @@ export type Database = {
         }
         Update: {
           allowed_weekdays?: number[] | null
+          bound_at?: string | null
           created_at?: string
           customer_id?: string | null
           eligibility_snapshot?: Json
@@ -795,6 +801,7 @@ export type Database = {
           available: number | null
           customer_id: string | null
           entitlement_id: string | null
+          expired_before_bound: boolean | null
           expires_at: string | null
           expires_on: string | null
           is_expired: boolean | null
@@ -838,6 +845,19 @@ export type Database = {
           p_product_id: string
           p_reference: string
         }
+        Returns: Json
+      }
+      admin_issue_link: {
+        Args: {
+          p_idempotency_key: string
+          p_purpose: string
+          p_target_id: string
+        }
+        Returns: Json
+      }
+      admin_list_links: { Args: never; Returns: Json }
+      admin_revoke_link: {
+        Args: { p_idempotency_key: string; p_token_id: string }
         Returns: Json
       }
       claim_join: {

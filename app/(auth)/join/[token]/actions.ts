@@ -23,6 +23,9 @@ export type JoinFormState =
   // the next attempt is sent with this new key (the previous one is stored
   // with the previous input).
   | { status: "identity_retry"; idempotencyKey: string }
+  // Auth refused the email (story 2.4): the form stays for a corrected email,
+  // sent with this new key.
+  | { status: "email_exists"; idempotencyKey: string }
   // Joined, but the sign-in failed: the customer logs in herself.
   | { status: "joined" }
   | { status: "used" }
@@ -98,6 +101,9 @@ export async function submitJoinAction(
   }
   if (result.data.outcome === "identity_retry") {
     return { status: "identity_retry", idempotencyKey: randomUUID() }
+  }
+  if (result.data.outcome === "email_exists") {
+    return { status: "email_exists", idempotencyKey: randomUUID() }
   }
   // The details belong to an existing account: the page reads the link
   // again (awaiting_login) and offers the login.

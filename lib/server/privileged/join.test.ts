@@ -1,6 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { getJoinTokenView, submitJoin, type JoinInput } from "./join"
+import {
+  deleteOrphanUser,
+  getJoinTokenView,
+  joinStepKey,
+  submitJoin,
+  type JoinInput,
+} from "./join"
+import { createServiceClient } from "@/lib/server/privileged/service-client"
 
 const rpc = vi.fn()
 // token_view inside submitJoin (the guard before a password update) is routed
@@ -10,12 +17,21 @@ const getUserById = vi.fn()
 const updateUserById = vi.fn()
 const createUser = vi.fn()
 const deleteUser = vi.fn()
+// profiles read by id before an orphan is deleted.
+const profileRead = vi.fn()
 
 vi.mock("@/lib/server/privileged/service-client", () => ({
   createServiceClient: () => ({
     rpc: (name: string, args: unknown) =>
       name === "token_view" ? tokenView(name, args) : rpc(name, args),
     auth: { admin: { getUserById, updateUserById, createUser, deleteUser } },
+    from: (table: string) => ({
+      select: () => ({
+        eq: (_column: string, id: string) => ({
+          maybeSingle: () => profileRead(table, id),
+        }),
+      }),
+    }),
   }),
 }))
 
@@ -39,6 +55,8 @@ const INPUT: JoinInput = {
   photoConsent: false,
   babies: [{ name: "Baby", birthDate: "2026-09-01" }],
 }
+
+const BEGIN_KEY = joinStepKey(KEY, INPUT.email, INPUT.phone, "begin")
 
 const claiming = {
   data: { outcome: "claiming", token_id: "tok-1", pending_user_id: USER_ID },
@@ -67,10 +85,12 @@ beforeEach(() => {
     updateUserById,
     createUser,
     deleteUser,
+    profileRead,
   ]) {
     fn.mockReset()
   }
   deleteUser.mockResolvedValue({ data: { user: null }, error: null })
+  profileRead.mockResolvedValue({ data: null, error: null })
   tokenView.mockImplementation((name: string, args: unknown) => rpc(name, args))
   vi.spyOn(console, "error").mockImplementation(() => {})
 })
@@ -259,7 +279,7 @@ describe("submitJoin", () => {
       p_token: TOKEN,
       p_email: INPUT.email,
       p_phone: INPUT.phone,
-      p_idempotency_key: KEY,
+      p_idempotency_key: BEGIN_KEY,
     })
     expect(createUser).toHaveBeenCalledWith({
       id: USER_ID,
@@ -278,7 +298,7 @@ describe("submitJoin", () => {
         photo_consent: false,
         babies: [{ name: "Baby", birth_date: "2026-09-01" }],
       },
-      p_idempotency_key: KEY,
+      p_idempotency_key: BEGIN_KEY,
     })
     expect(updateUserById).not.toHaveBeenCalled()
   })
@@ -319,7 +339,7 @@ describe("submitJoin", () => {
     expect(rpcNames()).toEqual(["join_begin", "join_complete"])
   })
 
-  it("answers conflict when the email belongs to another Auth user, without completing", async () => {
+  it("answers email_exists (the form stays open) when the email belongs to another Auth user, without completing", async () => {
     rpc.mockResolvedValue(claiming)
     getUserById.mockResolvedValue(notFound)
     createUser.mockResolvedValue({
@@ -329,7 +349,7 @@ describe("submitJoin", () => {
 
     await expect(submitJoin(TOKEN, INPUT, KEY)).resolves.toEqual({
       ok: true,
-      data: { outcome: "conflict", reason: "email_exists" },
+      data: { outcome: "email_exists" },
     })
     expect(rpcNames()).toEqual(["join_begin"])
   })
@@ -554,6 +574,135 @@ describe("submitJoin", () => {
     expect(console.error).not.toHaveBeenCalled()
   })
 
+  describe("a correction of the details (story 2.4)", () => {
+    const discard = {
+      data: {
+        outcome: "discard_pending_user",
+        token_id: "tok-1",
+        pending_user_id: USER_ID,
+      },
+      error: null,
+    }
+    const NEW_USER = "33333333-3333-4333-8333-333333333333"
+    const claimingNew = {
+      data: {
+        outcome: "claiming",
+        token_id: "tok-1",
+        pending_user_id: NEW_USER,
+      },
+      error: null,
+    }
+
+    it("deletes the Auth user of the previous input, then asks again under the after_discard key and completes", async () => {
+      let begins = 0
+      rpc.mockImplementation(async (name: string) => {
+        if (name !== "join_begin") return joined
+        begins++
+        return begins === 1 ? discard : claimingNew
+      })
+      getUserById.mockResolvedValue(notFound)
+      createUser.mockResolvedValue(ok)
+
+      await expect(submitJoin(TOKEN, INPUT, KEY)).resolves.toMatchObject({
+        ok: true,
+        data: { outcome: "joined" },
+      })
+      expect(deleteUser).toHaveBeenCalledWith(USER_ID)
+      expect(rpcNames()).toEqual(["join_begin", "join_begin", "join_complete"])
+      const keys = rpc.mock.calls.map(
+        ([, args]) => (args as { p_idempotency_key: string }).p_idempotency_key
+      )
+      expect(keys).toEqual([
+        BEGIN_KEY,
+        joinStepKey(KEY, INPUT.email, INPUT.phone, "after_discard"),
+        // join_complete runs under the begin key (lost-response lookup).
+        BEGIN_KEY,
+      ])
+      expect(createUser).toHaveBeenCalledWith(
+        expect.objectContaining({ id: NEW_USER })
+      )
+    })
+
+    it("returns SERVER_ERROR without asking again when the deletion fails", async () => {
+      rpc.mockResolvedValue(discard)
+      deleteUser.mockResolvedValue({
+        data: { user: null },
+        error: { status: 500, code: "unexpected_failure", message: "x" },
+      })
+      await expect(submitJoin(TOKEN, INPUT, KEY)).resolves.toEqual({
+        ok: false,
+        code: "SERVER_ERROR",
+      })
+      expect(rpcNames()).toEqual(["join_begin"])
+      expect(getUserById).not.toHaveBeenCalled()
+    })
+
+    it("returns SERVER_ERROR when the second answer is a discard again", async () => {
+      rpc.mockResolvedValue(discard)
+      await expect(submitJoin(TOKEN, INPUT, KEY)).resolves.toEqual({
+        ok: false,
+        code: "SERVER_ERROR",
+      })
+      expect(rpcNames()).toEqual(["join_begin", "join_begin"])
+      expect(deleteUser).toHaveBeenCalledTimes(1)
+    })
+
+    it("returns the joined result to a resubmit after a correction whose join_complete response was lost", async () => {
+      // A small stand-in for the database: stored results per (rpc, key).
+      const stored = new Map<string, unknown>()
+      let consumed = false
+      let deleted = false
+      rpc.mockImplementation(async (name: string, args: unknown) => {
+        const key = (args as { p_idempotency_key: string }).p_idempotency_key
+        if (name === "join_begin") {
+          if (consumed) {
+            const done = stored.get(`join_complete:${key}`)
+            return done
+              ? { data: done, error: null }
+              : { data: null, error: p0001("LINK_USED") }
+          }
+          const previous = stored.get(`join_begin:${key}`)
+          if (previous) return { data: previous, error: null }
+          const answer = deleted ? claimingNew.data : discard.data
+          stored.set(`join_begin:${key}`, answer)
+          return { data: answer, error: null }
+        }
+        consumed = true
+        stored.set(`join_complete:${key}`, joined.data)
+        // The response is lost.
+        return { data: null, error: { code: "PGRST000", message: "network" } }
+      })
+      deleteUser.mockImplementation(async () => {
+        deleted = true
+        return { data: { user: null }, error: null }
+      })
+      getUserById.mockResolvedValue(notFound)
+      createUser.mockResolvedValue(ok)
+
+      await expect(submitJoin(TOKEN, INPUT, KEY)).resolves.toEqual({
+        ok: false,
+        code: "SERVER_ERROR",
+      })
+      await expect(submitJoin(TOKEN, INPUT, KEY)).resolves.toEqual({
+        ok: true,
+        data: { outcome: "joined", email: "dev-join@example.com" },
+      })
+      expect(createUser).toHaveBeenCalledTimes(1)
+    })
+
+    it("never reuses a key for other input of the same page", () => {
+      const other = joinStepKey(KEY, "other@example.com", INPUT.phone, "begin")
+      expect(other).not.toBe(BEGIN_KEY)
+      expect(BEGIN_KEY).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
+      )
+      // The same input in another form (case, spaces, dashes): the same key.
+      expect(
+        joinStepKey(KEY, " DEV-JOIN@example.com", "0541234567", "begin")
+      ).toBe(BEGIN_KEY)
+    })
+  })
+
   it.each(["LINK_USED", "LINK_EXPIRED", "LINK_IN_USE"])(
     "passes begin %s through without touching Auth",
     async (code) => {
@@ -600,5 +749,31 @@ describe("submitJoin", () => {
     ]) {
       expect(logged).not.toContain(secret)
     }
+  })
+})
+
+describe("deleteOrphanUser", () => {
+  it("does not delete a user that has a profile (a parallel join completed), and goes on", async () => {
+    profileRead.mockResolvedValue({ data: { id: USER_ID }, error: null })
+    await expect(
+      deleteOrphanUser(createServiceClient(), USER_ID, "tok-1")
+    ).resolves.toBe(true)
+    expect(profileRead).toHaveBeenCalledWith("profiles", USER_ID)
+    expect(deleteUser).not.toHaveBeenCalled()
+  })
+
+  it("deletes a user without a profile", async () => {
+    await expect(
+      deleteOrphanUser(createServiceClient(), USER_ID, "tok-1")
+    ).resolves.toBe(true)
+    expect(deleteUser).toHaveBeenCalledWith(USER_ID)
+  })
+
+  it("fails without deleting when the profile cannot be read", async () => {
+    profileRead.mockResolvedValue({ data: null, error: { message: "x" } })
+    await expect(
+      deleteOrphanUser(createServiceClient(), USER_ID, "tok-1")
+    ).resolves.toBe(false)
+    expect(deleteUser).not.toHaveBeenCalled()
   })
 })

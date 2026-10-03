@@ -4,7 +4,7 @@ import { join, relative, sep } from "node:path"
 
 import { describe, expect, it } from "vitest"
 
-import { adminNav, customerNav, isCurrent } from "./nav"
+import { adminMoreNav, adminNav, customerNav, isCurrent } from "./nav"
 
 const APP = fileURLToPath(new URL("../app/", import.meta.url))
 
@@ -30,12 +30,11 @@ function routes(): Set<string> {
 describe("navigation", () => {
   const existing = routes()
 
-  it.each([...customerNav, ...adminNav].map((item) => [item.href]))(
-    "%s has a page.tsx",
-    (href) => {
-      expect(existing.has(href)).toBe(true)
-    }
-  )
+  it.each(
+    [...customerNav, ...adminNav, ...adminMoreNav].map((item) => [item.href])
+  )("%s has a page.tsx", (href) => {
+    expect(existing.has(href)).toBe(true)
+  })
 
   it("keeps each shell inside its own area", () => {
     for (const item of customerNav) expect(item.href).toMatch(/^\/me(\/|$)/)
@@ -52,5 +51,8 @@ describe("navigation", () => {
     expect(isCurrent(adminNav, home, "/admin/payments/new")).toBe(false)
     expect(isCurrent(adminNav, home, "/admin/sessions")).toBe(true)
     expect(isCurrent(adminNav, home, "/administration")).toBe(false)
+    // A row of "more" keeps "more" current.
+    expect(isCurrent(adminNav, more, "/admin/links")).toBe(true)
+    expect(isCurrent(adminNav, home, "/admin/links")).toBe(false)
   })
 })

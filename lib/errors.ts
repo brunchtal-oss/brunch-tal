@@ -28,6 +28,10 @@ export const ERROR_MESSAGES = {
   // User decision 2026-10-02 (round 2); on /join the last phrase links to
   // Tal's WhatsApp.
   LINK_IN_USE: "הלינק מומש. צרי קשר לפרטים נוספים",
+  // Revoking or replacing a join link while the customer is in the middle of
+  // joining (claiming for less than 15 minutes; story 2.4, user decision
+  // 2026-10-03).
+  LINK_IN_PROGRESS: "הלקוחה באמצע הצטרפות. אפשר לבטל או להחליף אחרי 15 דקות",
   // Raised by private.bind_purchase; the join RPCs turn it into a conflict.
   BIND_CONFLICT: "לא ניתן להוסיף את הרכישה לחשבון. צרי קשר לפרטים נוספים",
   // Raised by the adapter (never by SQL).
