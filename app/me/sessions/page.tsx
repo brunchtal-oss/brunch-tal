@@ -75,8 +75,6 @@ async function SessionsList() {
             <SessionCard
               href={`/me/sessions/${session.id}`}
               conceptName={session.concept_name}
-              themeKey={session.theme_key}
-              paperKey={session.paper_key}
               startsAt={session.starts_at}
               statusText={status?.text}
               status={

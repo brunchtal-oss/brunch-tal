@@ -35,6 +35,7 @@ colors:
   expired-tint: '#EDE9E0'
   expired-dot: '#B0A998'
   scrim-ink: '#2E2A1F'       # used with alpha on hero/sheet scrims (same hex as ink)
+  # DROPPED (user's decision 2026-10-04, memlog): no concept colours anywhere; kept for history only, never used.
   # Concept "paper" colours (CAP-41) — only in concept-header and session-card band. field + its own dark ink.
   concept-mothers-field: '#CDD3BC'
   concept-mothers-ink: '#3C4631'      # 6.46:1 on field
@@ -141,6 +142,7 @@ typography:
     fontSize: 26px
     fontWeight: '400'
     lineHeight: '1'
+  # DROPPED (user's decision 2026-10-04, memlog): the concept name uses Heebo 300 like every heading (26px on the card, display-lg in the header); kept for history only.
   # Concept name (the session title) — one face per concept, only for the concept name, >=22px.
   # Sizes: header 40-46px, card band 34px, card without photo 52px.
   concept-name-mothers:
@@ -284,17 +286,15 @@ components:
     background: '{colors.card}'
     border: '1px solid {colors.border}'
     radius: '{rounded.md}'
-    photo: 'top, aspect-ratio 4:3, full width'
-    band: 'concept field colour, padding 16px 18px 18px; "בראנץ׳" in {typography.body-sm} + concept name in the concept face at 34px, both in the concept ink'
-    noPhoto: 'band takes the photo area (aspect-ratio 4:3), name 52px, aligned to the band bottom'
-    meta: 'padding 12px 18px 16px; date {typography.body-sm} + {components.status-chip} (customer only)'
+    # One uniform card for every concept (user's decision 2026-10-04, memlog)
+    photo: 'top, aspect-ratio 2:1 (a low, rectangular card), full width; the session photo, else the concept photo (5.4)'
+    noPhoto: '{colors.muted} surface with a decorative croissant mark (56px, stroke 1) in {colors.accent}; never an empty frame'
+    body: 'padding 12px 16px 14px; "בראנץ׳" {typography.body-sm} {colors.ink-muted}, concept name {typography.display-sm} {colors.ink}, then date {typography.body-sm} + {components.status-chip} (customer only)'
   concept-header:
-    # session page top (CAP-41): colour field with the photo straddling its lower edge
-    field: 'concept field colour, padding 28px {spacing.gutter-mobile} 96px'
-    name: '"בראנץ׳" {typography.body-sm} above the concept name in the concept face (40-46px), concept ink'
-    when: '{typography.body}, concept ink, margin-top 14px'
-    photo: 'aspect-ratio 4:3, width 100% minus 2x{spacing.gutter-mobile}, margin-top -72px, radius {rounded.sm}'
-    noPhoto: 'field keeps padding-bottom {spacing.5}; no empty frame'
+    # session page top, same style as session-card (user's decision 2026-10-04, memlog)
+    photo: 'full-bleed inside the gutter, aspect-ratio 4:3, same noPhoto surface as session-card'
+    name: '"בראנץ׳" {typography.body-sm} {colors.ink-muted} above the concept name in {typography.display-lg}, {colors.ink}'
+    when: '{typography.body}, margin-top 12px'
   bell-button:
     # admin top bar (CAP-35)
     size: '{spacing.touch-min} square'
@@ -323,7 +323,7 @@ components:
   worksheet-print:
     # @media print and desktop table
     page: 'A4 portrait, margins 12mm, black on white'
-    header: 'concept name in the concept face 28px + date line; 2px rule in the concept ink under it'
+    header: 'concept name Heebo 300 28px + date line; 2px black rule under it'
     table: 'dish column + one column per prep day with content; 1px {colors.border} cells, header row {colors.muted}'
     sections: 'three columns: registrants and photo consent, dietary notes, shopping list'
   open-card-row:
@@ -523,7 +523,7 @@ components:
 
 כיוון נבחר: [mockups/directions-1.html](mockups/directions-1.html) — כיוון 1 "שקט של Ziona" עם ההירו ופס הוואטסאפ של כיוון 2; מיושם בדף הבית ב-[mockups/key-public-home.html](mockups/key-public-home.html).
 
-**חריג אחד לשקט — קונספטים (CAP-41):** לכל סוג בראנץ׳ חוזר יש "כרטיס תפריט" משלו: צבע נייר רך אחד וגופן אחד לשם הקונספט, כמו תפריט של מסעדה טובה. שם הקונספט הוא הכותרת של המפגש, ולכן הוא חוזר זהה בכל מפגש ונהיה הסמל של הקונספט. הצבע מופיע **רק** בראש עמוד המפגש (`concept-header`) ובפס של כרטיס המפגש (`session-card`); כל שאר הממשק נשאר בקרם. אין דוגמאות, אין איורים ואין אייקונים לקונספט — נוסו ונדחו (memlog). מוקאפ: [mockups/concept-themes-3.html](mockups/concept-themes-3.html).
+**קונספטים (CAP-41), החלטת המשתמשת 2026-10-04 (memlog):** אין לקונספט צבע או גופן משלו. כל כרטיסי המפגשים אחידים, והצילום (של המפגש, ואם אין, של הקונספט) הוא מה שמבדיל ביניהם. שם הקונספט הוא הכותרת של המפגש, ב-Heebo כמו כל כותרת. אין דוגמאות, אין איורים ואין אייקונים לקונספט. המוקאפ [mockups/concept-themes-3.html](mockups/concept-themes-3.html) והחריג הקודם ("כרטיס תפריט" צבעוני לכל קונספט) הוחלפו.
 
 שם העסק מוצג ככיתוב (wordmark) ב-Heebo דק — אין לוגו ואין סלוגן. ה-UI מבוסס shadcn/ui (base-nova, RTL, אייקוני lucide); הקובץ הזה מגדיר רק את ההבדלים. מצב בהיר בלבד — אין מצב כהה.
 
@@ -630,7 +630,7 @@ components:
 - **כל הכותרות ב-Heebo 300.** משקל 200 רק ב-`{typography.wordmark-display}` — שם העסק הגדול על רקע קרם חלק. אף פעם לא מעל צילום ולא מתחת ל-28px.
 - גבהים של מכלים עם טקסט (הירו, סרגל תחתון) מוגדרים כ-`min-height`, לא `height` — טקסט מוגדל או ריווח טקסט מותאם לא נחתכים.
 - **מינימום 13px לכל טקסט.** ברפרנס של Ziona התוויות הן 9–10px ו-12px; זה קטן מדי לנגישות ולקריאה בטלפון ביד אחת, לכן הועלה ל-13px. זו סטייה מכוונת מהרפרנס.
-- **גופני קונספט** (`{typography.concept-name-*}`, טבלה ב-Colors): רק לשם הקונספט (כותרת המפגש), תמיד 22px ומעלה (34px בפס הכרטיס, 40–46px בראש העמוד, 52px בכרטיס בלי צילום). כל טקסט אחר — Heebo/Assistant. נטענים מ-Google Fonts עם subset עברי, רק בעמודים שמציגים מפגשים. Bellefair ו-Karantina נבדקו ונדחו (Bellefair שמן בעברית; ב-Karantina "יווני" נקרא כקווים).
+- **גופני קונספט: בוטלו** (החלטת המשתמשת 2026-10-04). שם הקונספט ב-Heebo 300: `display-sm` (22px) בכרטיס, `display-lg` בראש עמוד המפגש. `{typography.concept-name-*}` נשארו לתיעוד בלבד.
 - אין אותיות רישיות/UPPERCASE (עברית); אין הטיה (italic).
 - תאריך: `יום שני 12.10 · 10:00` — שעון 24 שעות, DD.MM, מפריד נקודה אמצעית.
 - מחיר: `128 ₪` — שקלים בלבד, בלי אגורות בתצוגה; מספרי טלפון ומספרים מעורבים עטופים ב-`<bdi>` כדי לא להתהפך ב-RTL.
@@ -681,8 +681,8 @@ components:
 | `hero` | מותאם | צילום שולחן מלמעלה, full-bleed, `min-height` 560px בטלפון (גדל עם התוכן). scrim: פס עליון ink/72% מאחורי הסרגל; באמצע שקוף; מתחילת בלוק הטקסט ועד התחתית ≥ink/72% ובקצה 85%. **כלל:** בשום נקודה מאחורי טקסט השקיפות לא יורדת מ-0.72 (on-primary ≥5.35:1 גם מעל פיקסל לבן). בתחתית: wordmark `{typography.display-xl}` (משקל 300), כותרת `{typography.display-sm}`, שורת תיאור `{typography.body}`, `button-hero`. בלי צילום מאושר — וזו ברירת המחדל עד שצילום נבדק מול הכלל — fallback טיפוגרפי של כיוון 1 (רקע קרם, שם העסק ב-`{typography.wordmark-display}` ממורכז, `button-primary`) |
 | `card` | `Card` | `{colors.card}`, מסגרת `{colors.border}`, פינה 8px, ריפוד 16px, בלי צל |
 | `session-row` | מותאם | רשימה עם קווי הפרדה דקים (כיוון 1). עמודת תאריך 64px: `{typography.numeral-lg}` + יום ב-`label`. תוכן: שם הקונספט ("בראנץ׳ {קונספט}") `body-strong`, מטא (שעה) `label` ב-ink-muted — תווית הסוג לא מוצגת ללקוחה (CAP-41, החלטת משתמשת 2026-09-26), שורה של `status-chip` + רמז חזותי "לפרטים" עם chevron (טקסט `label` עם קו תחתון, לא כפתור נפרד — השורה כולה היא יעד אחד). מפגש מלא: שם ב-ink-muted. וריאנט **בחירה** (כרטיסייה): צ׳קבוקס 24px בצד inline-start, בלי רמז "לפרטים"; שורה נבחרת ברקע `{colors.muted}` **וגם** צ׳קבוקס מסומן (הרקע לבדו 1.09:1 — לא מספיק); שורה לא זכאית: טקסט ink-muted + סיבה ב-`label` |
-| `session-card` | `Card` | ([concept-themes-3](mockups/concept-themes-3.html)) צילום המפגש למעלה ביחס 4:3; מתחתיו **פס הקונספט** בצבע השדה: "בראנץ׳" ב-`body-sm` ושם הקונספט בגופן הקונספט (34px), בדיו של הקונספט. מתחת לפס: מועד ב-`body-sm` ו-`status-chip` (רק ללקוחה מחוברת). **בלי צילום:** הפס תופס את מקום הצילום (4:3) והשם בגודל 52px בתחתיתו — אף פעם לא מסגרת ריקה. אין תווית סוג ואין "לשני מבוגרים" |
-| `concept-header` | מותאם | ראש עמוד המפגש: שדה בצבע הקונספט ברוחב מלא, "בראנץ׳" + שם הקונספט (40–46px) + מועד, בדיו של הקונספט. הצילום (4:3, פינות 4px) יושב על הגבול התחתון של השדה — חציו על הצבע וחציו על הקרם. זה המהלך העיצובי הבולט היחיד בעמוד. בלי צילום — השדה נסגר בריווח רגיל |
+| `session-card` | `Card` | כרטיס אחיד לכל הקונספטים (החלטת המשתמשת 2026-10-04, memlog): צילום רחב למעלה ביחס 2:1, כרטיס נמוך ומלבני (תמונת המפגש, ואם אין, תמונת הקונספט; 5.4). מתחתיו "בראנץ׳" ב-`body-sm` ink-muted, שם הקונספט ב-`display-sm` בדיו הרגיל, ואז מועד ב-`body-sm` ו-`status-chip` (רק ללקוחה מחוברת). **בלי צילום:** משטח muted עם סימן קרואסון קישוטי בצבע accent, אף פעם לא מסגרת ריקה. בלי צבע או גופן לקונספט. אין תווית סוג ואין "לשני מבוגרים" |
+| `concept-header` | מותאם | ראש עמוד המפגש, באותו סגנון כמו `session-card` (החלטת המשתמשת 2026-10-04): צילום 4:3 ברוחב מלא, ומתחתיו "בראנץ׳" + שם הקונספט ב-`display-lg` + מועד, בדיו הרגיל. בלי צילום: אותו משטח muted כמו בכרטיס |
 | `chip` | `Badge` | בסיס: `{colors.muted}`, 13px, pill. לא אינטראקטיבי; צ׳יפ סינון אינטראקטיבי מקבל אזור מגע 44px |
 | `chip-type` | `Badge` outline | **אדמין בלבד** (רשימות מפגשים ועריכה): מסגרת `{colors.accent}` (גרפיקה, 3.42:1), טקסט ink, פינה 4px. לא מוצג לאורחת או ללקוחה |
 | `status-chip` | `Badge` | pill, tint + טקסט + dot 7px, `label-strong`. **יש מקום** success · **מקומות אחרונים** warning · **מלא** expired (עמום, לא אדום) — שלושתם רק ללקוחה מחוברת, בלי מספר (באדמין התפוסה מוצגת כמספר בטקסט `label` ליד השם, "9/12", ולא כצ׳יפ) · **מאושר** success · **ממתין** / **ממתין למימוש** (קישור הצטרפות) pending · **עומדת לפוג** (`expiring`) warning · **פג תוקף** expired · **בוטל** expired · **שגיאה** error. תוצאה לכל תאריך בהרשמה מרובה: **נשמר** = success, **לא נשמר** = expired, והסיבה ב-`inline-notice` warning מתחת. תמיד מילה, לעולם לא נקודה לבד; הנקודה `aria-hidden` |
@@ -694,7 +694,7 @@ components:
 | `focus-ring` | `ring` של shadcn | ראו Colors › פוקוס: פס 2px on-primary + טבעת 2px primary, ב-`:focus-visible` בלבד, לכל רכיב אינטראקטיבי בשלושת המשטחים |
 | `notification-item` | מותאם | שורה ברשימה עם קו הפרדה. לא נקראה: נקודה 8px accent (קישוטית) + כותרת `body-strong` + המילה "לא נקראה" לקורא מסך; נקראה: כותרת `body`. זמן יחסי ב-`label` ink-muted. השורה כולה היא קישור אחד (≥44px) |
 | `balance-card` | מותאם | רקע `{colors.muted}`, פינה 8px, נקודה accent. שורה: סוג · **מספרים ב-`body-strong`** · "בתוקף עד DD.MM" ב-ink-muted. שורה משנית: משוריינות / תפוגה. עומדת לפוג: שורת התוקף מוסיפה "עוד {n} ימים" + `status-chip` expiring, בלי כפתור; פגה: expired; זיכוי: שתי החלופות כשורות קטנות. נקודת ה-accent קישוטית |
-| `inline-notice` | `Alert` | tint + טקסט בצבע המצב, אייקון lucide (קישוטי), פינה 8px. מבנה קבוע: סיבה (שורה אחת) + פעולה (`button-link` או `button-secondary`) |
+| `inline-notice` | `Alert` | tint + טקסט בצבע המצב, אייקון lucide (קישוטי), פינה 8px. מבנה קבוע: סיבה (שורה אחת) + פעולה (`button-link` או `button-secondary`). ממורכז, בשורות מאוזנות, כך שאף פעם לא נשארת מילה בודדת בשורה האחרונה; האייקון בתחילת השורה הראשונה, והפעולות ממורכזות (החלטת המשתמשת 2026-10-04). כך גם ה-Alert במסכי ההתחברות. בכל האפליקציה טקסט רץ נשבר ב-`text-wrap: pretty` וכותרות ב-`balance` |
 | `attendee-row` | מותאם | אדמין: שם `body-strong` (+ "×2" לזוגי), שורת תינוק/ת וגיל `body-sm`. שדה "אלרגיות והעדפות תזונתיות" הוא טקסט אחד שהלקוחה כתבה — מוצג כמו שהוא ב-`body-sm`, בתוך רקע tint של warning כדי שיבלוט לטל; הגבלת המלווה בזוגי מוצגת באותו אופן עם "מלווה:". **שדה ריק — לא מוצג כלום** (בלי "טרם נמסר"). בדף העבודה גם אישור התמונות כ-`status-chip`. המערכת לא מפרקת את הטקסט לצ׳יפים |
 | `bell-button` | `Button` ghost | סרגל עליון של האדמין, ב-inline-end: פעמון lucide 24px באזור 44×44, מונה לא-נקראו כ-pill `primary`. פותח את מרכז ההתראות של טל |
 | `segmented-switch` | `ToggleGroup` / קישורים | שתי תצוגות של אותו דבר ("פרטים \| עבודה" במפגש, "לקוחות \| כרטיסיות פתוחות"): מסגרת 1px ink-muted, פינה 4px, כל חצי 44px לפחות; הנבחר ב-primary עם טקסט on-primary |
