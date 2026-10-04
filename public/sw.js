@@ -20,7 +20,7 @@
 // (regenerated ones stay stale until then), and activate deletes the caches
 // of older versions.
 
-const VERSION = "v1"
+const VERSION = "v2"
 const CACHE_PREFIX = "brunch-"
 const CACHE = `${CACHE_PREFIX}${VERSION}`
 const OFFLINE_URL = "/offline"
