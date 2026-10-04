@@ -1,6 +1,7 @@
 // System microcopy of the three shells (navigation, skip link, sign-out).
-// The wordmark is one constant, the same name as the <title> template. In 5.2
-// the public wordmark moves to the published business details.
+// The wordmark is one constant, the same name as the <title> template. The
+// public shell shows the published business name instead when there is one
+// (story 5.2).
 
 export const WORDMARK = "בראנץ׳ אצל טל"
 
@@ -18,10 +19,45 @@ export const shellCopy = {
     sessions: "מפגשים",
     payments: "תשלומים",
     more: "עוד",
+    // The public pages (menu-sheet); also each page's h1 and <title>.
+    about: "אודות",
+    howItWorks: "איך זה עובד ושאלות נפוצות",
+    gallery: "גלריה והמלצות",
+    contact: "יצירת קשר",
   },
   public: {
     customerLogin: "כניסה לאזור האישי",
     adminLogin: "כניסת מנהלת",
+    // top-bar and menu-sheet (EXPERIENCE › top-bar, menu-sheet).
+    menu: "תפריט",
+    closeMenu: "סגירת התפריט",
+    pagesLabel: "עמודי האתר",
+    // whatsapp-bar (EXPERIENCE › whatsapp-bar, source §3).
+    whatsappLabel: "יצירת קשר",
+    whatsappBar: "להצטרפות צרי קשר עם טל",
+    whatsappBarName: "להצטרפות צרי קשר עם טל בוואטסאפ (נפתח בוואטסאפ)",
+    // A public page with no published section yet.
+    emptyPage: "התוכן של העמוד הזה עוד בהכנה",
+    emptyPageWhatsapp: "לשאלות אפשר לכתוב לטל בוואטסאפ",
+    // The name of a section that was published without a title (for screen
+    // readers).
+    sections: {
+      steps: "איך זה עובד",
+      faq: "שאלות נפוצות",
+      testimonials: "המלצות",
+    },
+    // The business details (contact page, home › contact).
+    contact: {
+      label: "פרטי קשר",
+      phone: "טלפון",
+      whatsapp: "וואטסאפ",
+      whatsappLink: "לכתוב לטל בוואטסאפ",
+      address: "כתובת",
+      arrival: "הוראות הגעה",
+      navigation: "פתיחה באפליקציית ניווט",
+      payment: "הוראות תשלום",
+      opensOutside: "(נפתח בחלון חדש)",
+    },
   },
   customer: {
     homeTitle: "בית",

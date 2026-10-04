@@ -2,9 +2,14 @@ import { describe, expect, it } from "vitest"
 
 import {
   businessDetailsSchema,
+  faqSchema,
+  footerSchema,
   heroSchema,
   photoConsentSchema,
   schemaForKind,
+  stepsSchema,
+  testimonialsSchema,
+  textBlockSchema,
 } from "./schema"
 
 // The shapes the migrations seed (create_join_flow) and the editor saves.
@@ -108,11 +113,72 @@ describe("businessDetailsSchema", () => {
   })
 })
 
+describe("textBlockSchema", () => {
+  it("keeps the body's line breaks and drops an empty eyebrow", () => {
+    const parsed = textBlockSchema.parse({
+      eyebrow: " ",
+      title: " t ",
+      body: ["a", "b"].join("\n"),
+    })
+    expect(JSON.parse(JSON.stringify(parsed))).toEqual({
+      title: "t",
+      body: ["a", "b"].join("\n"),
+    })
+  })
+
+  it.each([
+    ["no title", { body: "b" }],
+    ["an empty body", { title: "t", body: " " }],
+  ])("refuses %s", (_label, value) => {
+    expect(textBlockSchema.safeParse(value).success).toBe(false)
+  })
+})
+
+describe("list schemas", () => {
+  it.each([
+    [stepsSchema, { title: "t", body: "b" }],
+    [faqSchema, { question: "q", answer: "a" }],
+    [testimonialsSchema, { name: "n", text: "t" }],
+  ] as const)("parses items and refuses an empty list", (schema, item) => {
+    expect(schema.safeParse({ items: [item] }).success).toBe(true)
+    expect(schema.safeParse({ items: [] }).success).toBe(false)
+    expect(schema.safeParse({}).success).toBe(false)
+  })
+
+  it("refuses a step without a body", () => {
+    expect(
+      stepsSchema.safeParse({ items: [{ title: "t", body: "" }] }).success
+    ).toBe(false)
+    expect(
+      stepsSchema.safeParse({ items: [{ title: "t", body: "b" }] }).success
+    ).toBe(true)
+  })
+
+  it("refuses a testimonial without a name", () => {
+    expect(
+      testimonialsSchema.safeParse({ items: [{ name: " ", text: "t" }] })
+        .success
+    ).toBe(false)
+  })
+})
+
+describe("footerSchema", () => {
+  it("needs a text", () => {
+    expect(footerSchema.safeParse({ text: "f" }).success).toBe(true)
+    expect(footerSchema.safeParse({ text: "" }).success).toBe(false)
+  })
+})
+
 describe("schemaForKind", () => {
   it("maps each kind to its schema", () => {
     expect(schemaForKind("hero")).toBe(heroSchema)
     expect(schemaForKind("business_details")).toBe(businessDetailsSchema)
     expect(schemaForKind("photo_consent")).toBe(photoConsentSchema)
+    expect(schemaForKind("text_block")).toBe(textBlockSchema)
+    expect(schemaForKind("steps")).toBe(stepsSchema)
+    expect(schemaForKind("faq")).toBe(faqSchema)
+    expect(schemaForKind("testimonials")).toBe(testimonialsSchema)
+    expect(schemaForKind("footer")).toBe(footerSchema)
   })
 
   it.each(["test", "toString", "__proto__", ""])(

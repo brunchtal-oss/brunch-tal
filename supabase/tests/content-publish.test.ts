@@ -73,6 +73,11 @@ async function anonHero(db: Db): Promise<unknown[]> {
   return rows
 }
 
+// The hero section of admin_get_content_page('home') (5.2 added more).
+function heroOf(page: Record<string, unknown>): unknown[] {
+  return (page.sections as { key: string }[]).filter((s) => s.key === "hero")
+}
+
 async function homeVersion(db: Db): Promise<number> {
   const { rows } = await db.query(
     "select published_version from public.content_pages where slug = 'home'"
@@ -109,6 +114,7 @@ describe("content publish", () => {
         published_version: 0,
         published_at: null,
       })
+      // The hero (5.1), then the intro and contact sections (5.2), in order.
       expect(page.sections).toEqual([
         expect.objectContaining({
           key: "hero",
@@ -117,6 +123,16 @@ describe("content publish", () => {
           hidden: false,
           draft_content: null,
           published_content: null,
+        }),
+        expect.objectContaining({
+          key: "intro",
+          kind: "text_block",
+          sort_order: 2,
+        }),
+        expect.objectContaining({
+          key: "contact",
+          kind: "text_block",
+          sort_order: 5,
         }),
       ])
       expect(await anonHero(db)).toEqual([])
@@ -132,7 +148,7 @@ describe("content publish", () => {
       expect(await anonHero(db)).toEqual([])
       expect(await homeVersion(db)).toBe(0)
       const page = await asAdmin(db, admin, GET, ["home"])
-      expect(page.sections).toEqual([
+      expect(heroOf(page)).toEqual([
         expect.objectContaining({
           draft_content: HERO,
           published_content: null,
@@ -226,7 +242,7 @@ describe("content publish", () => {
         expect(error).toMatchObject({ code: "P0001", message: "INVALID_INPUT" })
       }
       const page = await asAdmin(db, admin, GET, ["home"])
-      expect(page.sections).toEqual([
+      expect(heroOf(page)).toEqual([
         expect.objectContaining({ draft_content: null }),
       ])
     })

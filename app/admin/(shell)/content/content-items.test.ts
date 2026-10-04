@@ -7,6 +7,7 @@ import {
   hasPendingDraft,
   isEditableSlug,
   pageStatus,
+  publishTags,
   sameContent,
   type ContentSection,
 } from "./content-items"
@@ -32,6 +33,16 @@ describe("content items", () => {
     expect(isEditableSlug("contact")).toBe(true)
     expect(isEditableSlug("privacy")).toBe(false)
     expect(isEditableSlug("toString")).toBe(false)
+  })
+
+  it("updates content:global for the business details and the footer", () => {
+    expect(publishTags("home")).toEqual(["content:home"])
+    expect(publishTags("about")).toEqual(["content:about"])
+    expect(publishTags("contact")).toEqual([
+      "content:contact",
+      "content:global",
+    ])
+    expect(publishTags("site")).toEqual(["content:site", "content:global"])
   })
 
   it("compares content by value, not key order", () => {

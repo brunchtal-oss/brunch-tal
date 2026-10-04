@@ -194,6 +194,37 @@ body:has([data-tab-bar]) {
   }
 }
 
+/*
+ * Public shell (story 5.2). The top-bar is sticky: a focused control is
+ * never scrolled under it. The whatsapp-bar is fixed to the bottom (48px +
+ * 16px from the edge + safe area): the public layout keeps that room below
+ * the footer, and a focused control is not scrolled under it (DESIGN ›
+ * Layout). Below a 480px window height (zoom, landscape) the bar is not
+ * shown (`short:hidden`) and its link is in the flow, so no room is kept.
+ */
+@custom-variant short (@media (max-height: 479.98px));
+
+html:has([data-top-bar]) {
+  scroll-padding-top: 5rem;
+}
+html:has([data-whatsapp-bar]) {
+  scroll-padding-bottom: calc(3rem + 1rem + env(safe-area-inset-bottom) + 1rem);
+}
+@media (max-height: 479.98px) {
+  html:has([data-whatsapp-bar]) {
+    scroll-padding-bottom: 0;
+  }
+}
+/* On the olive top-bar the ring is on-primary, so it shows on the bar. */
+[data-top-bar] :focus-visible {
+  outline-color: var(--primary-foreground);
+}
+/* The menu-sheet's scrim: ink at 40%, flat (DESIGN › menu-sheet). */
+[data-slot="sheet-overlay"]:has(~ [data-menu-sheet]) {
+  background-color: rgb(46 42 31 / 0.4);
+  backdrop-filter: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

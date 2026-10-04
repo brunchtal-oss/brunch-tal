@@ -60,16 +60,29 @@ describe("ContentEditor", () => {
 describe("PreviewBar", () => {
   it("says the draft is not published and offers to publish it", () => {
     const html = renderToStaticMarkup(
-      <PreviewBar hasPending publishKey={KEY} />
+      <PreviewBar slug="home" hasPending publishKey={KEY} />
     )
     expect(html).toContain(copy.previewBar)
     expect(html).toContain(copy.backToEdit)
     expect(html).toContain(`>${copy.publish}<`)
   })
 
+  it("leads back to the editor of its page", () => {
+    expect(
+      renderToStaticMarkup(
+        <PreviewBar slug="contact" hasPending publishKey={KEY} />
+      )
+    ).toContain('href="/admin/content/contact"')
+    expect(
+      renderToStaticMarkup(
+        <PreviewBar slug="home" hasPending publishKey={KEY} />
+      )
+    ).toContain('href="/admin/content/home"')
+  })
+
   it("shows the site as it is, without publish, when nothing is pending", () => {
     const html = renderToStaticMarkup(
-      <PreviewBar hasPending={false} publishKey={KEY} />
+      <PreviewBar slug="home" hasPending={false} publishKey={KEY} />
     )
     expect(html).toContain(copy.previewNoChanges)
     expect(html).not.toContain(copy.previewBar)

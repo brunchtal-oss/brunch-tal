@@ -2,13 +2,13 @@
 title: '5.2 Public pages (static part) — עמודים ציבוריים, חלק סטטי'
 type: 'feature'
 created: '2026-10-04'
-status: 'ready-for-dev'
+status: 'done'
 baseline_commit: '52a282ecc2adb7f9dc767d47befc52c82f2dd1ea'
 route: 'full'
 route_source: 'auto'
-review: ''
-review_source: ''
-lenses_ran: []
+review: 'quick'
+review_source: 'pinned'
+lenses_ran: ['quick']
 review_loop_iteration: 0
 context:
   - '{project-root}/_bmad-output/implementation-artifacts/epic-5-context.md'
@@ -72,15 +72,15 @@ context:
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `supabase/migrations/<new>_public_pages.sql` -- השורות; החלה, ‏`get_advisors`, טיפוסים (**סשן ראשי**).
-- [ ] `lib/content/schema.ts`, ‏`pages.ts`, ‏`business-details.ts`, ‏`whatsapp.ts` (+tests) -- סכמות, קורא, פרטי עסק מלאים, הודעה בקישור.
-- [ ] `components/public/*` (+tests) -- ‏top-bar, ‏menu-sheet, ‏whatsapp-bar, פוטר, רכיבי סקשן, פרטי קשר.
-- [ ] `app/(public)/layout.tsx`, ‏`page.tsx`, ‏`about/`, ‏`how-it-works/`, ‏`gallery/`, ‏`contact/` -- העמודים.
-- [ ] `app/admin/(shell)/content/contact/preview/`, ‏`actions.ts` -- תצוגה מקדימה ו-`site`.
-- [ ] `lib/nav.ts`, ‏`lib/copy/shell.ts` (+tests) -- ‏`publicNav`, מיקרו-קופי.
-- [ ] `supabase/tests/content.test.ts` -- ‏anon רואה סקשן חדש רק אחרי פרסום.
-- [ ] מסד הפיתוח (**סשן ראשי**) -- תוכן בדוי לכל הסקשנים, מפורסם.
-- [ ] `deferred-work.md` -- הפריטים מ-Decisions.
+- [x] `supabase/migrations/<new>_public_pages.sql` -- השורות; החלה, ‏`get_advisors`, טיפוסים (**סשן ראשי**).
+- [x] `lib/content/schema.ts`, ‏`pages.ts`, ‏`business-details.ts`, ‏`whatsapp.ts` (+tests) -- סכמות, קורא, פרטי עסק מלאים, הודעה בקישור.
+- [x] `components/public/*` (+tests) -- ‏top-bar, ‏menu-sheet, ‏whatsapp-bar, פוטר, רכיבי סקשן, פרטי קשר.
+- [x] `app/(public)/layout.tsx`, ‏`page.tsx`, ‏`about/`, ‏`how-it-works/`, ‏`gallery/`, ‏`contact/` -- העמודים.
+- [x] `app/admin/(shell)/content/contact/preview/`, ‏`actions.ts` -- תצוגה מקדימה ו-`site`.
+- [x] `lib/nav.ts`, ‏`lib/copy/shell.ts` (+tests) -- ‏`publicNav`, מיקרו-קופי.
+- [x] `supabase/tests/content.test.ts` -- ‏anon רואה סקשן חדש רק אחרי פרסום.
+- [x] מסד הפיתוח (**סשן ראשי**) -- תוכן בדוי לכל הסקשנים, מפורסם.
+- [x] `deferred-work.md` -- הפריטים מ-Decisions.
 
 **Acceptance Criteria:**
 - Given טלפון ברוחב 360px, when אורחת עוברת בכל עמוד דרך התפריט, then הסרגל צמוד למעלה, שום דבר לא נחתך, והפס לא מסתיר את הפוטר.
@@ -88,9 +88,30 @@ context:
 
 ## Implementation Notes
 
+- **top-bar:** רקע `primary` (‏#4A4A2A) וטקסט `on-primary` (‏8.46:1). שלוש עמודות שוות כדי ששם העסק יישאר במרכז; ב-360px "כניסה לאזור האישי" נשבר לשתי שורות בתוך מטרת 44px. טבעת הפוקוס בסרגל בצבע `on-primary` (`globals.css`).
+- **menu-sheet:** נפתח מ-inline-start (ימין), מצד כפתור התפריט (ראו Spec Change Log). ה-API של `Sheet` מקבל צד פיזי (`side="right"`), ולכן יש שם `eslint-disable` אחד עם הסבר. ה-scrim של 40% מוגדר ב-`globals.css` (`[data-menu-sheet]`), כי `components/ui/` לא נערך.
+- **whatsapp-bar:** המקום מתחתיו נשמר ב-padding של המעטפת (לא של `body`), כך שעמוד קצר לא נגלל. וריאנט `short:` (גובה חלון מתחת ל-480px) מסתיר את הפס ומציג את הקישור בזרימה.
+- **`getBusinessDetails`:** כשל קריאה נרשם ומחזיר `null` (לא זורק), כדי שכל עמוד ציבורי ימשיך לעלות. ‏`getWhatsappHref` (הצטרפות, ‏`/me`) עובר דרכו, ולכן גם שם כשל קריאה מציג טקסט רגיל במקום שגיאה.
+- **בדיקות מסד:** ‏`content-publish.test.ts` מצפה עכשיו לשלושה סקשנים בבית (hero, ‏intro, ‏contact).
+
 ## Spec Change Log
 
+- 2026-10-04, החלטת המשתמשת: ה-menu-sheet נפתח מ-inline-start (ימין), מצד כפתור התפריט כמו ב-DESIGN, ולא מ-inline-end כמו שכתוב ב-Decisions.
+- 2026-10-04, החלטת המשתמשת: השינויים תחת `app/admin/(shell)/content` נשארים, למרות ההנחיה לא לגעת ב-`app/admin` בזמן ש-3.1 נבנה. הם לא נוגעים ב-sessions ולא בניווט האדמין.
+
 ## Review Triage Log
+
+**סבב 1 (2026-10-04):** עדשה אחת (quick), 6 ממצאים. ‏medium 2, ‏low 4.
+
+| # | ממצא | פסק | ניתוב | ראיה / פעולה |
+|---|------|------|-------|--------------|
+| 1 | בחלון נמוך `scroll-padding-top: 0` אבל הסרגל נשאר sticky, ופוקוס יכול להיגלל מתחתיו | medium | patch | מחיקת האיפוס העליון ב-`globals.css` |
+| 2 | ה-menu-sheet לא נגלל, ובחלון מתחת ל-400px הקישורים האחרונים נחתכים | medium | patch | גלילה אנכית ל-`SheetContent` |
+| 3 | בחירה בעמוד הנוכחי מהתפריט מאבדת את הפוקוס (‏RouteFocus לא רץ על אותו נתיב) | low | patch | `navigating` רק כשהיעד שונה מהעמוד הנוכחי |
+| 5 | הבית מציג "פרטי קשר" גם כש-`home/contact` לא פורסם, בניגוד לכלל הקריאה | low | patch | מחיקת הענף החלופי ב-`app/(public)/page.tsx` |
+| 6 | ההירו נקרא פעמיים (‏`getHomeHero` ו-`getPublishedSections("home")`), וכשל חלקי מפצל את העמוד | low | patch | ההירו מתוך סקשני הבית |
+
+נדחה: 4 (שם העסק בתצוגה המקדימה של הבית הוא `WORDMARK`; השם שפורסם זהה לו, והתיקון מוסיף קריאה).
 
 ## Verification
 

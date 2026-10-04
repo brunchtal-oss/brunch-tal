@@ -11,12 +11,19 @@ import { hasPublicSessions, SESSIONS_HREF } from "@/lib/nav"
 // the photo arrives in 5.4). Shared by the home page (published hero) and
 // the admin preview (the draft), so both render the same thing. Without a
 // valid hero: the business name only. The button leads to /sessions and is
-// shown only once that page is in the public navigation (3.2).
-export function HomeHero({ hero }: { hero: HeroContent | null }) {
+// shown only once that page is in the public navigation (3.2). The name is
+// the published business name, else the WORDMARK (story 5.2).
+export function HomeHero({
+  hero,
+  name = shellCopy.wordmark,
+}: {
+  hero: HeroContent | null
+  name?: string
+}) {
   return (
-    <section className="mx-auto flex w-full max-w-[720px] flex-1 flex-col items-center justify-center px-6 py-12 text-center">
+    <section className="mx-auto flex w-full max-w-[720px] flex-col items-center justify-center px-6 pt-16 pb-4 text-center">
       <PageHeading className="text-[40px] leading-[1.15] font-extralight">
-        {shellCopy.wordmark}
+        {name}
       </PageHeading>
       {hero && (
         <>

@@ -19,6 +19,17 @@ export function isEditableSlug(value: unknown): value is EditableSlug {
   return typeof value === "string" && Object.hasOwn(EDITABLE_PAGES, value)
 }
 
+// Pages whose content is used across the site (AD-16): the business details
+// (contact) and the footer (site) are also tagged content:global.
+const GLOBAL_PAGES: readonly string[] = ["contact", "site"]
+
+// The cache tags a publish of the page updates.
+export function publishTags(slug: string): string[] {
+  return GLOBAL_PAGES.includes(slug)
+    ? [`content:${slug}`, "content:global"]
+    : [`content:${slug}`]
+}
+
 export type ContentObject = Record<string, unknown>
 
 export type ContentSection = {
