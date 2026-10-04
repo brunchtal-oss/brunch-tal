@@ -54,7 +54,6 @@ describe("navigation", () => {
   it("lists the public pages in the menu's order, without /sessions yet", () => {
     expect(publicNav.map((item) => item.href)).toEqual([
       "/",
-      "/about",
       "/how-it-works",
       "/gallery",
       "/contact",
@@ -64,9 +63,9 @@ describe("navigation", () => {
 
   it("marks the current public page", () => {
     expect(currentPublicHref("/")).toBe("/")
-    expect(currentPublicHref("/about")).toBe("/about")
+    expect(currentPublicHref("/gallery")).toBe("/gallery")
     expect(currentPublicHref("/contact/")).toBe("/contact")
-    expect(currentPublicHref("/abouts")).toBeNull()
+    expect(currentPublicHref("/gallerys")).toBeNull()
     expect(currentPublicHref("/login")).toBeNull()
     expect(
       currentPublicHref("/sessions/1", [{ href: "/" }, { href: "/sessions" }])

@@ -126,11 +126,13 @@ describe("textBlockSchema", () => {
     })
   })
 
-  it.each([
-    ["no title", { body: "b" }],
-    ["an empty body", { title: "t", body: " " }],
-  ])("refuses %s", (_label, value) => {
-    expect(textBlockSchema.safeParse(value).success).toBe(false)
+  it("accepts a heading without a body (home › contact)", () => {
+    const parsed = textBlockSchema.parse({ title: "t", body: " " })
+    expect(JSON.parse(JSON.stringify(parsed))).toEqual({ title: "t" })
+  })
+
+  it("refuses a block without a title", () => {
+    expect(textBlockSchema.safeParse({ body: "b" }).success).toBe(false)
   })
 })
 

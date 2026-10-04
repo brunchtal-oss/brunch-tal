@@ -36,6 +36,12 @@ const nextConfig = {
     serverFunctions: false,
   },
 
+  // About is a section of the home page, not a page (user decision
+  // 2026-10-04); an old /about link lands on home.
+  async redirects() {
+    return [{ source: "/about", destination: "/", permanent: false }]
+  },
+
   async headers() {
     return [
       // Token routes (AD-16): no referrer leaks the token, nothing is cached.

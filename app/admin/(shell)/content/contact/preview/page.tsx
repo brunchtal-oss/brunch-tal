@@ -4,7 +4,6 @@ import type { Metadata } from "next"
 
 import { ContactDetails } from "@/components/public/contact-details"
 import { PublicPageHeading } from "@/components/public/public-page"
-import { guestWhatsappHref } from "@/lib/content/business-details"
 import { businessDetailsSchema } from "@/lib/content/schema"
 import { adminCopy } from "@/lib/copy/admin"
 import { shellCopy } from "@/lib/copy/shell"
@@ -49,10 +48,7 @@ async function Preview() {
       <div className="-mx-6 flex flex-1 flex-col border-b border-border pb-12">
         <PublicPageHeading>{shellCopy.nav.contact}</PublicPageHeading>
         <div className="px-6 pt-8">
-          <ContactDetails
-            details={details}
-            whatsappHref={guestWhatsappHref(details)}
-          />
+          <ContactDetails details={details} />
         </div>
       </div>
     </div>

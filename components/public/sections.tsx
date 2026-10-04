@@ -69,8 +69,8 @@ export function SectionHeading({
   )
 }
 
-// text_block: a heading and its text. children (the business details on
-// home › contact) follow the text.
+// text_block: a heading and its text (when there is one). children (the
+// WhatsApp button on home › contact) follow.
 export function TextBlockSection({
   content,
   children,
@@ -82,9 +82,11 @@ export function TextBlockSection({
   return (
     <PublicSection titleId={id}>
       <SectionHeading id={id} eyebrow={content.eyebrow} title={content.title} />
-      <p className="mx-auto mt-5 max-w-[60ch] text-center text-[17px] leading-[1.65] text-pretty whitespace-pre-line">
-        {content.body}
-      </p>
+      {content.body && (
+        <p className="mx-auto mt-5 max-w-[60ch] text-center text-[17px] leading-[1.65] text-pretty whitespace-pre-line">
+          {content.body}
+        </p>
+      )}
       {children}
     </PublicSection>
   )

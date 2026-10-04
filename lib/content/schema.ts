@@ -79,11 +79,12 @@ export type BusinessDetailsContent = z.infer<typeof businessDetailsSchema>
 const requiredText = (max: number) => z.string().trim().min(1).max(max)
 
 // A heading with its text (home › intro, home › contact, about › main,
-// contact › intro). The body keeps its line breaks.
+// contact › intro). The body keeps its line breaks; it is optional, so a
+// block can be a heading with an action (home › contact).
 export const textBlockSchema = z.object({
   eyebrow: optionalText(60),
   title: requiredText(120),
-  body: requiredText(5000),
+  body: optionalText(5000),
 })
 
 export type TextBlockContent = z.infer<typeof textBlockSchema>

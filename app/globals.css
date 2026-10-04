@@ -219,6 +219,10 @@ html:has([data-whatsapp-bar]) {
 [data-top-bar] :focus-visible {
   outline-color: var(--primary-foreground);
 }
+/* On the ink footer the ring is cream, so it shows on the band. */
+[data-site-footer] :focus-visible {
+  outline-color: var(--background);
+}
 /* The menu-sheet's scrim: ink at 40%, flat (DESIGN › menu-sheet). */
 [data-slot="sheet-overlay"]:has(~ [data-menu-sheet]) {
   background-color: rgb(46 42 31 / 0.4);

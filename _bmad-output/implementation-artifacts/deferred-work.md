@@ -173,3 +173,28 @@
   target: 4.7
   summary: מסך ההגדרות מוסיף את `business_settings.default_session_start_time` ו-`default_session_end_time` ("שעות מפגש חדש", ברירת מחדל 10:30–14:30) ל-`value-change-row`, עם יומן ישן ← חדש.
   evidence: העמודות נוספו אחרי בדיקת הטלפון של 3.1 (החלטת המשתמשת 2026-10-04), ועד 4.7 טל לא יכולה לשנות אותן.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-2-public-pages-static.md`
+  target: 5.5
+  summary: עמוד "תנאי שימוש" חדש (slug ‏`terms`, נתיב `/terms`) לצד מדיניות הפרטיות (`/privacy`) והצהרת הנגישות (`/accessibility`). הפוטר כבר מקשר לכל אחד מהם ברגע שהעמוד שלו מתפרסם (`publicLegalNav` ב-`lib/nav.ts`). לפי EXPERIENCE הקישור להצהרת הנגישות קיים תמיד, גם לפני פרסום, ולכן ב-5.5 הוא מוצג קבוע.
+  evidence: החלטת המשתמשת 2026-10-04. תנאי שימוש לא מופיעים במסמך המקור.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-2-public-pages-static.md`
+  target: 5.4
+  summary: המלצות כתמונות (צילומי מסך של ביקורות מוואטסאפ), עם טקסט חלופי. לפני פרסום מסתירים שם ומספר טלפון, ורק באישור הכותבת.
+  evidence: בקשת המשתמשת 2026-10-04. מסמך המקור (מפת האתר) אוסר פרסום מזוהה בלי אישור.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-2-public-pages-static.md`
+  target: 3.2
+  summary: בבית, אחרי הפתיח: "הבראנצ׳ים הקרובים" עם 2–3 המפגשים הקרובים (תאריך, קונספט ותמונת אוכל), מהטבלאות של 3.1 ומרכיב כרטיס המפגש המשותף.
+  evidence: בקשת המשתמשת 2026-10-04. מסמך המקור: "מפגשים קרובים" בבית.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-2-public-pages-static.md`
+  target: 5.3
+  summary: ‏`body` של `text_block` אופציונלי בשביל `home/contact`, אבל אותה סכמה משמשת את `home/intro`, ‏`about/main` ו-`contact/intro`. בעורך של 5.3 צריך לחייב טקסט בסקשנים האלה (חובה לכל סקשן, לא לכל kind).
+  evidence: ביקורת התיקונים של 5.2 (2026-10-04).
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-2-public-pages-static.md`
+  target: 5.3
+  summary: הוראות התשלום כבר לא מוצגות באתר הציבורי (החלטת המשתמשת 2026-10-04), אבל השדה עדיין נערך בפרטי העסק. צריך להחליט איפה הן מוצגות (למשל אחרי הצטרפות או באזור האישי), או להסתיר את השדה.
+  evidence: ‏`FIELDS` ב-`app/admin/(shell)/content/contact/page.tsx` עדיין כולל את `payment_instructions`.
