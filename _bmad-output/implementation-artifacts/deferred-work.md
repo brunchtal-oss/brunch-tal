@@ -119,3 +119,8 @@
   target: הסרת פרטים (`admin_anonymize_customer`)
   summary: הסרת פרטים מנקה גם את `payments.payer_label` ("שם לזיהוי") בכל התשלומים של הלקוחה.
   evidence: שם פרטי הוא מידע מזהה (AD-19); העמודה נוספה ב-2.5 אחרי הביקורת.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-1-publish-hero-to-home-tracer.md`
+  target: 4.7
+  summary: מסך ההגדרות (`/admin/settings`) מוסיף שורה "פרטי העסק" שמובילה לעורך `/admin/content/contact`. זו אותה רשומה (טיוטה ← פרסום), לא עותק נפרד בהגדרות.
+  evidence: ‏EXPERIENCE (Flow 7 וההגדרות): פרטי העסק נערכים "מהגדרות › פרטי העסק או מתוכן האתר › קשר". העורך נבנה ב-5.1, ו-`/admin/settings` עוד לא קיים.
