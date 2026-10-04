@@ -8,6 +8,7 @@ import { buttonVariants, Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { adminCopy } from "@/lib/copy/admin"
 import { errorMessage } from "@/lib/errors"
+import { newIdempotencyKey } from "@/lib/idempotency"
 import { cn } from "@/lib/utils"
 
 import { publishContentAction } from "../../actions"
@@ -52,7 +53,7 @@ export function PreviewBar({
         )
         return
       }
-      setKey(crypto.randomUUID())
+      setKey(newIdempotencyKey())
       setPublished(true)
       setLine(answer.data.changed > 0 ? copy.published : copy.nothingToPublish)
       router.refresh()
