@@ -444,6 +444,83 @@ describe("publishing", () => {
     })
   })
 
+  // One create screen (user decision 2026-10-04): publish in the same
+  // request, and a close set by hand at creation.
+  it("creates and publishes in one request, with one audit row", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const result = await asAdmin(db, f.admin, () =>
+        one(db, CREATE, [
+          { concept_id: f.concepts.greek, ...WHEN, publish: true },
+          randomUUID(),
+        ])
+      )
+      expect(result.status).toBe("published")
+      expect((await eventRow(db, result.event_id)).status).toBe("published")
+      const audit = await auditOf(db, result.event_id)
+      expect(audit.map((row) => row.action)).toEqual(["admin_create_event"])
+      expect(audit[0].after).toMatchObject({ status: "published" })
+
+      await asAuthenticated(db, f.admin)
+      expect(
+        await failure(db, CREATE, [
+          { concept_id: f.concepts.greek, ...WHEN, publish: "yes" },
+          randomUUID(),
+        ])
+      ).toMatchObject({ message: "INVALID_INPUT", field: "publish" })
+    })
+  })
+
+  it("keeps a close set at creation; a close after the start is refused", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const id = await create(db, f, {
+        concept_id: f.concepts.greek,
+        ...WHEN,
+        registration_closes_local: "2026-12-13T18:00",
+      })
+      // 13.12 18:00 in Israel (winter, UTC+2); the session is a draft.
+      expect(await eventRow(db, id)).toMatchObject({
+        closes: "2026-12-13T16:00Z",
+        registration_close_overridden: true,
+        status: "draft",
+      })
+
+      await asAuthenticated(db, f.admin)
+      expect(
+        await failure(db, CREATE, [
+          {
+            concept_id: f.concepts.greek,
+            ...WHEN,
+            registration_closes_local: "2026-12-15T11:00",
+          },
+          randomUUID(),
+        ])
+      ).toMatchObject({
+        message: "INVALID_INPUT",
+        field: "registration_closes_local",
+      })
+    })
+  })
+
+  it("the settings start a new session at 10:30-14:30", async () => {
+    await inRollback(async (db) => {
+      const { rows } = await db.query(
+        `select to_char(default_session_start_time, 'HH24:MI') as start,
+           to_char(default_session_end_time, 'HH24:MI') as end
+         from public.business_settings`
+      )
+      expect(rows).toEqual([{ start: "10:30", end: "14:30" }])
+      expect(
+        await queryError(
+          db,
+          `update public.business_settings
+           set default_session_end_time = '10:00'`
+        )
+      ).toMatchObject({ code: "23514" })
+    })
+  })
+
   it("does not publish or edit a cancelled session", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)

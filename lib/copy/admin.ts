@@ -258,9 +258,25 @@ export const adminCopy = {
     // "{day} · 10:00–12:00" in the date row's "old ← new".
     when: (day: string, start: string, end: string) =>
       `${day} · ${start}–${end}`,
+    // One create screen (user decision 2026-10-04): the close is optional
+    // (empty = the settings' rule) and the session is saved as a draft or
+    // published at once.
     create: {
       title: "מפגש חדש",
       submit: "יצירת טיוטה",
+      publish: "פרסום",
+      closes: "סגירת הרשמה (לא חובה)",
+      // The settings' rule in words: days before the session and the time.
+      closesRule: (daysBefore: number, time: string) => {
+        const when =
+          daysBefore === 0
+            ? "ביום המפגש"
+            : daysBefore === 1
+              ? "ערב לפני המפגש"
+              : `${daysBefore} ימים לפני המפגש`
+        return `לפי ההגדרות: ${when} ב-${time}. אפשר לקבוע מועד אחר`
+      },
+      note: "טיוטה לא מוצגת ללקוחות. פרסום מציג את המפגש מיד",
     },
     publish: "פרסום המפגש",
     publishNote: "הטיוטה לא מוצגת ללקוחות עד הפרסום",

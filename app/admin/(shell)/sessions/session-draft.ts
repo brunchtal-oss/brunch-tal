@@ -35,6 +35,10 @@ export type ConceptOption = {
 // settings could not be read (the RPC then takes them itself).
 export type CapacityDefaults = Record<EventKind, number> | null
 
+// The hours a new session starts with (business_settings, "HH:MM"), or null
+// when the settings could not be read (the times then start empty).
+export type TimeDefaults = { start: string; end: string } | null
+
 // A session as the screens read it (public.events, admin RLS, with its
 // concept's name).
 export type SessionRow = {
@@ -109,18 +113,20 @@ export function capacityFor(kind: EventKind, defaults: CapacityDefaults) {
 }
 
 // A new form for a concept: its kind and description, and the capacity of
-// that kind from the settings. The date, times and price typed so far stay.
+// that kind from the settings. The date, times, price and close typed so far
+// stay; a first form takes the default hours from the settings.
 export function draftForConcept(
   concept: ConceptOption,
   defaults: CapacityDefaults,
-  base?: SessionDraft
+  base?: SessionDraft,
+  times?: TimeDefaults
 ): SessionDraft {
   return {
     date: base?.date ?? "",
-    startTime: base?.startTime ?? "",
-    endTime: base?.endTime ?? "",
+    startTime: base?.startTime ?? times?.start ?? "",
+    endTime: base?.endTime ?? times?.end ?? "",
     priceText: base?.priceText ?? "",
-    closesLocal: "",
+    closesLocal: base?.closesLocal ?? "",
     conceptId: concept.id,
     kind: concept.default_kind,
     description: concept.description ?? "",
@@ -197,9 +203,11 @@ const CREATE_FIELDS: readonly DraftField[] = [
   "price",
 ]
 
-// The p_event of admin_create_event, or the first field to fix.
+// The p_event of admin_create_event, or the first field to fix. An empty
+// close is left to the settings' rule; publish sends the session out at once.
 export function createPayload(
-  draft: SessionDraft
+  draft: SessionDraft,
+  publish = false
 ):
   | { ok: true; event: Record<string, unknown> }
   | { ok: false; field: DraftField } {
@@ -218,6 +226,18 @@ export function createPayload(
   if (draft.priceText.trim() !== "") {
     event.display_price_agorot = parseShekelsToAgorot(draft.priceText)
   }
+  if (draft.closesLocal !== "") {
+    // "YYYY-MM-DDTHH:MM" strings compare in time order: the close comes
+    // before the start (the table's check refuses it too).
+    if (
+      fieldError("closes", draft) ||
+      draft.closesLocal > `${draft.date}T${draft.startTime}`
+    ) {
+      return { ok: false, field: "closes" }
+    }
+    event.registration_closes_local = draft.closesLocal
+  }
+  if (publish) event.publish = true
   return { ok: true, event }
 }
 

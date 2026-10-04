@@ -168,3 +168,8 @@
   target: 5.4
   summary: תמונות באודות, בגלריה ובהמלצות (המלצה כתמונה), וצילום בהירו.
   evidence: 5.2 מציג המלצות טקסט בלבד, לפי ה-spec.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-1-concepts-and-session-management.md`
+  target: 4.7
+  summary: מסך ההגדרות מוסיף את `business_settings.default_session_start_time` ו-`default_session_end_time` ("שעות מפגש חדש", ברירת מחדל 10:30–14:30) ל-`value-change-row`, עם יומן ישן ← חדש.
+  evidence: העמודות נוספו אחרי בדיקת הטלפון של 3.1 (החלטת המשתמשת 2026-10-04), ועד 4.7 טל לא יכולה לשנות אותן.
