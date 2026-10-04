@@ -203,6 +203,15 @@ const CREATE_FIELDS: readonly DraftField[] = [
   "price",
 ]
 
+// A close set by hand after the session's start ("YYYY-MM-DDTHH:MM" strings
+// compare in time order; the table's check refuses it too).
+export function closesAfterStart(draft: SessionDraft): boolean {
+  return (
+    draft.closesLocal !== "" &&
+    draft.closesLocal > `${draft.date}T${draft.startTime}`
+  )
+}
+
 // The p_event of admin_create_event, or the first field to fix. An empty
 // close is left to the settings' rule; publish sends the session out at once.
 export function createPayload(
@@ -227,12 +236,7 @@ export function createPayload(
     event.display_price_agorot = parseShekelsToAgorot(draft.priceText)
   }
   if (draft.closesLocal !== "") {
-    // "YYYY-MM-DDTHH:MM" strings compare in time order: the close comes
-    // before the start (the table's check refuses it too).
-    if (
-      fieldError("closes", draft) ||
-      draft.closesLocal > `${draft.date}T${draft.startTime}`
-    ) {
+    if (fieldError("closes", draft) || closesAfterStart(draft)) {
       return { ok: false, field: "closes" }
     }
     event.registration_closes_local = draft.closesLocal

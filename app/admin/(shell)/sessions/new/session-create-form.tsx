@@ -13,6 +13,7 @@ import { newIdempotencyKey } from "@/lib/idempotency"
 import { createEventAction } from "../actions"
 import {
   capacityFor,
+  closesAfterStart,
   createPayload,
   draftFieldOf,
   draftForConcept,
@@ -181,8 +182,14 @@ export function SessionCreateForm({
           serverError?.field === "closes"
             ? "invalid"
             : tried && draft.closesLocal !== ""
-              ? fieldError("closes", draft)
+              ? (fieldError("closes", draft) ??
+                (closesAfterStart(draft) ? "invalid" : null))
               : null
+        }
+        message={
+          serverError?.field === "closes" || (tried && closesAfterStart(draft))
+            ? copy.create.closesAfterStart
+            : null
         }
         hint={
           closeRule

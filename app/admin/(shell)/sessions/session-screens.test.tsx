@@ -6,6 +6,7 @@ import { adminCopy } from "@/lib/copy/admin"
 import { SessionEditor } from "./[id]/edit/session-editor"
 import { SessionCreateForm } from "./new/session-create-form"
 import type { ConceptOption, SessionRow } from "./session-draft"
+import { SessionField } from "./session-fields"
 import { SessionsList } from "./sessions-list"
 
 vi.mock("./actions", () => ({
@@ -144,5 +145,23 @@ describe("SessionEditor", () => {
     )
     expect(html).not.toContain(copy.publish)
     expect(html).not.toContain(copy.closesByRule)
+  })
+})
+
+describe("SessionField", () => {
+  it("shows a field-specific error text instead of the general one", () => {
+    const html = renderToStaticMarkup(
+      <SessionField
+        id="closes"
+        label={copy.create.closes}
+        type="datetime-local"
+        value="2026-12-15T10:30"
+        onChange={() => {}}
+        problem="invalid"
+        message={copy.create.closesAfterStart}
+      />
+    )
+    expect(html).toContain(copy.create.closesAfterStart)
+    expect(html).toContain('aria-invalid="true"')
   })
 })

@@ -30,6 +30,7 @@ export function SessionField({
   type = "text",
   maxLength,
   multiline = false,
+  message,
 }: {
   id: string
   label: string
@@ -41,6 +42,8 @@ export function SessionField({
   type?: "text" | "date" | "time" | "datetime-local" | "numeric" | "decimal"
   maxLength?: number
   multiline?: boolean
+  // A field-specific error text instead of the general one.
+  message?: string | null
 }) {
   const errorId = `${id}-error`
   const hintId = `${id}-hint`
@@ -89,9 +92,10 @@ export function SessionField({
       )}
       {problem ? (
         <p id={errorId} className="text-[15px] text-error">
-          {errorMessage(
-            problem === "required" ? "FIELD_REQUIRED" : "INVALID_INPUT"
-          )}
+          {message ??
+            errorMessage(
+              problem === "required" ? "FIELD_REQUIRED" : "INVALID_INPUT"
+            )}
         </p>
       ) : (
         hint && (
