@@ -2,6 +2,7 @@ import Link from "next/link"
 
 import { telHref } from "@/components/public/contact-details"
 import type { BusinessDetailsContent } from "@/lib/content/schema"
+import { pwaCopy } from "@/lib/copy/pwa"
 import { shellCopy } from "@/lib/copy/shell"
 import { cn } from "@/lib/utils"
 
@@ -15,7 +16,8 @@ const LINK =
 // ~14:1). The phone (tel:) and the address (opening the navigation link
 // when there is one), the legal links whose pages are published (legal; 5.5)
 // and the fixed admin entrance. No business name and no footer text (user
-// decision 2026-10-04). A missing field is not shown.
+// decision 2026-10-04). A missing field is not shown. The install guide
+// link (story 5.9) is always there.
 export function SiteFooter({
   details,
   legal,
@@ -80,6 +82,9 @@ export function SiteFooter({
               {item.label}
             </Link>
           ))}
+          <Link href="/install" className={LINK}>
+            {pwaCopy.footerLink}
+          </Link>
           <Link href="/admin/login" className={LINK}>
             {copy.adminLogin}
           </Link>

@@ -106,6 +106,11 @@ describe("SiteFooter", () => {
     expect(html).not.toContain('href="/privacy"')
     expect(html).toContain(copy.adminLogin)
   })
+
+  it("always links to the install guide (story 5.9)", () => {
+    const html = renderToStaticMarkup(<SiteFooter details={null} legal={[]} />)
+    expect(html).toMatch(/href="\/install"[^>]*>[^<]+<\/a>/)
+  })
 })
 
 describe("sections", () => {
