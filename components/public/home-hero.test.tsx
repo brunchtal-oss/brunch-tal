@@ -20,6 +20,12 @@ describe("HomeHero", () => {
     expect(html).not.toContain("<a")
   })
 
+  it("shows the published business name instead of the wordmark", () => {
+    const html = renderToStaticMarkup(<HomeHero hero={null} name="biz-name" />)
+    expect(html).toContain("biz-name")
+    expect(html).not.toContain(shellCopy.wordmark)
+  })
+
   it("shows the title and the description", () => {
     const html = renderToStaticMarkup(<HomeHero hero={HERO} />)
     expect(html).toContain(shellCopy.wordmark)

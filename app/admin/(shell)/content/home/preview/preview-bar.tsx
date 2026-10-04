@@ -8,19 +8,24 @@ import { buttonVariants, Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { adminCopy } from "@/lib/copy/admin"
 import { errorMessage } from "@/lib/errors"
+import { newIdempotencyKey } from "@/lib/idempotency"
 import { cn } from "@/lib/utils"
 
 import { publishContentAction } from "../../actions"
+import type { EditableSlug } from "../../content-items"
 
 const copy = adminCopy.content
 
 // The fixed bar of the preview (EXPERIENCE › site content › preview): "not
 // published yet", back to the editor, and publish when there is a pending
-// draft. The answer replaces the bar's line (aria-live).
+// draft. The answer replaces the bar's line (aria-live). Shared by the
+// previews of the home page and of the business details (slug).
 export function PreviewBar({
+  slug,
   hasPending,
   publishKey,
 }: {
+  slug: EditableSlug
   hasPending: boolean
   publishKey: string
 }) {
@@ -36,7 +41,7 @@ export function PreviewBar({
       let answer: Awaited<ReturnType<typeof publishContentAction>>
       try {
         answer = await publishContentAction({
-          slug: "home",
+          slug,
           idempotencyKey: key,
         })
       } catch {
@@ -52,7 +57,7 @@ export function PreviewBar({
         )
         return
       }
-      setKey(crypto.randomUUID())
+      setKey(newIdempotencyKey())
       setPublished(true)
       setLine(answer.data.changed > 0 ? copy.published : copy.nothingToPublish)
       router.refresh()
@@ -69,7 +74,7 @@ export function PreviewBar({
         </p>
         <div className="flex flex-wrap gap-3">
           <Link
-            href="/admin/content/home"
+            href={`/admin/content/${slug}`}
             className={cn(
               buttonVariants({ variant: "outline" }),
               "h-11 rounded-[4px] border-primary-foreground bg-transparent px-4 text-[15px] font-semibold text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"

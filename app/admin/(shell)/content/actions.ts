@@ -11,6 +11,7 @@ import {
   EDITABLE_PAGES,
   hasPendingDraft,
   isEditableSlug,
+  publishTags,
   type ContentPage,
 } from "./content-items"
 
@@ -18,9 +19,9 @@ import {
 // (AD-16): the draft is parsed with its kind's zod schema before it is saved,
 // and every draft that would be published is parsed again before
 // admin_publish_content; the RPCs enforce the admin, the object and the
-// version. After a publish the page's cache tag is updated, and the business
-// details also update content:global. The idempotency key comes from the
-// editor (AD-5).
+// version. After a publish the page's cache tags are updated (publishTags:
+// the business details and the footer also update content:global). The
+// idempotency key comes from the editor (AD-5).
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -102,8 +103,7 @@ export async function publishContentAction(input: {
     changed: number
   }
 
-  updateTag(`content:${input.slug}`)
-  if (input.slug === "contact") updateTag("content:global")
+  for (const tag of publishTags(input.slug)) updateTag(tag)
 
   return {
     ok: true,

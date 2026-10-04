@@ -23,11 +23,33 @@ export const adminMoreNav: readonly { href: string; label: string }[] = [
   { href: "/admin/content", label: adminCopy.content.title },
 ]
 
-// The public pages (the menu-sheet comes in 5.2). Only pages that exist;
-// 3.2 adds /sessions with its page, and the hero's button appears with it.
+// The public pages, in the menu-sheet's fixed order (story 5.2). Each
+// label is also the page's h1 and <title>. Only pages that exist; 3.2 adds
+// /sessions ("הבראנצ׳ים", after home) with its page, and the hero's button
+// appears with it.
 export const publicNav: readonly { href: string; label: string }[] = [
   { href: "/", label: shellCopy.nav.home },
+  { href: "/about", label: shellCopy.nav.about },
+  { href: "/how-it-works", label: shellCopy.nav.howItWorks },
+  { href: "/gallery", label: shellCopy.nav.gallery },
+  { href: "/contact", label: shellCopy.nav.contact },
 ]
+
+// The public item that is current on a path: its own path, or below it
+// (/sessions/[id] under /sessions); home only on "/".
+export function currentPublicHref(
+  pathname: string,
+  items: readonly { href: string }[] = publicNav
+): string | null {
+  const match = items
+    .filter((item) =>
+      item.href === "/"
+        ? pathname === "/"
+        : pathname === item.href || pathname.startsWith(`${item.href}/`)
+    )
+    .sort((a, b) => b.href.length - a.href.length)[0]
+  return match?.href ?? null
+}
 
 // The hero's button leads to /sessions, so it is shown only once that page
 // is in the public navigation (and therefore exists, lib/nav.test.ts).

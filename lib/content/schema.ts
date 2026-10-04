@@ -74,13 +74,79 @@ export const businessDetailsSchema = z.object({
 
 export type BusinessDetailsContent = z.infer<typeof businessDetailsSchema>
 
+// Story 5.2: the kinds of the public pages. Each is shown only when it
+// parses; a list without items is not a section.
+const requiredText = (max: number) => z.string().trim().min(1).max(max)
+
+// A heading with its text (home › intro, home › contact, about › main,
+// contact › intro). The body keeps its line breaks.
+export const textBlockSchema = z.object({
+  eyebrow: optionalText(60),
+  title: requiredText(120),
+  body: requiredText(5000),
+})
+
+export type TextBlockContent = z.infer<typeof textBlockSchema>
+
+// how-it-works › steps: an ordered list of steps.
+export const stepsSchema = z.object({
+  title: optionalText(120),
+  items: z
+    .array(z.object({ title: requiredText(120), body: requiredText(1000) }))
+    .min(1)
+    .max(30),
+})
+
+export type StepsContent = z.infer<typeof stepsSchema>
+
+// how-it-works › faq: questions and answers.
+export const faqSchema = z.object({
+  title: optionalText(120),
+  items: z
+    .array(
+      z.object({ question: requiredText(300), answer: requiredText(3000) })
+    )
+    .min(1)
+    .max(60),
+})
+
+export type FaqContent = z.infer<typeof faqSchema>
+
+// gallery › testimonials: text testimonials (a display name and the text;
+// images come in 5.4).
+export const testimonialsSchema = z.object({
+  title: optionalText(120),
+  items: z
+    .array(z.object({ name: requiredText(80), text: requiredText(1500) }))
+    .min(1)
+    .max(60),
+})
+
+export type TestimonialsContent = z.infer<typeof testimonialsSchema>
+
+// site › footer: the footer's text (tag content:global).
+export const footerSchema = z.object({
+  text: requiredText(500),
+})
+
+export type FooterContent = z.infer<typeof footerSchema>
+
 // kind -> schema. A kind without a schema cannot be saved or published from
 // the editor.
 export const contentSchemas = {
   hero: heroSchema,
   business_details: businessDetailsSchema,
   photo_consent: photoConsentSchema,
+  text_block: textBlockSchema,
+  steps: stepsSchema,
+  faq: faqSchema,
+  testimonials: testimonialsSchema,
+  footer: footerSchema,
 } as const
+
+export type ContentByKind = {
+  [K in keyof typeof contentSchemas]: z.infer<(typeof contentSchemas)[K]>
+}
 
 export type ContentKind = keyof typeof contentSchemas
 

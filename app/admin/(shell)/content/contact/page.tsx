@@ -65,7 +65,8 @@ const FIELDS: readonly EditorField[] = [
 ]
 
 // /admin/content/contact (story 5.1): the business details, one record for
-// the whole site. Its preview comes with /contact in 5.2.
+// the whole site. Draft -> preview (/contact's details, story 5.2) ->
+// publish.
 export default function ContentContactPage() {
   return (
     <>
@@ -73,7 +74,11 @@ export default function ContentContactPage() {
       <Suspense
         fallback={<p className="text-muted-foreground">{shellCopy.loading}</p>}
       >
-        <EditorContent slug="contact" fields={FIELDS} />
+        <EditorContent
+          slug="contact"
+          fields={FIELDS}
+          previewHref="/admin/content/contact/preview"
+        />
       </Suspense>
     </>
   )

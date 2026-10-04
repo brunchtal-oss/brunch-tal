@@ -32,15 +32,23 @@ const USE_CLIENT = 'Program:has(> ExpressionStatement[directive="use client"])';
 const SERVER_PATH = String.raw`/^(@\/lib\/|(\.\.?\/)+(lib\/)?)server(\/|$)/`;
 const CLIENT_MESSAGE =
   'A "use client" module must not import lib/server/** (AD-4). Call a Server Action instead.';
-const CLIENT_IMPORTS = [
-  "ImportDeclaration",
-  "ImportExpression",
-  "ExportNamedDeclaration",
-  "ExportAllDeclaration",
-].map((node) => ({
-  selector: `${USE_CLIENT} ${node}[source.value=${SERVER_PATH}]`,
-  message: CLIENT_MESSAGE,
-}));
+// crypto.randomUUID exists only in a secure context, so it is undefined on
+// the dev server opened by its LAN address (a phone at home). A browser key
+// comes from newIdempotencyKey (lib/idempotency.ts).
+const UUID_MESSAGE =
+  'crypto.randomUUID is missing outside a secure context (the LAN dev address). In a "use client" module use newIdempotencyKey from "@/lib/idempotency".';
+const CLIENT_RULES = [
+  ...[
+    "ImportDeclaration",
+    "ImportExpression",
+    "ExportNamedDeclaration",
+    "ExportAllDeclaration",
+  ].map((node) => ({
+    selector: `${USE_CLIENT} ${node}[source.value=${SERVER_PATH}]`,
+    message: CLIENT_MESSAGE,
+  })),
+  { selector: `${USE_CLIENT} MemberExpression[property.name="randomUUID"]`, message: UUID_MESSAGE },
+];
 
 // Money, entitlements and bookings change only through an RPC (AD-5). The app
 // writes directly only to the customer's own profile and babies (RLS).
@@ -107,26 +115,26 @@ const eslintConfig = defineConfig([
   ...nextTs,
   {
     files: TS_FILES,
-    rules: restrictSyntax(RTL, CLIENT_IMPORTS, TABLE_WRITES, PRIVILEGED_DYNAMIC, RPC_DIRECT),
+    rules: restrictSyntax(RTL, CLIENT_RULES, TABLE_WRITES, PRIVILEGED_DYNAMIC, RPC_DIRECT),
   },
   {
     files: UI_FILES,
-    rules: restrictSyntax(CLIENT_IMPORTS, TABLE_WRITES, PRIVILEGED_DYNAMIC, RPC_DIRECT),
+    rules: restrictSyntax(CLIENT_RULES, TABLE_WRITES, PRIVILEGED_DYNAMIC, RPC_DIRECT),
   },
   {
     files: TEST_FILES,
     ignores: UI_FILES,
-    rules: restrictSyntax(RTL, CLIENT_IMPORTS, PRIVILEGED_DYNAMIC),
+    rules: restrictSyntax(RTL, CLIENT_RULES, PRIVILEGED_DYNAMIC),
   },
   {
     files: ["components/ui/**/*.test.{ts,tsx}"],
-    rules: restrictSyntax(CLIENT_IMPORTS, PRIVILEGED_DYNAMIC),
+    rules: restrictSyntax(CLIENT_RULES, PRIVILEGED_DYNAMIC),
   },
   {
     files: ["lib/money.ts"],
     rules: restrictSyntax(
       RTL,
-      CLIENT_IMPORTS,
+      CLIENT_RULES,
       TABLE_WRITES,
       NO_PARSE_FLOAT,
       PRIVILEGED_DYNAMIC,
@@ -136,17 +144,17 @@ const eslintConfig = defineConfig([
   {
     // The one place that calls client.rpc() (AD-17).
     files: ["lib/rpc.ts"],
-    rules: restrictSyntax(RTL, CLIENT_IMPORTS, TABLE_WRITES, PRIVILEGED_DYNAMIC),
+    rules: restrictSyntax(RTL, CLIENT_RULES, TABLE_WRITES, PRIVILEGED_DYNAMIC),
   },
   {
     files: PRIVILEGED_ALLOWED,
     ignores: TEST_FILES,
-    rules: restrictSyntax(RTL, CLIENT_IMPORTS, TABLE_WRITES, RPC_DIRECT),
+    rules: restrictSyntax(RTL, CLIENT_RULES, TABLE_WRITES, RPC_DIRECT),
   },
   {
     // Test files inside the allowed places (both globs must match).
     files: PRIVILEGED_ALLOWED.map((glob) => [glob, TEST_FILES[0]]),
-    rules: restrictSyntax(RTL, CLIENT_IMPORTS),
+    rules: restrictSyntax(RTL, CLIENT_RULES),
   },
   {
     files: ["**/*.{ts,tsx,js,jsx,mjs,cjs}"],

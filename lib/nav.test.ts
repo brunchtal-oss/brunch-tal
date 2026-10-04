@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest"
 import {
   adminMoreNav,
   adminNav,
+  currentPublicHref,
   customerNav,
   hasPublicSessions,
   isCurrent,
@@ -48,6 +49,28 @@ describe("navigation", () => {
   it("shows the hero's button only with /sessions in the public navigation", () => {
     expect(hasPublicSessions([{ href: "/" }])).toBe(false)
     expect(hasPublicSessions([{ href: "/" }, { href: "/sessions" }])).toBe(true)
+  })
+
+  it("lists the public pages in the menu's order, without /sessions yet", () => {
+    expect(publicNav.map((item) => item.href)).toEqual([
+      "/",
+      "/about",
+      "/how-it-works",
+      "/gallery",
+      "/contact",
+    ])
+    expect(hasPublicSessions()).toBe(false)
+  })
+
+  it("marks the current public page", () => {
+    expect(currentPublicHref("/")).toBe("/")
+    expect(currentPublicHref("/about")).toBe("/about")
+    expect(currentPublicHref("/contact/")).toBe("/contact")
+    expect(currentPublicHref("/abouts")).toBeNull()
+    expect(currentPublicHref("/login")).toBeNull()
+    expect(
+      currentPublicHref("/sessions/1", [{ href: "/" }, { href: "/sessions" }])
+    ).toBe("/sessions")
   })
 
   it("keeps each shell inside its own area", () => {

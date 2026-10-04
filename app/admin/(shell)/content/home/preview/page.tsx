@@ -38,7 +38,7 @@ async function Preview() {
 
   return (
     <div className="flex min-h-[70svh] flex-col">
-      <PreviewBar hasPending={pending} publishKey={randomUUID()} />
+      <PreviewBar slug="home" hasPending={pending} publishKey={randomUUID()} />
       <div className="-mx-6 flex flex-1 flex-col border-b border-border">
         <HomeHero hero={parsed.success ? parsed.data : null} />
       </div>
