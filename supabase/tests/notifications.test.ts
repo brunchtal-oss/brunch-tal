@@ -167,7 +167,7 @@ const SEED = [
     false,
     "template",
     "ההרשמה אושרה",
-    "{date} · {time} · {kind}",
+    "{date} · {time} · בראנץ׳ {concept}",
   ],
   [
     "reminder",
@@ -374,12 +374,12 @@ describe("enqueue_notification", () => {
         f.a,
         "booking_confirmed",
         "booking-1",
-        { date: "10.11", time: "10:00", kind: "בראנץ׳" },
+        { date: "10.11", time: "10:00", concept: "יווני" },
         "/me/bookings"
       )
       const rows = await notificationsOf(db, [f.a])
       expect(rows.map((row) => row.id)).toEqual([id])
-      expect(rows[0].payload.body).toBe("10.11 · 10:00 · בראנץ׳")
+      expect(rows[0].payload.body).toBe("10.11 · 10:00 · בראנץ׳ יווני")
       expect(await jobsOf(db, [f.a])).toEqual([])
     })
   })

@@ -9,11 +9,58 @@ import { randomUUID } from "node:crypto"
 
 import { describe, expect, it } from "vitest"
 
-import { asAuthenticated, inRollback, sql, type Db } from "./support/db"
-import { approve, seedMoney } from "./support/money"
+import {
+  asAuthenticated,
+  inRollback,
+  queryError,
+  sql,
+  type Db,
+} from "./support/db"
+import { approve, seedMoney, type MoneyFixture } from "./support/money"
+
+// As the owner: a published session in a week and a booking without a
+// customer on the payment (a pinned purchase that is not bound yet, AD-23;
+// placed by 3.11).
+async function unboundBooking(
+  db: Db,
+  paymentId: string
+): Promise<{ eventId: string; bookingId: string }> {
+  const { rows: events } = await db.query(
+    `insert into public.events (
+       concept_id, kind, starts_at, ends_at, capacity_adults,
+       registration_closes_at, status)
+     select c.id, 'regular', now() + interval '7 days',
+       now() + interval '7 days 2 hours', 12, now() + interval '6 days',
+       'published'
+     from public.concepts c where c.theme_key = 'mothers' limit 1
+     returning id`
+  )
+  const { rows: bookings } = await db.query(
+    `insert into public.bookings (
+       payment_id, event_id, party_size, booked_by, policy_snapshot)
+     values ($1, $2, 1, 'admin',
+       '{"cancel_window_hours": 48, "reminder_lead_hours": 24}'::jsonb)
+     returning id`,
+    [paymentId, events[0].id]
+  )
+  return { eventId: events[0].id, bookingId: bookings[0].id }
+}
+
+async function approveCard(db: Db, f: MoneyFixture): Promise<string> {
+  await asAuthenticated(db, f.admin)
+  const r = await approve(db, {
+    productId: f.card,
+    amount: 47200,
+    paidOn: f.today,
+    methodId: f.method,
+    key: randomUUID(),
+  })
+  await db.query("reset role")
+  return r.payment_id as string
+}
 
 // Filled by private.bind_purchase from the payment.
-const BOUND = ["entitlements", "payments"]
+const BOUND = ["bookings", "entitlements", "payments"]
 
 // Created only for a customer who already exists, never for an unbound
 // purchase.
@@ -69,32 +116,77 @@ describe("bind_purchase coverage", () => {
   it("fills customer_id on every BOUND row of the payment", async () => {
     await inRollback(async (db) => {
       const f = await seedMoney(db)
-      await asAuthenticated(db, f.admin)
-      const r = await approve(db, {
-        productId: f.card,
-        amount: 47200,
-        paidOn: f.today,
-        methodId: f.method,
-        key: randomUUID(),
-      })
-      await db.query("reset role")
+      const paymentId = await approveCard(db, f)
+      const { bookingId } = await unboundBooking(db, paymentId)
 
       await db.query("select private.bind_purchase($1, $2)", [
-        r.payment_id,
+        paymentId,
         f.customerA,
       ])
 
       const lookup: Record<string, string> = {
         payments: "id = $1",
         entitlements: "payment_id = $1",
+        bookings: "payment_id = $1",
       }
       for (const table of BOUND) {
         const { rows } = await db.query(
           `select customer_id from public.${table} where ${lookup[table]}`,
-          [r.payment_id]
+          [paymentId]
         )
-        expect(rows.length).toBeGreaterThan(0)
+        expect(rows.length, table).toBeGreaterThan(0)
         expect(rows.every((row) => row.customer_id === f.customerA)).toBe(true)
+      }
+
+      // The booking's audit row and the booking_confirmed skipped while there
+      // was no customer (AD-23).
+      const { rows: audit } = await db.query(
+        "select action, customer_id from public.audit_log where entity_id = $1",
+        [bookingId]
+      )
+      expect(audit).toEqual([
+        { action: "bind_purchase", customer_id: f.customerA },
+      ])
+      const { rows: notifications } = await db.query(
+        "select dedupe_key from public.notifications where recipient_id = $1 and type = 'booking_confirmed'",
+        [f.customerA]
+      )
+      expect(notifications).toEqual([
+        { dedupe_key: `booking_confirmed:${f.customerA}:${bookingId}` },
+      ])
+    })
+  })
+
+  it("a customer already booked to that session -> BIND_CONFLICT, nothing bound", async () => {
+    await inRollback(async (db) => {
+      const f = await seedMoney(db)
+      const paymentId = await approveCard(db, f)
+      const { eventId } = await unboundBooking(db, paymentId)
+      await db.query(
+        `insert into public.bookings (
+           customer_id, event_id, party_size, booked_by, policy_snapshot)
+         values ($1, $2, 1, 'customer',
+           '{"cancel_window_hours": 48, "reminder_lead_hours": 24}'::jsonb)`,
+        [f.customerA, eventId]
+      )
+
+      expect(
+        await queryError(db, "select private.bind_purchase($1, $2)", [
+          paymentId,
+          f.customerA,
+        ])
+      ).toMatchObject({ code: "P0001", message: "BIND_CONFLICT" })
+
+      for (const [table, column] of [
+        ["payments", "id"],
+        ["entitlements", "payment_id"],
+        ["bookings", "payment_id"],
+      ]) {
+        const { rows } = await db.query(
+          `select customer_id from public.${table} where ${column} = $1`,
+          [paymentId]
+        )
+        expect(rows, table).toEqual([{ customer_id: null }])
       }
     })
   })

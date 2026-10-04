@@ -337,6 +337,96 @@ describe("updating", () => {
       expect(await auditOf(db, id)).toHaveLength(1)
     })
   })
+
+  // Story 3.2 (deferred 3.1 #7): until the impact view of 3.8.
+  it("with a confirmed booking: a new time or kind -> EVENT_HAS_BOOKINGS; capacity, description and the close still change", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const id = await create(db, f, {
+        concept_id: f.concepts.greek,
+        ...WHEN,
+        publish: true,
+      })
+      await db.query(
+        `insert into public.bookings (
+           customer_id, event_id, party_size, booked_by, policy_snapshot)
+         values ($1, $2, 1, 'customer',
+           '{"cancel_window_hours": 48, "reminder_lead_hours": 24}'::jsonb)`,
+        [f.customer, id]
+      )
+      const update = (changes: Record<string, unknown>) =>
+        asAdmin(db, f.admin, () =>
+          failure(db, UPDATE, [id, changes, randomUUID()])
+        )
+
+      for (const changes of [
+        { start_time: "11:00" },
+        { end_time: "13:00" },
+        { date: "2026-12-16" },
+        { kind: "couple" },
+      ]) {
+        expect(await update(changes), JSON.stringify(changes)).toMatchObject({
+          code: "P0001",
+          message: "EVENT_HAS_BOOKINGS",
+        })
+      }
+      // The same values are not a change.
+      expect(await update({ date: WHEN.date, start_time: "10:00" })).toBeNull()
+
+      expect(
+        await update({
+          capacity_adults: 13,
+          description: testName("d"),
+          registration_closes_local: "2026-12-14T12:00",
+        })
+      ).toBeNull()
+      expect(await eventRow(db, id)).toMatchObject({
+        starts: "2026-12-15T08:00Z",
+        capacity_adults: 13,
+        registration_close_overridden: true,
+        revision: 1,
+      })
+
+      // A cancelled booking does not block.
+      await db.query(
+        "update public.bookings set status = 'cancelled', cancelled_at = now() where event_id = $1",
+        [id]
+      )
+      expect(await update({ start_time: "11:00" })).toBeNull()
+    })
+  })
+
+  it("a capacity below the places taken -> CAPACITY_BELOW_BOOKED; down to exactly the places taken is fine", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const id = await create(db, f, {
+        concept_id: f.concepts.grandma,
+        ...WHEN,
+        publish: true,
+      })
+      // One couple booking: 2 places.
+      await db.query(
+        `insert into public.bookings (
+           customer_id, event_id, party_size, booked_by, policy_snapshot)
+         values ($1, $2, 2, 'customer',
+           '{"cancel_window_hours": 48, "reminder_lead_hours": 24}'::jsonb)`,
+        [f.customer, id]
+      )
+      const update = (changes: Record<string, unknown>) =>
+        asAdmin(db, f.admin, () =>
+          failure(db, UPDATE, [id, changes, randomUUID()])
+        )
+
+      expect(await update({ capacity_adults: 1 })).toMatchObject({
+        code: "P0001",
+        message: "CAPACITY_BELOW_BOOKED",
+      })
+      expect((await eventRow(db, id)).capacity_adults).toBe(14)
+
+      expect(await update({ capacity_adults: 2 })).toBeNull()
+      expect((await eventRow(db, id)).capacity_adults).toBe(2)
+    })
+  })
 })
 
 describe("daylight saving", () => {

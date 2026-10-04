@@ -43,6 +43,27 @@ export const ERROR_MESSAGES = {
   LINK_IN_PROGRESS: "הלקוחה באמצע הצטרפות. אפשר לבטל או להחליף אחרי 15 דקות",
   // Raised by private.bind_purchase; the join RPCs turn it into a conflict.
   BIND_CONFLICT: "לא ניתן להוסיף את הרכישה לחשבון. צרי קשר לפרטים נוספים",
+  // Self-booking (story 3.2, wording approved by the user on 2026-10-04). On
+  // the session page the screen adds the action (WhatsApp contact or "all
+  // sessions") after the text.
+  EVENT_NOT_BOOKABLE: "אי אפשר להירשם למפגש הזה",
+  REGISTRATION_CLOSED:
+    "ההרשמה העצמית למפגש הזה נסגרה. צרי קשר לבדיקת מקום פנוי.",
+  ALREADY_BOOKED: "את כבר רשומה למפגש הזה",
+  EVENT_FULL: "הבראנץ׳ מלא. ניתן לבחור תאריך אחר",
+  ENTITLEMENT_EXPIRED_ON_DATE:
+    "הכרטיסייה אינה בתוקף ביום המפגש. אפשר לבחור מפגש מוקדם יותר.",
+  NO_MATCHING_ENTITLEMENT:
+    "אין לך כרגע כניסה שמתאימה למפגש הזה. ניתן לרכוש כניסה מתאימה",
+  // A row changed between the read and the lock (AD-6).
+  CONCURRENT_CHANGE: "משהו השתנה בינתיים. כדאי לרענן את הדף ולנסות שוב",
+  // Tal changes the time or kind of a session with bookings (story 3.2,
+  // until the impact view of 3.8).
+  EVENT_HAS_BOOKINGS:
+    "יש נרשמות למפגש, ולכן אי אפשר עדיין לשנות מועד או סוג. אפשר לשנות מכסה, תיאור וסגירה",
+  // Tal lowers the capacity below the places already taken (story 3.2).
+  CAPACITY_BELOW_BOOKED:
+    "המכסה נמוכה ממספר המקומות שכבר תפוסים. אפשר להוריד אותה רק עד מספר התפוסים",
   // Raised by the adapter (never by SQL).
   INVALID_CREDENTIALS: "המייל או הסיסמה לא תואמים",
   // Correct password, but no active customer profile and not an admin.

@@ -27,4 +27,33 @@ export const customerCopy = {
   contactPhrase: "צרי קשר",
   sessionsTitle: "מפגשים",
   sessionsSoon: "המפגשים יופיעו כאן בקרוב",
+  // Self-booking (story 3.2, wording approved by the user on 2026-10-04).
+  // The session title; never a regular/couple label for the customer.
+  brunch: "בראנץ׳",
+  sessionTitle: (concept: string) => `בראנץ׳ ${concept}`,
+  sessionsEmpty: "המפגשים הבאים עוד נרקחים",
+  // status-chip: a label, never a number of places.
+  availability: {
+    available: "יש מקום",
+    last_places: "מקומות אחרונים",
+    full: "מלא",
+  },
+  booked: "נרשמת",
+  withBabies: { regular: "מגיעות עם התינוקות", couple: "מגיעים עם התינוקות" },
+  book: "להרשמה",
+  registered: "את רשומה למפגש הזה.",
+  cancelUntil: (when: string) => `אפשר לבטל בעצמך עד ${when}`,
+  allSessions: "לכל המפגשים",
+  // The booking sheet.
+  close: "סגירה",
+  uses: "מה ינוצל",
+  usesValue: (product: string) => `כניסה אחת מ${product}`,
+  remaining: "יישארו",
+  remainingValue: (count: number) =>
+    count === 0 ? "אין כניסות" : count === 1 ? "כניסה אחת" : `${count} כניסות`,
+  validUntilLabel: "בתוקף עד",
+  confirmBooking: "לשמור לי את המקום",
+  // After the booking (the climax).
+  climax: "המקום שלך סביב השולחן שמור",
+  toMyBalance: "ליתרה שלי",
 } as const
