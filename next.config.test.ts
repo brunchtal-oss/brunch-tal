@@ -51,6 +51,14 @@ describe("next.config", () => {
     expect(matcher.test("/me")).toBe(false)
   })
 
+  it("serves the service worker with no-cache as JavaScript (story 5.9)", async () => {
+    const headers = await headersFor("/sw.js")
+    expect(headers["Cache-Control"]).toBe("no-cache")
+    expect(headers["Content-Type"]).toBe(
+      "application/javascript; charset=utf-8"
+    )
+  })
+
   it("does not log token routes", () => {
     const logging = nextConfig.logging
     const incoming =

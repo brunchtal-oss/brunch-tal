@@ -203,3 +203,18 @@
   target: 5.3
   summary: הסקשן `site/footer` כבר לא מוצג (הפוטר בלי שם העסק ובלי טקסט, החלטת המשתמשת 2026-10-04). העורך של 5.3 לא צריך לכלול אותו, וכדאי להחליט אם להסיר את השורה מהמסד.
   evidence: ‏`app/(public)/layout.tsx` כבר לא קורא את `site`.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-9-pwa-install-and-offline.md`
+  target: אחרי ההגשה
+  summary: השבתת כל הכפתורים שמשנים נתונים כשאין חיבור, כולל באדמין (UX memlog, review fixes). בהדגמה רק `/offline`, ופעולה שנשלחת בלי רשת נכשלת בשגיאה הקיימת.
+  evidence: מסמך ההיקף 2026-10-04: אופליין מלא ומצב קריאה בלבד לא נכנסים ל-5.9.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-9-pwa-install-and-offline.md`
+  target: 2.10
+  summary: קישור "הדרכת התקנה" (`/install`) ברשימת הפרופיל ב-`/me` (EXPERIENCE › פרופיל). ב-5.9 הקישור רק בפוטר הציבורי.
+  evidence: מסך הפרופיל עוד לא קיים.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-9-pwa-install-and-offline.md`
+  target: 5.15
+  summary: לטופס הנעילה (`POST /site-lock`) אין הגבלת ניסיונות, כמו ל-Basic Auth. אם הנעילה נשארת אחרי ההדגמה, להוסיף הגבלה או להסתמך על הסרתה ב-5.15.
+  evidence: ‏`handleSiteLockPost` ב-`lib/site-lock.ts`.
