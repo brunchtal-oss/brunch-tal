@@ -18,12 +18,14 @@ describe("ValueChangeRow", () => {
         newValue={null}
         scope="Scope note"
         onSave={vi.fn()}
+        onCancel={vi.fn()}
       >
         <input id="units" />
       </ValueChangeRow>
     )
     expect(html).toContain('id="units"')
     expect(html).not.toContain(copy.save)
+    expect(html).not.toContain(copy.cancel)
     expect(html).not.toContain("Scope note")
     expect(html).not.toContain(copy.saved)
   })
@@ -36,6 +38,7 @@ describe("ValueChangeRow", () => {
         newValue="5"
         scope="Scope note"
         onSave={vi.fn()}
+        onCancel={vi.fn()}
       >
         <input id="units" />
       </ValueChangeRow>
@@ -44,6 +47,7 @@ describe("ValueChangeRow", () => {
     expect(html).toContain("Units: 4 ← 5")
     expect(html).toContain("Scope note")
     expect(html).toContain(copy.save)
+    expect(html).toContain(copy.cancel)
     // No checkbox: it belongs to the sensitive dialog only.
     expect(html).not.toContain('role="checkbox"')
     expect(html).not.toContain("aria-busy")

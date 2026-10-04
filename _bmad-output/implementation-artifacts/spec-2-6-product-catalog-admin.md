@@ -82,6 +82,12 @@ context:
 - שמות הפעולות ביומן הם שמות ה-RPC (`admin_create_product`, `admin_update_product`, `admin_set_product_price`) לפי AD-19, שגובר על `product_update` ו-`product_price_change` שב-Decisions. תוקן לפני ההחלה.
 - המיגרציה הוחלה מה-MCP (בלי drop). הטיפוסים שנוצרו זהים לעדכון הידני.
 - תוצאות סופיות: `npm run test:db` 371/371, בדיקות יחידה 751 (בלי `.claude/worktrees` של סשן מקביל), lint, format:check, typecheck ו-build עוברים; ה-advisor רק עם 0029 ו-`auth_leaked_password_protection`; לא נשארו שורות `test_%`.
+- בדיקה בטלפון (המשתמשת, 2026-10-04), תוקן אחרי ה-merge:
+  - טופס התשלום שמר את הסכום הישן אחרי שינוי מחיר, כי Next שומר מצב של דף שנפתח (`cacheComponents`). עכשיו הטופס מתחיל מחדש כשהמוצרים או המחירים משתנים (`payment-form-host.tsx`).
+  - נוסף "ביטול" (`button-link`) ב-`value-change-row`: מחזיר את השדה לערך השמור.
+  - ההודעה "המוצר נוסף" הוסרה (החלטת המשתמשת): שם המוצר בכותרת מספיק.
+  - טופס תשלום בלי מוצר זמין (רק כרטיסייה, והיא מוסתרת) נשאר כמו שהוא, בהחלטת המשתמשת: המוצרים המוצמדים נכנסים ב-E3.
+  - הנוסחים "כניסה אחת", "כן" / "לא" ו"עבר שבוע" / "עברו N ימים" אושרו.
 
 ## Spec Change Log
 
