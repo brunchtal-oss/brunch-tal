@@ -11,6 +11,7 @@ import {
 } from "./approval-history"
 import {
   PaymentForm,
+  type CustomerOption,
   type MethodOption,
   type ProductOption,
 } from "./payment-form"
@@ -18,13 +19,17 @@ import {
 // Holds one approval "session" of the form: a remount key, its idempotency
 // key and the phase of the success screen (approval-history.ts). The form
 // keeps its one-time link while ?approved=1 is in the URL; once the param is
-// gone (Back, or the "payments" tab) it is replaced by a new, empty form.
+// gone (Back) it is replaced by a new, empty form; the "payments" tab leaves
+// for /admin/payments.
 export function PaymentFormHost({
+  customer,
   products,
   methods,
   today,
   idempotencyKey,
 }: {
+  // null: a new customer (a join link); otherwise the chosen customer.
+  customer: CustomerOption | null
   products: readonly ProductOption[]
   methods: readonly MethodOption[]
   today: string
@@ -61,6 +66,7 @@ export function PaymentFormHost({
   return (
     <PaymentForm
       key={session.id}
+      customer={customer}
       products={products}
       methods={methods}
       today={today}

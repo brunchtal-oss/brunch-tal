@@ -19,6 +19,8 @@ export type LinkRow = {
   detail_name: string | null
   conflict_reason: string | null
   product_name: string | null
+  // The payment's payer label (a new customer, story 2.5), or null.
+  payer_label?: string | null
   amount_agorot: number
   paid_on: string
   created_at: string
@@ -104,7 +106,9 @@ export function toLinkItem(row: LinkRow): LinkItem {
     title:
       row.status === "consumed"
         ? (row.customer_name ?? "")
-        : copy.rowTitle[row.status],
+        : row.payer_label
+          ? copy.rowTitleNamed(row.payer_label, copy.rowTitle[row.status])
+          : copy.rowTitle[row.status],
     purchase: copy.purchase(
       row.product_name ?? "",
       formatAgorot(row.amount_agorot),

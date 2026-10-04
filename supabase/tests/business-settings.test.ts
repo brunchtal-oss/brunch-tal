@@ -13,7 +13,8 @@ describe("business_settings", () => {
         default_capacity_regular, default_capacity_couple, cancel_window_hours,
         credit_options_count, reminder_lead_hours, admin_expiring_days,
         customer_expiring_days, last_places_threshold, default_prep_days,
-        marketing_reminder_schedule, inactivity_months
+        marketing_reminder_schedule, inactivity_months,
+        duplicate_payment_window_days
       from public.business_settings`)
     expect(rows).toHaveLength(1)
     expect(rows[0]).toMatchObject({
@@ -30,6 +31,7 @@ describe("business_settings", () => {
       last_places_threshold: 4,
       default_prep_days: [-1, 0],
       inactivity_months: 3,
+      duplicate_payment_window_days: 7,
     })
     expect(rows[0].marketing_reminder_schedule).toEqual([
       { weekday: 0, time: "09:00" },
@@ -48,6 +50,7 @@ describe("business_settings", () => {
     ["reminder_lead_hours", "-1"],
     ["admin_expiring_days", "-1"],
     ["customer_expiring_days", "-1"],
+    ["duplicate_payment_window_days", "-1"],
     ["default_capacity_regular", "0"],
     ["default_capacity_couple", "0"],
     ["default_validity_days", "0"],

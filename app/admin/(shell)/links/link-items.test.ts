@@ -44,6 +44,27 @@ describe("toLinkItem", () => {
     })
   })
 
+  it.each(["pending", "expired", "revoked"] as const)(
+    "puts the payer label before the title of a %s link",
+    (status) => {
+      expect(toLinkItem(row({ status, payer_label: "Michal" })).title).toBe(
+        copy.rowTitleNamed("Michal", copy.rowTitle[status])
+      )
+    }
+  )
+
+  it("shows the customer's name, not the payer label, once the link is used", () => {
+    expect(
+      toLinkItem(
+        row({
+          status: "consumed",
+          payer_label: "Michal",
+          customer_name: "Dana",
+        })
+      ).title
+    ).toBe("Dana")
+  })
+
   it("shows the customer's name and the day of a consumed link", () => {
     const item = toLinkItem(
       row({

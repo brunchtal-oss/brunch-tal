@@ -24,6 +24,8 @@ async function seedPurchases(
       amount: 47200,
       paidOn: f.today,
       methodId: f.method,
+      // The second approval is a similar payment (2.5).
+      duplicateConfirmed: true,
       key: randomUUID(),
     })
     purchases.push({

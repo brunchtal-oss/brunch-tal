@@ -86,6 +86,10 @@ export async function seedMoney(db: Db): Promise<MoneyFixture> {
 }
 
 export type ApproveInput = {
+  // null or missing: a new customer (a join link).
+  customerId?: string | null
+  // A new customer only: a label Tal sees until the customer joins.
+  payerLabel?: string | null
   productId: string
   eventId?: string | null
   amount: number | null
@@ -95,14 +99,18 @@ export type ApproveInput = {
   reference?: string | null
   note?: string | null
   confirmed?: boolean | null
+  // A similar payment (same product, amount, method) within the window.
+  duplicateConfirmed?: boolean | null
   key: string
 }
 
 export const APPROVE =
-  "select public.admin_approve_payment($1, $2, $3, $4, $5::date, $6, $7, $8, $9, $10) as r"
+  "select public.admin_approve_payment($1, $2, $3, $4, $5, $6, $7::date, $8, $9, $10, $11, $12, $13) as r"
 
 export function approveParams(input: ApproveInput): unknown[] {
   return [
+    input.customerId ?? null,
+    input.payerLabel ?? null,
     input.productId,
     input.eventId ?? null,
     input.amount,
@@ -112,6 +120,7 @@ export function approveParams(input: ApproveInput): unknown[] {
     input.reference ?? null,
     input.note ?? null,
     input.confirmed ?? null,
+    input.duplicateConfirmed ?? null,
     input.key,
   ]
 }

@@ -47,6 +47,8 @@ async function approveCard(
     amount: 47200,
     paidOn: options.paidOn ?? f.today,
     methodId: f.method,
+    // Several approvals of one fixture are similar payments (2.5).
+    duplicateConfirmed: true,
     key: randomUUID(),
   })
   await db.query("reset role")

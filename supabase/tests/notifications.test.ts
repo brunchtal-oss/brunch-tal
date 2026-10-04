@@ -159,7 +159,7 @@ const SEED = [
     true,
     "template",
     "הרכישה נוספה לחשבון שלך",
-    "{product}, בתוקף עד {expires_on}",
+    "{product}, בתוקף עד {expires_on}{card_tip}",
   ],
   [
     "booking_confirmed",
@@ -565,7 +565,12 @@ describe("enqueue_notification", () => {
         f.a,
         "purchase_repeat",
         "payment-1",
-        { product: "{expires_on}", expires_on: "10.11", extra: "x" },
+        {
+          product: "{expires_on}",
+          expires_on: "10.11",
+          card_tip: "",
+          extra: "x",
+        },
         "/me"
       )
       const rows = await notificationsOf(db, [f.a])
