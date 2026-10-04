@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest"
 import { adminCopy } from "@/lib/copy/admin"
 
 import {
+  closesAfterStart,
   createPayload,
   draftFieldOf,
   draftForConcept,
@@ -131,6 +132,13 @@ describe("createPayload", () => {
     expect(
       createPayload({ ...filled, closesLocal: "2026-12-15T10:30" })
     ).toEqual({ ok: false, field: "closes" })
+    expect(
+      closesAfterStart({ ...filled, closesLocal: "2026-12-15T10:30" })
+    ).toBe(true)
+    expect(
+      closesAfterStart({ ...filled, closesLocal: "2026-12-15T10:00" })
+    ).toBe(false)
+    expect(closesAfterStart(filled)).toBe(false)
   })
 
   it("takes the default hours on a first form only", () => {
