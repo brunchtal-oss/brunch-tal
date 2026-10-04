@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest"
 
 import { shellCopy } from "@/lib/copy/shell"
 
-import { ContactDetails, telHref } from "./contact-details"
+import { ContactDetails, hasContactDetails, telHref } from "./contact-details"
 import { EmptyPublicPage, PublicPageHeading } from "./public-page"
 import {
   FaqSection,
@@ -16,7 +16,7 @@ import { TopBar } from "./top-bar"
 import { WhatsappBar, WhatsappFlowLink } from "./whatsapp-bar"
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/about",
+  usePathname: () => "/gallery",
 }))
 
 const copy = shellCopy.public
@@ -73,21 +73,47 @@ describe("WhatsappBar", () => {
 })
 
 describe("SiteFooter", () => {
-  it("shows the name, the footer text and the admin entrance", () => {
+  const details = {
+    whatsapp_phone: "0544256456",
+    phone: "050-123 4567",
+    address: "addr",
+    navigation_url: "https://waze.com/ul?q=x",
+  }
+  const legal = [{ href: "/privacy", label: "privacy-label" }]
+
+  it("shows the name, the footer text, the contact lines, the legal links and the admin entrance", () => {
     const html = renderToStaticMarkup(
-      <SiteFooter name="biz-name" footer={{ text: "footer-text" }} />
+      <SiteFooter
+        name="biz-name"
+        footer={{ text: "footer-text" }}
+        details={details}
+        legal={legal}
+      />
     )
-    expect(html).toMatch(/^<footer/)
+    expect(html).toMatch(/^<footer[^>]*data-site-footer/)
+    expect(html).toContain("bg-foreground")
     expect(html).toContain("biz-name")
     expect(html).toContain("footer-text")
+    expect(html).toContain('href="tel:0501234567"')
+    expect(html).toMatch(/href="https:\/\/waze\.com\/ul\?q=x"[^>]*>addr/)
+    expect(html).toContain('href="/privacy"')
     expect(html).toContain('href="/admin/login"')
   })
 
-  it("has no text without a published footer", () => {
+  it("leaves out what is not published", () => {
     const html = renderToStaticMarkup(
-      <SiteFooter name="biz-name" footer={null} />
+      <SiteFooter
+        name="biz-name"
+        footer={null}
+        details={{ whatsapp_phone: "0544256456", address: "addr" }}
+        legal={[]}
+      />
     )
     expect(html).not.toContain("footer-text")
+    expect(html).not.toContain("tel:")
+    expect(html).toContain("addr")
+    expect(html).not.toContain("waze")
+    expect(html).not.toContain('href="/privacy"')
     expect(html).toContain(copy.adminLogin)
   })
 })
@@ -161,38 +187,39 @@ describe("ContactDetails", () => {
     payment_instructions: "pay",
   }
 
-  it("shows every published field", () => {
-    const html = renderToStaticMarkup(
-      <ContactDetails details={full} whatsappHref={WA} />
-    )
+  it("shows the phone, address, arrival and navigation, without WhatsApp or payment", () => {
+    const html = renderToStaticMarkup(<ContactDetails details={full} />)
     expect(html).toContain('href="tel:0501234567"')
-    expect(html).toContain(`href="${WA}"`)
     expect(html).toContain("addr")
     expect(html).toContain("arrive")
     expect(html).toContain('href="https://maps.example.com/x"')
-    expect(html).toContain("pay")
+    expect(html).not.toContain("wa.me")
+    expect(html).not.toContain("054-425-6456")
+    expect(html).not.toContain("pay")
     expect(html).toContain("<bdi")
   })
 
   it("leaves out an empty field", () => {
     const html = renderToStaticMarkup(
       <ContactDetails
-        details={{ whatsapp_phone: "0544256456" }}
-        whatsappHref={WA}
+        details={{ whatsapp_phone: "0544256456", address: "a" }}
       />
     )
-    expect(html).not.toContain(copy.contact.address)
     expect(html).not.toContain(copy.contact.phone + "<")
     expect(html).not.toContain("tel:")
-    expect(html).toContain(`href="${WA}"`)
+    expect(html).toContain(copy.contact.address)
   })
 
   it("shows nothing without details", () => {
-    expect(
-      renderToStaticMarkup(
-        <ContactDetails details={null} whatsappHref={null} />
-      )
-    ).toBe("")
+    expect(renderToStaticMarkup(<ContactDetails details={null} />)).toBe("")
+  })
+
+  it("has nothing to show for a WhatsApp-only record", () => {
+    const only = { whatsapp_phone: "0544256456" }
+    expect(hasContactDetails(only)).toBe(false)
+    expect(renderToStaticMarkup(<ContactDetails details={only} />)).toBe("")
+    expect(hasContactDetails({ ...only, address: "a" })).toBe(true)
+    expect(hasContactDetails(null)).toBe(false)
   })
 
   it("dials digits only", () => {

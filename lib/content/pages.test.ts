@@ -1,9 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { getPublishedSections, sectionContent } from "./pages"
+import {
+  getPublishedPageSlugs,
+  getPublishedSections,
+  sectionContent,
+} from "./pages"
 
 const order = vi.fn()
 const eq = vi.fn()
+const inList = vi.fn()
 const select = vi.fn()
 const cacheTag = vi.fn()
 
@@ -22,7 +27,8 @@ beforeEach(() => {
   eq.mockReset()
   select.mockReset()
   cacheTag.mockReset()
-  select.mockReturnValue({ eq })
+  inList.mockReset()
+  select.mockReturnValue({ eq, in: inList })
   eq.mockReturnValue({ order })
 })
 
@@ -78,6 +84,25 @@ describe("getPublishedSections", () => {
     order.mockResolvedValue({ data: null, error: { message: "x" } })
     await expect(getPublishedSections("about")).resolves.toEqual({})
     expect(log).toHaveBeenCalledWith("content.read_failed", { page: "about" })
+    log.mockRestore()
+  })
+})
+
+describe("getPublishedPageSlugs", () => {
+  it("returns the published slugs, tagged content:<slug> for each", async () => {
+    inList.mockResolvedValue({ data: [{ slug: "privacy" }], error: null })
+    await expect(getPublishedPageSlugs(["terms", "privacy"])).resolves.toEqual([
+      "privacy",
+    ])
+    expect(inList).toHaveBeenCalledWith("slug", ["terms", "privacy"])
+    expect(cacheTag).toHaveBeenCalledWith("content:terms")
+    expect(cacheTag).toHaveBeenCalledWith("content:privacy")
+  })
+
+  it("gives [] on a read error", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => {})
+    inList.mockResolvedValue({ data: null, error: { message: "x" } })
+    await expect(getPublishedPageSlugs(["privacy"])).resolves.toEqual([])
     log.mockRestore()
   })
 })

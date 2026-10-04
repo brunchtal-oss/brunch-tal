@@ -29,10 +29,26 @@ export const adminMoreNav: readonly { href: string; label: string }[] = [
 // appears with it.
 export const publicNav: readonly { href: string; label: string }[] = [
   { href: "/", label: shellCopy.nav.home },
-  { href: "/about", label: shellCopy.nav.about },
   { href: "/how-it-works", label: shellCopy.nav.howItWorks },
   { href: "/gallery", label: shellCopy.nav.gallery },
   { href: "/contact", label: shellCopy.nav.contact },
+]
+
+// The legal pages linked from the public footer (user decision 2026-10-04),
+// each by its content page slug: a link is shown only once its page is
+// published. The pages and their routes arrive in 5.5.
+export const publicLegalNav: readonly {
+  slug: string
+  href: string
+  label: string
+}[] = [
+  { slug: "terms", href: "/terms", label: shellCopy.public.footer.terms },
+  { slug: "privacy", href: "/privacy", label: shellCopy.public.footer.privacy },
+  {
+    slug: "accessibility",
+    href: "/accessibility",
+    label: shellCopy.public.footer.accessibility,
+  },
 ]
 
 // The public item that is current on a path: its own path, or below it

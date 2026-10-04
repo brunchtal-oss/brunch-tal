@@ -20,7 +20,6 @@ export const shellCopy = {
     payments: "תשלומים",
     more: "עוד",
     // The public pages (menu-sheet); also each page's h1 and <title>.
-    about: "אודות",
     howItWorks: "איך זה עובד ושאלות נפוצות",
     gallery: "גלריה והמלצות",
     contact: "יצירת קשר",
@@ -36,6 +35,12 @@ export const shellCopy = {
     whatsappLabel: "יצירת קשר",
     whatsappBar: "להצטרפות צרי קשר עם טל",
     whatsappBarName: "להצטרפות צרי קשר עם טל בוואטסאפ (נפתח בוואטסאפ)",
+    // The public footer's legal links (its contact lines use contact.*).
+    footer: {
+      terms: "תנאי שימוש",
+      privacy: "מדיניות פרטיות",
+      accessibility: "הצהרת נגישות",
+    },
     // A public page with no published section yet.
     emptyPage: "התוכן של העמוד הזה עוד בהכנה",
     emptyPageWhatsapp: "לשאלות אפשר לכתוב לטל בוואטסאפ",
@@ -46,16 +51,15 @@ export const shellCopy = {
       faq: "שאלות נפוצות",
       testimonials: "המלצות",
     },
-    // The business details (contact page, home › contact).
+    // The business details (contact page, footer) and home › contact's
+    // WhatsApp button.
     contact: {
       label: "פרטי קשר",
       phone: "טלפון",
-      whatsapp: "וואטסאפ",
       whatsappLink: "לכתוב לטל בוואטסאפ",
       address: "כתובת",
       arrival: "הוראות הגעה",
       navigation: "פתיחה באפליקציית ניווט",
-      payment: "הוראות תשלום",
       opensOutside: "(נפתח בחלון חדש)",
     },
   },

@@ -51,6 +51,28 @@ export async function getPublishedSections(
   return sections
 }
 
+// Which of these public pages are published (RLS shows anon only published
+// pages), cached and tagged content:<slug> for each. The footer links to a
+// legal page only once it is published (user decision 2026-10-04; the pages
+// arrive in 5.5). A read error is logged and gives [].
+export async function getPublishedPageSlugs(
+  slugs: readonly string[]
+): Promise<string[]> {
+  "use cache"
+  for (const slug of slugs) cacheTag(`content:${slug}`)
+  cacheLife("minutes")
+
+  const { data, error } = await createPublicClient()
+    .from("content_pages")
+    .select("slug")
+    .in("slug", [...slugs])
+  if (error) {
+    console.error("content.read_failed", { pages: slugs })
+    return []
+  }
+  return (data ?? []).map((row) => row.slug)
+}
+
 // The section under key when it is of the expected kind, else null.
 export function sectionContent<K extends keyof ContentByKind>(
   sections: PublishedSections,
