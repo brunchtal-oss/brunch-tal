@@ -104,3 +104,18 @@
   target: 2.6
   summary: ב-toggletip של "תוקף הכרטיסיה פג" ב-`/me` מספר השבועות הוא `Math.round(validity_days / 7)` בלי צורת יחיד או זוגי. כשטל תערוך תוקף שאינו כפולה של 7 (למשל 10 ימים), יוצג "עברו 1 שבועות" או מספר מעוגל. ‏2.6 מחליט: ימים כשאינו כפולה של 7, ונוסח ליחיד ולזוגי (באישור המשתמשת).
   evidence: ‏`validityWeeks` ב-`app/me/purchase-items.ts` ו-`expiredBeforeBoundInfo` ב-`lib/copy/customer.ts`. היום יש רק כרטיסייה של 49 ימים. ביקורת 2.4, blind-hunter ו-edge-case.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-5-repeat-purchase-and-amount-override.md`
+  target: 4.7
+  summary: מסך ההגדרות מוסיף את `business_settings.duplicate_payment_window_days` (טווח לזיהוי תשלום כפול, ברירת מחדל 7) ל-`value-change-row`, עם יומן ישן ← חדש.
+  evidence: העמודה נוצרה ב-2.5, אבל הכרטיס של 4.7 לא מונה אותה ברשימת ברירות המחדל (admin-configurable-parameters.md, החלטת משתמשת 2026-10-02).
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-5-repeat-purchase-and-amount-override.md`
+  target: הסרת פרטים (`admin_anonymize_customer`)
+  summary: תשלום של לקוחה שפרטיה הוסרו: `admin_list_payments` מחזיר את `full_name` בלי בדיקת `anonymized_at` (וכותרת ריקה אם השם ריק), ו-`private.similar_payments` מחזיר null שמוצג באזהרת הכפילות כ"לקוחה חדשה". הסיפור שמסיר פרטים מחליט על נוסח ("לקוחה אנונימית", EXPERIENCE) ומיישר את שתי הפונקציות.
+  evidence: ביקורת 2.5, ממצא 8. היום אין RPC שקובע `anonymized_at`, ולכן זה לא קורה.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-5-repeat-purchase-and-amount-override.md`
+  target: הסרת פרטים (`admin_anonymize_customer`)
+  summary: הסרת פרטים מנקה גם את `payments.payer_label` ("שם לזיהוי") בכל התשלומים של הלקוחה.
+  evidence: שם פרטי הוא מידע מזהה (AD-19); העמודה נוספה ב-2.5 אחרי הביקורת.

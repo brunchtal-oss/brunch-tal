@@ -9,7 +9,7 @@ describe("nextApprovalPhase", () => {
     expect(nextApprovalPhase("shown", true)).toBe("shown")
   })
 
-  it("resets to an empty form when the param is gone (Back, or the payments tab)", () => {
+  it("resets to an empty form when the param is gone (Back)", () => {
     expect(nextApprovalPhase("shown", false)).toBe("reset")
   })
 

@@ -23,7 +23,7 @@ import {
 } from "./support/money"
 
 const PREVIEW =
-  "select public.preview_admin_approve_payment($1, $2, $3, $4::date) as r"
+  "select public.preview_admin_approve_payment(null, null, $1, $2, $3, $4::date, null) as r"
 
 function cardInput(f: MoneyFixture, extra: Partial<ApproveInput> = {}) {
   return {
@@ -461,7 +461,7 @@ describe("admin_approve_payment", () => {
       const f = await seedMoney(db)
       await asAuthenticated(db, f.admin)
       const params = approveParams(cardInput(f))
-      params[9] = null
+      params[12] = null
       expect(await queryError(db, APPROVE, params)).toMatchObject({
         code: "P0001",
         message: "INVALID_INPUT",
@@ -525,7 +525,10 @@ describe("entitlement_balances", () => {
       const fresh = await approve(db, cardInput(f, { paidOn }))
       const old = await approve(
         db,
-        cardInput(f, { paidOn: await addDays(db, f.today, -50) })
+        cardInput(f, {
+          paidOn: await addDays(db, f.today, -50),
+          duplicateConfirmed: true,
+        })
       )
       const { rows } = await db.query(
         "select entitlement_id, is_expired from public.entitlement_balances where entitlement_id = any($1::uuid[])",

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { formatAgorot, parseShekelsToAgorot } from "./money"
+import { formatAgorot, formatAgorotInput, parseShekelsToAgorot } from "./money"
 
 describe("formatAgorot", () => {
   it.each([
@@ -74,5 +74,17 @@ describe("parseShekelsToAgorot", () => {
     for (const agorot of [0, 5, 12750, 123450, 987654321]) {
       expect(parseShekelsToAgorot(formatAgorot(agorot))).toBe(agorot)
     }
+  })
+})
+
+describe("formatAgorotInput", () => {
+  it.each([
+    [47200, "472"],
+    [123400, "1,234"],
+    [12750, "127.50"],
+    [0, "0"],
+  ])("formats %i as %s and parses it back", (agorot, text) => {
+    expect(formatAgorotInput(agorot)).toBe(text)
+    expect(parseShekelsToAgorot(text)).toBe(agorot)
   })
 })

@@ -199,6 +199,7 @@ export type Database = {
           default_capacity_regular: number
           default_prep_days: number[]
           default_validity_days: number
+          duplicate_payment_window_days: number
           id: boolean
           inactivity_months: number
           last_places_threshold: number
@@ -218,6 +219,7 @@ export type Database = {
           default_capacity_regular?: number
           default_prep_days?: number[]
           default_validity_days?: number
+          duplicate_payment_window_days?: number
           id?: boolean
           inactivity_months?: number
           last_places_threshold?: number
@@ -237,6 +239,7 @@ export type Database = {
           default_capacity_regular?: number
           default_prep_days?: number[]
           default_validity_days?: number
+          duplicate_payment_window_days?: number
           id?: boolean
           inactivity_months?: number
           last_places_threshold?: number
@@ -622,6 +625,7 @@ export type Database = {
           id: string
           note: string | null
           paid_on: string
+          payer_label: string | null
           payment_method_id: string | null
           product_id: string
           product_snapshot: Json
@@ -640,6 +644,7 @@ export type Database = {
           id?: string
           note?: string | null
           paid_on: string
+          payer_label?: string | null
           payment_method_id?: string | null
           product_id: string
           product_snapshot: Json
@@ -658,6 +663,7 @@ export type Database = {
           id?: string
           note?: string | null
           paid_on?: string
+          payer_label?: string | null
           payment_method_id?: string | null
           product_id?: string
           product_snapshot?: Json
@@ -837,10 +843,13 @@ export type Database = {
           p_amount_agorot: number
           p_amount_override_reason: string
           p_confirmed: boolean
+          p_customer_id: string
+          p_duplicate_confirmed: boolean
           p_event_id: string
           p_idempotency_key: string
           p_note: string
           p_paid_on: string
+          p_payer_label: string
           p_payment_method_id: string
           p_product_id: string
           p_reference: string
@@ -856,10 +865,12 @@ export type Database = {
         Returns: Json
       }
       admin_list_links: { Args: never; Returns: Json }
+      admin_list_payments: { Args: never; Returns: Json }
       admin_revoke_link: {
         Args: { p_idempotency_key: string; p_token_id: string }
         Returns: Json
       }
+      admin_search_customers: { Args: { p_query: string }; Returns: Json }
       claim_join: {
         Args: { p_idempotency_key: string; p_token: string }
         Returns: Json
@@ -882,8 +893,11 @@ export type Database = {
       preview_admin_approve_payment: {
         Args: {
           p_amount_agorot: number
+          p_customer_id: string
           p_event_id: string
           p_paid_on: string
+          p_payer_label: string
+          p_payment_method_id: string
           p_product_id: string
         }
         Returns: Json

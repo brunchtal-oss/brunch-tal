@@ -24,6 +24,8 @@ export const adminCopy = {
     linkNotShown:
       "התשלום כבר אושר, ואת הקישור אי אפשר להציג שוב. קישור חלופי, בלי תשלום נוסף, יתאפשר במסך הקישורים",
     linkTitle: "לקוחה חדשה · הקישור מחכה להצטרפות",
+    // With a payer label (story 2.5, user decision 2026-10-04).
+    linkTitleNamed: (label: string) => `${label} · הקישור מחכה להצטרפות`,
     linkPending: "ממתין למימוש",
     linkValidUntil: "תקף עד",
     linkOnce: "לשימוש פעם אחת. פתיחה לא צורכת אותו",
@@ -33,6 +35,81 @@ export const adminCopy = {
     another: "להוספת תשלום נוסף",
     // The link at the top of "add payment" to the links screen.
     allLinks: "לכל קישורי ההצטרפות",
+    // Story 2.5 (wording approved by the user on 2026-10-04).
+    // /admin/payments/new: whom the payment is for.
+    choiceLegend: "למי התשלום?",
+    // A new customer only: a name only Tal sees, until the customer joins.
+    payerLabel: "שם לזיהוי (לא חובה)",
+    payerLabelHint: "רק את רואה אותו. למשל: מיכל",
+    existingCustomer: "לקוחה קיימת",
+    // /admin/payments/new/existing
+    searchLabel: "חיפוש לפי שם או טלפון",
+    searchHint: "לפחות 2 תווים",
+    searchResult: (name: string, phone: string) =>
+      phone ? `${name} · ${phone}` : name,
+    searchNone: "לא נמצאה לקוחה. אפשר לחפש לפי חלק מהשם או לפי מספר הטלפון",
+    // The head of the form for an existing customer, and its button.
+    customerHead: (name: string, phone: string) =>
+      phone ? `${name} · ${phone}` : name,
+    changeCustomer: "החלפה",
+    // The amount field: from the product, or changed.
+    amountChanged: (price: string) => `מחיר הקטלוג: ${price} · הסכום שונה`,
+    amountInvalid: "סכום לא תקין",
+    overrideReason: "סיבת שינוי המחיר (לא חובה)",
+    previewForCustomer: (name: string) => `הרכישה תתווסף לחשבון של ${name}`,
+    // The expiry of the purchase is already in the past (new or existing).
+    previewExpired: "תאריך התפוגה כבר עבר. הרכישה תופיע אצל הלקוחה כפגה",
+    duplicateTitle: "נמצא תשלום דומה",
+    duplicateBody: (days: number) =>
+      `אותו מוצר, סכום ואמצעי תשלום, בטווח של ${days} ימים מתאריך הרכישה:`,
+    duplicateRow: (name: string, paidOn: string, approvedOn: string) =>
+      `${name} · רכישה ${paidOn} · אושר ${approvedOn}`,
+    duplicateConfirm: "בדקתי, וזה תשלום נפרד ולא כפילות",
+    submitExisting: "לאישור התשלום",
+    successExisting: (name: string) =>
+      `התשלום אושר. הרכישה נוספה לחשבון של ${name}`,
+    successPurchase: (product: string, units: number, expiresOn: string) =>
+      `${product} · ${units} כניסות · בתוקף עד ${expiresOn}`,
+    toList: "לרשימת התשלומים",
+    // The price_change dialog (lib/admin/sensitive-actions.ts has its title).
+    priceChange: {
+      body: "הסכום שונה ממחיר הקטלוג. בדקי לפני האישור.",
+      customer: "לקוחה",
+      newCustomer: "לקוחה חדשה (תמלא פרטים בקישור)",
+      product: "מוצר",
+      price: "מחיר",
+      reason: "סיבה",
+      priceChange: (price: string, amount: string) => `${price} ← ${amount}`,
+      confirm: (amount: string, price: string) =>
+        `אני מאשרת שהלקוחה משלמת ${amount} במקום מחיר הקטלוג ${price}, ושהשינוי יירשם ביומן הפעולות`,
+    },
+  },
+  // /admin/payments (story 2.5, wording approved by the user on 2026-10-04).
+  paymentsList: {
+    title: "תשלומים",
+    add: "הוספת תשלום",
+    unbound: "לקוחה חדשה · עוד לא הצטרפה",
+    unboundNamed: (label: string) => `${label} · עוד לא הצטרפה`,
+    // "{product} · {amount} · {method} · רכישה {DD.MM} · אושר {DD.MM}"
+    details: (
+      product: string,
+      amount: string,
+      method: string,
+      paidOn: string,
+      approvedOn: string
+    ) =>
+      `${product} · ${amount} · ${method} · רכישה ${paidOn} · אושר ${approvedOn}`,
+    catalogPrice: (price: string) => `מחיר הקטלוג ${price}`,
+    reason: (reason: string) => `סיבה: ${reason}`,
+    reference: (value: string) => `אסמכתה: ${value}`,
+    note: (value: string) => `הערה: ${value}`,
+    limit: "מוצגים 50 התשלומים האחרונים",
+    empty: "אין עדיין תשלומים",
+  },
+  // sensitive-confirm-dialog (EXPERIENCE › Component Patterns).
+  sensitive: {
+    cancel: "ביטול",
+    checkRequired: "צריך לסמן את האישור כדי להמשיך",
   },
   // /admin/links (story 2.4, wording approved by the user on 2026-10-03).
   links: {
@@ -43,6 +120,8 @@ export const adminCopy = {
       expired: "הקישור פג בלי מימוש",
       revoked: "הקישור בוטל",
     },
+    // "{payer label} · {row title}" until the link is used (story 2.5).
+    rowTitleNamed: (label: string, title: string) => `${label} · ${title}`,
     // "{product} · {amount} · אושר {DD.MM}"; the amount arrives formatted.
     purchase: (product: string, amount: string, approvedOn: string) =>
       `${product} · ${amount} · אושר ${approvedOn}`,

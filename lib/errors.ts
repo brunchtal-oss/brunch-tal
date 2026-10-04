@@ -21,6 +21,13 @@ export const ERROR_MESSAGES = {
   PAYMENT_METHOD_NOT_SELECTABLE: "אמצעי התשלום הזה הוסתר. בחרי אחר",
   // A sensitive action was sent without its confirmation (AD-7).
   CONFIRM_REQUIRED: "צריך לאשר את השינוי לפני שממשיכים",
+  // Repeat purchase (story 2.5, wording approved by the user on 2026-10-04).
+  // The customer chosen for a payment was removed in the meantime, or the id
+  // in the address is not an available customer.
+  CUSTOMER_NOT_AVAILABLE: "הלקוחה הזו לא זמינה. בחרי לקוחה אחרת",
+  // A similar payment exists and "separate payment" was not checked (or one
+  // was created in the meantime; the preview then reloads).
+  DUPLICATE_CONFIRM_REQUIRED: "צריך לאשר שזה תשלום נפרד ולא כפילות",
   // Join (story 2.2). INVALID_INPUT of join_begin / join_complete carries
   // detail.field (email | phone | full_name | photo_consent | dietary_notes |
   // babies | baby_name | birth_date) and, for a baby, detail.index.

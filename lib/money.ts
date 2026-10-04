@@ -21,6 +21,14 @@ export function formatAgorot(agorot: number): string {
   return `${sign}${GROUPING.format(shekels)}${fraction} ₪`
 }
 
+/**
+ * The value of an amount field: formatAgorot without the sign ("472",
+ * "1,234", "127.50"), which parseShekelsToAgorot reads back exactly.
+ */
+export function formatAgorotInput(agorot: number): string {
+  return formatAgorot(agorot).replace(/ ₪$/, "")
+}
+
 const BIDI_MARKS = /[\u200e\u200f\u202a-\u202e\u2066-\u2069]/g
 
 // Whole shekels, optionally with correct thousands grouping, then up to two

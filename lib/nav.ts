@@ -28,9 +28,9 @@ export const customerNav: readonly NavItem[] = [
 
 export const adminNav: readonly NavItem[] = [
   { href: "/admin", label: shellCopy.nav.home, icon: "home" },
-  // Only the "add payment" screen exists so far; the payments list comes later.
+  // The payments list; "add payment" and its steps are below it.
   {
-    href: "/admin/payments/new",
+    href: "/admin/payments",
     label: shellCopy.nav.payments,
     icon: "payments",
   },
