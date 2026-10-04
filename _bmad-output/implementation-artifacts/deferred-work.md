@@ -218,3 +218,8 @@
   target: 5.15
   summary: לטופס הנעילה (`POST /site-lock`) אין הגבלת ניסיונות, כמו ל-Basic Auth. אם הנעילה נשארת אחרי ההדגמה, להוסיף הגבלה או להסתמך על הסרתה ב-5.15.
   evidence: ‏`handleSiteLockPost` ב-`lib/site-lock.ts`.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-9-pwa-install-and-offline.md`
+  target: אחרי ההגשה
+  summary: לאתר אין דף שגיאה כללי (`app/error.tsx`). פעולה שנשלחת בלי רשת (התחברות, הרשמה, ביטול) מציגה את דף ברירת המחדל של Next באנגלית ("This page couldn't load"). צריך דף שגיאה בעברית, בעיצוב האתר, עם "לנסות שוב" (מתחיל ב-frontend-design, נוסח לאישור).
+  evidence: בדיקת האופליין בדפדפן אחרי 5.9 (2026-10-04): שליחת טופס ההתחברות בלי רשת. לא הוצג אישור, אבל הדף באנגלית. החלטת המשתמשת: לדחות.

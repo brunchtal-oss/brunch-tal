@@ -70,7 +70,7 @@
 - **אנדרואיד:** ב-preview של ה-branch (Chrome). אחרי סיסמת הנעילה פותחים את `/install`, מתקינים ופותחים מהאייקון.
 - **אייפון:** ב-production. ה-preview מוגן גם ב-Vercel Authentication, ואפליקציה מותקנת באייפון לא מקבלת את העוגייה שלו. ב-Safari פותחים את `/install`, ואז שיתוף ← "הוספה למסך הבית". בפתיחה הראשונה מהאייקון ממלאים את טופס הנעילה.
 - **אופליין:** ‏מצב טיסה ← ניווט לדף אחר ← מוצג "אין חיבור".
-- **אין מידע אישי במטמון:** ב-Chrome במחשב, ‏DevTools ← Application ← Cache Storage ← `brunch-v1`. יש בו רק `/offline`, ‏`/_next/static/…` ו-`/icons/…`, גם אחרי ניווט ב-`/me` וב-`/admin`.
+- **אין מידע אישי במטמון:** ב-Chrome במחשב, ‏DevTools ← Application ← Cache Storage ← `brunch-v…` (‏`VERSION` שב-`public/sw.js`). יש בו רק `/offline`, ‏`/_next/static/…` ו-`/icons/…`, גם אחרי ניווט ב-`/me` וב-`/admin`.
 - כשמשנים את `/offline`, את האייקונים או את התנהגות ה-SW, מעלים את `VERSION` ב-`public/sw.js`. האייקונים נשמרים במטמון בשמות קבועים, ובלי העלאת הגרסה יישארו הישנים.
 
 ## Checklist לכל סביבה (AD-22)
