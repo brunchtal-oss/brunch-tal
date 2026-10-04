@@ -1,7 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
-import { usePathname } from "next/navigation"
+import { useRef, useState } from "react"
 
 import { SensitiveConfirmDialog } from "@/components/admin/sensitive-confirm-dialog"
 import {
@@ -41,6 +40,20 @@ import {
 
 const copy = adminCopy.products
 
+// The draft values behind each editor row (for its "cancel").
+const DRAFT_KEYS: Record<EditorField, readonly (keyof ProductDraft)[]> = {
+  type: ["type"],
+  name: ["name"],
+  units: ["unitsText"],
+  validity: ["validityMode", "validityDaysText"],
+  weekdays: ["weekdays"],
+  eventKind: ["eventKind"],
+  partySize: ["partySize"],
+  introOnly: ["introOnly"],
+  postJoinMessage: ["postJoinMessage"],
+  postJoinButtonLabel: ["postJoinButtonLabel"],
+}
+
 function asSaveResult(result: ActionResult<unknown>): ValueSaveResult {
   return result.ok ? { ok: true } : { ok: false, code: result.code }
 }
@@ -51,25 +64,16 @@ function asSaveResult(result: ActionResult<unknown>): ValueSaveResult {
 // hide / show as a change of its state. The fixed note on top: changes
 // apply to new purchases only. The saved values come from the server after
 // each save (router.refresh in the row); a failure leaves them as they were.
-export function ProductEditor({
-  row,
-  added = false,
-}: {
-  row: ProductRow
-  // Opened by the create form (?added=1): "the product was added" is shown
-  // once, until the first save refreshes the row; the query is dropped at
-  // once, so a reload does not show it again.
-  added?: boolean
-}) {
-  const pathname = usePathname()
-  const [addedFor] = useState(added ? row : null)
-  useEffect(() => {
-    if (added) window.history.replaceState(null, "", pathname)
-  }, [added, pathname])
+export function ProductEditor({ row }: { row: ProductRow }) {
   const [draft, setDraft] = useState<ProductDraft>(() => draftFromRow(row))
   const [active, setActive] = useState(row.active)
   const update = (patch: Partial<ProductDraft>) =>
     setDraft((current) => ({ ...current, ...patch }))
+  // "Cancel" of a row: its draft values go back to the saved ones.
+  const revert = (keys: readonly (keyof ProductDraft)[]) => {
+    const saved = draftFromRow(row)
+    update(Object.fromEntries(keys.map((key) => [key, saved[key]])))
+  }
 
   // The price dialog: opened by the price row's save, which waits for it.
   const [pricePlan, setPricePlan] = useState<{
@@ -150,6 +154,7 @@ export function ProductEditor({
         oldValue={change?.from ?? ""}
         newValue={change?.to ?? null}
         onSave={saveField(field)}
+        onCancel={() => revert(DRAFT_KEYS[field])}
       >
         {children}
       </ValueChangeRow>
@@ -162,9 +167,6 @@ export function ProductEditor({
 
   return (
     <div className="flex flex-col gap-6">
-      {addedFor === row && (
-        <InlineNotice tone="success">{copy.create.success}</InlineNotice>
-      )}
       <InlineNotice tone="info">{copy.scopeNote}</InlineNotice>
 
       <ul className="flex flex-col divide-y divide-border border-y border-border">
@@ -200,6 +202,7 @@ export function ProductEditor({
             oldValue={price?.from ?? ""}
             newValue={price?.to ?? null}
             onSave={savePrice}
+            onCancel={() => revert(["priceText"])}
           >
             <TextField
               id="price"
@@ -329,6 +332,7 @@ export function ProductEditor({
                 : null
             }
             scope={copy.hideScope}
+            onCancel={() => setActive(row.active)}
             onSave={async (key) =>
               asSaveResult(
                 await updateProductAction({

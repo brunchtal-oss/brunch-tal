@@ -166,7 +166,6 @@ export const adminCopy = {
     create: {
       title: "הוספת מוצר",
       submit: "שמירת המוצר",
-      success: "המוצר נוסף",
     },
   },
   // value-change-row (story 2.6; EXPERIENCE › Component Patterns).
@@ -174,6 +173,7 @@ export const adminCopy = {
     change: (field: string, from: string, to: string) =>
       `${field}: ${from} ← ${to}`,
     save: "לשמור את השינוי",
+    cancel: "ביטול",
     saved: "השינוי נשמר",
   },
   // sensitive-confirm-dialog (EXPERIENCE › Component Patterns).

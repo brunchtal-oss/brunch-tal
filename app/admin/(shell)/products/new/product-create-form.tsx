@@ -44,7 +44,7 @@ const FIELD_IDS: Record<DraftField, string> = {
 // and the texts she typed are kept when she switches type. Errors show
 // under their field once she tried to save; nothing is sent until they are
 // fixed. One idempotency key per product (AD-5); a success opens the new
-// product with "the product was added".
+// product (its name in the heading confirms it; phone test 2026-10-04).
 export function ProductCreateForm({
   defaultValidityDays,
 }: {
@@ -96,7 +96,7 @@ export function ProductCreateForm({
         })
         if (result.ok) {
           setIdempotencyKey(newIdempotencyKey())
-          router.push(`/admin/products/${result.data.productId}?added=1`)
+          router.push(`/admin/products/${result.data.productId}`)
           return
         }
         setServerError(result.code)

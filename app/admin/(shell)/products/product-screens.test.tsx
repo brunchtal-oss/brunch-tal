@@ -81,15 +81,6 @@ describe("ProductEditor", () => {
     expect(html).not.toContain(adminCopy.valueChange.save)
   })
 
-  it('shows "the product was added" only when opened by the create form', () => {
-    expect(renderToStaticMarkup(<ProductEditor row={CARD} added />)).toContain(
-      copy.create.success
-    )
-    expect(renderToStaticMarkup(<ProductEditor row={CARD} />)).not.toContain(
-      copy.create.success
-    )
-  })
-
   it("offers to show a hidden product", () => {
     const html = renderToStaticMarkup(
       <ProductEditor row={{ ...CARD, active: false }} />

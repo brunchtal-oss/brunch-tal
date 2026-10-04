@@ -17,33 +17,24 @@ export const metadata: Metadata = {
   title: copy.title,
 }
 
-// One product, field by field (CAP-3). ?added=1 after the create form.
+// One product, field by field (CAP-3); the create form leads here.
 // Rendered inside the admin shell's <Suspense> gate.
 export default function ProductPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ added?: string }>
 }) {
   return (
     <Suspense
       fallback={<p className="text-muted-foreground">{shellCopy.loading}</p>}
     >
-      <ProductContent params={params} searchParams={searchParams} />
+      <ProductContent params={params} />
     </Suspense>
   )
 }
 
-async function ProductContent({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ id: string }>
-  searchParams: Promise<{ added?: string }>
-}) {
+async function ProductContent({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const { added } = await searchParams
   if (!UUID.test(id)) notFound()
   const supabase = await createClient()
   const { data, error } = await supabase
@@ -60,7 +51,7 @@ async function ProductContent({
       <PageHeading>
         <bdi>{row.name}</bdi>
       </PageHeading>
-      <ProductEditor row={row} added={added === "1"} />
+      <ProductEditor row={row} />
     </>
   )
 }

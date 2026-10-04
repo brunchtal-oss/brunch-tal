@@ -33,6 +33,7 @@ export function ValueChangeRow({
   newValue,
   scope,
   onSave,
+  onCancel,
   children,
 }: {
   // The field's name in the change line.
@@ -45,6 +46,9 @@ export function ValueChangeRow({
   scope?: React.ReactNode
   // Sends the change with this key; called only from the save button.
   onSave: (idempotencyKey: string) => Promise<ValueSaveResult | null>
+  // Returns the field to its saved value (phone test 2026-10-04), which
+  // closes the box.
+  onCancel: () => void
   children: React.ReactNode
 }) {
   const router = useRouter()
@@ -102,18 +106,29 @@ export function ValueChangeRow({
           {error && (
             <InlineNotice tone="error">{errorMessage(error)}</InlineNotice>
           )}
-          <Button
-            type="button"
-            variant="outline"
-            size="lg"
-            className="h-11 self-start border-foreground bg-transparent px-4 text-base"
-            aria-busy={pending || undefined}
-            aria-disabled={pending || undefined}
-            onClick={save}
-          >
-            {pending && <Spinner aria-hidden />}
-            {copy.save}
-          </Button>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              className="h-11 border-foreground bg-transparent px-4 text-base"
+              aria-busy={pending || undefined}
+              aria-disabled={pending || undefined}
+              onClick={save}
+            >
+              {pending && <Spinner aria-hidden />}
+              {copy.save}
+            </Button>
+            {/* button-link (DESIGN): ink text, underlined, 44px target. */}
+            <button
+              type="button"
+              disabled={pending}
+              onClick={onCancel}
+              className="min-h-11 px-1 text-base underline underline-offset-[3px] disabled:opacity-50"
+            >
+              {copy.cancel}
+            </button>
+          </div>
         </div>
       )}
       {savedNow && <InlineNotice tone="success">{copy.saved}</InlineNotice>}
