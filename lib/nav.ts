@@ -68,6 +68,11 @@ export const customerNav: readonly NavItem[] = [
 
 export const adminNav: readonly NavItem[] = [
   { href: "/admin", label: shellCopy.nav.home, icon: "home" },
+  {
+    href: "/admin/sessions",
+    label: shellCopy.nav.sessions,
+    icon: "sessions",
+  },
   // The payments list; "add payment" and its steps are below it.
   {
     href: "/admin/payments",
