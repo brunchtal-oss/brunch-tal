@@ -12,6 +12,7 @@ import { Spinner } from "@/components/ui/spinner"
 import { Textarea } from "@/components/ui/textarea"
 import { adminCopy } from "@/lib/copy/admin"
 import { errorMessage, type ErrorCode } from "@/lib/errors"
+import { newIdempotencyKey } from "@/lib/idempotency"
 
 import { publishContentAction, saveContentDraftAction } from "./actions"
 import {
@@ -125,7 +126,7 @@ export function ContentEditor({
     setSaved(values)
     setPending(true)
     // A new draft is a new publish: a kept key would replay the old result.
-    keyRef.current = crypto.randomUUID()
+    keyRef.current = newIdempotencyKey()
     return true
   }
 
@@ -183,7 +184,7 @@ export function ContentEditor({
         } else fail(answer.code)
         return
       }
-      keyRef.current = crypto.randomUUID()
+      keyRef.current = newIdempotencyKey()
       setPending(false)
       setNotice({
         tone: "success",

@@ -165,6 +165,86 @@ describe("content", () => {
     })
   })
 
+  // Story 5.2: the pages and sections of the static public pages
+  // (migration public_pages). Their content is made up in the dev project,
+  // so only the rows are checked here.
+  it("seeds the 5.2 sections with their kinds and order", async () => {
+    const rows = await sql(
+      `select page_slug, key, kind, sort_order from public.content_sections
+       where (page_slug, key) in (
+         ('home', 'intro'), ('home', 'contact'), ('about', 'main'),
+         ('how-it-works', 'steps'), ('how-it-works', 'faq'),
+         ('gallery', 'testimonials'), ('contact', 'intro'), ('site', 'footer'))
+       order by page_slug, sort_order`
+    )
+    expect(rows).toEqual([
+      { page_slug: "about", key: "main", kind: "text_block", sort_order: 1 },
+      { page_slug: "contact", key: "intro", kind: "text_block", sort_order: 0 },
+      {
+        page_slug: "gallery",
+        key: "testimonials",
+        kind: "testimonials",
+        sort_order: 1,
+      },
+      { page_slug: "home", key: "intro", kind: "text_block", sort_order: 2 },
+      { page_slug: "home", key: "contact", kind: "text_block", sort_order: 5 },
+      { page_slug: "how-it-works", key: "steps", kind: "steps", sort_order: 1 },
+      { page_slug: "how-it-works", key: "faq", kind: "faq", sort_order: 2 },
+      { page_slug: "site", key: "footer", kind: "footer", sort_order: 1 },
+    ])
+  })
+
+  it("shows a 5.2 section to anon only once it is published", async () => {
+    await inRollback(async (db) => {
+      // about and about › main as the migration left them: not published.
+      await db.query(
+        `update public.content_sections
+         set draft_content = null, published_content = null, published_at = null
+         where page_slug = 'about'`
+      )
+      await db.query(
+        `update public.content_pages
+         set published_content = null, published_at = null
+         where slug = 'about'`
+      )
+      const admin = randomUUID()
+      await db.query("insert into public.admin_roles (user_id) values ($1)", [
+        admin,
+      ])
+      const main = { title: testName("about"), body: "b" }
+      const anonMain = async () => {
+        await asAnon(db)
+        const { rows } = await db.query(
+          `${SECTIONS} where page_slug = 'about' and key = 'main'`
+        )
+        await db.query("reset role")
+        return rows
+      }
+
+      await asAuthenticated(db, admin)
+      await db.query(
+        "select public.admin_set_content_draft('about', 'main', $1::jsonb)",
+        [JSON.stringify(main)]
+      )
+      await db.query("reset role")
+      expect(await anonMain()).toEqual([])
+
+      await asAuthenticated(db, admin)
+      await db.query("select public.admin_publish_content('about', $1)", [
+        randomUUID(),
+      ])
+      await db.query("reset role")
+      expect(await anonMain()).toEqual([
+        {
+          page_slug: "about",
+          key: "main",
+          kind: "text_block",
+          published_content: main,
+        },
+      ])
+    })
+  })
+
   // The card's post-join message without its first sentence (user decision
   // 2026-10-02, migration update_card_post_join_message); button unchanged.
   it("seeds the approved card post-join message and button", async () => {

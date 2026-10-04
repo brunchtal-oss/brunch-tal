@@ -70,6 +70,27 @@ describe("use client never imports lib/server", () => {
   })
 })
 
+describe("use client never calls crypto.randomUUID", () => {
+  it.each([
+    ["export const k = () => crypto.randomUUID()"],
+    ["export const k = () => globalThis.crypto.randomUUID()"],
+    ["export const k = () => window.crypto.randomUUID()"],
+  ])("%s", async (code) => {
+    expect(await violations("app/admin/editor.tsx", CLIENT + code)).toContain(
+      "no-restricted-syntax"
+    )
+  })
+
+  it("allows it without the directive (server code)", async () => {
+    expect(
+      await violations(
+        "app/admin/page-data.ts",
+        "export const k = () => crypto.randomUUID()"
+      )
+    ).toEqual([])
+  })
+})
+
 describe("lib/server/privileged import boundary", () => {
   it.each([
     "lib/server/privileged/join.ts",

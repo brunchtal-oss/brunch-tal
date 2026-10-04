@@ -143,3 +143,28 @@
   target: 3.4
   summary: הסינון של רשימת `/admin/sessions` (טיוטות ומפגשים שפורסמו ועוד לא התחילו) לא נבדק בבדיקה. בנוסף, מפגש שבוטל או הסתיים נפתח ב-`/[id]/edit` עם שדות עריכה שכל שמירה בהם נכשלת. ‏3.4 (פרטי מפגש) מחליט מה מוצג למפגש עבר, מבוטל או שהסתיים, ומוסיף בדיקה לסינון.
   evidence: ביקורת 3.1, verification-gap ו-blind-hunter. היום אין מפגש מבוטל או שהסתיים (3.8, ‏3.12), ואין בפרויקט בדיקות של שאילתות בעמודים.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-2-public-pages-static.md`
+  target: 3.2
+  summary: העמודים `/sessions` ו-`/sessions/[id]`, הפריט "הבראנצ׳ים" ב-`publicNav` (אחרי "בית"), אזור המפגשים בבית (בין `home/intro` ל-`gallery/testimonials`, ‏`sort_order` 3–4 פנויים) ומחיר התצוגה בעמוד המפגש.
+  evidence: 5.2 בנה רק את החלק הסטטי. כפתור ההירו מופיע מעצמו כש-`/sessions` נכנס ל-`publicNav` (`hasPublicSessions`).
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-2-public-pages-static.md`
+  target: 5.7
+  summary: לקוחה מחוברת רואה "האזור שלי" במקום "כניסה לאזור האישי" בסרגל העליון ובתפריט, ו-`whatsapp-bar` לא מוצג לה. צריך לקרוא את ה-session בלי לשבור את המטמון של העמודים הציבוריים (רכיב דינמי בתוך `Suspense`, לא `'use cache'` עם cookies).
+  evidence: ‏EXPERIENCE › `top-bar` ו-`whatsapp-bar`. היום המעטפת הציבורית סטטית לגמרי ולא יודעת מי מחוברת.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-2-public-pages-static.md`
+  target: 5.4
+  summary: הסתרת `whatsapp-bar` (‏`inert` ו-`visibility: hidden`) כל עוד כפתור ההירו גלוי, והופעה כשהוא יוצא מהמסך.
+  evidence: ‏EXPERIENCE › `whatsapp-bar`. כפתור ההירו לא מוצג עד 3.2, ולכן היום הפס גלוי תמיד (כמו בעמוד בלי כפתור הירו). אם 3.2 נבנה אחרי 5.4, הסיפור שמוסיף את הכפתור לוקח את זה.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-2-public-pages-static.md`
+  target: 5.3
+  summary: עורך לסקשנים החדשים (`text_block`, ‏`steps`, ‏`faq`, ‏`testimonials`, ‏`footer`) והעמודים `about`, ‏`how-it-works`, ‏`gallery`, ‏`site`, כולל תצוגה מקדימה. היום התוכן שלהם מוזן רק כשורות בדויות במסד הפיתוח. ב-`publishTags` כבר יש `site` ← `content:global`.
+  evidence: ‏`EDITABLE_PAGES` ב-`content-items.ts` כולל רק `home` (הירו) ו-`contact` (פרטי העסק).
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-2-public-pages-static.md`
+  target: 5.4
+  summary: תמונות באודות, בגלריה ובהמלצות (המלצה כתמונה), וצילום בהירו.
+  evidence: 5.2 מציג המלצות טקסט בלבד, לפי ה-spec.
