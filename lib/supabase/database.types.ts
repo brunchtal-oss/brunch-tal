@@ -198,6 +198,8 @@ export type Database = {
           default_capacity_couple: number
           default_capacity_regular: number
           default_prep_days: number[]
+          default_session_end_time: string
+          default_session_start_time: string
           default_validity_days: number
           duplicate_payment_window_days: number
           id: boolean
@@ -218,6 +220,8 @@ export type Database = {
           default_capacity_couple?: number
           default_capacity_regular?: number
           default_prep_days?: number[]
+          default_session_end_time?: string
+          default_session_start_time?: string
           default_validity_days?: number
           duplicate_payment_window_days?: number
           id?: boolean
@@ -238,6 +242,8 @@ export type Database = {
           default_capacity_couple?: number
           default_capacity_regular?: number
           default_prep_days?: number[]
+          default_session_end_time?: string
+          default_session_start_time?: string
           default_validity_days?: number
           duplicate_payment_window_days?: number
           id?: boolean

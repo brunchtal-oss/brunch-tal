@@ -75,6 +75,8 @@ describe("SessionCreateForm", () => {
       <SessionCreateForm
         concepts={CONCEPTS}
         capacityDefaults={{ regular: 12, couple: 14 }}
+        timeDefaults={{ start: "10:30", end: "14:30" }}
+        closeRule={{ daysBefore: 1, time: "20:00" }}
       />
     )
     expect(html.indexOf(copy.fields.concept)).toBeLessThan(
@@ -94,10 +96,21 @@ describe("SessionCreateForm", () => {
       copy.fromSettings,
       copy.priceEmpty,
       copy.create.submit,
+      copy.create.publish,
+      copy.create.closes,
+      copy.create.closesRule(1, "20:00"),
+      copy.create.note,
     ]) {
       expect(html, text).toContain(text)
     }
     expect(html).toContain('value="14"')
+    // The default hours from the settings; the draft button comes first so
+    // Enter never publishes.
+    expect(html).toContain('value="10:30"')
+    expect(html).toContain('value="14:30"')
+    expect(html.indexOf('value="draft"')).toBeLessThan(
+      html.indexOf('value="publish"')
+    )
   })
 })
 

@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 }
 
 // A new session (CAP-12): the concept first, then the date and times; it is
-// saved as a draft. Rendered inside the admin shell's <Suspense> gate.
+// saved as a draft or published at once. Rendered inside the admin shell's <Suspense> gate.
 export default function NewSessionPage() {
   return (
     <>
@@ -39,11 +39,14 @@ async function NewSessionContent() {
       .is("archived_at", null)
       .order("sort_order")
       .order("name"),
-    // The capacity of each kind (business_settings, admin RLS). Without it
-    // the capacity field starts empty and Tal types it (it is required).
+    // The capacity of each kind, the default hours and the close rule
+    // (business_settings, admin RLS). Without them the capacity and times
+    // start empty and Tal types them (they are required), and no rule shows.
     supabase
       .from("business_settings")
-      .select("default_capacity_regular, default_capacity_couple")
+      .select(
+        "default_capacity_regular, default_capacity_couple, default_session_start_time, default_session_end_time, registration_close_days_before, registration_close_local_time"
+      )
       .maybeSingle(),
   ])
   if (concepts.error) throw new Error("concepts read failed")
@@ -59,6 +62,27 @@ async function NewSessionContent() {
             }
           : null
       }
+      timeDefaults={
+        settings.data
+          ? {
+              start: hhmm(settings.data.default_session_start_time),
+              end: hhmm(settings.data.default_session_end_time),
+            }
+          : null
+      }
+      closeRule={
+        settings.data
+          ? {
+              daysBefore: settings.data.registration_close_days_before,
+              time: hhmm(settings.data.registration_close_local_time),
+            }
+          : null
+      }
     />
   )
+}
+
+// Postgres time arrives as "HH:MM:SS"; the form and the rule use "HH:MM".
+function hhmm(time: string): string {
+  return time.slice(0, 5)
 }

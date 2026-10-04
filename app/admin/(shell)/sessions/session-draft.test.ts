@@ -116,6 +116,34 @@ describe("createPayload", () => {
     })
   })
 
+  it("sends a close set by hand and publish", () => {
+    expect(
+      createPayload({ ...filled, closesLocal: "2026-12-13T18:00" }, true)
+    ).toMatchObject({
+      ok: true,
+      event: { registration_closes_local: "2026-12-13T18:00", publish: true },
+    })
+    expect(createPayload({ ...filled, closesLocal: "13.12" })).toEqual({
+      ok: false,
+      field: "closes",
+    })
+    // After the start (15.12 10:00).
+    expect(
+      createPayload({ ...filled, closesLocal: "2026-12-15T10:30" })
+    ).toEqual({ ok: false, field: "closes" })
+  })
+
+  it("takes the default hours on a first form only", () => {
+    const times = { start: "10:30", end: "14:30" }
+    expect(draftForConcept(GRANDMA, DEFAULTS, undefined, times)).toMatchObject({
+      startTime: "10:30",
+      endTime: "14:30",
+    })
+    expect(
+      draftForConcept(GREEK, DEFAULTS, { ...filled, closesLocal: "x" }, times)
+    ).toMatchObject({ startTime: "10:00", endTime: "12:00", closesLocal: "x" })
+  })
+
   it("stops at the first field to fix", () => {
     expect(createPayload({ ...filled, conceptId: "" })).toEqual({
       ok: false,
