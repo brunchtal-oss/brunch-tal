@@ -6,7 +6,7 @@ parent: epic-accounts-and-money
 covers: [CAP-21]
 after: [1]
 risk: medium
-status: in-progress
+status: done
 ---
 
 # Notification core — ליבת ההתראות

@@ -27,14 +27,26 @@ references = ["ARCHITECTURE-SPINE.md#ad-16 (Next, צורת התוכן)", "admin-
 [[entry]]
 id = 2
 type = "story"
-title = "Public pages and shared session page — עמודים ציבוריים ועמוד מפגש"
-description = "CAP-1, CAP-41, CAP-12: העמודים /, /sessions ו-/sessions/[id] (דינמיים, בלי 'use cache', ועם הרכיב המשותף מ-3.2), /about, /how-it-works, /gallery, /contact, ה-top-bar (בצבע משלו, שם העסק במרכז, צמוד לראש המסך וגלוי תמיד בגלילה, החלטת המשתמשת 2026-10-04; לבדוק שהכול נכנס ברוחב 360px), התפריט, פס הוואטסאפ והפוטר, עם \"כניסה לאזור האישי\" ו\"להצטרפות צרי קשר עם טל\" למספר מפרטי העסק, מחיר תצוגה או מחיר המוצר בעמוד המפגש, בלי תווית סוג, בלי תפריט ובלי נתון תפוסה."
-verify = "בדיקות: אורחת מגיעה לכל עמוד בלי התחברות; מפגש בטיוטה לא מופיע; תשובת הקריאה הציבורית למפגשים לא מכילה שום שדה תפוסה; שינוי מספר הוואטסאפ או הכתובת בפרטי העסק משנה כל קישור ותצוגה באתר; מחיר התצוגה מוצג ולא משנה תשלום; סקשן בלי תוכן שפורסם לא מוצג."
-covers = ["CAP-1", "CAP-41", "CAP-12"]
+title = "Public pages, static part — עמודים ציבוריים, חלק סטטי"
+description = "CAP-1, CAP-41: הבית (בלי אזור המפגשים), /about, /how-it-works, /gallery, /contact, ה-top-bar (בצבע משלו, שם העסק במרכז, צמוד לראש המסך וגלוי תמיד בגלילה, החלטת המשתמשת 2026-10-04; לבדוק שהכול נכנס ברוחב 360px), התפריט, פס הוואטסאפ והפוטר, עם \"כניסה לאזור האישי\" ו\"להצטרפות צרי קשר עם טל\" למספר מפרטי העסק. עמודי המפגשים פוצלו ל-5.16 (החלטת המשתמשת 2026-10-04)."
+verify = "בדיקות: אורחת מגיעה לכל עמוד בלי התחברות; שינוי מספר הוואטסאפ או הכתובת בפרטי העסק משנה כל קישור ותצוגה באתר; סקשן בלי תוכן שפורסם לא מוצג."
+covers = ["CAP-1", "CAP-41"]
 after = [1]
 hitl = false
 risk = "medium"
-references = ["site-map.md, אתר ציבורי", "ARCHITECTURE-SPINE.md#ad-2", "mockups/key-public-session.html"]
+references = ["site-map.md, אתר ציבורי", "ARCHITECTURE-SPINE.md#ad-2"]
+
+[[entry]]
+id = 16
+type = "story"
+title = "Public session pages — עמודי המפגשים הציבוריים"
+description = "CAP-1, CAP-41, CAP-12: /sessions ו-/sessions/[id] (דינמיים, בלי 'use cache', עם הרכיב המשותף מ-3.2), הפריט \"הבראנצ׳ים\" ב-publicNav אחרי \"בית\" (כפתור ההירו מופיע מעצמו דרך hasPublicSessions), אזור \"הבראנצ׳ים הקרובים\" בבית אחרי הפתיח עם 2–3 המפגשים הקרובים (תאריך, קונספט ותמונת אוכל), ומחיר תצוגה או מחיר המוצר בעמוד המפגש, בלי תווית סוג, בלי תפריט ובלי נתון תפוסה. אם 5.4 כבר נבנה, הסיפור לוקח גם את הסתרת whatsapp-bar כל עוד כפתור ההירו גלוי. נפרד מ-5.2 (החלטת המשתמשת 2026-10-04); הפריטים ב-deferred-work."
+verify = "בדיקות: אורחת מגיעה ל-/sessions ול-/sessions/[id] בלי התחברות; מפגש בטיוטה לא מופיע; תשובת הקריאה הציבורית למפגשים לא מכילה שום שדה תפוסה; מחיר התצוגה מוצג ולא משנה תשלום; הבית מציג עד 3 מפגשים קרובים ושום מפגש כשאין."
+covers = ["CAP-1", "CAP-41", "CAP-12"]
+after = [2, "3.2"]
+hitl = false
+risk = "medium"
+references = ["site-map.md, אתר ציבורי", "ARCHITECTURE-SPINE.md#ad-2", "mockups/key-public-session.html", "deferred-work.md, פריטי 5.2 שיעדם 5.16"]
 
 [[entry]]
 id = 3
@@ -76,10 +88,10 @@ references = ["EXPERIENCE.md, הצהרת נגישות", "ARCHITECTURE-SPINE.md#a
 id = 6
 type = "story"
 title = "Waitlist — רשימת המתנה"
-description = "CAP-15, CAP-12: waitlist_entries, join_waitlist ו-leave_waitlist ללקוחה מחוברת גם בלי יתרה, private.notify_waitlist עם waitlist_cycle לכל גודל הרשמה, ב-migration חדשה שמגדירה מחדש את פונקציות E3 שמשחררות מקום (cancel_booking, admin_cancel_booking, move_booking, העלאת מכסה, בקשת החזר) ואת אלה שמוציאות מההמתנה (book_session, book_sessions, admin_book_customer, bind_purchase), הרצה חוזרת של בדיקות E3, ממתינות בפרטי המפגש ובהרשמות שלי, הרחבת הסרת הפרטים (4.6), והתראת waitlist_spot."
+description = "CAP-15, CAP-12: waitlist_entries, join_waitlist ו-leave_waitlist ללקוחה מחוברת גם בלי יתרה, private.notify_waitlist עם waitlist_cycle לכל גודל הרשמה, ב-migration חדשה שמגדירה מחדש את פונקציות E3 שמשחררות מקום (cancel_booking, admin_cancel_booking, move_booking, העלאת מכסה, בקשת החזר) ואת אלה שמוציאות מההמתנה (book_session, book_sessions, admin_book_customer, bind_purchase), הרצה חוזרת של בדיקות E3, ממתינות בפרטי המפגש ובהרשמות שלי, הרחבת הסרת הפרטים (4.6), והתראת waitlist_spot. כולל בדיקה חוזרת של waitlist_spot לפני שליחה ב-worker של 5.8 (הועבר מ-5.8, החלטת המשתמשת 2026-10-04)."
 verify = "בדיקות: אי אפשר להיות פעמיים ברשימה או גם רשומה וגם ממתינה; הרשמה מוצלחת מוציאה מהרשימה; מקום בודד לא מזמין זוג; פינוי אחד לא שולח שתי התראות לאותה ממתינה; לקוחה בלי כניסה מצטרפת להמתנה אבל לא נרשמת; אורחת לא יכולה להצטרף."
 covers = ["CAP-15", "CAP-12"]
-after = [2, "3.14"]
+after = [16, "3.14"]
 hitl = false
 risk = "high"
 references = ["ARCHITECTURE-SPINE.md#ad-14 (רשימת המתנה)", "ARCHITECTURE-SPINE.md#ad-12 (waitlist_spot)", "brunch_at_tal_charecter.md, §5 רשימת המתנה"]
@@ -112,22 +124,58 @@ references = ["ARCHITECTURE-SPINE.md#ad-16 (Service worker)", "EXPERIENCE.md"]
 id = 8
 type = "story"
 title = "Push pipeline and permission flow — פוש והרשאה"
-description = "CAP-22, CAP-21, CAP-35: הפעלת pg_net ו-Vault (app_url של כתובת production קבועה, cron_secret), private.invoke_push_worker ו-job_invoke_push_worker, /api/jobs/push עם Bearer ו-timingSafeEqual, claim_push_jobs ו-finish_push_job עם lease, notification_deliveries, backoff ומחיקת מנוי ב-404/410, בדיקה חוזרת של waitlist_spot לפני שליחה, register/unregister_push_subscription (כולל בהתנתקות), בקשת הרשאה רק אחרי הסבר ולחיצה ב-/me וב-/admin של טל, הסבר למכשיר שלא תומך, הרחבת הסרת הפרטים למנויים, ו-notification_jobs שנכשלו ב\"לטיפול\"."
+description = "CAP-22, CAP-21, CAP-35: הפעלת pg_net ו-Vault (app_url של כתובת production קבועה, cron_secret), private.invoke_push_worker ו-job_invoke_push_worker, /api/jobs/push עם Bearer ו-timingSafeEqual, claim_push_jobs ו-finish_push_job עם lease, notification_deliveries, backoff ומחיקת מנוי ב-404/410, register/unregister_push_subscription (כולל בהתנתקות), בקשת הרשאה רק אחרי הסבר ולחיצה ב-/me וב-/admin של טל, הסבר למכשיר שלא תומך, הרחבת הסרת הפרטים למנויים, ו-notification_jobs שנכשלו ב\"לטיפול\". הנתיב /api/jobs/push נכנס ל-SITE_LOCK_EXEMPT_PREFIXES, כי האתר נעול עד 5.15."
 verify = "בטלפון (Android ו-iPhone עם האפליקציה במסך הבית): התראה שנכנסה לתור מגיעה תוך דקה כשהאפליקציה סגורה, גם לטל; retry לא שולח שוב למכשיר שקיבל; כשל פוש לא משנה את ההרשמה; בקשה בלי סוד מקבלת 401; מי שסירבה לא נשאלת בכל כניסה; waitlist_spot שהמקום שלו נתפס נסגר בלי שליחה."
 covers = ["CAP-22", "CAP-21", "CAP-35"]
-after = [5, 6, 7, 9, "4.1", 15]
+after = [5, 7, 9, "4.1"]
 hitl = true
 risk = "high"
 references = ["ARCHITECTURE-SPINE.md#ad-11", "ARCHITECTURE-SPINE.md#ad-12 (העובד, מנויים)", "ARCHITECTURE-SPINE.md#ad-22"]
 
 [[entry]]
+id = 17
+type = "story"
+title = "24-hour session reminder — תזכורת 24 שעות לפני מפגש"
+description = "CAP-21, CAP-22: הפעלת job_reminders ב-pg_cron לפי policy_snapshot ו-revision (לא להרשמה בלי לקוחה), שנכנסת לתור notification_jobs ונשלחת בפוש דרך ה-worker של 5.8. פוצל מ-5.10 להדגמה (החלטת המשתמשת 2026-10-04)."
+verify = "בטלפון: לקוחה בדויה עם הרשמה מקבלת תזכורת בפוש כשהאפליקציה סגורה. בדיקות: תזכורת נשלחת פעם אחת, לא להרשמה שבוטלה ולא להרשמה שנוצרה אחרי זמן התזכורת; שינוי זמן התזכורת בהגדרות לא משנה הרשמות קיימות."
+covers = ["CAP-21", "CAP-22"]
+after = [8, "4.7"]
+hitl = true
+risk = "medium"
+references = ["ARCHITECTURE-SPINE.md, תזמון ופוש", "notification-matrix.md", "demo-scope-2026-10-04.md"]
+
+[[entry]]
+id = 18
+type = "story"
+title = "Demo data — נתוני הדגמה בדויים"
+description = "סקריפט ב-scripts/ שממלא את מסד הפיתוח בלבד בנתונים בדויים: לקוחות, רכישות וזכויות, מפגשים עתידיים ומפגש שהסתיים, הרשמות וביטולים, תוכן האתר ותמונות סינתטיות (לא תמונות אמיתיות של נשים או תינוקות, כי ה-repo ציבורי). כסף, זכויות והרשמות נוצרים דרך ה-RPC הקיימות ולא בכתיבה ישירה לטבלאות. הרצה חוזרת לא משכפלת, וכל נתון ניתן לזיהוי ולמחיקה. כולל מסלול הצגה כתוב למבקרים. מהיקף ההדגמה (החלטת המשתמשת 2026-10-04)."
+verify = "בטלפון: מבקר נכנס עם פרטי הכניסה של הנעילה ורואה אתר מלא, לקוחה בדויה עם כרטיסייה והרשמות, ואדמין עם מפגשים, תפוסה ו\"לטיפול\"; הרצה שנייה של הסקריפט לא מכפילה נתונים."
+covers = []
+after = [4, 17, "3.12", "4.2", "4.12", "2.10"]
+hitl = true
+risk = "medium"
+references = ["demo-scope-2026-10-04.md", "AGENTS.md, מדיניות (נתונים בדויים בלבד)"]
+
+[[entry]]
+id = 19
+type = "story"
+title = "Demo refactor sweep — ניקוי מאוחד לפני ההדגמה"
+description = "ניקוי אחד, במקום ניקוי בסוף כל אפיק, על כל מה שנבנה עד ההדגמה, לפי רשומות הבנייה וממצאי הביקורת שנדחו. ניקויי האפיקים (2.11, 3.15, 4.13, 5.14) נשארים לאחרי ההגשה ומכסים את מה שייבנה אחריה (החלטת המשתמשת 2026-10-04)."
+verify = "lint, typecheck ו-test עוברים, grants.test.ts וה-advisor נקיים, ומסלול ההצגה של 5.18 עובר מקצה לקצה ב-preview מאחורי הנעילה."
+covers = []
+after = [18, 16, 5, 9, 7, "4.7"]
+hitl = false
+risk = "low"
+references = ["demo-scope-2026-10-04.md"]
+
+[[entry]]
 id = 10
 type = "story"
-title = "Scheduled jobs: reminders, expiry alerts, auto-extend, cleanup — משימות מתוזמנות"
-description = "CAP-21, CAP-22, CAP-35, CAP-36, CAP-18: job_reminders לפי policy_snapshot ו-revision (לא להרשמה בלי לקוחה), job_expiry_alerts (card_expiring ללקוחה ו-admin_card_expiring לטל), job_auto_extend שמפעיל את כלל 3.14, job_refresh_credit_options ו-job_cleanup, פריט ב\"לטיפול\" למשימה שנכשלה או שלא רצה בזמן ולערכי Vault חסרים, ובדיקה האם pg_cron מונע השהיה של הפרויקט החינמי."
-verify = "בטלפון: לקוחה בדויה עם הרשמה מקבלת תזכורת בפוש כשהאפליקציה סגורה. בדיקות: תזכורת נשלחת פעם אחת, לא להרשמה שבוטלה ולא להרשמה שנוצרה אחרי זמן התזכורת, ומחושבת מחדש אחרי שינוי שעה; שינוי זמן התזכורת בהגדרות לא משנה הרשמות קיימות; התראות 21 ו-10 ימים פעם אחת כל אחת ושוב אחרי הארכה; job_refresh_credit_options מחליף חלופה שהתמלאה; job_cleanup מוחק רק מה שעבר את הזמן."
+title = "Scheduled jobs: expiry alerts, auto-extend, cleanup — משימות מתוזמנות"
+description = "CAP-21, CAP-22, CAP-35, CAP-36, CAP-18: job_expiry_alerts (card_expiring ללקוחה ו-admin_card_expiring לטל), job_auto_extend שמפעיל את כלל 3.14, job_refresh_credit_options ו-job_cleanup, פריט ב\"לטיפול\" למשימה שנכשלה או שלא רצה בזמן ולערכי Vault חסרים, ובדיקה האם pg_cron מונע השהיה של הפרויקט החינמי."
+verify = "בדיקות: התראות 21 ו-10 ימים פעם אחת כל אחת ושוב אחרי הארכה; job_refresh_credit_options מחליף חלופה שהתמלאה; job_cleanup מוחק רק מה שעבר את הזמן."
 covers = ["CAP-21", "CAP-22", "CAP-35", "CAP-36", "CAP-18"]
-after = [8, "3.14", "4.7"]
+after = [17, "3.14", "4.7"]
 hitl = true
 risk = "medium"
 references = ["ARCHITECTURE-SPINE.md#ad-11", "ARCHITECTURE-SPINE.md#ad-13", "notification-matrix.md"]
