@@ -6,6 +6,7 @@ covers: [CAP-2, CAP-4, CAP-6, CAP-9, CAP-10, CAP-11, CAP-12, CAP-13, CAP-14, CAP
 after: []
 assignee: ""
 risk: high
+status: in-progress
 ---
 
 # E3 מפגשים והרשמה: מהרשמה אטומית עד ביטול, זיכוי והחזר

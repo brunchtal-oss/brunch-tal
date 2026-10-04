@@ -145,7 +145,7 @@
   evidence: ביקורת 3.1, verification-gap ו-blind-hunter. היום אין מפגש מבוטל או שהסתיים (3.8, ‏3.12), ואין בפרויקט בדיקות של שאילתות בעמודים.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-2-public-pages-static.md`
-  target: 3.2
+  target: 5.16
   summary: העמודים `/sessions` ו-`/sessions/[id]`, הפריט "הבראנצ׳ים" ב-`publicNav` (אחרי "בית"), אזור המפגשים בבית (בין `home/intro` ל-`gallery/testimonials`, ‏`sort_order` 3–4 פנויים) ומחיר התצוגה בעמוד המפגש.
   evidence: 5.2 בנה רק את החלק הסטטי. כפתור ההירו מופיע מעצמו כש-`/sessions` נכנס ל-`publicNav` (`hasPublicSessions`).
 
@@ -185,7 +185,7 @@
   evidence: בקשת המשתמשת 2026-10-04. מסמך המקור (מפת האתר) אוסר פרסום מזוהה בלי אישור.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-2-public-pages-static.md`
-  target: 3.2
+  target: 5.16
   summary: בבית, אחרי הפתיח: "הבראנצ׳ים הקרובים" עם 2–3 המפגשים הקרובים (תאריך, קונספט ותמונת אוכל), מהטבלאות של 3.1 ומרכיב כרטיס המפגש המשותף.
   evidence: בקשת המשתמשת 2026-10-04. מסמך המקור: "מפגשים קרובים" בבית.
 
@@ -223,3 +223,23 @@
   target: 3.6
   summary: בעמוד המפגש, להרשמה שעברה את מועד הביטול העצמי מוצג רק "את רשומה למפגש הזה." בלי הכוונה. בנוסף אין בדיקת רכיב ל-`BookingPanel` (מפתח idempotency לכל פתיחה, נעילת busy). ‏3.6 מוסיף את מצב "הביטול דרך טל" (בנוסח בלי "כתבי לטל") ובדיקת רכיב לגיליון ההרשמה ולגיליון הביטול.
   evidence: ביקורת 3.2 (blind, verification-gap).
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-9-pwa-install-and-offline.md`
+  target: אחרי ההגשה
+  summary: השבתת כל הכפתורים שמשנים נתונים כשאין חיבור, כולל באדמין (UX memlog, review fixes). בהדגמה רק `/offline`, ופעולה שנשלחת בלי רשת נכשלת בשגיאה הקיימת.
+  evidence: מסמך ההיקף 2026-10-04: אופליין מלא ומצב קריאה בלבד לא נכנסים ל-5.9.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-9-pwa-install-and-offline.md`
+  target: 2.10
+  summary: קישור "הדרכת התקנה" (`/install`) ברשימת הפרופיל ב-`/me` (EXPERIENCE › פרופיל). ב-5.9 הקישור רק בפוטר הציבורי.
+  evidence: מסך הפרופיל עוד לא קיים.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-9-pwa-install-and-offline.md`
+  target: 5.15
+  summary: לטופס הנעילה (`POST /site-lock`) אין הגבלת ניסיונות, כמו ל-Basic Auth. אם הנעילה נשארת אחרי ההדגמה, להוסיף הגבלה או להסתמך על הסרתה ב-5.15.
+  evidence: ‏`handleSiteLockPost` ב-`lib/site-lock.ts`.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-9-pwa-install-and-offline.md`
+  target: אחרי ההגשה
+  summary: לאתר אין דף שגיאה כללי (`app/error.tsx`). פעולה שנשלחת בלי רשת (התחברות, הרשמה, ביטול) מציגה את דף ברירת המחדל של Next באנגלית ("This page couldn't load"). צריך דף שגיאה בעברית, בעיצוב האתר, עם "לנסות שוב" (מתחיל ב-frontend-design, נוסח לאישור).
+  evidence: בדיקת האופליין בדפדפן אחרי 5.9 (2026-10-04): שליחת טופס ההתחברות בלי רשת. לא הוצג אישור, אבל הדף באנגלית. החלטת המשתמשת: לדחות.

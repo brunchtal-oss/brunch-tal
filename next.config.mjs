@@ -63,6 +63,18 @@ const nextConfig = {
       { source: "/me/:path*", headers: [noStore] },
       { source: "/admin", headers: [noStore] },
       { source: "/admin/:path*", headers: [noStore] },
+      // The service worker (story 5.9, AD-16): always checked against the
+      // server, so a new version reaches installed apps.
+      {
+        source: "/sw.js",
+        headers: [
+          { key: "Cache-Control", value: "no-cache" },
+          {
+            key: "Content-Type",
+            value: "application/javascript; charset=utf-8",
+          },
+        ],
+      },
     ]
   },
 }

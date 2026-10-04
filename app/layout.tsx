@@ -1,9 +1,10 @@
 import { Suspense } from "react"
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Assistant, Heebo } from "next/font/google"
 
 import "./globals.css"
 import { RouteFocus } from "@/components/shared/route-focus"
+import { ServiceWorkerRegister } from "@/components/shared/service-worker-register"
 import { shellCopy } from "@/lib/copy/shell"
 import { cn } from "@/lib/utils"
 
@@ -27,6 +28,15 @@ export const metadata: Metadata = {
     default: shellCopy.wordmark,
     template: shellCopy.titleTemplate,
   },
+  // Installed on an iPhone home screen (story 5.9): full screen, with the
+  // name under the icon. The manifest link is added by app/manifest.ts.
+  appleWebApp: { capable: true, title: shellCopy.wordmark },
+  icons: { apple: "/icons/apple-touch-icon.png" },
+}
+
+// The olive of the manifest's theme_color (DESIGN.md primary).
+export const viewport: Viewport = {
+  themeColor: "#4A4A2A",
 }
 
 export default function RootLayout({
@@ -53,6 +63,7 @@ export default function RootLayout({
           <RouteFocus />
         </Suspense>
         {children}
+        <ServiceWorkerRegister />
       </body>
     </html>
   )
