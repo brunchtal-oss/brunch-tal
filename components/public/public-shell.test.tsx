@@ -81,19 +81,12 @@ describe("SiteFooter", () => {
   }
   const legal = [{ href: "/privacy", label: "privacy-label" }]
 
-  it("shows the name, the footer text, the contact lines, the legal links and the admin entrance", () => {
+  it("shows the contact lines, the legal links and the admin entrance", () => {
     const html = renderToStaticMarkup(
-      <SiteFooter
-        name="biz-name"
-        footer={{ text: "footer-text" }}
-        details={details}
-        legal={legal}
-      />
+      <SiteFooter details={details} legal={legal} />
     )
     expect(html).toMatch(/^<footer[^>]*data-site-footer/)
     expect(html).toContain("bg-foreground")
-    expect(html).toContain("biz-name")
-    expect(html).toContain("footer-text")
     expect(html).toContain('href="tel:0501234567"')
     expect(html).toMatch(/href="https:\/\/waze\.com\/ul\?q=x"[^>]*>addr/)
     expect(html).toContain('href="/privacy"')
@@ -103,13 +96,10 @@ describe("SiteFooter", () => {
   it("leaves out what is not published", () => {
     const html = renderToStaticMarkup(
       <SiteFooter
-        name="biz-name"
-        footer={null}
         details={{ whatsapp_phone: "0544256456", address: "addr" }}
         legal={[]}
       />
     )
-    expect(html).not.toContain("footer-text")
     expect(html).not.toContain("tel:")
     expect(html).toContain("addr")
     expect(html).not.toContain("waze")

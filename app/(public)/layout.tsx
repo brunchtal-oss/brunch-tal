@@ -6,11 +6,7 @@ import {
   getBusinessDetails,
   guestWhatsappHref,
 } from "@/lib/content/business-details"
-import {
-  getPublishedPageSlugs,
-  getPublishedSections,
-  sectionContent,
-} from "@/lib/content/pages"
+import { getPublishedPageSlugs } from "@/lib/content/pages"
 import { shellCopy } from "@/lib/copy/shell"
 import { publicLegalNav } from "@/lib/nav"
 import { cn } from "@/lib/utils"
@@ -18,18 +14,17 @@ import { cn } from "@/lib/utils"
 // Public shell (AD-2, story 5.2): the sticky top-bar with the menu-sheet,
 // <main>, the whatsapp-bar (<aside>, fixed to the bottom; in the flow below
 // a 480px window height) and the footer. The business name, the WhatsApp
-// link and the footer text come from published content (content:global),
-// read from the cache with the anon client; without them the WORDMARK, no
-// bar and no footer text. The footer links to a legal page once it is
-// published.
+// link and the footer's contact lines come from the published business
+// details (content:global), read from the cache with the anon client;
+// without them the WORDMARK and no bar. The footer links to a legal page
+// once it is published.
 export default async function PublicLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const [details, site, legalSlugs] = await Promise.all([
+  const [details, legalSlugs] = await Promise.all([
     getBusinessDetails(),
-    getPublishedSections("site"),
     getPublishedPageSlugs(publicLegalNav.map((item) => item.slug)),
   ])
   const name = details?.business_name ?? shellCopy.wordmark
@@ -45,8 +40,6 @@ export default async function PublicLayout({
       <WhatsappBar href={whatsappHref} />
       <WhatsappFlowLink href={whatsappHref} />
       <SiteFooter
-        name={name}
-        footer={sectionContent(site, "footer", "footer")}
         details={details}
         legal={publicLegalNav.filter((item) => legalSlugs.includes(item.slug))}
         className={cn(
