@@ -860,6 +860,7 @@ export type Database = {
         Args: { p_idempotency_key: string; p_product: Json }
         Returns: Json
       }
+      admin_get_content_page: { Args: { p_slug: string }; Returns: Json }
       admin_issue_link: {
         Args: {
           p_idempotency_key: string
@@ -870,11 +871,19 @@ export type Database = {
       }
       admin_list_links: { Args: never; Returns: Json }
       admin_list_payments: { Args: never; Returns: Json }
+      admin_publish_content: {
+        Args: { p_idempotency_key: string; p_slug: string }
+        Returns: Json
+      }
       admin_revoke_link: {
         Args: { p_idempotency_key: string; p_token_id: string }
         Returns: Json
       }
       admin_search_customers: { Args: { p_query: string }; Returns: Json }
+      admin_set_content_draft: {
+        Args: { p_content: Json; p_key: string; p_slug: string }
+        Returns: Json
+      }
       admin_set_product_price: {
         Args: {
           p_confirmed: boolean

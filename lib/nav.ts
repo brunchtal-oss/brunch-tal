@@ -20,7 +20,24 @@ export type NavItem = {
 export const adminMoreNav: readonly { href: string; label: string }[] = [
   { href: "/admin/links", label: adminCopy.links.title },
   { href: "/admin/products", label: adminCopy.products.title },
+  { href: "/admin/content", label: adminCopy.content.title },
 ]
+
+// The public pages (the menu-sheet comes in 5.2). Only pages that exist;
+// 3.2 adds /sessions with its page, and the hero's button appears with it.
+export const publicNav: readonly { href: string; label: string }[] = [
+  { href: "/", label: shellCopy.nav.home },
+]
+
+// The hero's button leads to /sessions, so it is shown only once that page
+// is in the public navigation (and therefore exists, lib/nav.test.ts).
+export const SESSIONS_HREF = "/sessions"
+
+export function hasPublicSessions(
+  items: readonly { href: string }[] = publicNav
+): boolean {
+  return items.some((item) => item.href === SESSIONS_HREF)
+}
 
 export const customerNav: readonly NavItem[] = [
   { href: "/me", label: shellCopy.nav.home, icon: "home" },

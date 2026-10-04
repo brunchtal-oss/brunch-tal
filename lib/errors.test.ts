@@ -22,6 +22,11 @@ describe("errors", () => {
     )
   })
 
+  it("maps NOT_FOUND (story 5.1) to its microcopy", () => {
+    expect(isErrorCode("NOT_FOUND")).toBe(true)
+    expect(errorMessage("NOT_FOUND")).toBe(ERROR_MESSAGES.NOT_FOUND)
+  })
+
   it("shows an unknown code as a server error", () => {
     expect(errorMessage("NOPE")).toBe(ERROR_MESSAGES.SERVER_ERROR)
   })

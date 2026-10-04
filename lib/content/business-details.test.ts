@@ -4,8 +4,12 @@ import { getWhatsappHref } from "./business-details"
 
 const maybeSingle = vi.fn()
 const eq = vi.fn()
+const cacheTag = vi.fn()
 
-vi.mock("next/cache", () => ({ cacheLife: vi.fn(), cacheTag: vi.fn() }))
+vi.mock("next/cache", () => ({
+  cacheLife: vi.fn(),
+  cacheTag: (...args: unknown[]) => cacheTag(...args),
+}))
 vi.mock("@/lib/supabase/public", () => ({
   createPublicClient: () => ({
     from: () => ({ select: () => ({ eq }) }),
@@ -28,6 +32,8 @@ describe("getWhatsappHref", () => {
     await expect(getWhatsappHref()).resolves.toBe("https://wa.me/972544256456")
     expect(eq).toHaveBeenCalledWith("page_slug", "contact")
     expect(eq).toHaveBeenCalledWith("key", "business_details")
+    // Publishing the contact page updates content:global (story 5.1).
+    expect(cacheTag).toHaveBeenCalledWith("content:global")
   })
 
   it.each([

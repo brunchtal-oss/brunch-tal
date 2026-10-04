@@ -1,15 +1,10 @@
-import { PageHeading } from "@/components/shared/page-heading"
-import { shellCopy } from "@/lib/copy/shell"
+import { HomeHero } from "@/components/public/home-hero"
+import { getHomeHero } from "@/lib/content/home"
 
-// Typographic hero fallback (DESIGN.md › hero): the business name on plain
-// cream in wordmark-display (Heebo 40/200, the one place for weight 200). The
-// published content of the home page arrives in 5.2. Title: the root default.
-export default function HomePage() {
-  return (
-    <section className="mx-auto flex w-full max-w-[720px] flex-1 flex-col items-center justify-center px-6 py-12 text-center">
-      <PageHeading className="text-[40px] leading-[1.15] font-extralight">
-        {shellCopy.wordmark}
-      </PageHeading>
-    </section>
-  )
+// The home page (story 5.1): the published hero (home › hero), read from the
+// cache (content:home, updated on publish) through the anon client, so a
+// draft never reaches it. Without a valid published hero: the business name
+// only. Title: the root default.
+export default async function HomePage() {
+  return <HomeHero hero={await getHomeHero()} />
 }

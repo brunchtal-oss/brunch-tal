@@ -4,7 +4,14 @@ import { join, relative, sep } from "node:path"
 
 import { describe, expect, it } from "vitest"
 
-import { adminMoreNav, adminNav, customerNav, isCurrent } from "./nav"
+import {
+  adminMoreNav,
+  adminNav,
+  customerNav,
+  hasPublicSessions,
+  isCurrent,
+  publicNav,
+} from "./nav"
 
 const APP = fileURLToPath(new URL("../app/", import.meta.url))
 
@@ -31,9 +38,16 @@ describe("navigation", () => {
   const existing = routes()
 
   it.each(
-    [...customerNav, ...adminNav, ...adminMoreNav].map((item) => [item.href])
+    [...customerNav, ...adminNav, ...adminMoreNav, ...publicNav].map((item) => [
+      item.href,
+    ])
   )("%s has a page.tsx", (href) => {
     expect(existing.has(href)).toBe(true)
+  })
+
+  it("shows the hero's button only with /sessions in the public navigation", () => {
+    expect(hasPublicSessions([{ href: "/" }])).toBe(false)
+    expect(hasPublicSessions([{ href: "/" }, { href: "/sessions" }])).toBe(true)
   })
 
   it("keeps each shell inside its own area", () => {
@@ -58,5 +72,7 @@ describe("navigation", () => {
     // A row of "more" keeps "more" current.
     expect(isCurrent(adminNav, more, "/admin/links")).toBe(true)
     expect(isCurrent(adminNav, home, "/admin/links")).toBe(false)
+    expect(isCurrent(adminNav, more, "/admin/content/home/preview")).toBe(true)
+    expect(isCurrent(adminNav, home, "/admin/content")).toBe(false)
   })
 })

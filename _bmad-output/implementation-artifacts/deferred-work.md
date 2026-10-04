@@ -124,3 +124,7 @@
   target: 2.11
   summary: הבדיקה שמוצר מוסתר לא מוצע ב"הוספת תשלום" מריצה עותק של השאילתה ב-`form-data.ts` ולא אותה עצמה. להוציא את הסינון לפונקציה שבדיקה מריצה.
   evidence: ביקורת 2.6, ממצא 7. הסינון (`.eq("active", true)`) קודם ל-2.6 ולא השתנה, והאישור דוחה מוצר מוסתר (`PRODUCT_NOT_AVAILABLE`).
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-1-publish-hero-to-home-tracer.md`
+  target: 4.7
+  summary: מסך ההגדרות (`/admin/settings`) מוסיף שורה "פרטי העסק" שמובילה לעורך `/admin/content/contact`. זו אותה רשומה (טיוטה ← פרסום), לא עותק נפרד בהגדרות.
+  evidence: ‏EXPERIENCE (Flow 7 וההגדרות): פרטי העסק נערכים "מהגדרות › פרטי העסק או מתוכן האתר › קשר". העורך נבנה ב-5.1, ו-`/admin/settings` עוד לא קיים.

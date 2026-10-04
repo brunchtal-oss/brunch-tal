@@ -106,6 +106,65 @@ export const adminCopy = {
     limit: "מוצגים 50 התשלומים האחרונים",
     empty: "אין עדיין תשלומים",
   },
+  // /admin/content (story 5.1): the content editor. Draft -> preview ->
+  // publish (EXPERIENCE › admin states › site content).
+  content: {
+    title: "תוכן האתר",
+    pages: {
+      home: "בית",
+      contact: "פרטי העסק",
+    },
+    // content-section-row chips (DESIGN › content-section-row).
+    status: {
+      draft: "טיוטה",
+      published: "פורסם",
+      changed: "שינויים שלא פורסמו",
+    },
+    notShown: "לא מוצג באתר עד שיפורסם",
+    changedHint: "יש טיוטה שעוד לא פורסמה",
+    publishedHint: "האתר מציג את מה שפורסם",
+    backToList: "לכל התוכן",
+    saveDraft: "שמירת טיוטה",
+    publish: "פרסום",
+    preview: "תצוגה מקדימה",
+    saved: "הטיוטה נשמרה. היא לא מוצגת באתר עד הפרסום",
+    published: "פורסם. האתר יציג את השינוי בטעינה הבאה",
+    nothingToPublish: "אין שינויים לפרסום. הכול כבר מוצג באתר",
+    // A field the saved draft or the form refused (zod, lib/content/schema.ts).
+    fieldError: {
+      required: "צריך למלא את השדה הזה",
+      tooLong: (max: number) => `עד ${max} תווים`,
+      phone: "מספר טלפון לא תקין",
+      url: "קישור לא תקין. צריך להתחיל ב-https://",
+      invalid: "הערך לא תקין",
+    },
+    // A saved draft that does not pass the schema (edited elsewhere).
+    draftInvalid: "בטיוטה השמורה יש שדה לא תקין. כדאי לתקן ולשמור שוב",
+    hero: {
+      title: "כותרת",
+      description: "תיאור (לא חובה)",
+      ctaLabel: "תווית הכפתור",
+      ctaHint: "הכפתור יופיע באתר כשעמוד המפגשים ייפתח",
+    },
+    business: {
+      whatsappPhone: "מספר וואטסאפ",
+      whatsappPhoneHint: "אליו מגיעות ההודעות מהאתר",
+      businessName: "שם העסק (לא חובה)",
+      phone: "טלפון (לא חובה)",
+      whatsappMessage: "הודעה מוכנה לוואטסאפ (לא חובה)",
+      whatsappMessageHint: "הטקסט שיופיע בהודעה כשלוחצים על וואטסאפ באתר",
+      address: "כתובת (לא חובה)",
+      arrivalInstructions: "הוראות הגעה (לא חובה)",
+      navigationUrl: "קישור ניווט (לא חובה)",
+      navigationUrlHint: "למשל קישור מ-Google Maps או Waze, שמתחיל ב-https://",
+      paymentInstructions: "הוראות תשלום (לא חובה)",
+    },
+    // /admin/content/home/preview
+    previewTitle: "תצוגה מקדימה",
+    previewBar: "תצוגה מקדימה — עוד לא פורסם",
+    previewNoChanges: "תצוגה מקדימה — כמו שמוצג עכשיו באתר",
+    backToEdit: "חזרה לעריכה",
+  },
   // /admin/products (story 2.6, wording approved by the user on 2026-10-04).
   products: {
     title: "מוצרים",

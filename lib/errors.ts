@@ -7,6 +7,8 @@ export const ERROR_MESSAGES = {
   // Raised by RPCs.
   NOT_AUTHORIZED: "אין הרשאה לפעולה הזאת",
   INVALID_INPUT: "חלק מהפרטים לא תקינים",
+  // A page or block that does not exist (content editor, story 5.1).
+  NOT_FOUND: "לא מצאנו את מה שחיפשת. כדאי לרענן את הדף",
   LINK_EXPIRED: "תוקף הקישור פג. צרי קשר לקבלת קישור חדש",
   LINK_USED: "הקישור הזה כבר שימש לאיפוס סיסמה",
   RESET_TARGET_INVALID: "אי אפשר להפיק קישור איפוס לחשבון הזה",
