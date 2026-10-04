@@ -127,7 +127,7 @@ async function Purchases() {
             expiredNote={
               item.expiredBeforeBound ? (
                 <ExpiredCardNote
-                  weeks={item.validityWeeks}
+                  days={item.validityDays}
                   contactHref={contactHref}
                 />
               ) : null

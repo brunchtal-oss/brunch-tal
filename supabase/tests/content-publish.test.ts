@@ -2,7 +2,7 @@
 // admin_publish_content (AD-5, AD-16, AD-19), along the I/O matrix of the
 // spec: publish, draft only, repeat with the same key, nothing changed, not
 // an admin, unknown page or key. The home page and its hero section come
-// from the migration (not published); everything else is rolled back.
+// from the migration; each test resets them (inCleanHome) and rolls back.
 
 import { randomUUID } from "node:crypto"
 
@@ -80,9 +80,28 @@ async function homeVersion(db: Db): Promise<number> {
   return rows[0].published_version
 }
 
+// The shared dev database may hold a published home page (demo content), so
+// every test starts from the migration's state inside its rollback: home not
+// published, version 0, the hero section without a draft.
+async function inCleanHome(fn: (db: Db) => Promise<void>): Promise<void> {
+  await inRollback(async (db) => {
+    await db.query(
+      `update public.content_pages
+       set published_content = null, published_at = null, published_version = 0
+       where slug = 'home'`
+    )
+    await db.query(
+      `update public.content_sections
+       set draft_content = null, published_content = null, published_at = null
+       where page_slug = 'home'`
+    )
+    await fn(db)
+  })
+}
+
 describe("content publish", () => {
-  it("seeds an unpublished home page with an empty hero section", async () => {
-    await inRollback(async (db) => {
+  it("has the home page with its hero section (migration)", async () => {
+    await inCleanHome(async (db) => {
       const admin = await seedAdmin(db)
       const page = await asAdmin(db, admin, GET, ["home"])
       expect(page).toMatchObject({
@@ -105,7 +124,7 @@ describe("content publish", () => {
   })
 
   it("keeps a draft from anon until it is published", async () => {
-    await inRollback(async (db) => {
+    await inCleanHome(async (db) => {
       const admin = await seedAdmin(db)
       await asAdmin(db, admin, SET, ["home", "hero", JSON.stringify(HERO)])
 
@@ -141,7 +160,7 @@ describe("content publish", () => {
   })
 
   it("returns the same result for the same key and raises the version once", async () => {
-    await inRollback(async (db) => {
+    await inCleanHome(async (db) => {
       const admin = await seedAdmin(db)
       await asAdmin(db, admin, SET, ["home", "hero", JSON.stringify(HERO)])
       const key = randomUUID()
@@ -160,7 +179,7 @@ describe("content publish", () => {
   })
 
   it("changes nothing when there is no new draft", async () => {
-    await inRollback(async (db) => {
+    await inCleanHome(async (db) => {
       const admin = await seedAdmin(db)
       // Nothing to publish on an unpublished page: still not published.
       expect(await asAdmin(db, admin, PUBLISH, ["home", randomUUID()])).toEqual(
@@ -184,7 +203,7 @@ describe("content publish", () => {
   })
 
   it("keeps the published page {} when it had no content", async () => {
-    await inRollback(async (db) => {
+    await inCleanHome(async (db) => {
       const admin = await seedAdmin(db)
       await asAdmin(db, admin, SET, ["home", "hero", JSON.stringify(HERO)])
       await asAdmin(db, admin, PUBLISH, ["home", randomUUID()])
@@ -196,7 +215,7 @@ describe("content publish", () => {
   })
 
   it("refuses a draft that is not an object", async () => {
-    await inRollback(async (db) => {
+    await inCleanHome(async (db) => {
       const admin = await seedAdmin(db)
       for (const content of ["[]", '"x"', "1", "null"]) {
         const error = await adminError(db, admin, SET, [
@@ -219,7 +238,7 @@ describe("content publish", () => {
     ["an unknown key", SET, ["home", "nope", "{}"]],
     ["an unknown page (publish)", PUBLISH, ["nope", randomUUID()]],
   ])("is NOT_FOUND for %s", async (_label, query, params) => {
-    await inRollback(async (db) => {
+    await inCleanHome(async (db) => {
       const admin = await seedAdmin(db)
       expect(await adminError(db, admin, query, params)).toMatchObject({
         code: "P0001",
@@ -233,7 +252,7 @@ describe("content publish", () => {
     ["draft", SET, ["home", "hero", JSON.stringify(HERO)]],
     ["publish", PUBLISH, ["home", randomUUID()]],
   ])("refuses a customer and anon (%s)", async (_label, query, params) => {
-    await inRollback(async (db) => {
+    await inCleanHome(async (db) => {
       const customer = randomUUID()
       await db.query(
         "insert into public.profiles (id, full_name, activated_at) values ($1, $2, now())",
@@ -252,7 +271,7 @@ describe("content publish", () => {
   })
 
   it("never shows a draft column to anon or a customer", async () => {
-    await inRollback(async (db) => {
+    await inCleanHome(async (db) => {
       const admin = await seedAdmin(db)
       await asAdmin(db, admin, SET, ["home", "hero", JSON.stringify(HERO)])
       await asAuthenticated(db, randomUUID())

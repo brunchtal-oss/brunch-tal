@@ -41,7 +41,11 @@ describe("content", () => {
       const { rows: contact } = await db.query(
         `${PAGES} where slug = 'contact'`
       )
-      expect(contact).toEqual([{ slug: "contact", published_version: 0 }])
+      // The business details are editable since 5.1 (admin_publish_content),
+      // so the shared dev database may hold a later version than the seed.
+      expect(contact).toEqual([
+        { slug: "contact", published_version: expect.any(Number) },
+      ])
       const { rows: business } = await db.query(
         `${SECTIONS} where page_slug = 'contact' and key = 'business_details'`
       )
@@ -50,7 +54,9 @@ describe("content", () => {
           page_slug: "contact",
           key: "business_details",
           kind: "business_details",
-          published_content: { whatsapp_phone: "0544256456" },
+          published_content: expect.objectContaining({
+            whatsapp_phone: expect.any(String),
+          }),
         },
       ])
     })

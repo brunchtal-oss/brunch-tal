@@ -63,9 +63,15 @@ export function PaymentFormHost({
     setSession((current) => ({ ...current, phase: "pushed" }))
   }
 
+  // Next keeps a visited page's state (cacheComponents), so a form opened
+  // before a catalog change would keep the old price as its amount (phone
+  // test 2026-10-04). A change in the offered products or their prices
+  // starts the form again.
+  const catalog = products.map((p) => `${p.id}:${p.priceAgorot}`).join(",")
+
   return (
     <PaymentForm
-      key={session.id}
+      key={`${session.id}|${catalog}`}
       customer={customer}
       products={products}
       methods={methods}

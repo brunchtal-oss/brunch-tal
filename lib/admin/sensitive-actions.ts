@@ -5,7 +5,8 @@
 // (lib/copy/*).
 
 export const SENSITIVE_ACTIONS = {
-  // Approving a payment whose amount differs from the catalog price (2.5).
+  // Approving a payment whose amount differs from the catalog price (2.5),
+  // and changing a product's catalog price (2.6).
   price_change: "האם לאשר שינוי מחיר?",
 } as const
 

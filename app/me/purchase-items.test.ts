@@ -45,12 +45,12 @@ describe("buildPurchaseItems", () => {
         message: "Current message",
         buttonLabel: "Current button",
         expiredBeforeBound: false,
-        validityWeeks: null,
+        validityDays: null,
       },
     ])
   })
 
-  it("marks a card that expired before it was bound, with the weeks of its snapshot and no message", () => {
+  it("marks a card that expired before it was bound, with the validity days of its snapshot and no message", () => {
     const [item] = buildPurchaseItems({
       ...rows,
       balances: [balance({ expired_before_bound: true })],
@@ -60,21 +60,21 @@ describe("buildPurchaseItems", () => {
     })
     expect(item).toMatchObject({
       expiredBeforeBound: true,
-      validityWeeks: 7,
+      validityDays: 49,
       message: null,
       buttonLabel: null,
     })
   })
 
   it.each([[{}], [{ validity_days: null }], [null]])(
-    "has no weeks without validity days in the snapshot (%j)",
+    "has no validity days without them in the snapshot (%j)",
     (snapshot) => {
       const [item] = buildPurchaseItems({
         ...rows,
         balances: [balance({ expired_before_bound: true })],
         entitlements: [{ id: "ent-1", eligibility_snapshot: snapshot }],
       })
-      expect(item.validityWeeks).toBeNull()
+      expect(item.validityDays).toBeNull()
     }
   )
 

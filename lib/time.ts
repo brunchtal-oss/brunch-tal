@@ -109,3 +109,14 @@ export function formatLocalDate(value: DateInput): string {
   })
   return `${year}-${month}-${day}`
 }
+
+/**
+ * The name of a weekday by its index (0 = Sunday, as in
+ * products.allowed_weekdays): "יום ראשון". 2026-01-04 is a Sunday.
+ */
+export function formatWeekdayIndex(index: number): string {
+  if (!Number.isInteger(index) || index < 0 || index > 6) {
+    throw new RangeError(`Invalid weekday index: ${index}`)
+  }
+  return formatWeekday(`2026-01-${String(4 + index).padStart(2, "0")}`)
+}

@@ -166,6 +166,76 @@ export const adminCopy = {
     previewNoChanges: "תצוגה מקדימה — כמו שמוצג עכשיו באתר",
     backToEdit: "חזרה לעריכה",
   },
+  // /admin/products (story 2.6, wording approved by the user on 2026-10-04).
+  products: {
+    title: "מוצרים",
+    add: "הוספת מוצר",
+    hidden: "מוסתר",
+    // "{price} · {N} כניסות · בתוקף {N} ימים / מוצמד למפגש"; one entry is
+    // "כניסה אחת".
+    summary: (price: string, units: number, validity: string) =>
+      `${price} · ${units === 1 ? "כניסה אחת" : `${units} כניסות`} · ${validity}`,
+    validityDays: (days: number) => `בתוקף ${days} ימים`,
+    validitySession: "מוצמד למפגש",
+    // The fixed note of the product screens.
+    scopeNote: "השינוי חל על רכישות חדשות בלבד. זכויות שכבר ניתנו לא משתנות",
+    fields: {
+      type: "סוג",
+      name: "שם",
+      price: "מחיר",
+      units: "מספר כניסות",
+      validity: "תוקף",
+      validityDays: "מספר ימים",
+      weekdays: "ימי מימוש",
+      eventKind: "סוג מפגש",
+      partySize: "מספר מבוגרים",
+      introOnly: "להיכרות בלבד",
+      postJoinMessage: "הודעה אחרי רכישה (לא חובה)",
+      postJoinButtonLabel: "תווית הכפתור (לא חובה)",
+    },
+    types: {
+      single: "בודד",
+      intro: "היכרות",
+      card: "כרטיסייה",
+      couple: "זוגי",
+    },
+    validityModes: { days: "בימים", session: "מוצמד למפגש" },
+    eventKinds: { regular: "רגיל", couple: "זוגי" },
+    weekdaysAll: "כל הימים",
+    weekdaysEmpty: "צריך לבחור לפחות יום אחד",
+    // The value of a yes / no field in "old ← new".
+    yes: "כן",
+    no: "לא",
+    // An empty optional text in "old ← new".
+    empty: "—",
+    hide: "הסתרת המוצר",
+    show: "הצגת המוצר",
+    state: "מצב",
+    stateOffered: "מוצע",
+    stateHidden: "מוסתר",
+    hideScope: "מוסתר לא מוצע בהוספת תשלום, ותשלומי עבר לא משתנים",
+    // The price_change dialog (lib/admin/sensitive-actions.ts has its title).
+    priceDialog: {
+      product: "מוצר",
+      price: "מחיר",
+      reason: "סיבה (לא חובה)",
+      priceChange: (from: string, to: string) => `${from} ← ${to}`,
+      confirm: (name: string, price: string) =>
+        `אני מאשרת שהמחיר של ${name} משתנה ל-${price}, ושהשינוי יירשם ביומן הפעולות`,
+    },
+    create: {
+      title: "הוספת מוצר",
+      submit: "שמירת המוצר",
+    },
+  },
+  // value-change-row (story 2.6; EXPERIENCE › Component Patterns).
+  valueChange: {
+    change: (field: string, from: string, to: string) =>
+      `${field}: ${from} ← ${to}`,
+    save: "לשמור את השינוי",
+    cancel: "ביטול",
+    saved: "השינוי נשמר",
+  },
   // sensitive-confirm-dialog (EXPERIENCE › Component Patterns).
   sensitive: {
     cancel: "ביטול",
