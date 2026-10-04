@@ -204,6 +204,26 @@
   summary: הסקשן `site/footer` כבר לא מוצג (הפוטר בלי שם העסק ובלי טקסט, החלטת המשתמשת 2026-10-04). העורך של 5.3 לא צריך לכלול אותו, וכדאי להחליט אם להסיר את השורה מהמסד.
   evidence: ‏`app/(public)/layout.tsx` כבר לא קורא את `site`.
 
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-2-self-booking-tracer-with-a-card.md`
+  target: 5.16
+  summary: שלושת הפריטים הציבוריים שהופנו ל-3.2 מ-5.2 (`/sessions` ו-`/sessions/[id]` עם מחיר התצוגה, "הבראנצ׳ים" ב-`publicNav` ועדכון `nav.test.ts`, ואזור "הבראנצ׳ים הקרובים" בבית) נבנים בסיפור מסכים נפרד, עם `session-card` ו-`concept-header` של 3.2, בלי תפוסה ובלי תווית רגיל/זוגי.
+  evidence: החלטת המשתמשת 2026-10-04 בתכנון 3.2. תצוגה בלבד בלי שינוי סכמה, ולכן ביקורת מקוצרת, ויכול לרוץ במקביל ל-3.3.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-2-self-booking-tracer-with-a-card.md`
+  target: 3.11
+  summary: ‏`private.plan_funding` דורש `available ≥ party_size`, ו-`private.book_core` משריין `units = party_size`. אבל מוצר זוגי הוא כניסה אחת לשני מבוגרים (מקור §2; ב-seed ‏`units 1, party_size 2`), ולכן זכות זוגית לא תתאים אף פעם למפגש זוגי. גם בגיליון כתוב "כניסה אחת" באופן קבוע. ‏3.11 מפריד בין מספר המקומות למספר הכניסות (כניסות מהזכות, מקומות מ-`party_size`), ומציג בגיליון את `units`.
+  evidence: ביקורת 3.2 (intent-alignment, edge-case, blind). לא מגיע ב-3.2, כי זכות זוגית מוצמדת ולא נבחרת ב-self.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-2-self-booking-tracer-with-a-card.md`
+  target: 3.8
+  summary: ‏`preview_book_session` מחזיר `EVENT_NOT_BOOKABLE` עם `booked: false` למפגש שאינו `published`, לפני שהוא מחפש את ההרשמה שלה. במפגש שבוטל (3.8) או הסתיים (3.12) עמוד המפגש לא יציג את ההרשמה שלה. צריך לחפש את ההרשמה לפני בדיקת הסטטוס.
+  evidence: ביקורת 3.2 (blind, edge). לא בודק עכשיו: עד 3.8 ו-3.12 אין מפגש מבוטל או שהסתיים.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-2-self-booking-tracer-with-a-card.md`
+  target: 3.6
+  summary: בעמוד המפגש, להרשמה שעברה את מועד הביטול העצמי מוצג רק "את רשומה למפגש הזה." בלי הכוונה. בנוסף אין בדיקת רכיב ל-`BookingPanel` (מפתח idempotency לכל פתיחה, נעילת busy). ‏3.6 מוסיף את מצב "הביטול דרך טל" (בנוסח בלי "כתבי לטל") ובדיקת רכיב לגיליון ההרשמה ולגיליון הביטול.
+  evidence: ביקורת 3.2 (blind, verification-gap).
+
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-9-pwa-install-and-offline.md`
   target: אחרי ההגשה
   summary: השבתת כל הכפתורים שמשנים נתונים כשאין חיבור, כולל באדמין (UX memlog, review fixes). בהדגמה רק `/offline`, ופעולה שנשלחת בלי רשת נכשלת בשגיאה הקיימת.

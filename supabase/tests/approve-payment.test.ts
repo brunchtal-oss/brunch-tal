@@ -492,7 +492,22 @@ describe("entitlement_balances", () => {
       await asAuthenticated(db, f.admin)
       const r = await approve(db, cardInput(f))
       await db.query("reset role")
-      const [b1, b2] = [randomUUID(), randomUUID()]
+      // booking_id has a FK to bookings since 3.2: two real bookings.
+      const { rows: bookings } = await db.query<{ id: string }>(
+        `with e as (
+           insert into public.events (concept_id, kind, starts_at, ends_at, capacity_adults)
+           select id, 'regular', now() + interval '7 days', now() + interval '7 days 2 hours', 12
+           from public.concepts order by sort_order limit 1
+           returning id
+         )
+         insert into public.bookings (payment_id, event_id, party_size, booked_by, policy_snapshot)
+         select $1, e.id, 1, 'admin',
+           '{"cancel_window_hours": 48, "reminder_lead_hours": 24}'::jsonb
+         from e, generate_series(1, 2)
+         returning id`,
+        [r.payment_id]
+      )
+      const [b1, b2] = bookings.map((b) => b.id)
       const move = (booking: string, action: string, units: number) =>
         db.query(
           `insert into public.entitlement_movements (entitlement_id, booking_id, action, units)

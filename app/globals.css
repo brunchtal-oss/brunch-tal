@@ -229,6 +229,13 @@ html:has([data-whatsapp-bar]) {
   backdrop-filter: none;
 }
 
+/* The booking bottom-sheet's scrim: the same ink at 40% (DESIGN ›
+   bottom-sheet). */
+[data-slot="sheet-overlay"]:has(~ [data-booking-sheet]) {
+  background-color: rgb(46 42 31 / 0.4);
+  backdrop-filter: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

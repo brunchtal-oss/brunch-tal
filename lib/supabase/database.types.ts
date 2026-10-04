@@ -189,6 +189,122 @@ export type Database = {
           },
         ]
       }
+      booking_allocations: {
+        Row: {
+          booking_id: string
+          created_at: string
+          credit_id: string | null
+          entitlement_id: string | null
+          id: string
+          units: number
+        }
+        Insert: {
+          booking_id: string
+          created_at?: string
+          credit_id?: string | null
+          entitlement_id?: string | null
+          id?: string
+          units: number
+        }
+        Update: {
+          booking_id?: string
+          created_at?: string
+          credit_id?: string | null
+          entitlement_id?: string | null
+          id?: string
+          units?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_allocations_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_allocations_entitlement_id_fkey"
+            columns: ["entitlement_id"]
+            isOneToOne: false
+            referencedRelation: "entitlement_balances"
+            referencedColumns: ["entitlement_id"]
+          },
+          {
+            foreignKeyName: "booking_allocations_entitlement_id_fkey"
+            columns: ["entitlement_id"]
+            isOneToOne: false
+            referencedRelation: "entitlements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bookings: {
+        Row: {
+          booked_by: string
+          cancelled_at: string | null
+          confirmed_at: string
+          created_at: string
+          customer_id: string | null
+          event_id: string
+          guest_details: string | null
+          id: string
+          party_size: number
+          payment_id: string | null
+          policy_snapshot: Json
+          status: string
+        }
+        Insert: {
+          booked_by: string
+          cancelled_at?: string | null
+          confirmed_at?: string
+          created_at?: string
+          customer_id?: string | null
+          event_id: string
+          guest_details?: string | null
+          id?: string
+          party_size: number
+          payment_id?: string | null
+          policy_snapshot: Json
+          status?: string
+        }
+        Update: {
+          booked_by?: string
+          cancelled_at?: string | null
+          confirmed_at?: string
+          created_at?: string
+          customer_id?: string | null
+          event_id?: string
+          guest_details?: string | null
+          id?: string
+          party_size?: number
+          payment_id?: string | null
+          policy_snapshot?: Json
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_settings: {
         Row: {
           admin_expiring_days: number
@@ -416,6 +532,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "entitlement_movements_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "entitlement_movements_entitlement_id_fkey"
             columns: ["entitlement_id"]
             isOneToOne: false
@@ -503,6 +626,13 @@ export type Database = {
             columns: ["payment_id"]
             isOneToOne: true
             referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entitlements_pinned_event_id_fkey"
+            columns: ["pinned_event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
             referencedColumns: ["id"]
           },
         ]
@@ -1025,8 +1155,16 @@ export type Database = {
         }
         Returns: Json
       }
+      book_session: {
+        Args: { p_event_id: string; p_idempotency_key: string }
+        Returns: Json
+      }
       claim_join: {
         Args: { p_idempotency_key: string; p_token: string }
+        Returns: Json
+      }
+      get_event_availability: {
+        Args: { p_event_ids: string[] }
         Returns: Json
       }
       get_my_session_role: { Args: never; Returns: string }
@@ -1060,6 +1198,7 @@ export type Database = {
         Args: { p_price_agorot: number; p_product_id: string }
         Returns: Json
       }
+      preview_book_session: { Args: { p_event_id: string }; Returns: Json }
       reset_begin: {
         Args: { p_idempotency_key: string; p_token: string }
         Returns: Json
