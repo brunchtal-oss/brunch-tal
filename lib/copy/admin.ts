@@ -201,6 +201,7 @@ export const adminCopy = {
     validityModes: { days: "בימים", session: "מוצמד למפגש" },
     eventKinds: { regular: "רגיל", couple: "זוגי" },
     weekdaysAll: "כל הימים",
+    weekdaysOpen: "הגבלה לימים מסוימים",
     weekdaysEmpty: "צריך לבחור לפחות יום אחד",
     // The value of a yes / no field in "old ← new".
     yes: "כן",

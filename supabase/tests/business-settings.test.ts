@@ -152,7 +152,8 @@ describe("seed", () => {
         units: 4,
         validity_mode: "days",
         validity_days: 49,
-        allowed_weekdays: [1, 4],
+        // Every weekday (user decision 2026-10-04, card_every_weekday).
+        allowed_weekdays: null,
         eligible_event_kind: "regular",
         party_size: 1,
         intro_only: false,
