@@ -57,8 +57,11 @@ describe("getHomeHero", () => {
     await expect(getHomeHero()).resolves.toBeNull()
   })
 
-  it("throws on a read error", async () => {
+  it("falls back to null on a read error", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => {})
     maybeSingle.mockResolvedValue({ data: null, error: { message: "x" } })
-    await expect(getHomeHero()).rejects.toThrow()
+    await expect(getHomeHero()).resolves.toBeNull()
+    expect(log).toHaveBeenCalledWith("content.read_failed", { page: "home" })
+    log.mockRestore()
   })
 })

@@ -2,13 +2,13 @@
 title: '5.1 Publish hero to home tracer — פרסום ההירו לבית'
 type: 'feature'
 created: '2026-10-04'
-status: 'in-progress'
+status: 'done'
 baseline_commit: '66fec7d4a57b46db3affd0e1c0a6eb47233abd54'
 route: 'full'
 route_source: 'auto'
-review: ''
-review_source: ''
-lenses_ran: []
+review: 'thorough'
+review_source: 'auto'
+lenses_ran: ['blind-hunter', 'edge-case-hunter', 'verification-gap', 'intent-alignment']
 review_loop_iteration: 0
 context:
   - '{project-root}/_bmad-output/implementation-artifacts/epic-5-context.md'
@@ -87,6 +87,19 @@ context:
 ## Spec Change Log
 
 ## Review Triage Log
+
+**סבב 1 (2026-10-04):** ‏4 עדשות, 22 ממצאים. ‏medium 3, ‏low 6, ‏false 6, ‏maybe-false 0, תיאור בלבד 7.
+
+| # | ממצא | פסק | ניתוב | ראיה / פעולה |
+|---|------|------|-------|--------------|
+| 1 | המפתח לא מתחלף אחרי שמירת טיוטה חדשה; אחרי תשובה שאבדה, פרסום חוזר מחזיר "פורסם" בלי לפרסם (blind, edge) | medium | patch | ‏`setKey` חדש אחרי שמירה מוצלחת ב-`saveIfDirty` |
+| 2 | action שזורק (רשת) לא נתפס בעורך ובפס התצוגה המקדימה (edge) | medium | patch | ‏catch ← `SERVER_ERROR` |
+| 3 | ‏`getHomeHero` זורק בכשל קריאה: דף הבית נופל, וה-build נכשל כשהמסד לא זמין (blind, edge) | medium | patch | ‏log והחזרת `null` (שם העסק בלבד) |
+| 4 | ‏`cta_label` חובה אבל הכפתור לא מוצג עד 3.2, וה-hint מתאר כפתור שלא קיים (blind, intent) | low | patch | ה-hint אומר שהכפתור יופיע כשעמוד המפגשים ייפתח |
+| 5 | ‏`content.hero.legend` לא בשימוש (blind) | low | patch | נמחק |
+| 6 | אין בדיקת רינדור ל-`HomeHero`, ל-`ContentEditor` ול-`PreviewBar` (gap, blind) | low | patch | בדיקות `renderToStaticMarkup`. הזרימה האינטראקטיבית: מתקבל (`review-accepted`, בדיקה בטלפון) |
+
+נדחו: TOCTOU בין zod לפרסום (אדמין אחת, האתר מפרש שוב, תיקון מוסיף פרמטרים); טיוטה לא תקינה בלי סימון שדה ותצוגה מקדימה שלה (לא נוצרת מהעורך); ערכים לא-מחרוזת נמחקים (לא נוצרים מהעורך); בדיקת ה-seed של `contact` נחלשה (הנתון ניתן לעריכה מ-5.1, ‏`inCleanHome` מכסה את הפרסום); חסרות בדיקות מסד ל-`contact`, ‏`hidden` ומפתח עם slug אחר (אותו נתיב קוד; ה-policy וה-idempotency נבדקו ב-2.2 וב-1.4); אין תצוגה מקדימה ואישור למספר הוואטסאפ (‏Decisions: ב-5.2); seed לא idempotent במיגרציה (מיגרציה רצה פעם אחת, כמו בשאר); שדות פרטי העסק לא מוצגים ו"גרסה בלי צרכן" (‏Decisions: ‏5.2, ‏5.5).
 
 ## Design Notes
 

@@ -79,7 +79,8 @@ export function ContentEditor({
   const [values, setValues] = useState<Values>(initial)
   const [saved, setSaved] = useState<Values>(initial)
   const [pending, setPending] = useState(hasPending)
-  const [key, setKey] = useState(publishKey)
+  // A ref, so a key rotated by the save inside a publish is the one sent.
+  const keyRef = useRef(publishKey)
   const [errors, setErrors] = useState<Record<string, FieldError> | null>(null)
   const [notice, setNotice] = useState<Notice | null>(null)
   const noticeRef = useRef<HTMLDivElement>(null)
@@ -123,6 +124,8 @@ export function ContentEditor({
     }
     setSaved(values)
     setPending(true)
+    // A new draft is a new publish: a kept key would replay the old result.
+    keyRef.current = crypto.randomUUID()
     return true
   }
 
@@ -141,6 +144,9 @@ export function ContentEditor({
     startTransition(async () => {
       try {
         await after()
+      } catch {
+        // A thrown Server Action (network drop): nothing is known to be saved.
+        fail("SERVER_ERROR")
       } finally {
         setBusyWith(null)
       }
@@ -167,14 +173,17 @@ export function ContentEditor({
   const publish = () =>
     run("publish", async () => {
       if (!(await saveIfDirty())) return
-      const answer = await publishContentAction({ slug, idempotencyKey: key })
+      const answer = await publishContentAction({
+        slug,
+        idempotencyKey: keyRef.current,
+      })
       if (!answer.ok) {
         if (answer.code === "INVALID_INPUT") {
           setNotice({ tone: "error", text: copy.draftInvalid })
         } else fail(answer.code)
         return
       }
-      setKey(crypto.randomUUID())
+      keyRef.current = crypto.randomUUID()
       setPending(false)
       setNotice({
         tone: "success",

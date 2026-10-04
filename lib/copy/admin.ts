@@ -141,11 +141,10 @@ export const adminCopy = {
     // A saved draft that does not pass the schema (edited elsewhere).
     draftInvalid: "בטיוטה השמורה יש שדה לא תקין. כדאי לתקן ולשמור שוב",
     hero: {
-      legend: "הירו",
       title: "כותרת",
       description: "תיאור (לא חובה)",
       ctaLabel: "תווית הכפתור",
-      ctaHint: "הכפתור מוביל לעמוד המפגשים",
+      ctaHint: "הכפתור יופיע באתר כשעמוד המפגשים ייפתח",
     },
     business: {
       whatsappPhone: "מספר וואטסאפ",

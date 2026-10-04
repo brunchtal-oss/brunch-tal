@@ -33,10 +33,17 @@ export function PreviewBar({
   const publish = () => {
     if (busy) return
     startTransition(async () => {
-      const answer = await publishContentAction({
-        slug: "home",
-        idempotencyKey: key,
-      })
+      let answer: Awaited<ReturnType<typeof publishContentAction>>
+      try {
+        answer = await publishContentAction({
+          slug: "home",
+          idempotencyKey: key,
+        })
+      } catch {
+        // A thrown Server Action (network drop); the key is kept for a retry.
+        setLine(errorMessage("SERVER_ERROR"))
+        return
+      }
       if (!answer.ok) {
         setLine(
           answer.code === "INVALID_INPUT"
