@@ -8,24 +8,27 @@ import { ExpiredCardNote, nextToggletip } from "./expired-card-note"
 describe("ExpiredCardNote", () => {
   it("shows the expired line with a closed toggletip button", () => {
     const html = renderToStaticMarkup(
-      <ExpiredCardNote weeks={7} contactHref="https://wa.me/972544256456" />
+      <ExpiredCardNote days={49} contactHref="https://wa.me/972544256456" />
     )
     expect(html).toContain(customerCopy.expiredBeforeBound)
     expect(html).toContain('aria-expanded="false"')
     expect(html).toMatch(/<p[^>]*hidden=""/)
   })
 
-  it("has no button without the weeks", () => {
+  it("has no button without the validity days", () => {
     const html = renderToStaticMarkup(
-      <ExpiredCardNote weeks={null} contactHref={null} />
+      <ExpiredCardNote days={null} contactHref={null} />
     )
     expect(html).toContain(customerCopy.expiredBeforeBound)
     expect(html).not.toContain("<button")
   })
 
-  it("words the explanation with the weeks", () => {
-    expect(customerCopy.expiredBeforeBoundInfo(7)).toContain("7")
-    expect(customerCopy.expiredBeforeBoundInfo(7)).toContain(
+  it("words the explanation in weeks for whole weeks, otherwise in days", () => {
+    expect(customerCopy.expiredBeforeBoundInfo(49)).toMatch(/^עברו 7 שבועות /)
+    expect(customerCopy.expiredBeforeBoundInfo(7)).toMatch(/^עבר שבוע /)
+    expect(customerCopy.expiredBeforeBoundInfo(10)).toMatch(/^עברו 10 ימים /)
+    expect(customerCopy.expiredBeforeBoundInfo(1)).toMatch(/^עבר יום /)
+    expect(customerCopy.expiredBeforeBoundInfo(49)).toContain(
       customerCopy.contactPhrase
     )
   })

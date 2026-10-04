@@ -19,6 +19,7 @@ export type NavItem = {
 // The rows of the admin's "more" screen (app/admin/(shell)/more/page.tsx).
 export const adminMoreNav: readonly { href: string; label: string }[] = [
   { href: "/admin/links", label: adminCopy.links.title },
+  { href: "/admin/products", label: adminCopy.products.title },
 ]
 
 export const customerNav: readonly NavItem[] = [

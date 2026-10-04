@@ -856,6 +856,10 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_create_product: {
+        Args: { p_idempotency_key: string; p_product: Json }
+        Returns: Json
+      }
       admin_issue_link: {
         Args: {
           p_idempotency_key: string
@@ -871,6 +875,24 @@ export type Database = {
         Returns: Json
       }
       admin_search_customers: { Args: { p_query: string }; Returns: Json }
+      admin_set_product_price: {
+        Args: {
+          p_confirmed: boolean
+          p_idempotency_key: string
+          p_price_agorot: number
+          p_product_id: string
+          p_reason: string
+        }
+        Returns: Json
+      }
+      admin_update_product: {
+        Args: {
+          p_changes: Json
+          p_idempotency_key: string
+          p_product_id: string
+        }
+        Returns: Json
+      }
       claim_join: {
         Args: { p_idempotency_key: string; p_token: string }
         Returns: Json
@@ -900,6 +922,10 @@ export type Database = {
           p_payment_method_id: string
           p_product_id: string
         }
+        Returns: Json
+      }
+      preview_admin_set_product_price: {
+        Args: { p_price_agorot: number; p_product_id: string }
         Returns: Json
       }
       reset_begin: {
