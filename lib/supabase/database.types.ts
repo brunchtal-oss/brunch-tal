@@ -252,6 +252,42 @@ export type Database = {
         }
         Relationships: []
       }
+      concepts: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          default_kind: string
+          description: string | null
+          generic_paper_key: string | null
+          id: string
+          name: string
+          sort_order: number
+          theme_key: string
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          default_kind: string
+          description?: string | null
+          generic_paper_key?: string | null
+          id?: string
+          name: string
+          sort_order?: number
+          theme_key: string
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          default_kind?: string
+          description?: string | null
+          generic_paper_key?: string | null
+          id?: string
+          name?: string
+          sort_order?: number
+          theme_key?: string
+        }
+        Relationships: []
+      }
       content_pages: {
         Row: {
           created_at: string
@@ -461,6 +497,65 @@ export type Database = {
             columns: ["payment_id"]
             isOneToOne: true
             referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          capacity_adults: number
+          concept_id: string
+          created_at: string
+          description: string | null
+          display_price_agorot: number | null
+          ends_at: string
+          id: string
+          kind: string
+          registration_close_overridden: boolean
+          registration_closes_at: string
+          revision: number
+          starts_at: string
+          status: string
+          waitlist_cycle: number
+        }
+        Insert: {
+          capacity_adults: number
+          concept_id: string
+          created_at?: string
+          description?: string | null
+          display_price_agorot?: number | null
+          ends_at: string
+          id?: string
+          kind: string
+          registration_close_overridden?: boolean
+          registration_closes_at: string
+          revision?: number
+          starts_at: string
+          status?: string
+          waitlist_cycle?: number
+        }
+        Update: {
+          capacity_adults?: number
+          concept_id?: string
+          created_at?: string
+          description?: string | null
+          display_price_agorot?: number | null
+          ends_at?: string
+          id?: string
+          kind?: string
+          registration_close_overridden?: boolean
+          registration_closes_at?: string
+          revision?: number
+          starts_at?: string
+          status?: string
+          waitlist_cycle?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_concept_id_fkey"
+            columns: ["concept_id"]
+            isOneToOne: false
+            referencedRelation: "concepts"
             referencedColumns: ["id"]
           },
         ]
@@ -856,8 +951,22 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_create_event: {
+        Args: { p_event: Json; p_idempotency_key: string }
+        Returns: Json
+      }
       admin_create_product: {
         Args: { p_idempotency_key: string; p_product: Json }
+        Returns: Json
+      }
+      admin_duplicate_event: {
+        Args: {
+          p_date: string
+          p_end_time: string
+          p_event_id: string
+          p_idempotency_key: string
+          p_start_time: string
+        }
         Returns: Json
       }
       admin_get_content_page: { Args: { p_slug: string }; Returns: Json }
@@ -873,6 +982,10 @@ export type Database = {
       admin_list_payments: { Args: never; Returns: Json }
       admin_publish_content: {
         Args: { p_idempotency_key: string; p_slug: string }
+        Returns: Json
+      }
+      admin_publish_event: {
+        Args: { p_event_id: string; p_idempotency_key: string }
         Returns: Json
       }
       admin_revoke_link: {
@@ -892,6 +1005,10 @@ export type Database = {
           p_product_id: string
           p_reason: string
         }
+        Returns: Json
+      }
+      admin_update_event: {
+        Args: { p_changes: Json; p_event_id: string; p_idempotency_key: string }
         Returns: Json
       }
       admin_update_product: {

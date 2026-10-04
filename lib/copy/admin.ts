@@ -227,6 +227,47 @@ export const adminCopy = {
       submit: "שמירת המוצר",
     },
   },
+  // /admin/sessions (story 3.1, wording approved by the user on 2026-10-04).
+  sessions: {
+    title: "מפגשים",
+    add: "מפגש חדש",
+    // The title of a session is always the concept's name (no events.title).
+    sessionTitle: (concept: string) => `בראנץ׳ ${concept}`,
+    status: { draft: "טיוטה", published: "פורסם" },
+    places: (n: number) => `${n} מקומות`,
+    empty: 'אין מפגשים קרובים. "מפגש חדש" יוצר את הראשון',
+    fields: {
+      concept: "קונספט",
+      date: "תאריך",
+      startTime: "שעת התחלה",
+      endTime: "שעת סיום",
+      kind: "סוג",
+      description: "תיאור (לא חובה)",
+      capacity: "מכסת מבוגרים",
+      price: "מחיר תצוגה (לא חובה)",
+      when: "מועד",
+      closes: "סגירת הרשמה",
+    },
+    kinds: { regular: "רגיל", couple: "זוגי" },
+    // Hints under a field while it holds the value it was filled with.
+    fromConcept: "מהקונספט",
+    fromSettings: "לפי ההגדרות",
+    priceEmpty: "מחיר תצוגה ריק: מוצג מחיר המוצר",
+    closesByRule: "נקבעה לפי ההגדרות",
+    closesScope: "שינוי כאן חל רק על המפגש הזה",
+    // "{day} · 10:00–12:00" in the date row's "old ← new".
+    when: (day: string, start: string, end: string) =>
+      `${day} · ${start}–${end}`,
+    create: {
+      title: "מפגש חדש",
+      submit: "יצירת טיוטה",
+    },
+    publish: "פרסום המפגש",
+    publishNote: "הטיוטה לא מוצגת ללקוחות עד הפרסום",
+    duplicate: "שכפול לטיוטה",
+    duplicateWhen: "מועד הטיוטה החדשה",
+    duplicateSubmit: "יצירת הטיוטה",
+  },
   // value-change-row (story 2.6; EXPERIENCE › Component Patterns).
   valueChange: {
     change: (field: string, from: string, to: string) =>

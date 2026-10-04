@@ -128,3 +128,18 @@
   target: 4.7
   summary: מסך ההגדרות (`/admin/settings`) מוסיף שורה "פרטי העסק" שמובילה לעורך `/admin/content/contact`. זו אותה רשומה (טיוטה ← פרסום), לא עותק נפרד בהגדרות.
   evidence: ‏EXPERIENCE (Flow 7 וההגדרות): פרטי העסק נערכים "מהגדרות › פרטי העסק או מתוכן האתר › קשר". העורך נבנה ב-5.1, ו-`/admin/settings` עוד לא קיים.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-1-concepts-and-session-management.md`
+  target: אחרי ההדגמה (סיפור חדש)
+  summary: "מוצרים תקפים" למפגש (מקור §7): הטבלה `event_products`, שדה סימון במסך המפגש ובדיקה ב-`private.plan_funding` שמוצר שלא סומן לא מממן את המפגש. הבדיקה חלה רק על זכויות חדשות.
+  evidence: data-model מגדיר את הטבלה, אבל אף סיפור לא בונה אותה, ו-AD-18 בוחר מימון רק לפי סוג, יום בשבוע והיכרות. נדחה בהחלטת המשתמשת 2026-10-04 (3.1, שאלה 1).
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-1-concepts-and-session-management.md`
+  target: 3.2
+  summary: מ-3.2 יש הרשמות, ועד 3.8 `admin_update_event` משנה מועד או סוג של מפגש עם נרשמות בלי תצוגת השפעה ובלי התראה ("לא להזיז אירוע בשקט", מקור §7). ‏3.2 חוסם ב-`admin_update_event` שינוי של `date`, ‏`start_time`, ‏`end_time` או `kind` כשיש הרשמה פעילה (קוד שגיאה חדש), ו-3.8 מחליף את החסימה בתצוגת השפעה.
+  evidence: ביקורת 3.1, intent-alignment. היום אין טבלת `bookings`, ולכן זה לא קורה.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-1-concepts-and-session-management.md`
+  target: 3.4
+  summary: הסינון של רשימת `/admin/sessions` (טיוטות ומפגשים שפורסמו ועוד לא התחילו) לא נבדק בבדיקה. בנוסף, מפגש שבוטל או הסתיים נפתח ב-`/[id]/edit` עם שדות עריכה שכל שמירה בהם נכשלת. ‏3.4 (פרטי מפגש) מחליט מה מוצג למפגש עבר, מבוטל או שהסתיים, ומוסיף בדיקה לסינון.
+  evidence: ביקורת 3.1, verification-gap ו-blind-hunter. היום אין מפגש מבוטל או שהסתיים (3.8, ‏3.12), ואין בפרויקט בדיקות של שאילתות בעמודים.
