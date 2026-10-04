@@ -6,6 +6,7 @@ covers: [CAP-1, CAP-12, CAP-15, CAP-18, CAP-21, CAP-22, CAP-23, CAP-27, CAP-25, 
 after: []
 assignee: ""
 risk: high
+status: in-progress
 ---
 
 # E5 אתר ותקשורת: אתר שיווקי, המתנה, פוש ותזמון
