@@ -10,7 +10,7 @@ import { customerCopy } from "@/lib/copy/customer"
 // with an i that opens a toggletip: a button with aria-expanded, opened by a
 // click (and on a mouse also by hovering), closed by Escape, a click outside
 // or a second click. The bubble's contact phrase links to Tal's WhatsApp.
-// weeks comes from the card's validity days (null: no explanation).
+// days is the card's validity days (null: no explanation).
 
 export type ToggletipState = { open: boolean; byHover: boolean }
 export type ToggletipEvent =
@@ -42,10 +42,10 @@ export function nextToggletip(
 }
 
 export function ExpiredCardNote({
-  weeks,
+  days,
   contactHref,
 }: {
-  weeks: number | null
+  days: number | null
   contactHref: string | null
 }) {
   const [tip, setTip] = useState<ToggletipState>({
@@ -89,7 +89,7 @@ export function ExpiredCardNote({
     >
       <p className="flex items-center gap-1 text-[15px] text-expired">
         <span id={labelId}>{customerCopy.expiredBeforeBound}</span>
-        {weeks !== null && (
+        {days !== null && (
           <button
             type="button"
             aria-labelledby={labelId}
@@ -111,7 +111,7 @@ export function ExpiredCardNote({
           </button>
         )}
       </p>
-      {weeks !== null && (
+      {days !== null && (
         <p
           id={tipId}
           role="status"
@@ -120,7 +120,7 @@ export function ExpiredCardNote({
         >
           {open && (
             <ContactText
-              text={customerCopy.expiredBeforeBoundInfo(weeks)}
+              text={customerCopy.expiredBeforeBoundInfo(days)}
               href={contactHref}
               phrase={customerCopy.contactPhrase}
             />

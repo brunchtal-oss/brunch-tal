@@ -48,16 +48,16 @@ export type PurchaseItem = {
   // card that expired before it was bound.
   message: string | null
   buttonLabel: string | null
-  // The card expired before it reached the customer; validityWeeks (from the
-  // snapshot's validity days) explains it, null when unknown.
+  // The card expired before it reached the customer; validityDays (from the
+  // snapshot) explains it, null when unknown.
   expiredBeforeBound: boolean
-  validityWeeks: number | null
+  validityDays: number | null
 }
 
-function validityWeeks(snapshot: unknown): number | null {
+function validityDays(snapshot: unknown): number | null {
   const days = (snapshot as { validity_days?: unknown } | null)?.validity_days
   return typeof days === "number" && Number.isInteger(days) && days > 0
-    ? Math.round(days / 7)
+    ? days
     : null
 }
 
@@ -94,8 +94,8 @@ export function buildPurchaseItems(rows: {
           ? (product?.post_join_button_label ?? null)
           : null,
         expiredBeforeBound,
-        validityWeeks: expiredBeforeBound
-          ? validityWeeks(entitlement?.eligibility_snapshot)
+        validityDays: expiredBeforeBound
+          ? validityDays(entitlement?.eligibility_snapshot)
           : null,
       },
     ]
