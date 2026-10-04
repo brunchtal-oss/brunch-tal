@@ -1,53 +1,49 @@
 import Link from "next/link"
 
-import { conceptTheme } from "@/lib/concepts/themes"
 import { customerCopy } from "@/lib/copy/customer"
 import { formatAccessibleDateTime, formatSessionDateTime } from "@/lib/time"
-import { cn } from "@/lib/utils"
 
-import { conceptFaceClass, conceptStyle } from "./concept-header"
+import { SessionPhoto } from "./session-photo"
 
-// DESIGN.md › session-card, EXPERIENCE.md › session-card. No photo yet
-// (5.4), so the concept band takes the photo's 4:3 place with the name at
-// 52px on its bottom edge, in the concept face and ink. Under it the date
-// and, for a signed-in customer, the status-chip. A single target: one link
-// on the concept name whose ::after covers the card; its accessible name is
-// the title, the full date and the status. No regular/couple label and no
-// number of places.
+// One uniform card for every session (user's decision 2026-10-04, UX
+// memlog; replaces the concept band of DESIGN.md › session-card): a wide
+// photo at 2:1 on top (a low, rectangular card), then "בראנץ׳", the concept name in the site's heading face
+// and ink, and the date with, for a signed-in customer, the status-chip. No
+// concept colour or face. A single target: one link on the concept name
+// whose ::after covers the card; its accessible name is the title, the full
+// date and the status. No regular/couple label and no number of places.
 export function SessionCard({
   href,
   conceptName,
-  themeKey,
-  paperKey,
+  photoUrl,
   startsAt,
   status,
   statusText,
 }: {
   href: string
   conceptName: string
-  themeKey: string | null
-  paperKey: string | null
+  // The session's photo, else its concept's (story 5.4); none yet.
+  photoUrl?: string | null
   startsAt: string
   // The visible chip, and its word for the link's accessible name.
   status?: React.ReactNode
   statusText?: string
 }) {
-  const theme = conceptTheme(themeKey, paperKey)
   return (
     <article className="relative flex flex-col overflow-hidden rounded-lg border border-border bg-card">
-      <div
-        style={conceptStyle(theme.field, theme.ink)}
-        className="flex aspect-[4/3] flex-col justify-end gap-2 bg-[var(--concept-field)] px-[18px] pt-4 pb-[18px] text-[var(--concept-ink)]"
-      >
-        <span aria-hidden className="text-[15px] leading-none">
+      <SessionPhoto
+        src={photoUrl}
+        sizes="(min-width: 640px) 560px, 100vw"
+        className="aspect-[2/1]"
+      />
+      <div className="flex flex-col gap-1 px-4 pt-3 pb-3.5">
+        <span
+          aria-hidden
+          className="text-[15px] leading-none text-muted-foreground"
+        >
           {customerCopy.brunch}
         </span>
-        <h2
-          className={cn(
-            "text-[52px] leading-none",
-            conceptFaceClass(theme.face)
-          )}
-        >
+        <h2 className="font-heading text-[22px] leading-tight font-light text-balance">
           <Link
             href={href}
             className="rounded-[4px] after:absolute after:inset-0 after:content-['']"
@@ -60,16 +56,16 @@ export function SessionCard({
             </span>
           </Link>
         </h2>
-      </div>
-      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-[18px] pt-3 pb-4">
-        <time
-          dateTime={startsAt}
-          aria-hidden
-          className="text-[15px] text-foreground"
-        >
-          {formatSessionDateTime(startsAt)}
-        </time>
-        {status && <span aria-hidden>{status}</span>}
+        <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+          <time
+            dateTime={startsAt}
+            aria-hidden
+            className="text-[15px] text-foreground"
+          >
+            {formatSessionDateTime(startsAt)}
+          </time>
+          {status && <span aria-hidden>{status}</span>}
+        </div>
       </div>
     </article>
   )

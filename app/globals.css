@@ -145,6 +145,40 @@
   html {
     @apply font-sans;
   }
+  /*
+   * No word left alone on the last line of a text, across the whole app
+   * (user's decision 2026-10-04): running text wraps "pretty", headings
+   * balance their lines. A utility on the element still wins.
+   */
+  p,
+  li,
+  dd,
+  dt,
+  label,
+  figcaption,
+  blockquote {
+    text-wrap: pretty;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    text-wrap: balance;
+  }
+}
+
+/*
+ * The shadcn Alert (auth screens) reads like the inline-notice: centred,
+ * balanced lines (user's decision 2026-10-04). Unlayered, so it wins over
+ * the Alert's own `text-start` utility; components/ui is not edited.
+ */
+[data-slot="alert"] {
+  text-align: center;
+  justify-items: center;
+}
+[data-slot="alert-title"],
+[data-slot="alert-description"] {
+  text-wrap: balance;
 }
 
 /*

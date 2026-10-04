@@ -22,6 +22,9 @@ const TONES = {
 
 // DESIGN.md › inline-notice: status tint with text in the status colour,
 // decorative icon, 8px corners. Fixed shape: one-line reason, then actions.
+// Centred, with balanced lines so a wrapped reason never leaves one word
+// alone on its last line (user's decision 2026-10-04, UX memlog); the icon
+// sits in the text's first line.
 export function InlineNotice({
   tone,
   children,
@@ -38,20 +41,22 @@ export function InlineNotice({
     <div
       role={tone === "error" ? "alert" : "status"}
       className={cn(
-        "flex flex-col gap-3 rounded-xl px-4 py-3 text-[15px] leading-normal",
+        "flex flex-col items-center gap-3 rounded-xl px-4 py-3 text-center text-[15px] leading-normal",
         toneClass,
         className
       )}
     >
-      <p className="flex items-start gap-2">
+      <p className="text-balance">
         <Icon
           aria-hidden
           strokeWidth={1.5}
-          className="mt-0.5 size-5 shrink-0"
+          className="me-1.5 inline-block size-5 align-[-0.3em]"
         />
-        <span>{children}</span>
+        {children}
       </p>
-      {actions && <div className="flex flex-wrap gap-3">{actions}</div>}
+      {actions && (
+        <div className="flex flex-wrap justify-center gap-3">{actions}</div>
+      )}
     </div>
   )
 }

@@ -78,8 +78,6 @@ async function SessionContent({ params }: { params: Promise<{ id: string }> }) {
     <>
       <ConceptHeader
         conceptName={session.concept_name}
-        themeKey={session.theme_key}
-        paperKey={session.paper_key}
         startsAt={session.starts_at}
       >
         {status && <StatusChip tone={status.tone}>{status.text}</StatusChip>}
