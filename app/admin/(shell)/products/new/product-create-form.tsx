@@ -26,6 +26,7 @@ import {
   TypeField,
   ValidityField,
   WeekdaysField,
+  WeekdaysToggle,
 } from "../product-fields"
 
 const copy = adminCopy.products
@@ -61,6 +62,10 @@ export function ProductCreateForm({
     draftForType("single", defaultValidityDays)
   )
   const [tried, setTried] = useState(false)
+  // Every day unless Tal opens the weekday picker (a type change closes it,
+  // as the type resets the days to all).
+  const [weekdaysFocus, setWeekdaysFocus] = useState(false)
+  const [weekdaysOpen, setWeekdaysOpen] = useState(false)
   const [pending, setPending] = useState(false)
   const [serverError, setServerError] = useState<ErrorCode | null>(null)
 
@@ -120,11 +125,12 @@ export function ProductCreateForm({
       <TypeField
         name="type"
         value={draft.type}
-        onChange={(type) =>
+        onChange={(type) => {
+          setWeekdaysOpen(false)
           setDraft((current) =>
             draftForType(type, defaultValidityDays, current)
           )
-        }
+        }}
       />
       <TextField
         id="name"
@@ -164,11 +170,21 @@ export function ProductCreateForm({
         onDaysChange={(validityDaysText) => update({ validityDaysText })}
         daysProblem={problem("validityDays")}
       />
-      <WeekdaysField
-        name="weekdays"
-        value={draft.weekdays}
-        onChange={(weekdays) => update({ weekdays })}
-      />
+      {weekdaysOpen ? (
+        <WeekdaysField
+          name="weekdays"
+          value={draft.weekdays}
+          onChange={(weekdays) => update({ weekdays })}
+          autoFocus={weekdaysFocus}
+        />
+      ) : (
+        <WeekdaysToggle
+          onOpen={() => {
+            setWeekdaysFocus(true)
+            setWeekdaysOpen(true)
+          }}
+        />
+      )}
       <EventKindField
         name="eventKind"
         value={draft.eventKind}

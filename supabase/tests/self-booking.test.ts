@@ -335,6 +335,18 @@ describe("refusals keep no place and take no entry", () => {
     })
   })
 
+  it("a card with no weekday limit books a Sunday (user decision 2026-10-04)", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      // allowed_weekdays null, like the seeded card after card_every_weekday.
+      const card = await insertEntitlement(db, f, { customer: f.customerB })
+      const sunday = await insertEvent(db, f, { day: await localDay(db, 0, 2) })
+      await as(db, f.customerB, BOOK, [sunday, randomUUID()])
+      expect(await bookingsOf(db, sunday)).toHaveLength(1)
+      expect(await movementsOf(db, card.id)).toHaveLength(2)
+    })
+  })
+
   it("a Sunday, a couple session, or no entitlement -> NO_MATCHING_ENTITLEMENT", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)

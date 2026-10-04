@@ -167,15 +167,32 @@ export function ValidityField({
   )
 }
 
+// A product is valid on every day by default (user decision 2026-10-04): the
+// weekday picker stays closed behind this link until Tal opens it.
+export function WeekdaysToggle({ onOpen }: { onOpen: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="inline-flex min-h-11 items-center self-start text-[15px] underline underline-offset-4"
+    >
+      {copy.weekdaysOpen}
+    </button>
+  )
+}
+
 // Weekdays: seven checkboxes; all seven = every day, none is refused.
 export function WeekdaysField({
   name,
   value,
   onChange,
+  autoFocus = false,
 }: {
   name: string
   value: readonly number[]
   onChange: (value: number[]) => void
+  // Opened from WeekdaysToggle: the link is gone, so focus the first day.
+  autoFocus?: boolean
 }) {
   const empty = value.length === 0
   const errorId = `${name}-error`
@@ -195,6 +212,7 @@ export function WeekdaysField({
             <div key={day} className="flex min-h-11 items-center gap-3">
               <Checkbox
                 id={id}
+                autoFocus={autoFocus && day === ALL_WEEKDAYS[0]}
                 checked={checked}
                 onCheckedChange={(next) =>
                   onChange(

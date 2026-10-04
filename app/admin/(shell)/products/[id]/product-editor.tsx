@@ -36,6 +36,7 @@ import {
   TypeField,
   ValidityField,
   WeekdaysField,
+  WeekdaysToggle,
 } from "../product-fields"
 
 const copy = adminCopy.products
@@ -67,6 +68,12 @@ function asSaveResult(result: ActionResult<unknown>): ValueSaveResult {
 export function ProductEditor({ row }: { row: ProductRow }) {
   const [draft, setDraft] = useState<ProductDraft>(() => draftFromRow(row))
   const [active, setActive] = useState(row.active)
+  // A product valid on every day hides the weekday row behind a link; a
+  // restricted one shows it, so Tal sees the restriction and can lift it.
+  const [weekdaysFocus, setWeekdaysFocus] = useState(false)
+  const [weekdaysOpen, setWeekdaysOpen] = useState(
+    row.allowed_weekdays !== null
+  )
   const update = (patch: Partial<ProductDraft>) =>
     setDraft((current) => ({ ...current, ...patch }))
   // "Cancel" of a row: its draft values go back to the saved ones.
@@ -248,13 +255,23 @@ export function ProductEditor({ row }: { row: ProductRow }) {
           )}
         </li>
         <li className="py-5">
-          {fieldRow(
-            "weekdays",
-            copy.fields.weekdays,
-            <WeekdaysField
-              name="weekdays"
-              value={draft.weekdays}
-              onChange={(weekdays) => update({ weekdays })}
+          {weekdaysOpen ? (
+            fieldRow(
+              "weekdays",
+              copy.fields.weekdays,
+              <WeekdaysField
+                name="weekdays"
+                value={draft.weekdays}
+                onChange={(weekdays) => update({ weekdays })}
+                autoFocus={weekdaysFocus}
+              />
+            )
+          ) : (
+            <WeekdaysToggle
+              onOpen={() => {
+                setWeekdaysFocus(true)
+                setWeekdaysOpen(true)
+              }}
             />
           )}
         </li>
