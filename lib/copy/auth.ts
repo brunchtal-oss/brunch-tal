@@ -13,7 +13,7 @@ export const authCopy = {
     submit: "להתחברות",
     submitting: "מתחברת…",
     forgotPassword: "שכחתי סיסמה",
-    forgotPasswordHelp: "טל תוודא שזו את ותשלח לך קישור לאיפוס.",
+    forgotPasswordHelp: "נוודא שזו את ונשלח לך קישור לאיפוס.",
   },
   reset: {
     title: "בחירת סיסמה חדשה",

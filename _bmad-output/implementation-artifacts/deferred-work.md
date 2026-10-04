@@ -198,3 +198,8 @@
   target: 5.3
   summary: הוראות התשלום כבר לא מוצגות באתר הציבורי (החלטת המשתמשת 2026-10-04), אבל השדה עדיין נערך בפרטי העסק. צריך להחליט איפה הן מוצגות (למשל אחרי הצטרפות או באזור האישי), או להסתיר את השדה.
   evidence: ‏`FIELDS` ב-`app/admin/(shell)/content/contact/page.tsx` עדיין כולל את `payment_instructions`.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-2-public-pages-static.md`
+  target: 5.3
+  summary: הסקשן `site/footer` כבר לא מוצג (הפוטר בלי שם העסק ובלי טקסט, החלטת המשתמשת 2026-10-04). העורך של 5.3 לא צריך לכלול אותו, וכדאי להחליט אם להסיר את השורה מהמסד.
+  evidence: ‏`app/(public)/layout.tsx` כבר לא קורא את `site`.

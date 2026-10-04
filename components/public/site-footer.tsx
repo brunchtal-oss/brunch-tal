@@ -1,10 +1,7 @@
 import Link from "next/link"
 
 import { telHref } from "@/components/public/contact-details"
-import type {
-  BusinessDetailsContent,
-  FooterContent,
-} from "@/lib/content/schema"
+import type { BusinessDetailsContent } from "@/lib/content/schema"
 import { shellCopy } from "@/lib/copy/shell"
 import { cn } from "@/lib/utils"
 
@@ -15,19 +12,15 @@ const LINK =
 
 // The public footer (stories 5.2, user decisions 2026-10-04): its own ink
 // band, apart from the cream page and the olive top-bar (cream text,
-// ~14:1). The business name, the published footer text (site › footer), the
-// phone (tel:) and the address (opening the navigation link when there is
-// one), the legal links whose pages are published (legal; 5.5) and the fixed
-// admin entrance. A missing field is not shown.
+// ~14:1). The phone (tel:) and the address (opening the navigation link
+// when there is one), the legal links whose pages are published (legal; 5.5)
+// and the fixed admin entrance. No business name and no footer text (user
+// decision 2026-10-04). A missing field is not shown.
 export function SiteFooter({
-  name,
-  footer,
   details,
   legal,
   className,
 }: {
-  name: string
-  footer: FooterContent | null
   details: BusinessDetailsContent | null
   legal: readonly { href: string; label: string }[]
   className?: string
@@ -38,17 +31,6 @@ export function SiteFooter({
       className={cn("mt-12 bg-foreground text-background", className)}
     >
       <div className="mx-auto flex max-w-[720px] flex-col gap-5 px-6 pt-8 pb-6">
-        <div className="flex flex-col gap-2">
-          <p className="font-heading text-xl leading-none font-light tracking-[0.01em]">
-            {name}
-          </p>
-          {footer && (
-            <p className="text-[15px] leading-normal whitespace-pre-line text-background/75">
-              {footer.text}
-            </p>
-          )}
-        </div>
-
         {(details?.phone || details?.address) && (
           <dl className="flex flex-col gap-1 text-[15px]">
             {details.phone && (

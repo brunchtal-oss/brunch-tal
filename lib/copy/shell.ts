@@ -31,10 +31,11 @@ export const shellCopy = {
     menu: "תפריט",
     closeMenu: "סגירת התפריט",
     pagesLabel: "עמודי האתר",
-    // whatsapp-bar (EXPERIENCE › whatsapp-bar, source §3).
+    // whatsapp-bar (EXPERIENCE › whatsapp-bar, source §3; without "עם טל",
+    // user decision 2026-10-04: the copy never names Tal).
     whatsappLabel: "יצירת קשר",
-    whatsappBar: "להצטרפות צרי קשר עם טל",
-    whatsappBarName: "להצטרפות צרי קשר עם טל בוואטסאפ (נפתח בוואטסאפ)",
+    whatsappBar: "להצטרפות צרי קשר",
+    whatsappBarName: "להצטרפות צרי קשר בוואטסאפ (נפתח בוואטסאפ)",
     // The public footer's legal links (its contact lines use contact.*).
     footer: {
       terms: "תנאי שימוש",
@@ -43,7 +44,7 @@ export const shellCopy = {
     },
     // A public page with no published section yet.
     emptyPage: "התוכן של העמוד הזה עוד בהכנה",
-    emptyPageWhatsapp: "לשאלות אפשר לכתוב לטל בוואטסאפ",
+    emptyPageWhatsapp: "לשאלות אפשר לפנות בוואטסאפ",
     // The name of a section that was published without a title (for screen
     // readers).
     sections: {
@@ -56,7 +57,7 @@ export const shellCopy = {
     contact: {
       label: "פרטי קשר",
       phone: "טלפון",
-      whatsappLink: "לכתוב לטל בוואטסאפ",
+      whatsappLink: "לפנייה בוואטסאפ",
       address: "כתובת",
       arrival: "הוראות הגעה",
       navigation: "פתיחה באפליקציית ניווט",
