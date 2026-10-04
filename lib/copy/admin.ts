@@ -122,14 +122,14 @@ export const adminCopy = {
     },
     notShown: "לא מוצג באתר עד שיפורסם",
     changedHint: "יש טיוטה שעוד לא פורסמה",
-    publishedHint: "האתר מציג את מה שפורסם",
+    publishedHint: "התוכן מופיע באתר",
     backToList: "לכל התוכן",
     saveDraft: "שמירת טיוטה",
     publish: "פרסום",
     preview: "תצוגה מקדימה",
-    saved: "הטיוטה נשמרה. היא לא מוצגת באתר עד הפרסום",
+    saved: "הטיוטה נשמרה. היא לא תוצג באתר עד הפרסום",
     published: "פורסם. האתר יציג את השינוי בטעינה הבאה",
-    nothingToPublish: "אין שינויים לפרסום. הכול כבר מוצג באתר",
+    nothingToPublish: "לא בוצעו שינויים לפרסום",
     // A field the saved draft or the form refused (zod, lib/content/schema.ts).
     fieldError: {
       required: "צריך למלא את השדה הזה",
