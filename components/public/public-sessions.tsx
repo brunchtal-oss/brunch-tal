@@ -45,19 +45,20 @@ export function PublicSessionList({
 export function PublicSessionCard({
   session,
   headingLevel,
-  photoAspect,
+  layout,
 }: {
   session: PublicSession
   headingLevel?: 2 | 3
-  photoAspect?: "aspect-[2/1]" | "aspect-[5/2]"
+  layout?: "stacked" | "horizontal"
 }) {
   return (
     <SessionCard
       href={`/sessions/${session.id}`}
       conceptName={session.concept_name}
+      photo={session.photo}
       startsAt={session.starts_at}
       headingLevel={headingLevel}
-      photoAspect={photoAspect}
+      layout={layout}
     />
   )
 }
@@ -106,6 +107,7 @@ export function PublicSessionView({
     <div className="mx-auto w-full max-w-[720px] px-6 pt-2">
       <ConceptHeader
         conceptName={session.concept_name}
+        photo={session.photo}
         startsAt={session.starts_at}
       />
       {session.display_price_agorot !== null && (

@@ -18,16 +18,21 @@ import {
   guestWhatsappHref,
 } from "@/lib/content/business-details"
 import {
+  getPublishedPage,
   getPublishedPageSlugs,
-  getPublishedSections,
+  resolveSections,
   sectionContent,
   toSections,
+  type ImageMap,
   type PublishedSections,
 } from "@/lib/content/pages"
+import { visibleImages } from "@/lib/content/visible"
 import { adminCopy } from "@/lib/copy/admin"
 import { joinCopy } from "@/lib/copy/join"
 import { shellCopy } from "@/lib/copy/shell"
+import { draftImageMap } from "@/lib/media/drafts"
 import { publicLegalNav } from "@/lib/nav"
+import { createClient } from "@/lib/supabase/server"
 
 import {
   hasPendingDraft,
@@ -81,6 +86,24 @@ function previewSections(page: ContentPage): PublishedSections {
   )
 }
 
+// The preview of pages with their images (story 5.4): every image the
+// shown content holds, from its draft file (a signed URL, with the alt and
+// focus of the content); an image whose file is missing is left out, as on
+// the site.
+async function previewPages(
+  pages: readonly ContentPage[]
+): Promise<{ sections: PublishedSections[]; images: ImageMap }> {
+  const raw = pages.map(previewSections)
+  const refs = raw.flatMap((sections) =>
+    Object.values(sections).flatMap((section) => visibleImages(section.content))
+  )
+  const images = await draftImageMap(await createClient(), refs)
+  return {
+    sections: raw.map((sections) => resolveSections(sections, images)),
+    images,
+  }
+}
+
 async function Preview({
   params,
   searchParams,
@@ -122,12 +145,17 @@ async function PageView({
   const whatsappHref = guestWhatsappHref(details)
 
   switch (id) {
-    case "home":
+    case "home": {
+      const [preview, gallery] = await Promise.all([
+        previewPages([pages.home, pages.about]),
+        getPublishedPage("gallery"),
+      ])
       return (
         <HomeView
-          home={previewSections(pages.home)}
-          about={previewSections(pages.about)}
-          gallery={await getPublishedSections("gallery")}
+          home={preview.sections[0]}
+          about={preview.sections[1]}
+          gallery={gallery.sections}
+          images={{ ...gallery.images, ...preview.images }}
           name={details?.business_name ?? shellCopy.wordmark}
           whatsappHref={whatsappHref}
           sessions={
@@ -137,6 +165,7 @@ async function PageView({
           }
         />
       )
+    }
     case "how-it-works":
       return (
         <HowItWorksView
@@ -144,13 +173,16 @@ async function PageView({
           whatsappHref={whatsappHref}
         />
       )
-    case "gallery":
+    case "gallery": {
+      const preview = await previewPages([pages.gallery])
       return (
         <GalleryView
-          sections={previewSections(pages.gallery)}
+          sections={preview.sections[0]}
+          images={preview.images}
           whatsappHref={whatsappHref}
         />
       )
+    }
     case "contact": {
       const sections = previewSections(pages.contact)
       return (

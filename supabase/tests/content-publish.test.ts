@@ -156,7 +156,7 @@ describe("content publish", () => {
       ])
 
       const result = await asAdmin(db, admin, PUBLISH, ["home", randomUUID()])
-      expect(result).toEqual({ published_version: 1, changed: 1 })
+      expect(result).toMatchObject({ published_version: 1, changed: 1 })
       expect(await anonHero(db)).toEqual([{ published_content: HERO }])
 
       // Audited: the draft and the publish of the section.
@@ -198,22 +198,22 @@ describe("content publish", () => {
     await inCleanHome(async (db) => {
       const admin = await seedAdmin(db)
       // Nothing to publish on an unpublished page: still not published.
-      expect(await asAdmin(db, admin, PUBLISH, ["home", randomUUID()])).toEqual(
-        { published_version: 0, changed: 0 }
-      )
+      expect(
+        await asAdmin(db, admin, PUBLISH, ["home", randomUUID()])
+      ).toMatchObject({ published_version: 0, changed: 0 })
       expect(await anonHero(db)).toEqual([])
 
       await asAdmin(db, admin, SET, ["home", "hero", JSON.stringify(HERO)])
       await asAdmin(db, admin, PUBLISH, ["home", randomUUID()])
-      expect(await asAdmin(db, admin, PUBLISH, ["home", randomUUID()])).toEqual(
-        { published_version: 1, changed: 0 }
-      )
+      expect(
+        await asAdmin(db, admin, PUBLISH, ["home", randomUUID()])
+      ).toMatchObject({ published_version: 1, changed: 0 })
 
       // An empty draft is not published either.
       await asAdmin(db, admin, SET, ["home", "hero", "{}"])
-      expect(await asAdmin(db, admin, PUBLISH, ["home", randomUUID()])).toEqual(
-        { published_version: 1, changed: 0 }
-      )
+      expect(
+        await asAdmin(db, admin, PUBLISH, ["home", randomUUID()])
+      ).toMatchObject({ published_version: 1, changed: 0 })
       expect(await anonHero(db)).toEqual([{ published_content: HERO }])
     })
   })

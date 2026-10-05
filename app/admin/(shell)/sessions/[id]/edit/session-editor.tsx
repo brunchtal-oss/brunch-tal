@@ -17,17 +17,24 @@ import { newIdempotencyKey } from "@/lib/idempotency"
 import {
   duplicateEventAction,
   publishEventAction,
+  setSessionImageAction,
   updateEventAction,
 } from "../../actions"
 import {
   draftFromRow,
   fieldChange,
   fieldError,
+  imageChanged,
   type EditorField,
   type SessionDraft,
+  type SessionImage,
   type SessionRow,
 } from "../../session-draft"
-import { SessionField, WhenFields } from "../../session-fields"
+import {
+  SessionField,
+  SessionImageField,
+  WhenFields,
+} from "../../session-fields"
 
 const copy = adminCopy.sessions
 
@@ -52,7 +59,13 @@ function asSaveResult(result: ActionResult<unknown>): ValueSaveResult {
 // can be duplicated to a new draft on another date. The concept is fixed.
 // The saved values come from the server after each save (router.refresh);
 // a failure leaves them as they were.
-export function SessionEditor({ row }: { row: SessionRow }) {
+export function SessionEditor({
+  row,
+  imagePreviewUrl = null,
+}: {
+  row: SessionRow
+  imagePreviewUrl?: string | null
+}) {
   const [draft, setDraft] = useState<SessionDraft>(() => draftFromRow(row))
   // A new date or time moves the close on the server (trigger); after the
   // refresh the close field takes the saved value, the others stay.
@@ -199,8 +212,87 @@ export function SessionEditor({ row }: { row: SessionRow }) {
         </li>
       </ul>
 
+      <ImageBox row={row} previewUrl={imagePreviewUrl} />
+
       <DuplicateBox row={row} />
     </div>
+  )
+}
+
+// The session's image (story 5.4): image-upload-field, then "save the
+// image" once it differs from the saved one. Saving publishes it and sets
+// it on the session (setSessionImageAction); removing it and saving shows
+// the concept's image again. A failure keeps the form as it is.
+function ImageBox({
+  row,
+  previewUrl,
+}: {
+  row: SessionRow
+  previewUrl: string | null
+}) {
+  const router = useRouter()
+  const saved = row.image ?? null
+  const [image, setImage] = useState<SessionImage | null>(saved)
+  const [pending, setPending] = useState(false)
+  const [notice, setNotice] = useState<
+    | { tone: "success"; text: string }
+    | { tone: "error"; code: ErrorCode }
+    | null
+  >(null)
+  const changed = imageChanged(saved, image)
+
+  const save = () => {
+    if (pending || !changed) return
+    setPending(true)
+    setNotice(null)
+    startTransition(async () => {
+      try {
+        const result = await setSessionImageAction({ eventId: row.id, image })
+        if (result.ok) {
+          setNotice({
+            tone: "success",
+            text: image ? copy.image.saved : copy.image.removed,
+          })
+          router.refresh()
+        } else {
+          setNotice({ tone: "error", code: result.code })
+        }
+      } catch {
+        setNotice({ tone: "error", code: "SERVER_ERROR" })
+      }
+      setPending(false)
+    })
+  }
+
+  return (
+    <section className="flex flex-col gap-3">
+      <SessionImageField
+        value={image}
+        previewUrl={previewUrl}
+        onChange={(next) => {
+          setImage(next)
+          setNotice(null)
+        }}
+      />
+      {notice && (
+        <InlineNotice tone={notice.tone}>
+          {notice.tone === "error" ? errorMessage(notice.code) : notice.text}
+        </InlineNotice>
+      )}
+      {changed && (
+        <Button
+          type="button"
+          size="lg"
+          className="h-12 self-start px-5 text-base"
+          aria-busy={pending || undefined}
+          aria-disabled={pending || undefined}
+          onClick={save}
+        >
+          {pending && <Spinner aria-hidden />}
+          {copy.image.save}
+        </Button>
+      )}
+    </section>
   )
 }
 

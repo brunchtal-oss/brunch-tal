@@ -33,6 +33,23 @@ describe("next.config", () => {
     }
   )
 
+  it("sends private, no-store on the session-morning view (story 3.4)", async () => {
+    const rules = (await nextConfig.headers!()) as HeaderRule[]
+    const path = "/admin/sessions/11111111-1111-4111-8111-111111111111/day"
+    // ":path*" is zero or more segments (path-to-regexp), anchored by Next.
+    const matching = rules.filter(
+      (r) =>
+        !r.has &&
+        new RegExp(
+          `^${r.source.replace(/[.]/g, "\\.").replace("/:path*", "(?:/.*)?")}$`
+        ).test(path)
+    )
+    expect(matching.map((r) => r.source)).toEqual(["/admin/:path*"])
+    expect(
+      Object.fromEntries(matching[0].headers.map((h) => [h.key, h.value]))
+    ).toMatchObject({ "Cache-Control": "private, no-store" })
+  })
+
   it("sends no-referrer and no-store on /login only when next is a join link", async () => {
     const rules = (await nextConfig.headers!()) as HeaderRule[]
     const login = rules.filter((r) => r.source === "/login")

@@ -1,5 +1,6 @@
 "use client"
 
+import { ImageUploadField } from "@/components/admin/image-upload-field"
 import { RadioCardGroup } from "@/components/admin/radio-card"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
@@ -8,7 +9,8 @@ import { adminCopy } from "@/lib/copy/admin"
 import { authCopy } from "@/lib/copy/auth"
 import { errorMessage } from "@/lib/errors"
 
-import type { ConceptOption, EventKind } from "./session-draft"
+import { createSessionMediaAction } from "./actions"
+import type { ConceptOption, EventKind, SessionImage } from "./session-draft"
 
 const copy = adminCopy.sessions
 
@@ -230,5 +232,31 @@ export function WhenFields({
         />
       </div>
     </div>
+  )
+}
+
+// The session's image (story 5.4): image-upload-field framed as the card
+// (2:1), with the alt text. Saving it (the create form after the session
+// exists, or the editor's own button) publishes it.
+export function SessionImageField({
+  value,
+  previewUrl,
+  onChange,
+}: {
+  value: SessionImage | null
+  previewUrl?: string | null
+  onChange: (value: SessionImage | null) => void
+}) {
+  return (
+    <ImageUploadField
+      id="session-image"
+      label={copy.image.label}
+      hint={copy.image.hint}
+      aspectRatio={2}
+      value={value}
+      previewUrl={previewUrl}
+      onChange={onChange}
+      createMedia={createSessionMediaAction}
+    />
   )
 }

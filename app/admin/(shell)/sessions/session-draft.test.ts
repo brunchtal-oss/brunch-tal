@@ -10,6 +10,7 @@ import {
   draftFromRow,
   fieldChange,
   fieldError,
+  imageChanged,
   listSummary,
   localDateTime,
   sessionTitle,
@@ -273,5 +274,34 @@ describe("listSummary", () => {
     expect(text).toContain("15.12")
     expect(text).toContain("10:00")
     expect(text).toContain(copy.places(12))
+  })
+})
+
+// Story 5.4: the editor offers "save the image" only when it changed.
+describe("imageChanged", () => {
+  const IMAGE = {
+    media_id: "3f8b1c2a-1d4e-4a8b-9c0d-2e3f4a5b6c7d",
+    alt: "שולחן",
+    focus_x: 20,
+    focus_y: 80,
+  }
+
+  it("compares the image, its alt and its focus", () => {
+    expect(imageChanged(null, null)).toBe(false)
+    expect(imageChanged(undefined, null)).toBe(false)
+    expect(imageChanged(IMAGE, null)).toBe(true)
+    expect(imageChanged(null, IMAGE)).toBe(true)
+    expect(imageChanged(IMAGE, { ...IMAGE })).toBe(false)
+    expect(imageChanged(IMAGE, { ...IMAGE, alt: "אחר" })).toBe(true)
+    // Only whitespace around the alt is not a change.
+    expect(imageChanged(IMAGE, { ...IMAGE, alt: "  שולחן " })).toBe(false)
+    expect(imageChanged(IMAGE, { ...IMAGE, focus_x: 25 })).toBe(true)
+    expect(imageChanged(IMAGE, { ...IMAGE, focus_y: 75 })).toBe(true)
+    expect(
+      imageChanged(IMAGE, {
+        ...IMAGE,
+        media_id: "4f8b1c2a-1d4e-4a8b-9c0d-2e3f4a5b6c7d",
+      })
+    ).toBe(true)
   })
 })

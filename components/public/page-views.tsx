@@ -7,6 +7,7 @@ import {
 } from "@/components/public/public-page"
 import {
   FaqSection,
+  GallerySection,
   PublicSection,
   StepsSection,
   TestimonialsSection,
@@ -16,7 +17,11 @@ import {
   ContactDetails,
   hasContactDetails,
 } from "@/components/public/contact-details"
-import { sectionContent, type PublishedSections } from "@/lib/content/pages"
+import {
+  sectionContent,
+  type ImageMap,
+  type PublishedSections,
+} from "@/lib/content/pages"
 import type { BusinessDetailsContent } from "@/lib/content/schema"
 import { shellCopy } from "@/lib/copy/shell"
 
@@ -31,11 +36,13 @@ const copy = shellCopy.public
 // The home page: the hero, the intro, the upcoming sessions (a slot, dynamic
 // on the site), about (about › main), the testimonials (gallery ›
 // testimonials) and contact (home › contact, with the WhatsApp button; only
-// with a usable number).
+// with a usable number). images: the resolved images of these sections
+// (story 5.4; the published files, or the drafts in the admin preview).
 export function HomeView({
   home,
   about,
   gallery,
+  images = {},
   name,
   whatsappHref,
   sessions,
@@ -43,6 +50,7 @@ export function HomeView({
   home: PublishedSections
   about: PublishedSections
   gallery: PublishedSections
+  images?: ImageMap
   name: string
   whatsappHref: string | null
   sessions?: React.ReactNode
@@ -52,17 +60,25 @@ export function HomeView({
   const aboutMain = sectionContent(about, "main", "text_block")
   const testimonials = sectionContent(gallery, "testimonials", "testimonials")
   const contact = sectionContent(home, "contact", "text_block")
+  const imageOf = (image: { media_id: string } | undefined) =>
+    (image && images[image.media_id]) ?? null
 
   return (
     <>
-      <HomeHero hero={hero} name={name} />
+      <HomeHero hero={hero} name={name} image={imageOf(hero?.image)} />
       {intro && <TextBlockSection content={intro} />}
       {sessions}
-      {aboutMain && <TextBlockSection content={aboutMain} />}
+      {aboutMain && (
+        <TextBlockSection
+          content={aboutMain}
+          image={imageOf(aboutMain.image)}
+        />
+      )}
       {testimonials && (
         <TestimonialsSection
           content={testimonials}
           label={copy.sections.testimonials}
+          images={images}
         />
       )}
       {contact && whatsappHref && (
@@ -109,24 +125,37 @@ export function HowItWorksView({
   )
 }
 
-// /gallery: the text testimonials (the photos arrive in 5.4).
+// /gallery: the photos (gallery › photos, story 5.4), then the testimonials
+// (text and image).
 export function GalleryView({
   sections,
+  images = {},
   whatsappHref,
 }: {
   sections: PublishedSections
+  images?: ImageMap
   whatsappHref: string | null
 }) {
+  const photos = sectionContent(sections, "photos", "gallery")
   const testimonials = sectionContent(sections, "testimonials", "testimonials")
   return (
     <>
       <PublicPageHeading>{shellCopy.nav.gallery}</PublicPageHeading>
-      {testimonials ? (
+      {photos && (
+        <GallerySection
+          content={photos}
+          label={copy.sections.gallery}
+          images={images}
+        />
+      )}
+      {testimonials && (
         <TestimonialsSection
           content={testimonials}
           label={copy.sections.testimonials}
+          images={images}
         />
-      ) : (
+      )}
+      {!photos && !testimonials && (
         <EmptyPublicPage whatsappHref={whatsappHref} />
       )}
     </>

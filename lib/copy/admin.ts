@@ -147,6 +147,7 @@ export const adminCopy = {
       "home/contact": "יצירת קשר",
       "how-it-works/steps": "שלבים",
       "how-it-works/faq": "שאלות נפוצות",
+      "gallery/photos": "גלריה",
       "gallery/testimonials": "המלצות",
       "contact/intro": "פתיח",
       "contact/business_details": "פרטי העסק",
@@ -223,7 +224,24 @@ export const adminCopy = {
       add: "הוספת המלצה",
       name: "שם לתצוגה",
       text: "טקסט ההמלצה",
+      // Story 5.4: a testimonial is text or an image (a screenshot).
+      kind: "סוג ההמלצה",
+      kinds: { text: "טקסט", image: "תמונה" },
+      image: "צילום ההמלצה",
+      imageHint: "צילום מסך שכבר הוסתרו בו השם והטלפון",
+      imageName: "שם לתצוגה (לא חובה)",
+      altHint: "מומלץ: תמלול קצר של ההמלצה, בשביל מי שלא רואה את התמונה",
     },
+    // gallery › photos (story 5.4).
+    gallery: {
+      item: (n: number) => `תמונה ${n}`,
+      add: "הוספת תמונה",
+      image: "תמונה",
+      caption: "כיתוב (לא חובה)",
+    },
+    // The image of a block (hero, about).
+    blockImage: "תמונה (לא חובה)",
+    heroImageHint: "מוצגת מאחורי הכותרת, בגובה המסך",
     footerLinks: {
       item: (n: number) => `קישור ${n}`,
       add: "הוספת קישור",
@@ -295,6 +313,31 @@ export const adminCopy = {
     previewBar: "תצוגה מקדימה — עוד לא פורסם",
     previewNoChanges: "תצוגה מקדימה — כמו שמוצג עכשיו באתר",
     backToEdit: "חזרה לעריכה",
+  },
+  // image-upload-field (story 5.4; DESIGN › image-upload-field). The alt text
+  // is recommended, not required (user decision 2026-10-05).
+  image: {
+    choose: "בחירת תמונה",
+    chooseHint: "JPG, PNG או WEBP. התמונה מוקטנת לפני ההעלאה",
+    replace: "החלפת התמונה",
+    remove: "הסרת התמונה",
+    uploading: "מעלה את התמונה…",
+    uploaded: "התמונה הועלתה. היא תוצג באתר אחרי הפרסום",
+    retry: "לנסות שוב",
+    notSupported: "סוג קובץ לא נתמך. אפשר לבחור JPG, PNG או WEBP",
+    tooLarge: "הקובץ גדול מדי. אפשר לבחור תמונה קטנה יותר",
+    uploadFailed: "ההעלאה לא הסתיימה",
+    unreadable: "לא הצלחנו לקרוא את התמונה. אפשר לבחור תמונה אחרת",
+    // A saved image whose file never reached the drafts.
+    notUploaded: "ההעלאה לא הסתיימה. אפשר להחליף את התמונה",
+    alt: "טקסט חלופי (מומלץ)",
+    altHint: "מומלץ: תיאור קצר של מה שרואים בתמונה, בשביל מי שלא רואה אותה",
+    // The focus point (DESIGN › image-upload-field: the crop frame).
+    focusTitle: "מה חשוב בתמונה",
+    focusHint: "נגעי בנקודה החשובה. המסגרת מראה מה ייראה בטלפון",
+    focusAt: (x: number, y: number) =>
+      `נקודת המוקד: ${x}% מהשמאל, ${y}% מלמעלה`,
+    previewAlt: "תצוגה מקדימה של התמונה",
   },
   // /admin/products (story 2.6, wording approved by the user on 2026-10-04).
   products: {
@@ -416,6 +459,67 @@ export const adminCopy = {
     duplicate: "שכפול לטיוטה",
     duplicateWhen: "מועד הטיוטה החדשה",
     duplicateSubmit: "יצירת הטיוטה",
+    // The session's image (story 5.4): saving publishes it.
+    image: {
+      label: "תמונה (לא חובה)",
+      hint: "בלי תמונה מוצגת תמונת הקונספט, אם יש",
+      save: "שמירת התמונה",
+      saved: "התמונה נשמרה ומוצגת באתר",
+      removed: "התמונה הוסרה",
+      // The session was created; its image was not saved (shown in the
+      // session's editor, where the image is saved again).
+      createdWithoutImage:
+        "המפגש נוצר, אבל התמונה לא נשמרה. אפשר לבחור אותה שוב ולשמור כאן",
+    },
+    // The session's details, the morning view and the manual booking (story
+    // 3.4, wording from the spec's design notes).
+    attendees: "מי מגיעה",
+    manualBooking: "רישום ידני",
+    edit: "עריכה",
+    morningView: "למבט בוקר המפגש",
+    toDetails: "לפרטי המפגש",
+    bookForDate: "לרישום לתאריך",
+    summary: {
+      places: "מקומות",
+      bookings: "נרשמות",
+      babies: "תינוקות",
+      allergies: "אלרגיות",
+    },
+    noAttendees: "עוד אין נרשמות",
+    couple: "×2",
+    pendingJoin: "לקוחה חדשה · ממתינה להצטרפות",
+    detailsRemoved: "פרטי הלקוחה הוסרו",
+    companion: (note: string) => `מלווה: ${note}`,
+    // A baby's age on the session's day, computed for display only.
+    babyLine: (name: string, age: string) => (age ? `${name} · ${age}` : name),
+    babyAge: {
+      newborn: "פחות משבוע",
+      weeks: (n: number) =>
+        n === 1 ? "שבוע" : n === 2 ? "שבועיים" : `${n} שבועות`,
+      months: (n: number) =>
+        n === 1 ? "חודש" : n === 2 ? "חודשיים" : `${n} חודשים`,
+    },
+    // "({n}/{n})" when every place is taken; a couple session with one place
+    // left is full too.
+    full: (occupied: number, capacity: number) =>
+      `המפגש מלא (${occupied}/${capacity})`,
+    raiseCapacity: "להעלות את המכסה",
+    addPayment: "הוספת תשלום",
+    willUse: (product: string, expiresOn: string) =>
+      `ינוצל: כניסה מ${product}, בתוקף עד ${expiresOn}`,
+    bookCustomer: (name: string) => `לרשום את ${name}`,
+    booked: (name: string) => `${name} נרשמה למפגש`,
+    bookAnother: "רישום לקוחה נוספת",
+    chooseSession: "בחירת מפגש",
+    noBookableSessions: "אין מפגש פתוח לרישום",
+    // A refusal on the manual booking screen, worded for Tal (lib/errors.ts
+    // speaks to the customer). Any other code keeps errorMessage.
+    bookRefusal: {
+      NO_MATCHING_ENTITLEMENT: "ללקוחה אין זכות שמתאימה למפגש הזה",
+      ENTITLEMENT_EXPIRED_ON_DATE: "הזכות של הלקוחה אינה בתוקף ביום המפגש",
+      EVENT_FULL: "המפגש מלא. כדי לרשום אותה צריך קודם להעלות את המכסה",
+      EVENT_NOT_BOOKABLE: "המפגש לא פורסם, ולכן אי אפשר לרשום אליו",
+    } as Record<string, string>,
   },
   // value-change-row (story 2.6; EXPERIENCE › Component Patterns).
   valueChange: {

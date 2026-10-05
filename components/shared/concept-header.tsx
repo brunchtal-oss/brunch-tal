@@ -1,4 +1,5 @@
 import { customerCopy } from "@/lib/copy/customer"
+import type { SessionPhotoData } from "@/lib/media/photo"
 import { formatAccessibleDateTime, formatSessionDateTime } from "@/lib/time"
 
 import { SessionPhoto } from "./session-photo"
@@ -8,16 +9,16 @@ import { SessionPhoto } from "./session-photo"
 // DESIGN.md › concept-header): the photo at 4:3, full-bleed inside the 24px
 // gutter of the customer shell, then "בראנץ׳", the concept name (the page's
 // h1) in the site's heading face (display-lg) and the date, in the site's
-// ink. No concept colour or face.
+// ink. No concept colour or face. The photo (story 5.4) is the session's,
+// else its concept's, with its alt text, at its focus point; loaded first.
 export function ConceptHeader({
   conceptName,
-  photoUrl,
+  photo = null,
   startsAt,
   children,
 }: {
   conceptName: string
-  // The session's photo, else its concept's (story 5.4); none yet.
-  photoUrl?: string | null
+  photo?: SessionPhotoData | null
   startsAt: string
   // Under the date (e.g. the status-chip).
   children?: React.ReactNode
@@ -25,7 +26,10 @@ export function ConceptHeader({
   return (
     <header className="-mx-6 -mt-2">
       <SessionPhoto
-        src={photoUrl}
+        src={photo?.photoUrl}
+        alt={photo?.photoAlt}
+        focusX={photo?.focusX}
+        focusY={photo?.focusY}
         sizes="(min-width: 640px) 640px, 100vw"
         priority
       />

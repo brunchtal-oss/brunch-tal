@@ -2,6 +2,13 @@ import "server-only"
 
 import type { SupabaseClient } from "@supabase/supabase-js"
 
+import {
+  CONCEPT_IMAGE_SELECT,
+  SESSION_IMAGE_SELECT,
+  sessionPhoto,
+  type MediaRow,
+  type SessionPhotoData,
+} from "@/lib/media/photo"
 import type { Database } from "@/lib/supabase/database.types"
 import { createPublicClient } from "@/lib/supabase/public"
 
@@ -13,8 +20,9 @@ import { createPublicClient } from "@/lib/supabase/public"
 // session, so the reads also keep only published sessions that have not
 // started. Not cached (AD-2): the callers run after `await connection()`.
 
-export const PUBLIC_SESSION_COLUMNS =
-  "id, starts_at, description, display_price_agorot, concepts(name, description)"
+// The photo (story 5.4): the session's image, else its concept's, through a
+// join to media_assets (anon sees only published images).
+export const PUBLIC_SESSION_COLUMNS = `id, starts_at, description, display_price_agorot, ${SESSION_IMAGE_SELECT}, concepts(name, description, ${CONCEPT_IMAGE_SELECT})`
 
 export type PublicSession = {
   id: string
@@ -24,6 +32,8 @@ export type PublicSession = {
   description: string | null
   display_price_agorot: number | null
   concept_name: string
+  // The session's photo, else its concept's; null without one.
+  photo: SessionPhotoData | null
 }
 
 type PublicSessionRow = {
@@ -31,7 +41,12 @@ type PublicSessionRow = {
   starts_at: string
   description: string | null
   display_price_agorot: number | null
-  concepts: { name: string; description: string | null } | null
+  image?: MediaRow | null
+  concepts: {
+    name: string
+    description: string | null
+    default_image?: MediaRow | null
+  } | null
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -49,6 +64,7 @@ export function toPublicSession(row: PublicSessionRow): PublicSession {
     display_price_agorot: row.display_price_agorot,
     // The concept is a required FK, so never missing in practice.
     concept_name: row.concepts?.name ?? "",
+    photo: sessionPhoto(row.image, row.concepts?.default_image),
   }
 }
 
@@ -77,7 +93,7 @@ export async function listUpcomingPublicSessions(
     .order("id")
     .limit(limit)
   if (error) throw new Error("public sessions read failed")
-  return (data as PublicSessionRow[]).map(toPublicSession)
+  return (data as unknown as PublicSessionRow[]).map(toPublicSession)
 }
 
 /**
@@ -98,5 +114,5 @@ export async function getPublicSession(
     .gt("starts_at", nowIso())
     .maybeSingle()
   if (error) throw new Error("public session read failed")
-  return data ? toPublicSession(data as PublicSessionRow) : null
+  return data ? toPublicSession(data as unknown as PublicSessionRow) : null
 }

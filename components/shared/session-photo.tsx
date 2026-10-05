@@ -1,22 +1,28 @@
 import Image from "next/image"
 import { CroissantIcon } from "lucide-react"
 
+import { objectPosition } from "@/lib/media/photo"
 import { cn } from "@/lib/utils"
 
-// The photo of a session, 4:3 unless the caller sets another aspect (user's decision 2026-10-04, UX memlog: one
-// uniform card, a photo on every card). The session's own photo, else its
-// concept's photo; both come with story 5.4 (upload and storage). Until then,
-// and for any session without one, a quiet muted surface with a decorative
-// mark in the accent colour: never an empty frame. alt "" when decorative.
+// The photo of a session, 4:3 unless the caller sets another aspect (user's
+// decision 2026-10-04, UX memlog: one uniform card, a photo on every card).
+// The session's own photo, else its concept's (story 5.4), shown at its
+// focus point (object-position) in every aspect; lazy unless priority. For
+// any session without one, a quiet muted surface with a decorative mark in
+// the accent colour: never an empty frame. alt "" when decorative.
 export function SessionPhoto({
   src,
   alt = "",
+  focusX = 50,
+  focusY = 50,
   sizes,
   priority = false,
   className,
 }: {
   src?: string | null
   alt?: string
+  focusX?: number
+  focusY?: number
   sizes: string
   priority?: boolean
   className?: string
@@ -36,6 +42,7 @@ export function SessionPhoto({
           sizes={sizes}
           priority={priority}
           className="object-cover"
+          style={{ objectPosition: objectPosition(focusX, focusY) }}
         />
       ) : (
         <div aria-hidden className="absolute inset-0 grid place-items-center">

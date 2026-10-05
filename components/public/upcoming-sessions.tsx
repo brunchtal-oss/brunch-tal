@@ -49,7 +49,7 @@ export function UpcomingSessionsSection({
             <PublicSessionCard
               session={session}
               headingLevel={3}
-              photoAspect="aspect-[5/2]"
+              layout="horizontal"
             />
           </li>
         ))}

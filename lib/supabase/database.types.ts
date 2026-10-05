@@ -378,6 +378,7 @@ export type Database = {
         Row: {
           archived_at: string | null
           created_at: string
+          default_image_id: string | null
           default_kind: string
           description: string | null
           generic_paper_key: string | null
@@ -389,6 +390,7 @@ export type Database = {
         Insert: {
           archived_at?: string | null
           created_at?: string
+          default_image_id?: string | null
           default_kind: string
           description?: string | null
           generic_paper_key?: string | null
@@ -400,6 +402,7 @@ export type Database = {
         Update: {
           archived_at?: string | null
           created_at?: string
+          default_image_id?: string | null
           default_kind?: string
           description?: string | null
           generic_paper_key?: string | null
@@ -408,7 +411,15 @@ export type Database = {
           sort_order?: number
           theme_key?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "concepts_default_image_id_fkey"
+            columns: ["default_image_id"]
+            isOneToOne: false
+            referencedRelation: "media_assets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       content_pages: {
         Row: {
@@ -646,6 +657,7 @@ export type Database = {
           display_price_agorot: number | null
           ends_at: string
           id: string
+          image_id: string | null
           kind: string
           registration_close_overridden: boolean
           registration_closes_at: string
@@ -662,6 +674,7 @@ export type Database = {
           display_price_agorot?: number | null
           ends_at: string
           id?: string
+          image_id?: string | null
           kind: string
           registration_close_overridden?: boolean
           registration_closes_at: string
@@ -678,6 +691,7 @@ export type Database = {
           display_price_agorot?: number | null
           ends_at?: string
           id?: string
+          image_id?: string | null
           kind?: string
           registration_close_overridden?: boolean
           registration_closes_at?: string
@@ -694,7 +708,59 @@ export type Database = {
             referencedRelation: "concepts"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "events_image_id_fkey"
+            columns: ["image_id"]
+            isOneToOne: false
+            referencedRelation: "media_assets"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      media_assets: {
+        Row: {
+          alt_text: string | null
+          created_at: string
+          created_by: string | null
+          focus_x: number
+          focus_y: number
+          id: string
+          public_path: string
+          publish_started_at: string | null
+          publish_state: string
+          published_at: string | null
+          storage_path: string
+          updated_at: string
+        }
+        Insert: {
+          alt_text?: string | null
+          created_at?: string
+          created_by?: string | null
+          focus_x?: number
+          focus_y?: number
+          id: string
+          public_path: string
+          publish_started_at?: string | null
+          publish_state?: string
+          published_at?: string | null
+          storage_path: string
+          updated_at?: string
+        }
+        Update: {
+          alt_text?: string | null
+          created_at?: string
+          created_by?: string | null
+          focus_x?: number
+          focus_y?: number
+          id?: string
+          public_path?: string
+          publish_started_at?: string | null
+          publish_state?: string
+          published_at?: string | null
+          storage_path?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       notification_jobs: {
         Row: {
@@ -1087,10 +1153,28 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_begin_media_publish: {
+        Args: {
+          p_alt_text: string
+          p_focus_x: number
+          p_focus_y: number
+          p_media_id: string
+        }
+        Returns: Json
+      }
+      admin_book_customer: {
+        Args: {
+          p_customer_id: string
+          p_event_id: string
+          p_idempotency_key: string
+        }
+        Returns: Json
+      }
       admin_create_event: {
         Args: { p_event: Json; p_idempotency_key: string }
         Returns: Json
       }
+      admin_create_media: { Args: { p_idempotency_key: string }; Returns: Json }
       admin_create_product: {
         Args: { p_idempotency_key: string; p_product: Json }
         Returns: Json
@@ -1105,7 +1189,12 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_finish_media_publish: {
+        Args: { p_media_id: string }
+        Returns: Json
+      }
       admin_get_content_page: { Args: { p_slug: string }; Returns: Json }
+      admin_get_event_details: { Args: { p_event_id: string }; Returns: Json }
       admin_issue_link: {
         Args: {
           p_idempotency_key: string
@@ -1132,6 +1221,10 @@ export type Database = {
       admin_search_customers: { Args: { p_query: string }; Returns: Json }
       admin_set_content_draft: {
         Args: { p_content: Json; p_key: string; p_slug: string }
+        Returns: Json
+      }
+      admin_set_event_image: {
+        Args: { p_event_id: string; p_media_id: string }
         Returns: Json
       }
       admin_set_product_price: {
@@ -1198,6 +1291,10 @@ export type Database = {
           p_payment_method_id: string
           p_product_id: string
         }
+        Returns: Json
+      }
+      preview_admin_book_customer: {
+        Args: { p_customer_id: string; p_event_id: string }
         Returns: Json
       }
       preview_admin_set_product_price: {
