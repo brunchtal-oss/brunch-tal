@@ -159,6 +159,20 @@ export function buildPurchaseItems(rows: {
   })
 }
 
+/**
+ * Where the product's button leads: a pinned purchase to its session; a
+ * card with entries left straight to choosing dates (story 3.3,
+ * EXPERIENCE.md "בואי נבחר תאריכים"); anything else to the sessions list.
+ */
+export function joinButtonHref(
+  item: Pick<PurchaseItem, "session" | "available">,
+  isCard: boolean
+): string {
+  if (item.session) return `/me/sessions/${item.session.eventId}`
+  if (isCard && item.available > 0) return "/me/sessions?select=1"
+  return "/me/sessions"
+}
+
 function pinnedSession(
   eventId: string | null,
   paymentId: string,

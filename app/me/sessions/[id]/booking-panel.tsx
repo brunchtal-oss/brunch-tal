@@ -81,18 +81,7 @@ export function BookingPanel({
   }
 
   if (preview.kind === "booked") {
-    return (
-      <InlineNotice tone="success">
-        {copy.registered}
-        {preview.canSelfCancel && preview.cancelDeadline && (
-          <>
-            {" "}
-            {copy.cancelUntil("")}
-            <bdi>{formatSessionDateTime(preview.cancelDeadline)}</bdi>
-          </>
-        )}
-      </InlineNotice>
-    )
+    return <InlineNotice tone="success">{copy.registered}</InlineNotice>
   }
 
   if (preview.kind === "blocked") {
@@ -213,12 +202,6 @@ export function BookingPanel({
             </time>
           </dd>
         </dl>
-        <p className="mt-3 text-[15px] text-muted-foreground">
-          {copy.cancelUntil("")}
-          <time dateTime={preview.cancelDeadline}>
-            <bdi>{formatSessionDateTime(preview.cancelDeadline)}</bdi>
-          </time>
-        </p>
         {error && (
           <InlineNotice tone="error" className="mt-4">
             {errorMessage(error)}
@@ -233,7 +216,7 @@ export function BookingPanel({
           className="mt-5 h-12 w-full rounded-[4px] text-base font-semibold"
         >
           {busy && <Spinner aria-hidden />}
-          {copy.confirmBooking}
+          {copy.book}
         </Button>
       </SheetContent>
     </Sheet>

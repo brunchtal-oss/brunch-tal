@@ -14,7 +14,7 @@ import { formatAgorot } from "@/lib/money"
 import { createClient } from "@/lib/supabase/server"
 import { formatDayMonth, formatSessionDateTime } from "@/lib/time"
 
-import { buildPurchaseItems } from "./purchase-items"
+import { buildPurchaseItems, joinButtonHref } from "./purchase-items"
 
 export const metadata: Metadata = {
   title: shellCopy.customer.homeTitle,
@@ -91,7 +91,7 @@ async function Purchases() {
       .in("id", productIds),
     supabase
       .from("entitlements")
-      .select("id, eligibility_snapshot, pinned_event_id")
+      .select("id, eligibility_snapshot, pinned_event_id, kind")
       .in("id", entitlementIds),
     hasExpired ? getWhatsappHref() : Promise.resolve(null),
   ])
@@ -134,6 +134,12 @@ async function Purchases() {
     })),
   })
   if (items.length === 0) return null
+
+  // The cards, whose join button may go straight to choosing dates
+  // (joinButtonHref, story 3.3).
+  const cardIds = new Set(
+    entitlements.data.flatMap((e) => (e.kind === "card" ? [e.id] : []))
+  )
 
   return (
     <section aria-labelledby="balances-title" className="flex flex-col gap-6">
@@ -180,11 +186,7 @@ async function Purchases() {
           {item.message && <p className="text-base">{item.message}</p>}
           {item.buttonLabel && (
             <Link
-              href={
-                item.session
-                  ? `/me/sessions/${item.session.eventId}`
-                  : "/me/sessions"
-              }
+              href={joinButtonHref(item, cardIds.has(item.id))}
               className={buttonVariants({
                 size: "lg",
                 className: "h-12 max-w-xs text-base",

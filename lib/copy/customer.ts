@@ -40,9 +40,10 @@ export const customerCopy = {
   },
   booked: "נרשמת",
   withBabies: { regular: "מגיעות עם התינוקות", couple: "מגיעים עם התינוקות" },
+  // Also the confirm button of both booking sheets; no self-cancel deadline
+  // is shown (user decision 2026-10-05, the cancel button comes in 3.6).
   book: "להרשמה",
   registered: "את רשומה למפגש הזה.",
-  cancelUntil: (when: string) => `אפשר לבטל בעצמך עד ${when}`,
   allSessions: "לכל המפגשים",
   // The booking sheet.
   close: "סגירה",
@@ -52,11 +53,44 @@ export const customerCopy = {
   remainingValue: (count: number) =>
     count === 0 ? "אין כניסות" : count === 1 ? "כניסה אחת" : `${count} כניסות`,
   validUntilLabel: "בתוקף עד",
-  confirmBooking: "לשמור לי את המקום",
   // After the booking (the climax).
   climax: "המקום שלך סביב השולחן שמור",
   toMyBalance: "ליתרה שלי",
   // A pinned purchase whose session has not started (story 3.11): shown
   // instead of the balance card, before the product's message and button.
   pinnedSaved: "המקום שלך שמור",
+  // Several dates with a card (story 3.3, wording from the spec's Design
+  // Notes).
+  selectDates: "לבחור כמה תאריכים",
+  selectTitle: "בחירת תאריכים",
+  availableEntries: (count: number) =>
+    count === 0
+      ? "אין כניסות זמינות"
+      : count === 1
+        ? "כניסה אחת זמינה"
+        : `${count} כניסות זמינות`,
+  selectedCount: (count: number, max: number) => `נבחרו ${count} מתוך ${max}`,
+  continue: "להמשך",
+  clearSelection: "ביטול הבחירה",
+  // Why a date cannot be chosen, shown in its row.
+  unavailableReason: {
+    ALREADY_BOOKED: "נרשמת",
+    REGISTRATION_CLOSED: "ההרשמה נסגרה",
+    EVENT_FULL: "מלא",
+    ENTITLEMENT_EXPIRED_ON_DATE: "הכרטיסייה אינה בתוקף ביום הזה",
+    other: "לא מתאים לכרטיסייה",
+  },
+  // The summary sheet.
+  selectedDatesTitle: (count: number) =>
+    count === 1 ? "התאריך שבחרת" : `${count} התאריכים שבחרת`,
+  usesEntries: (count: number, product: string) =>
+    count === 1 ? `כניסה אחת מ${product}` : `${count} כניסות מ${product}`,
+  // The results, per date.
+  saved: "נשמר",
+  notSaved: "לא נשמר",
+  savedSome: (count: number, total: number) =>
+    `שמרנו לך ${count} מתוך ${total} תאריכים`,
+  savedNone: "לא הצלחנו לשמור את התאריכים שבחרת",
+  entryKept: (dayMonth: string) =>
+    `הכניסה של ${dayMonth} לא נוצלה ונשארה ביתרה שלך`,
 } as const
