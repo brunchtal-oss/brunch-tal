@@ -104,13 +104,18 @@ export type ApproveInput = {
   key: string
 }
 
+// The payer name of a new customer when a test gives none (required since
+// 2026-10-05). One name per run, so two unnamed approvals of a test are
+// still "similar" as before.
+export const DEFAULT_PAYER = testName("payer")
+
 export const APPROVE =
   "select public.admin_approve_payment($1, $2, $3, $4, $5, $6, $7::date, $8, $9, $10, $11, $12, $13) as r"
 
 export function approveParams(input: ApproveInput): unknown[] {
   return [
     input.customerId ?? null,
-    input.payerLabel ?? null,
+    input.payerLabel ?? (input.customerId ? null : DEFAULT_PAYER),
     input.productId,
     input.eventId ?? null,
     input.amount,

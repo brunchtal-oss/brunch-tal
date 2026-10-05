@@ -228,7 +228,8 @@ export function createPayload(
     date: draft.date,
     start_time: draft.startTime,
     end_time: draft.endTime,
-    kind: draft.kind,
+    // No kind: the session's kind is the concept's (user decision
+    // 2026-10-05; admin_create_event refuses one).
     description: draft.description.trim() || null,
     capacity_adults: parsePositiveInt(draft.capacityText),
   }

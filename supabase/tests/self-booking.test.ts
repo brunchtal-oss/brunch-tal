@@ -545,6 +545,34 @@ describe("funding rules (plan_funding)", () => {
     })
   })
 
+  // Story 3.11 (deferred from 3.2): a booking takes one entry whatever its
+  // party size; party_size counts places only.
+  it("a couple booking takes one entry: an entitlement with 1 available funds it with units 1", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const couple = await insertEvent(db, f, {
+        day: await localDay(db, 1, 2),
+        kind: "couple",
+        capacity: 14,
+      })
+      const entitlement = await insertEntitlement(db, f, {
+        customer: f.customerB,
+        kind: "couple",
+        eligibleKind: "couple",
+        units: 1,
+        pinnedTo: couple,
+      })
+      const { rows } = await db.query(
+        "select private.plan_funding($1, $2, 2, 'admin') as r",
+        [f.customerB, couple]
+      )
+      expect(rows[0].r).toEqual({
+        ok: true,
+        sources: [{ kind: "entitlement", id: entitlement.id, units: 1 }],
+      })
+    })
+  })
+
   it("of two matching entitlements, the one that ends first is used", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)

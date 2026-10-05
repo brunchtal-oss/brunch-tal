@@ -7,9 +7,11 @@ import {
   type ConflictReason,
   type JoinLinkState,
 } from "@/lib/auth/join-link-state"
+import { joinCopy } from "@/lib/copy/join"
 import type { ActionResult, ErrorCode } from "@/lib/errors"
 import { callRpc } from "@/lib/rpc"
 import { createServiceClient } from "@/lib/server/privileged/service-client"
+import { formatDayMonth, formatWeekday } from "@/lib/time"
 
 // Joining through a one-time link (AD-10, AD-21):
 // join_begin (intent: claiming + pending_user_id) -> Auth Admin
@@ -47,8 +49,23 @@ type TokenViewResult = {
   purpose: string | null
   product_name: string | null
   amount_agorot: number | null
+  // A pinned purchase's session (story 3.11); null for a days product.
+  session_starts_at?: string | null
+  concept_name?: string | null
   conflict_reason?: string | null
   bound_user_id?: string | null
+}
+
+// The purchase as the customer sees it: a pinned one by its session
+// ("בראנץ׳ {concept} · {day DD.MM}", story 3.11), otherwise the product.
+function purchaseName(view: TokenViewResult): string | null {
+  if (view.session_starts_at && view.concept_name) {
+    return joinCopy.pinnedPurchase(
+      view.concept_name,
+      `${formatWeekday(view.session_starts_at)} ${formatDayMonth(view.session_starts_at)}`
+    )
+  }
+  return view.product_name
 }
 
 // Opening the link never changes its state. Unknown, revoked, expired and
@@ -72,7 +89,7 @@ export async function getJoinTokenView(token: string): Promise<JoinTokenView> {
     case "awaiting_login":
       return {
         state: view.state_public,
-        productName: view.product_name,
+        productName: purchaseName(view),
         amountAgorot: view.amount_agorot,
         conflictReason: null,
         boundUserId:

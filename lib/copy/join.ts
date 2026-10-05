@@ -5,6 +5,10 @@
 // Error codes live in lib/errors.ts; these are the field messages of the form.
 
 export const joinCopy = {
+  // A pinned purchase is named by its session, not the product (story 3.11,
+  // user decision 2026-10-05). day: "{יום} DD.MM".
+  pinnedPurchase: (concept: string, day: string) =>
+    `בראנץ׳ ${concept} · ${day}`,
   title: "יצירת החשבון שלך",
   loading: "בודקת את הקישור…",
   fullName: "שם מלא",

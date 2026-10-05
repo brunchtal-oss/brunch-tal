@@ -243,3 +243,38 @@
   target: אחרי ההגשה
   summary: לאתר אין דף שגיאה כללי (`app/error.tsx`). פעולה שנשלחת בלי רשת (התחברות, הרשמה, ביטול) מציגה את דף ברירת המחדל של Next באנגלית ("This page couldn't load"). צריך דף שגיאה בעברית, בעיצוב האתר, עם "לנסות שוב" (מתחיל ב-frontend-design, נוסח לאישור).
   evidence: בדיקת האופליין בדפדפן אחרי 5.9 (2026-10-04): שליחת טופס ההתחברות בלי רשת. לא הוצג אישור, אבל הדף באנגלית. החלטת המשתמשת: לדחות.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-11-pinned-product-approval-and-placement.md`
+  target: 4.1
+  summary: פריט "שולם בלי מקום" ב"לטיפול": רכישה מוצמדת ש-`private.place_pinned_booking` השאיר ב-`park` (תשלום וזכות עם `pinned_event_id`, בלי הרשמה). ב-3.11 ה-`park` נבנה ונבדק רק בקריאה ישירה לליבה (`online`).
+  evidence: אין עדיין `admin_get_attention_items`; ‏`supabase/tests/pinned-approval.test.ts` (park).
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-11-pinned-product-approval-and-placement.md`
+  target: 3.4
+  summary: שורת "לקוחה חדשה · ממתינה להצטרפות" ברשימת הנרשמות של המפגש: הרשמה מוצמדת עם `customer_id` ריק עד ההצטרפות. היא כבר נספרת במכסה (`occupied_places`).
+  evidence: ‏3.11 יוצר את ההרשמות האלה; רשימת הנרשמות נבנית ב-3.4.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-11-pinned-product-approval-and-placement.md`
+  target: 2.9
+  summary: ‏`private.has_participated` קורא רק הרשמות שהסתיימו. כש-2.9 מוסיף השתתפות מיבוא או מתיקון של טל (`profiles.prior_participation_override`), הפונקציה צריכה לקרוא גם אותה, כדי שלקוחה מיובאת לא תקבל היכרות שוב (מקור §2).
+  evidence: ביקורת 3.11 (blind). העמודה עוד לא קיימת, ולכן לא נבדק עכשיו.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-11-pinned-product-approval-and-placement.md`
+  target: 3.6
+  summary: הרשמה מוצמדת עם `customer_id` ריק שההצטרפות שלה הסתיימה ב-`BIND_CONFLICT` ממשיכה לתפוס מקום במפגש. טל רואה רק קישור ב-conflict. צריך דרך לשחרר אותה (`admin_cancel_booking`) ולהציג אותה לטל ("לטיפול" של 4.1).
+  evidence: ביקורת 3.11 (blind, edge). אין עדיין ביטול באדמין.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-11-pinned-product-approval-and-placement.md`
+  target: סבב הסליקה
+  summary: ‏`approve_payment_core` זורק `INTRO_NOT_ELIGIBLE` גם במצב `park` (אחרת האינדקס הייחודי היה זורק 23505). כשנבנה המסלול המקוון: לבדוק את המקרה הזה ולהחליט מה רואה הלקוחה ששילמה.
+  evidence: ביקורת 3.11 (verification). אין עדיין קורא ל-`park`.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-11-pinned-product-approval-and-placement.md`
+  target: 5.16
+  summary: עמוד המפגש הציבורי צריך להציג את תיאור המפגש (אחרת של הקונספט) במקום השורה הקבועה "מגיעות/מגיעים עם התינוקות", כמו `/me/sessions/[id]` ב-3.11 (החלטת המשתמשת 2026-10-05, memlog של ה-UX: בכל עמוד שמציג מפגש).
+  evidence: בדיקת הטלפון של 3.11. ‏5.16 רץ במקביל, ולכן העמוד הציבורי לא שונה כאן.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-11-pinned-product-approval-and-placement.md`
+  target: סיפור קטן אחרי 3.11
+  summary: טקסט ברירת מחדל לפרטי בראנץ׳ שטל יכולה לערוך (למשל טקסט כללי כשאין תיאור למפגש ולקונספט, ועריכת תיאור הקונספט). החלטת המשתמשת 2026-10-05: בהמשך, כסיפור נפרד.
+  evidence: בדיקת הטלפון של 3.11.

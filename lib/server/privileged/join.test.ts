@@ -7,7 +7,9 @@ import {
   submitJoin,
   type JoinInput,
 } from "./join"
+import { joinCopy } from "@/lib/copy/join"
 import { createServiceClient } from "@/lib/server/privileged/service-client"
+import { formatDayMonth, formatWeekday } from "@/lib/time"
 
 const rpc = vi.fn()
 // token_view inside submitJoin (the guard before a password update) is routed
@@ -121,6 +123,27 @@ describe("getJoinTokenView", () => {
       boundUserId: null,
     })
     expect(rpc).toHaveBeenCalledWith("token_view", { p_token: TOKEN })
+  })
+
+  it("names a pinned purchase by its session, not the product (story 3.11)", async () => {
+    const startsAt = "2026-10-12T07:00:00Z"
+    rpc.mockResolvedValue({
+      data: {
+        ...view("active").data,
+        product_name: "Single",
+        amount_agorot: 12800,
+        session_starts_at: startsAt,
+        concept_name: "Mothers",
+      },
+      error: null,
+    })
+    await expect(getJoinTokenView(TOKEN)).resolves.toMatchObject({
+      productName: joinCopy.pinnedPurchase(
+        "Mothers",
+        `${formatWeekday(startsAt)} ${formatDayMonth(startsAt)}`
+      ),
+      amountAgorot: 12800,
+    })
   })
 
   it("returns the product of a link waiting for an existing account", async () => {

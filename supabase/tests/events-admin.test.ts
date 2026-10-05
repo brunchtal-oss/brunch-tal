@@ -138,10 +138,15 @@ describe("creating from a concept", () => {
         concept_id: f.concepts.grandma,
         ...WHEN,
       })
+      // The description comes from the concept (Tal may have written one).
+      const concept = await db.query<{ description: string | null }>(
+        "select description from public.concepts where id = $1",
+        [f.concepts.grandma]
+      )
       expect(await eventRow(db, id)).toMatchObject({
         concept_id: f.concepts.grandma,
         kind: "couple",
-        description: null,
+        description: concept.rows[0].description,
         capacity_adults: 14,
         status: "draft",
         revision: 1,
@@ -172,16 +177,16 @@ describe("creating from a concept", () => {
         capacity_adults: 12,
       })
 
+      // The kind is always the concept's (user decision 2026-10-05).
       const other = await create(db, f, {
         concept_id: f.concepts.greek,
         ...WHEN,
-        kind: "couple",
         description: "  " + testName("text") + "  ",
         display_price_agorot: 13800,
       })
       expect(await eventRow(db, other)).toMatchObject({
-        kind: "couple",
-        capacity_adults: 14,
+        kind: "regular",
+        capacity_adults: 12,
         description: testName("text"),
         display_price_agorot: 13800,
       })
@@ -319,8 +324,11 @@ describe("updating", () => {
         registration_close_overridden: false,
       })
 
-      // A kind change raises it too; a description does not.
-      await update({ kind: "couple" })
+      // A kind change raises it too (only a direct write can change the
+      // kind now: it follows the concept); a description does not.
+      await db.query("update public.events set kind = 'couple' where id = $1", [
+        id,
+      ])
       expect((await eventRow(db, id)).revision).toBe(5)
       await update({ description: testName("d") })
       expect((await eventRow(db, id)).revision).toBe(5)
@@ -339,7 +347,7 @@ describe("updating", () => {
   })
 
   // Story 3.2 (deferred 3.1 #7): until the impact view of 3.8.
-  it("with a confirmed booking: a new time or kind -> EVENT_HAS_BOOKINGS; capacity, description and the close still change", async () => {
+  it("with a confirmed booking: a new time -> EVENT_HAS_BOOKINGS; capacity, description and the close still change", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)
       const id = await create(db, f, {
@@ -363,7 +371,6 @@ describe("updating", () => {
         { start_time: "11:00" },
         { end_time: "13:00" },
         { date: "2026-12-16" },
-        { kind: "couple" },
       ]) {
         expect(await update(changes), JSON.stringify(changes)).toMatchObject({
           code: "P0001",
@@ -709,6 +716,16 @@ describe("invalid input", () => {
           "registration_closes_local",
         ],
         [UPDATE, [id, { kind: "triple" }, randomUUID()], "kind"],
+        // The kind follows the concept (user decision 2026-10-05).
+        [UPDATE, [id, { kind: "couple" }, randomUUID()], "kind"],
+        [
+          CREATE,
+          [
+            { concept_id: f.concepts.greek, ...WHEN, kind: "couple" },
+            randomUUID(),
+          ],
+          "kind",
+        ],
         [
           DUPLICATE,
           [id, "2027-01-05", "12:00", "11:00", randomUUID()],

@@ -66,6 +66,7 @@ const EXPECTED_GRANTS = [
   "function public.admin_duplicate_event(p_event_id uuid, p_date date, p_start_time time without time zone, p_end_time time without time zone, p_idempotency_key uuid) authenticated EXECUTE",
   "function public.admin_get_content_page(p_slug text) authenticated EXECUTE",
   "function public.admin_issue_link(p_purpose text, p_target_id uuid, p_idempotency_key uuid) authenticated EXECUTE",
+  "function public.admin_list_bookable_events() authenticated EXECUTE",
   "function public.admin_list_links() authenticated EXECUTE",
   "function public.admin_list_payments() authenticated EXECUTE",
   "function public.admin_publish_content(p_slug text, p_idempotency_key uuid) authenticated EXECUTE",

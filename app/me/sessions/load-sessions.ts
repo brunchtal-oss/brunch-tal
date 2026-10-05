@@ -12,12 +12,14 @@ import { parseAvailability, type Availability } from "./session-status"
 // the availability labels (get_event_availability; never a number).
 
 export const SESSION_COLUMNS =
-  "id, kind, status, description, starts_at, display_price_agorot, concepts(name)"
+  "id, kind, status, description, starts_at, display_price_agorot, concepts(name, description)"
 
 export type CustomerSession = {
   id: string
   kind: "regular" | "couple"
   status: string
+  // The session's description, else its concept's (story 3.11, user
+  // decision 2026-10-05).
   description: string | null
   starts_at: string
   display_price_agorot: number | null
@@ -35,11 +37,13 @@ export function toCustomerSession(row: {
   display_price_agorot: number | null
   concepts: {
     name: string
+    description?: string | null
   } | null
 }): CustomerSession {
   const { concepts, ...rest } = row
   return {
     ...rest,
+    description: rest.description ?? concepts?.description ?? null,
     kind: rest.kind === "couple" ? "couple" : "regular",
     concept_name: concepts?.name ?? "",
   }

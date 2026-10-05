@@ -22,7 +22,7 @@ const PRICE = "select public.admin_set_product_price($1, $2, $3, $4, $5) as r"
 const PRICE_PREVIEW =
   "select public.preview_admin_set_product_price($1, $2) as r"
 const APPROVE_PREVIEW =
-  "select public.preview_admin_approve_payment(null, null, $1, null, $2, $3::date, $4) as r"
+  "select public.preview_admin_approve_payment(null, 'Test payer', $1, null, $2, $3::date, $4) as r"
 const LIST = "select public.admin_list_payments() as r"
 
 async function one(db: Db, text: string, params: unknown[]) {
@@ -155,7 +155,7 @@ describe("hiding a product", () => {
       expect(
         await queryError(
           db,
-          "select public.admin_approve_payment(null, null, $1, null, 47200, null, $2::date, $3, null, null, null, null, $4)",
+          "select public.admin_approve_payment(null, 'Test payer', $1, null, 47200, null, $2::date, $3, null, null, null, null, $4)",
           [f.card, f.today, f.method, randomUUID()]
         )
       ).toMatchObject({ code: "P0001", message: "PRODUCT_NOT_AVAILABLE" })

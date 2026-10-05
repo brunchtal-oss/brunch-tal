@@ -27,10 +27,11 @@ export const metadata: Metadata = {
 }
 
 // One session for the signed-in customer (CAP-13, story 3.2): the
-// concept-header (the concept name is the h1), the status-chip, "with the
-// babies", the display price when Tal set one, then the action
-// (BookingPanel: the booking sheet, her booking, or the reason she cannot
-// book) and the description. Every value comes from the server
+// concept-header (the concept name is the h1), the status-chip, the
+// description (the session's, else its concept's; in place of "with the
+// babies", user decision 2026-10-05), the display price when Tal set one,
+// then the action (BookingPanel: the booking sheet, her booking, or the
+// reason she cannot book). Every value comes from the server
 // (preview_book_session, get_event_availability). Rendered inside the
 // layout's <Suspense> customer gate.
 export default function MeSessionPage({
@@ -83,7 +84,11 @@ async function SessionContent({ params }: { params: Promise<{ id: string }> }) {
         {status && <StatusChip tone={status.tone}>{status.text}</StatusChip>}
       </ConceptHeader>
       <div className="flex flex-col gap-1 text-base">
-        <p>{customerCopy.withBabies[session.kind]}</p>
+        {session.description && (
+          <p className="text-[17px] leading-relaxed whitespace-pre-line">
+            {session.description}
+          </p>
+        )}
         {session.display_price_agorot !== null && (
           <p>
             <bdi>{formatAgorot(session.display_price_agorot)}</bdi>
@@ -97,11 +102,6 @@ async function SessionContent({ params }: { params: Promise<{ id: string }> }) {
         preview={preview}
         contactHref={contactHref}
       />
-      {session.description && (
-        <p className="pb-8 text-[17px] leading-relaxed whitespace-pre-line">
-          {session.description}
-        </p>
-      )}
     </>
   )
 }

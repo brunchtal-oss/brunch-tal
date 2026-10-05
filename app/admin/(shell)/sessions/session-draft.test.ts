@@ -104,7 +104,6 @@ describe("createPayload", () => {
         date: "2026-12-15",
         start_time: "10:00",
         end_time: "12:00",
-        kind: "couple",
         description: "Text",
         capacity_adults: 14,
       },
