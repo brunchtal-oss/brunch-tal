@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from "vitest"
 
-import { answerFor, canSearch } from "./customer-search"
+import {
+  answerFor,
+  canSearch,
+  PAYMENT_HREF,
+  resultHref,
+} from "./customer-search"
 
 vi.mock("../actions", () => ({ searchCustomersAction: vi.fn() }))
 
@@ -24,5 +29,16 @@ describe("answerFor", () => {
     expect(answerFor("dan", answer)).toBeNull()
     expect(answerFor("d", answer)).toBeNull()
     expect(answerFor("dana", null)).toBeNull()
+  })
+})
+
+describe("resultHref", () => {
+  it("leads to the payment form by default, or to the given template (story 3.4)", () => {
+    expect(resultHref(PAYMENT_HREF, "c1")).toBe(
+      "/admin/payments/new/existing/c1"
+    )
+    expect(resultHref("/admin/sessions/e1/book?customer=:id", "c1")).toBe(
+      "/admin/sessions/e1/book?customer=c1"
+    )
   })
 })

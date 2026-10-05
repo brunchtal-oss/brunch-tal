@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import {
+  adminBookCustomerAction,
   createEventAction,
   duplicateEventAction,
+  previewAdminBookAction,
   publishEventAction,
   updateEventAction,
 } from "./actions"
@@ -147,6 +149,82 @@ describe("duplicateEventAction", () => {
         endTime: "11:30",
         idempotencyKey: KEY,
       })
+    ).resolves.toEqual({ ok: false, code: "INVALID_INPUT" })
+    expect(callRpc).not.toHaveBeenCalled()
+  })
+})
+
+const CUSTOMER_ID = "33333333-3333-4333-8333-333333333333"
+
+describe("adminBookCustomerAction (story 3.4)", () => {
+  it("books with the admin's session and the screen's key", async () => {
+    callRpc.mockResolvedValue({ ok: true, data: { booking_id: "b1" } })
+    await expect(
+      adminBookCustomerAction({
+        customerId: CUSTOMER_ID,
+        eventId: EVENT_ID,
+        idempotencyKey: KEY,
+      })
+    ).resolves.toEqual({ ok: true, data: { bookingId: "b1" } })
+    expect(callRpc).toHaveBeenCalledWith(
+      { session: true },
+      "admin_book_customer",
+      {
+        p_customer_id: CUSTOMER_ID,
+        p_event_id: EVENT_ID,
+        p_idempotency_key: KEY,
+      }
+    )
+  })
+
+  it("refuses a bad id or key without calling the RPC", async () => {
+    for (const input of [
+      { customerId: "x", eventId: EVENT_ID, idempotencyKey: KEY },
+      { customerId: CUSTOMER_ID, eventId: "x", idempotencyKey: KEY },
+      { customerId: CUSTOMER_ID, eventId: EVENT_ID, idempotencyKey: "x" },
+    ]) {
+      await expect(adminBookCustomerAction(input)).resolves.toEqual({
+        ok: false,
+        code: "INVALID_INPUT",
+      })
+    }
+    expect(callRpc).not.toHaveBeenCalled()
+  })
+
+  it("passes the RPC's code through", async () => {
+    callRpc.mockResolvedValue({ ok: false, code: "EVENT_FULL" })
+    await expect(
+      adminBookCustomerAction({
+        customerId: CUSTOMER_ID,
+        eventId: EVENT_ID,
+        idempotencyKey: KEY,
+      })
+    ).resolves.toEqual({ ok: false, code: "EVENT_FULL" })
+  })
+})
+
+describe("previewAdminBookAction (story 3.4)", () => {
+  it("returns the parsed preview", async () => {
+    callRpc.mockResolvedValue({
+      ok: true,
+      data: { ok: false, code: "EVENT_FULL", occupied: 12, capacity: 12 },
+    })
+    await expect(
+      previewAdminBookAction({ customerId: CUSTOMER_ID, eventId: EVENT_ID })
+    ).resolves.toEqual({
+      ok: true,
+      data: { ok: false, code: "EVENT_FULL", occupied: 12, capacity: 12 },
+    })
+    expect(callRpc).toHaveBeenCalledWith(
+      { session: true },
+      "preview_admin_book_customer",
+      { p_customer_id: CUSTOMER_ID, p_event_id: EVENT_ID }
+    )
+  })
+
+  it("refuses a bad id without calling the RPC", async () => {
+    await expect(
+      previewAdminBookAction({ customerId: "x", eventId: EVENT_ID })
     ).resolves.toEqual({ ok: false, code: "INVALID_INPUT" })
     expect(callRpc).not.toHaveBeenCalled()
   })

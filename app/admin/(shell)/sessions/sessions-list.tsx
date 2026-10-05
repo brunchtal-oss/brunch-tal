@@ -10,7 +10,8 @@ import { SessionStatusChip } from "./session-status-chip"
 const copy = adminCopy.sessions
 
 // The rows of /admin/sessions (story 3.1): "בראנץ׳ {concept}" with its
-// status-chip, then "{when} · {n} מקומות"; a row leads to its editor. By
+// status-chip, then "{when} · {n} מקומות"; a row leads to its details
+// (story 3.4). By
 // date. Empty: the line that points at "מפגש חדש".
 export function SessionsList({ rows }: { rows: readonly SessionRow[] }) {
   if (rows.length === 0) {
@@ -21,7 +22,7 @@ export function SessionsList({ rows }: { rows: readonly SessionRow[] }) {
       {rows.map((row) => (
         <li key={row.id} className="border-b border-border">
           <Link
-            href={`/admin/sessions/${row.id}/edit`}
+            href={`/admin/sessions/${row.id}`}
             className="flex min-h-14 items-center justify-between gap-3 py-3"
           >
             <span className="flex min-w-0 flex-col gap-0.5">
