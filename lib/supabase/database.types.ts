@@ -1160,6 +1160,10 @@ export type Database = {
         Args: { p_event_id: string; p_idempotency_key: string }
         Returns: Json
       }
+      book_sessions: {
+        Args: { p_idempotency_key: string; p_items: string[] }
+        Returns: Json
+      }
       claim_join: {
         Args: { p_idempotency_key: string; p_token: string }
         Returns: Json
@@ -1200,6 +1204,7 @@ export type Database = {
         Returns: Json
       }
       preview_book_session: { Args: { p_event_id: string }; Returns: Json }
+      preview_book_sessions: { Args: { p_items: string[] }; Returns: Json }
       reset_begin: {
         Args: { p_idempotency_key: string; p_token: string }
         Returns: Json

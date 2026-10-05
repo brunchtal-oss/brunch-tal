@@ -2,7 +2,40 @@ import { describe, expect, it } from "vitest"
 
 import { customerCopy } from "@/lib/copy/customer"
 
-import { buildPurchaseItems, type BalanceRow } from "./purchase-items"
+import {
+  buildPurchaseItems,
+  joinButtonHref,
+  type BalanceRow,
+} from "./purchase-items"
+
+describe("joinButtonHref", () => {
+  const session = {
+    eventId: "ev-1",
+    startsAt: "2026-10-12T07:00:00Z",
+    conceptName: "יווני",
+  }
+
+  it("a card with entries goes to choosing dates", () => {
+    expect(joinButtonHref({ session: null, available: 2 }, true)).toBe(
+      "/me/sessions?select=1"
+    )
+  })
+
+  it("a card with no entries left, or another product, goes to the sessions list", () => {
+    expect(joinButtonHref({ session: null, available: 0 }, true)).toBe(
+      "/me/sessions"
+    )
+    expect(joinButtonHref({ session: null, available: 1 }, false)).toBe(
+      "/me/sessions"
+    )
+  })
+
+  it("a pinned purchase with its session goes to that session", () => {
+    expect(joinButtonHref({ session, available: 1 }, false)).toBe(
+      "/me/sessions/ev-1"
+    )
+  })
+})
 
 const balance = (overrides: Partial<BalanceRow> = {}): BalanceRow => ({
   entitlement_id: "ent-1",

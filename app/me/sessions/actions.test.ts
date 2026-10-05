@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { bookSessionAction } from "./actions"
+import { bookSessionAction, bookSessionsAction } from "./actions"
 
 const callRpc = vi.fn()
 
@@ -52,5 +52,55 @@ describe("bookSessionAction", () => {
     await expect(
       bookSessionAction({ eventId: EVENT_ID, idempotencyKey: KEY })
     ).resolves.toEqual({ ok: false, code: "EVENT_FULL" })
+  })
+})
+
+describe("bookSessionsAction", () => {
+  const OTHER = "44444444-4444-4444-8444-444444444444"
+
+  it("books the dates with the customer's session and the sheet's key, and returns the RPC's results", async () => {
+    const results = { results: [{ event_id: EVENT_ID, ok: true }] }
+    callRpc.mockResolvedValue({ ok: true, data: results })
+    await expect(
+      bookSessionsAction({ eventIds: [EVENT_ID, OTHER], idempotencyKey: KEY })
+    ).resolves.toEqual({ ok: true, data: results })
+    expect(callRpc).toHaveBeenCalledWith({ session: true }, "book_sessions", {
+      p_items: [EVENT_ID, OTHER],
+      p_idempotency_key: KEY,
+    })
+  })
+
+  it("refuses an empty list, more than 20, a duplicate, a bad id or key without calling the RPC", async () => {
+    for (const input of [
+      { eventIds: [], idempotencyKey: KEY },
+      {
+        eventIds: Array.from(
+          { length: 21 },
+          (_, i) => `11111111-1111-4111-8111-${String(i).padStart(12, "0")}`
+        ),
+        idempotencyKey: KEY,
+      },
+      { eventIds: [EVENT_ID, EVENT_ID.toUpperCase()], idempotencyKey: KEY },
+      { eventIds: ["nope"], idempotencyKey: KEY },
+      { eventIds: [5], idempotencyKey: KEY },
+      { eventIds: EVENT_ID, idempotencyKey: KEY },
+      { eventIds: [EVENT_ID], idempotencyKey: "nope" },
+      null,
+    ]) {
+      await expect(
+        bookSessionsAction(
+          input as unknown as { eventIds: string[]; idempotencyKey: string }
+        ),
+        JSON.stringify(input)
+      ).resolves.toEqual({ ok: false, code: "INVALID_INPUT" })
+    }
+    expect(callRpc).not.toHaveBeenCalled()
+  })
+
+  it("passes the RPC's code through", async () => {
+    callRpc.mockResolvedValue({ ok: false, code: "NOT_AUTHORIZED" })
+    await expect(
+      bookSessionsAction({ eventIds: [EVENT_ID], idempotencyKey: KEY })
+    ).resolves.toEqual({ ok: false, code: "NOT_AUTHORIZED" })
   })
 })

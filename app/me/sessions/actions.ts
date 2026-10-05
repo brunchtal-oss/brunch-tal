@@ -31,3 +31,29 @@ export async function bookSessionAction(input: {
   const booked = result.data as { booking_id: string }
   return { ok: true, data: { bookingId: booked.booking_id } }
 }
+
+// Several dates with a card (story 3.3). book_sessions checks each date
+// again and answers per date; this action checks only the shape: 1 to 20
+// distinct session ids and the key made when the summary sheet opened. The
+// per-date results are returned as they came (parsed by the screen).
+export async function bookSessionsAction(input: {
+  eventIds: string[]
+  idempotencyKey: string
+}): Promise<ActionResult<unknown>> {
+  const ids: unknown = input?.eventIds
+  if (
+    !Array.isArray(ids) ||
+    ids.length < 1 ||
+    ids.length > 20 ||
+    !ids.every((id) => typeof id === "string" && UUID.test(id)) ||
+    new Set(ids.map((id: string) => id.toLowerCase())).size !== ids.length ||
+    typeof input.idempotencyKey !== "string" ||
+    !UUID.test(input.idempotencyKey)
+  ) {
+    return { ok: false, code: "INVALID_INPUT" }
+  }
+  return callRpc(await createClient(), "book_sessions", {
+    p_items: ids as string[],
+    p_idempotency_key: input.idempotencyKey,
+  })
+}
