@@ -20,6 +20,7 @@ export const shellCopy = {
     payments: "תשלומים",
     more: "עוד",
     // The public pages (menu-sheet); also each page's h1 and <title>.
+    publicSessions: "בראנצ׳ים",
     howItWorks: "איך זה עובד ושאלות נפוצות",
     gallery: "גלריה והמלצות",
     contact: "יצירת קשר",
@@ -51,6 +52,18 @@ export const shellCopy = {
       steps: "איך זה עובד",
       faq: "שאלות נפוצות",
       testimonials: "המלצות",
+    },
+    // The public session pages and the home page's upcoming sessions
+    // (story 5.16, user decision 2026-10-05).
+    sessions: {
+      upcoming: "הבראנצ׳ים הקרובים",
+      all: "לכל הבראנצ׳ים",
+      // The guest's action on a session page: "להרשמה התחברי או צרי קשר",
+      // "התחברי" to the login page and "צרי קשר" to WhatsApp.
+      guestBefore: "להרשמה ",
+      guestContact: "צרי קשר",
+      guestOr: " או ",
+      guestLogin: "התחברי",
     },
     // The business details (contact page, footer) and home › contact's
     // WhatsApp button.

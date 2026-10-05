@@ -27,10 +27,11 @@ export const metadata: Metadata = {
 }
 
 // One session for the signed-in customer (CAP-13, story 3.2): the
-// concept-header (the concept name is the h1), the status-chip, "with the
-// babies", the display price when Tal set one, then the action
-// (BookingPanel: the booking sheet, her booking, or the reason she cannot
-// book) and the description. Every value comes from the server
+// concept-header (the concept name is the h1), the status-chip, the display
+// price when Tal set one, the description (the session's, else the
+// concept's), then the action (BookingPanel: the booking sheet, her booking,
+// or the reason she cannot book). No "with the babies" line (user's decision
+// 2026-10-05, as on the public session page). Every value comes from the server
 // (preview_book_session, get_event_availability). Rendered inside the
 // layout's <Suspense> customer gate.
 export default function MeSessionPage({
@@ -82,26 +83,25 @@ async function SessionContent({ params }: { params: Promise<{ id: string }> }) {
       >
         {status && <StatusChip tone={status.tone}>{status.text}</StatusChip>}
       </ConceptHeader>
-      <div className="flex flex-col gap-1 text-base">
-        <p>{customerCopy.withBabies[session.kind]}</p>
-        {session.display_price_agorot !== null && (
-          <p>
-            <bdi>{formatAgorot(session.display_price_agorot)}</bdi>
-          </p>
-        )}
-      </div>
-      <BookingPanel
-        eventId={session.id}
-        title={customerCopy.sessionTitle(session.concept_name)}
-        startsAt={session.starts_at}
-        preview={preview}
-        contactHref={contactHref}
-      />
+      {session.display_price_agorot !== null && (
+        <p className="text-base">
+          <bdi>{formatAgorot(session.display_price_agorot)}</bdi>
+        </p>
+      )}
       {session.description && (
-        <p className="pb-8 text-[17px] leading-relaxed whitespace-pre-line">
+        <p className="text-[17px] leading-relaxed text-pretty whitespace-pre-line">
           {session.description}
         </p>
       )}
+      <div className="pb-8">
+        <BookingPanel
+          eventId={session.id}
+          title={customerCopy.sessionTitle(session.concept_name)}
+          startsAt={session.starts_at}
+          preview={preview}
+          contactHref={contactHref}
+        />
+      </div>
     </>
   )
 }

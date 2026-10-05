@@ -24,11 +24,11 @@ export const adminMoreNav: readonly { href: string; label: string }[] = [
 ]
 
 // The public pages, in the menu-sheet's fixed order (story 5.2). Each
-// label is also the page's h1 and <title>. Only pages that exist; 3.2 adds
-// /sessions ("הבראנצ׳ים", after home) with its page, and the hero's button
-// appears with it.
+// label is also the page's h1 and <title>. Only pages that exist; /sessions
+// ("בראנצ׳ים", after home, story 5.16).
 export const publicNav: readonly { href: string; label: string }[] = [
   { href: "/", label: shellCopy.nav.home },
+  { href: "/sessions", label: shellCopy.nav.publicSessions },
   { href: "/how-it-works", label: shellCopy.nav.howItWorks },
   { href: "/gallery", label: shellCopy.nav.gallery },
   { href: "/contact", label: shellCopy.nav.contact },
@@ -67,8 +67,9 @@ export function currentPublicHref(
   return match?.href ?? null
 }
 
-// The hero's button leads to /sessions, so it is shown only once that page
-// is in the public navigation (and therefore exists, lib/nav.test.ts).
+// The public sessions list (story 5.16), linked from the home page's
+// upcoming sessions. The hero has no button since 5.16 (user's decision
+// 2026-10-05).
 export const SESSIONS_HREF = "/sessions"
 
 export function hasPublicSessions(
