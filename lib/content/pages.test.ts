@@ -4,6 +4,7 @@ import {
   getPublishedPageSlugs,
   getPublishedSections,
   sectionContent,
+  toSections,
 } from "./pages"
 
 const order = vi.fn()
@@ -79,6 +80,32 @@ describe("getPublishedSections", () => {
     expect(cacheTag).toHaveBeenCalledWith("content:global")
   })
 
+  it("leaves hidden sections and items out (story 5.3)", async () => {
+    order.mockResolvedValue({
+      data: [
+        {
+          key: "steps",
+          kind: "steps",
+          published_content: { hidden: true, ...STEPS },
+        },
+        {
+          key: "faq",
+          kind: "faq",
+          published_content: {
+            items: [
+              { question: "hidden", answer: "a", hidden: true },
+              ...FAQ.items,
+            ],
+          },
+        },
+      ],
+      error: null,
+    })
+    await expect(getPublishedSections("how-it-works")).resolves.toEqual({
+      faq: { kind: "faq", content: FAQ },
+    })
+  })
+
   it("gives {} on a read error", async () => {
     const log = vi.spyOn(console, "error").mockImplementation(() => {})
     order.mockResolvedValue({ data: null, error: { message: "x" } })
@@ -104,6 +131,18 @@ describe("getPublishedPageSlugs", () => {
     inList.mockResolvedValue({ data: null, error: { message: "x" } })
     await expect(getPublishedPageSlugs(["privacy"])).resolves.toEqual([])
     log.mockRestore()
+  })
+})
+
+describe("toSections", () => {
+  it("is the same rule for the preview's drafts", () => {
+    expect(
+      toSections([
+        { key: "faq", kind: "faq", content: { items: [] } },
+        { key: "steps", kind: "steps", content: STEPS },
+        { key: "bad", kind: "faq", content: { items: [{ question: "q" }] } },
+      ])
+    ).toEqual({ steps: { kind: "steps", content: STEPS } })
   })
 })
 

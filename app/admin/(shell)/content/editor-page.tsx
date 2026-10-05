@@ -1,66 +1,72 @@
 import { randomUUID } from "node:crypto"
 
-import { schemaForKind } from "@/lib/content/schema"
+import { schemaForSection } from "@/lib/content/schema"
+import { adminCopy } from "@/lib/copy/admin"
 
-import { ContentEditor, type EditorField } from "./content-editor"
+import { ContentEditor } from "./content-editor"
 import {
-  EDITABLE_PAGES,
   editorContent,
   hasPendingDraft,
-  pageStatus,
+  sectionHidden,
   sectionOf,
-  type EditableSlug,
+  sectionStatus,
+  type EditorPageId,
+  type SectionRef,
 } from "./content-items"
 import { ContentStatusChip, statusHint } from "./content-status-chip"
 import { loadContentPage } from "./load-page"
+import { fromContent, keptFields, sectionSpec } from "./section-fields"
 
-// The data part of an editor page (inside the page's <Suspense>): reads the
-// page with the admin's session and hands the editor its section, as text
-// fields, with a fresh publish key (AD-5).
+const copy = adminCopy.content
+
+// The data part of a section's editor (inside the page's <Suspense>): reads
+// the section's page with the admin's session and hands the editor the
+// section's content as its form state, with a fresh publish key (AD-5).
 export async function EditorContent({
-  slug,
-  fields,
-  previewHref,
+  pageId,
+  sectionRef: ref,
 }: {
-  slug: EditableSlug
-  fields: readonly EditorField[]
-  previewHref?: string
+  pageId: EditorPageId
+  sectionRef: SectionRef
 }) {
-  const page = await loadContentPage(slug)
-  const section = sectionOf(page, EDITABLE_PAGES[slug].key)
-  if (!section) throw new Error(`content section of ${slug} is missing`)
+  const page = await loadContentPage(ref.slug)
+  const section = sectionOf(page, ref.key)
+  if (!section)
+    throw new Error(`content section ${ref.slug}/${ref.key} is missing`)
 
   const content = editorContent(section)
-  const initial = Object.fromEntries(
-    fields.map((field) => {
-      const value = content[field.name]
-      return [field.name, typeof value === "string" ? value : ""]
-    })
-  )
+  const spec = sectionSpec(ref)
   const pending = hasPendingDraft(section)
   const draftInvalid =
     pending &&
-    !schemaForKind(section.kind)?.safeParse(section.draft_content).success
+    !schemaForSection(ref.slug, ref.key, section.kind)?.safeParse(
+      section.draft_content
+    ).success
 
-  const status = pageStatus(page)
+  const status = sectionStatus(page, section)
+  const hidden = sectionHidden(section)
 
   return (
     <>
       <div className="flex flex-wrap items-center gap-3">
         <ContentStatusChip status={status} />
+        {hidden && <ContentStatusChip status="hidden" />}
         <p className="text-[15px] text-muted-foreground">
           {statusHint(status)}
         </p>
       </div>
       <ContentEditor
-        slug={slug}
+        slug={ref.slug}
+        sectionKey={ref.key}
         kind={section.kind}
-        fields={fields}
-        initial={initial}
+        initial={fromContent(spec, content)}
+        keep={keptFields(ref, content)}
         hasPending={pending}
         publishKey={randomUUID()}
-        previewHref={previewHref}
+        previewHref={`/admin/content/${pageId}/preview?section=${ref.key}`}
         draftInvalid={draftInvalid}
+        backHref={`/admin/content/${pageId}`}
+        backLabel={copy.backToPage(copy.pages[pageId])}
       />
     </>
   )

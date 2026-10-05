@@ -1,22 +1,105 @@
 import type { z } from "zod"
 
-import { schemaForKind } from "@/lib/content/schema"
+import { schemaForSection } from "@/lib/content/schema"
 import { adminCopy } from "@/lib/copy/admin"
 
-// The content editor's view of admin_get_content_page (story 5.1) and the
-// pure rules on it: which pages are edited here, a section's pending draft,
-// the chip of a page, and the field errors of a draft.
+// The content editor's view of admin_get_content_page (stories 5.1, 5.3) and
+// the pure rules on it: which sections are edited here, a section's pending
+// draft and chip, and the field errors of a draft.
 
-// The pages edited in 5.1, each with its one section (5.3 adds the rest).
+// A section of the site (content_sections: page_slug, key, kind).
+export type SectionRef = { slug: EditableSlug; key: string; kind: string }
+
+// The editor's pages are grouped by where they are on the site (story 5.3):
+// each is the list of its sections, in the site's order. about › main is
+// shown only on the home page, so it is a row of "home"; the testimonials
+// are also shown on the home page but edited in "gallery". Saving and
+// publishing act on a section's slug.
 export const EDITABLE_PAGES = {
-  home: { key: "hero" },
-  contact: { key: "business_details" },
-} as const
+  home: [
+    { slug: "home", key: "hero", kind: "hero" },
+    { slug: "home", key: "intro", kind: "text_block" },
+    { slug: "about", key: "main", kind: "text_block" },
+    { slug: "home", key: "contact", kind: "text_block" },
+  ],
+  "how-it-works": [
+    { slug: "how-it-works", key: "steps", kind: "steps" },
+    { slug: "how-it-works", key: "faq", kind: "faq" },
+  ],
+  gallery: [{ slug: "gallery", key: "testimonials", kind: "testimonials" }],
+  contact: [
+    { slug: "contact", key: "intro", kind: "text_block" },
+    { slug: "contact", key: "business_details", kind: "business_details" },
+  ],
+  "join-form": [
+    { slug: "join-form", key: "photo_consent", kind: "photo_consent" },
+  ],
+  site: [{ slug: "site", key: "footer", kind: "footer" }],
+} as const satisfies Record<string, readonly SectionRef[]>
 
-export type EditableSlug = keyof typeof EDITABLE_PAGES
+export type EditorPageId = keyof typeof EDITABLE_PAGES
+
+export const EDITOR_PAGE_IDS = Object.keys(EDITABLE_PAGES) as EditorPageId[]
+
+export function isEditorPageId(value: unknown): value is EditorPageId {
+  return typeof value === "string" && Object.hasOwn(EDITABLE_PAGES, value)
+}
+
+// The content_pages slugs the editor saves and publishes.
+export const EDITABLE_SLUGS = [
+  "home",
+  "about",
+  "how-it-works",
+  "gallery",
+  "contact",
+  "join-form",
+  "site",
+] as const
+
+export type EditableSlug = (typeof EDITABLE_SLUGS)[number]
 
 export function isEditableSlug(value: unknown): value is EditableSlug {
-  return typeof value === "string" && Object.hasOwn(EDITABLE_PAGES, value)
+  return (
+    typeof value === "string" &&
+    (EDITABLE_SLUGS as readonly string[]).includes(value)
+  )
+}
+
+// The slugs of an editor page, in order, without repeats.
+export function slugsOf(pageId: EditorPageId): EditableSlug[] {
+  const slugs: EditableSlug[] = []
+  for (const ref of EDITABLE_PAGES[pageId]) {
+    if (!slugs.includes(ref.slug)) slugs.push(ref.slug)
+  }
+  return slugs
+}
+
+// The section of an editor page under key (keys are unique in a page).
+export function sectionRefOf(
+  pageId: EditorPageId,
+  key: string
+): SectionRef | null {
+  return EDITABLE_PAGES[pageId].find((ref) => ref.key === key) ?? null
+}
+
+// The edited section with this slug and key, from any page.
+export function findSectionRef(slug: string, key: string): SectionRef | null {
+  for (const id of EDITOR_PAGE_IDS) {
+    const ref = EDITABLE_PAGES[id].find(
+      (item) => item.slug === slug && item.key === key
+    )
+    if (ref) return ref
+  }
+  return null
+}
+
+// The editor page a section is edited in.
+export function editorPageOf(slug: string, key: string): EditorPageId | null {
+  return (
+    EDITOR_PAGE_IDS.find((id) =>
+      EDITABLE_PAGES[id].some((ref) => ref.slug === slug && ref.key === key)
+    ) ?? null
+  )
 }
 
 // Pages whose content is used across the site (AD-16): the business details
@@ -81,13 +164,44 @@ export function hasPendingDraft(
 
 export type PageStatus = "draft" | "published" | "changed"
 
-// DESIGN › content-section-row: never published -> draft; published with a
-// pending draft -> unpublished changes; otherwise published.
-export function pageStatus(
-  page: Pick<ContentPage, "published_at" | "sections">
+// DESIGN › content-section-row, for one section: never published -> draft;
+// published with a pending draft -> unpublished changes; otherwise
+// published.
+export function sectionStatus(
+  page: Pick<ContentPage, "published_at">,
+  section: ContentSection | null
 ): PageStatus {
-  if (!page.published_at) return "draft"
-  return page.sections.some(hasPendingDraft) ? "changed" : "published"
+  if (!section || !page.published_at || !section.published_content) {
+    return "draft"
+  }
+  return hasPendingDraft(section) ? "changed" : "published"
+}
+
+// The chip of an editor page, over its sections (refs; all of the pages'
+// sections when left out), across its slugs: unpublished changes when any
+// has a pending draft, draft when none is published, otherwise published.
+export function pageStatus(
+  pages: readonly Pick<ContentPage, "slug" | "published_at" | "sections">[],
+  refs?: readonly Pick<SectionRef, "slug" | "key">[]
+): PageStatus {
+  const statuses = pages.flatMap((page) =>
+    page.sections
+      .filter(
+        (section) =>
+          !refs ||
+          refs.some((ref) => ref.slug === page.slug && ref.key === section.key)
+      )
+      .map((section) => sectionStatus(page, section))
+  )
+  if (statuses.includes("changed")) return "changed"
+  if (statuses.every((status) => status === "draft")) return "draft"
+  return "published"
+}
+
+// A section is hidden when what would be shown (the saved draft, else what
+// is published) says so (story 5.3).
+export function sectionHidden(section: ContentSection | null): boolean {
+  return editorContent(section).hidden === true
 }
 
 export function sectionOf(
@@ -109,18 +223,20 @@ export type FieldError =
   | { kind: "url" }
   | { kind: "invalid" }
 
-// The first error of each top-level field, from the kind's schema.
+// The first error of each field, from the section's schema
+// (schemaForSection). A field is named by its path: "title", or
+// "items.2.text" for a field of the third item.
 export function fieldErrors(
-  kind: string,
+  ref: SectionRef,
   content: unknown
 ): Record<string, FieldError> | null {
-  const schema = schemaForKind(kind)
+  const schema = schemaForSection(ref.slug, ref.key, ref.kind)
   if (!schema) return { "": { kind: "invalid" } }
   const parsed = schema.safeParse(content)
   if (parsed.success) return null
   const errors: Record<string, FieldError> = {}
   for (const issue of parsed.error.issues) {
-    const field = String(issue.path[0] ?? "")
+    const field = issue.path.map(String).join(".")
     if (field in errors) continue
     errors[field] = toFieldError(issue)
   }
@@ -148,4 +264,20 @@ function toFieldError(issue: z.core.$ZodIssue): FieldError {
     default:
       return { kind: "invalid" }
   }
+}
+
+// The short detail of a section's row: its title (or first line), or how
+// many items its list has; "" when there is nothing to say.
+export function sectionSummary(content: ContentObject): string {
+  if (Array.isArray(content.items)) {
+    return adminCopy.content.itemCount(content.items.length)
+  }
+  for (const name of ["title", "question", "business_name", "whatsapp_phone"]) {
+    const value = content[name]
+    if (typeof value === "string" && value.trim()) {
+      const line = value.trim().split("\n")[0]
+      return line.length > 60 ? `${line.slice(0, 60)}…` : line
+    }
+  }
+  return ""
 }

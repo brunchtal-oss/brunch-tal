@@ -1,15 +1,20 @@
 import { Suspense } from "react"
 import type { Metadata } from "next"
-import Link from "next/link"
-import { ChevronLeftIcon } from "lucide-react"
 
 import { PageHeading } from "@/components/shared/page-heading"
 import { adminCopy } from "@/lib/copy/admin"
 import { shellCopy } from "@/lib/copy/shell"
 
-import { EDITABLE_PAGES, pageStatus, type EditableSlug } from "./content-items"
-import { ContentStatusChip, statusHint } from "./content-status-chip"
-import { loadContentPage } from "./load-page"
+import {
+  EDITABLE_PAGES,
+  EDITABLE_SLUGS,
+  EDITOR_PAGE_IDS,
+  pageStatus,
+  slugsOf,
+} from "./content-items"
+import { ContentRow } from "./content-row"
+import { statusHint } from "./content-status-chip"
+import { loadContentPages } from "./load-page"
 
 const copy = adminCopy.content
 
@@ -17,8 +22,9 @@ export const metadata: Metadata = {
   title: copy.title,
 }
 
-// /admin/content (story 5.1): one content-section-row per page, the whole
-// row one target to its editor, with the chip of the page.
+// /admin/content (stories 5.1, 5.3): one content-section-row per editor
+// page, grouped by where it is on the site, the whole row one target to the
+// page's sections, with the chip of all its sections.
 export default function ContentPage() {
   return (
     <>
@@ -33,35 +39,23 @@ export default function ContentPage() {
 }
 
 async function ContentRows() {
-  const slugs = Object.keys(EDITABLE_PAGES) as EditableSlug[]
-  const pages = await Promise.all(slugs.map(loadContentPage))
+  const pages = await loadContentPages(EDITABLE_SLUGS)
 
   return (
     <ul className="flex flex-col">
-      {slugs.map((slug, index) => {
-        const status = pageStatus(pages[index])
+      {EDITOR_PAGE_IDS.map((id) => {
+        const status = pageStatus(
+          slugsOf(id).map((slug) => pages[slug]),
+          EDITABLE_PAGES[id]
+        )
         return (
-          <li key={slug} className="border-b border-border last:border-b-0">
-            <Link
-              href={`/admin/content/${slug}`}
-              className="flex min-h-12 items-center gap-3 py-4"
-            >
-              <span className="flex min-w-0 flex-1 flex-col gap-1">
-                <span className="text-base font-semibold">
-                  {copy.pages[slug]}
-                </span>
-                <span className="text-[15px] text-muted-foreground">
-                  {statusHint(status)}
-                </span>
-              </span>
-              <ContentStatusChip status={status} />
-              <ChevronLeftIcon
-                aria-hidden
-                strokeWidth={1.5}
-                className="size-5 shrink-0 text-muted-foreground"
-              />
-            </Link>
-          </li>
+          <ContentRow
+            key={id}
+            href={`/admin/content/${id}`}
+            title={copy.pages[id]}
+            detail={statusHint(status)}
+            chips={[status]}
+          />
         )
       })}
     </ul>

@@ -107,6 +107,21 @@ describe("SiteFooter", () => {
     expect(html).toContain(copy.adminLogin)
   })
 
+  it("shows the editor's links above the fixed ones, in a new tab", () => {
+    const html = renderToStaticMarkup(
+      <SiteFooter
+        details={null}
+        legal={[]}
+        links={[{ label: "insta", url: "https://instagram.com/x" }]}
+      />
+    )
+    expect(html).toMatch(
+      /href="https:\/\/instagram\.com\/x" target="_blank" rel="noopener noreferrer"[^>]*>insta/
+    )
+    expect(html).toContain(copy.contact.opensOutside)
+    expect(html.indexOf("instagram")).toBeLessThan(html.indexOf("/admin/login"))
+  })
+
   it("always links to the install guide (story 5.9)", () => {
     const html = renderToStaticMarkup(<SiteFooter details={null} legal={[]} />)
     expect(html).toMatch(/href="\/install"[^>]*>[^<]+<\/a>/)

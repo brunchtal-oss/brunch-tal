@@ -16,3 +16,11 @@ export async function loadContentPage(
   if (!result.ok) throw new Error("admin_get_content_page failed")
   return result.data as unknown as ContentPage
 }
+
+// The pages of these slugs, by slug.
+export async function loadContentPages(
+  slugs: readonly EditableSlug[]
+): Promise<Record<string, ContentPage>> {
+  const pages = await Promise.all(slugs.map(loadContentPage))
+  return Object.fromEntries(pages.map((page, index) => [slugs[index], page]))
+}

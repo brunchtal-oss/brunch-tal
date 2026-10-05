@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { publishContentAction, saveContentDraftAction } from "./actions"
+import {
+  discardContentDraftAction,
+  publishContentAction,
+  saveContentDraftAction,
+} from "./actions"
 import type { ContentPage, ContentSection } from "./content-items"
 
 const callRpc = vi.fn()
@@ -17,7 +21,7 @@ vi.mock("next/cache", () => ({
 }))
 
 const KEY = "22222222-2222-4222-8222-222222222222"
-const HERO = { title: "t", description: "d", cta_label: "c" }
+const HERO = { title: "t", description: "d" }
 
 function section(values: Partial<ContentSection>): ContentSection {
   return {
@@ -57,7 +61,8 @@ describe("saveContentDraftAction", () => {
     await expect(
       saveContentDraftAction({
         slug: "home",
-        content: { title: " t ", description: " ", cta_label: "c" },
+        key: "hero",
+        content: { title: " t ", description: " " },
       })
     ).resolves.toEqual({ ok: true, data: undefined })
     expect(callRpc).toHaveBeenCalledWith(
@@ -71,28 +76,95 @@ describe("saveContentDraftAction", () => {
       {
         p_slug: "home",
         p_key: "hero",
-        p_content: { title: "t", cta_label: "c" },
+        p_content: { title: "t" },
       }
     )
     expect(updateTag).not.toHaveBeenCalled()
   })
 
-  it("refuses an empty button label without saving", async () => {
-    answer(page("home", [section({})]))
+  it("refuses an intro without its text without saving", async () => {
+    answer(page("home", [section({ key: "intro", kind: "text_block" })]), {
+      ok: true,
+      data: {},
+    })
     await expect(
       saveContentDraftAction({
         slug: "home",
-        content: { ...HERO, cta_label: "" },
+        key: "intro",
+        content: { title: "t", body: " " },
       })
     ).resolves.toEqual({
       ok: false,
       code: "INVALID_INPUT",
-      detail: { field: "cta_label" },
+      detail: { field: "body" },
     })
     expect(callRpc).not.toHaveBeenCalledWith(
       expect.anything(),
       "admin_set_content_draft",
       expect.anything()
+    )
+  })
+
+  it("saves home › contact as a heading only", async () => {
+    answer(page("home", [section({ key: "contact", kind: "text_block" })]), {
+      ok: true,
+      data: {},
+    })
+    await expect(
+      saveContentDraftAction({
+        slug: "home",
+        key: "contact",
+        content: { title: "t", body: "" },
+      })
+    ).resolves.toEqual({ ok: true, data: undefined })
+  })
+
+  it("names the field of an item that is refused", async () => {
+    answer(
+      page("gallery", [section({ key: "testimonials", kind: "testimonials" })])
+    )
+    await expect(
+      saveContentDraftAction({
+        slug: "gallery",
+        key: "testimonials",
+        content: {
+          items: [
+            { name: "a", text: "b" },
+            { name: "c", text: " " },
+          ],
+        },
+      })
+    ).resolves.toEqual({
+      ok: false,
+      code: "INVALID_INPUT",
+      detail: { field: "items.1.text" },
+    })
+  })
+
+  it("saves the testimonials with a hidden item and the section hidden", async () => {
+    answer(
+      page("gallery", [section({ key: "testimonials", kind: "testimonials" })]),
+      { ok: true, data: {} }
+    )
+    await saveContentDraftAction({
+      slug: "gallery",
+      key: "testimonials",
+      content: {
+        hidden: true,
+        items: [{ name: "a", text: "b", hidden: true }],
+      },
+    })
+    expect(callRpc).toHaveBeenCalledWith(
+      { session: true },
+      "admin_set_content_draft",
+      {
+        p_slug: "gallery",
+        p_key: "testimonials",
+        p_content: {
+          hidden: true,
+          items: [{ name: "a", text: "b", hidden: true }],
+        },
+      }
     )
   })
 
@@ -106,6 +178,7 @@ describe("saveContentDraftAction", () => {
     await expect(
       saveContentDraftAction({
         slug: "contact",
+        key: "business_details",
         content: { whatsapp_phone: "0544256456", navigation_url: "http://x" },
       })
     ).resolves.toMatchObject({
@@ -115,27 +188,104 @@ describe("saveContentDraftAction", () => {
     })
   })
 
-  it.each(["join-form", "privacy", "x"])(
-    "refuses the page %s without calling an RPC",
-    async (slug) => {
-      await expect(
-        saveContentDraftAction({ slug, content: HERO })
-      ).resolves.toEqual({ ok: false, code: "INVALID_INPUT" })
-      expect(callRpc).not.toHaveBeenCalled()
-    }
-  )
+  it.each([
+    ["privacy", "main"],
+    ["x", "hero"],
+    ["home", "faq"],
+    ["home", "main"],
+    ["about", "hero"],
+    ["home", "toString"],
+  ])("refuses the section %s/%s without calling an RPC", async (slug, key) => {
+    await expect(
+      saveContentDraftAction({ slug, key, content: HERO })
+    ).resolves.toEqual({ ok: false, code: "INVALID_INPUT" })
+    expect(callRpc).not.toHaveBeenCalled()
+  })
 
   it("passes NOT_AUTHORIZED of the read through", async () => {
     callRpc.mockResolvedValue({ ok: false, code: "NOT_AUTHORIZED" })
     await expect(
-      saveContentDraftAction({ slug: "home", content: HERO })
+      saveContentDraftAction({ slug: "home", key: "hero", content: HERO })
     ).resolves.toEqual({ ok: false, code: "NOT_AUTHORIZED" })
   })
 
   it("is NOT_FOUND when the page has no such section", async () => {
     answer(page("home", []))
     await expect(
-      saveContentDraftAction({ slug: "home", content: HERO })
+      saveContentDraftAction({ slug: "home", key: "hero", content: HERO })
+    ).resolves.toEqual({ ok: false, code: "NOT_FOUND" })
+  })
+})
+
+describe("discardContentDraftAction", () => {
+  it("puts what is published back in the draft, without a schema check", async () => {
+    // Published long ago with a field the editor no longer has.
+    const published = { title: "t", cta_label: "c" }
+    answer(
+      page("home", [
+        section({
+          draft_content: { title: "new" },
+          published_content: published,
+        }),
+      ]),
+      { ok: true, data: {} }
+    )
+    await expect(
+      discardContentDraftAction({ slug: "home", key: "hero" })
+    ).resolves.toEqual({ ok: true, data: { content: published } })
+    expect(callRpc).toHaveBeenCalledWith(
+      { session: true },
+      "admin_set_content_draft",
+      { p_slug: "home", p_key: "hero", p_content: published }
+    )
+    expect(updateTag).not.toHaveBeenCalled()
+  })
+
+  it("empties the draft of a section that was never published", async () => {
+    answer(
+      page("about", [
+        section({ key: "main", kind: "text_block", draft_content: { a: 1 } }),
+      ]),
+      { ok: true, data: {} }
+    )
+    await expect(
+      discardContentDraftAction({ slug: "about", key: "main" })
+    ).resolves.toEqual({ ok: true, data: { content: {} } })
+    expect(callRpc).toHaveBeenCalledWith(
+      { session: true },
+      "admin_set_content_draft",
+      { p_slug: "about", p_key: "main", p_content: {} }
+    )
+  })
+
+  it.each([
+    ["home", "main"],
+    ["privacy", "main"],
+    ["home", "toString"],
+  ])("refuses the section %s/%s without calling an RPC", async (slug, key) => {
+    await expect(discardContentDraftAction({ slug, key })).resolves.toEqual({
+      ok: false,
+      code: "INVALID_INPUT",
+    })
+    expect(callRpc).not.toHaveBeenCalled()
+  })
+
+  it("passes the RPC errors through", async () => {
+    callRpc.mockResolvedValue({ ok: false, code: "NOT_AUTHORIZED" })
+    await expect(
+      discardContentDraftAction({ slug: "home", key: "hero" })
+    ).resolves.toEqual({ ok: false, code: "NOT_AUTHORIZED" })
+
+    answer(page("home", [section({})]), { ok: false, code: "SERVER_ERROR" })
+    await expect(
+      discardContentDraftAction({ slug: "home", key: "hero" })
+    ).resolves.toEqual({ ok: false, code: "SERVER_ERROR" })
+  })
+
+  it("is NOT_FOUND when the page has no such section", async () => {
+    answer(page("home", []))
+    await expect(
+      discardContentDraftAction({ slug: "home", key: "hero" })
     ).resolves.toEqual({ ok: false, code: "NOT_FOUND" })
   })
 })
@@ -187,6 +337,28 @@ describe("publishContentAction", () => {
     expect(updateTag).not.toHaveBeenCalled()
   })
 
+  it("checks a pending draft with its section's schema", async () => {
+    // about › main needs its text, though text_block's body is optional.
+    answer(
+      page("about", [
+        section({
+          key: "main",
+          kind: "text_block",
+          draft_content: { title: "t" },
+        }),
+      ])
+    )
+    await expect(
+      publishContentAction({ slug: "about", idempotencyKey: KEY })
+    ).resolves.toEqual({
+      ok: false,
+      code: "INVALID_INPUT",
+      detail: { field: "main" },
+    })
+    expect(callRpc).toHaveBeenCalledTimes(1)
+    expect(updateTag).not.toHaveBeenCalled()
+  })
+
   it("ignores a draft that is already published", async () => {
     // Invalid, but equal to what is published: not part of this publish.
     const old = { cta_label: "c" }
@@ -212,6 +384,10 @@ describe("publishContentAction", () => {
 
   it.each([
     ["an unknown page", { slug: "privacy", idempotencyKey: KEY }],
+    [
+      "an editor page that is not a slug",
+      { slug: "toString", idempotencyKey: KEY },
+    ],
     ["a key that is not a uuid", { slug: "home", idempotencyKey: "x" }],
   ])("refuses %s without calling an RPC", async (_label, input) => {
     await expect(publishContentAction(input)).resolves.toEqual({
