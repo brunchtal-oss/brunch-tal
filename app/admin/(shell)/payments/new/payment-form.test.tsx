@@ -64,6 +64,7 @@ describe("ApprovedPurchase", () => {
   it("names the customer and the purchase, with another payment and the list", () => {
     const html = renderToStaticMarkup(
       <ApprovedPurchase
+        customerId="c1"
         customerName="Dana"
         productName="Card"
         units={4}
@@ -77,6 +78,38 @@ describe("ApprovedPurchase", () => {
     expect(html).toContain('href="/admin/payments"')
     expect(html).toContain(copy.toList)
     expect(html).not.toContain(copy.sendWhatsapp)
+  })
+
+  it("after a card, leads on to booking her for a date (story 3.4)", () => {
+    const html = renderToStaticMarkup(
+      <ApprovedPurchase
+        customerId="c1"
+        customerName="Dana"
+        productName="Card"
+        units={4}
+        expiresOn="2026-11-19"
+      />
+    )
+    expect(html).toContain('href="/admin/sessions/book?customer=c1"')
+    expect(html).toContain(adminCopy.sessions.bookForDate)
+  })
+
+  it("has no booking link after a pinned product (its place is kept)", () => {
+    const html = renderToStaticMarkup(
+      <ApprovedPurchase
+        customerId="c1"
+        customerName="Dana"
+        productName="Single"
+        units={1}
+        expiresOn="2026-10-12"
+        placed={{
+          productName: "Single",
+          conceptName: "Mothers",
+          startsAt: "2026-10-12T07:00:00Z",
+        }}
+      />
+    )
+    expect(html).not.toContain(adminCopy.sessions.bookForDate)
   })
 })
 
@@ -96,6 +129,7 @@ describe("a pinned product's success screens (story 3.11)", () => {
   it("names the session instead of the entries for an existing customer", () => {
     const html = renderToStaticMarkup(
       <ApprovedPurchase
+        customerId="c1"
         customerName="Dana"
         productName="Single"
         units={1}

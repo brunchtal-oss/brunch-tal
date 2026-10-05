@@ -283,6 +283,7 @@ export function PaymentForm({
     if (state.data.kind === "existing" && customer) {
       return (
         <ApprovedPurchase
+          customerId={customer.id}
           customerName={customer.name}
           productName={state.data.productName}
           units={state.data.units}
@@ -841,14 +842,17 @@ function AnotherPayment() {
 }
 
 // The approval's result for an existing customer: the purchase is in her
-// account already (no link).
+// account already (no link). A card (no session placed) leads on to booking
+// her for a date (story 3.4).
 export function ApprovedPurchase({
+  customerId,
   customerName,
   productName,
   units,
   expiresOn,
   placed = null,
 }: {
+  customerId: string
   customerName: string
   productName: string
   units: number
@@ -880,6 +884,18 @@ export function ApprovedPurchase({
               )}
         </bdi>
       </p>
+      {!placed && (
+        <a
+          href={`/admin/sessions/book?customer=${encodeURIComponent(customerId)}`}
+          className={buttonVariants({
+            variant: "default",
+            size: "lg",
+            className: BUTTON,
+          })}
+        >
+          {adminCopy.sessions.bookForDate}
+        </a>
+      )}
       <AnotherPayment />
       <a
         href="/admin/payments"

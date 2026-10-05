@@ -4,6 +4,7 @@
 // EVENT_FULL and her entry is not taken. Story 3.3 adds the same race with
 // book_sessions, and a request that waits on a lock past the registration
 // close (the close is checked against clock_timestamp() after the locks).
+// Story 3.4 adds Tal (admin_book_customer) and a customer on the last place.
 // This needs real commits, so the fixtures are inserted directly as the
 // owner and removed in onCleanup.
 
@@ -22,6 +23,7 @@ import {
 
 const BOOK = "select public.book_session($1, $2) as r"
 const BOOK_MANY = "select public.book_sessions($1::uuid[], $2) as r"
+const ADMIN_BOOK = "select public.admin_book_customer($1, $2, $3) as r"
 
 type Race = {
   customerA: string
@@ -415,4 +417,88 @@ describe("waiting on a lock past the registration close (story 3.3)", () => {
       reserved: 0,
     })
   }, 60_000)
+})
+
+// A committed admin (admin_roles), removed in onCleanup with her idempotency
+// rows.
+async function seedAdmin(): Promise<string> {
+  const admin = randomUUID()
+  onCleanup(async () => {
+    await sql(
+      "delete from private.idempotency_results where actor_scope = $1",
+      [admin]
+    )
+    await sql("delete from public.admin_roles where user_id = $1", [admin])
+  })
+  await sql("insert into public.admin_roles (user_id) values ($1)", [admin])
+  return admin
+}
+
+describe("Tal and a customer on the last place (story 3.4)", () => {
+  it("Tal books first: the customer gets EVENT_FULL and keeps her entry", async () => {
+    const eventId = randomUUID()
+    const fixture = await seedRace("race_admin_first", [eventId])
+    const admin = await seedAdmin()
+    await insertEvent(eventId, { capacity: 1 })
+
+    const second = await race({
+      hold: async (a) => {
+        await asAuthenticated(a, admin)
+        const first = await a.query(ADMIN_BOOK, [
+          fixture.customerA,
+          eventId,
+          randomUUID(),
+        ])
+        expect(first.rows[0].r).toEqual({ booking_id: expect.any(String) })
+      },
+      customer: fixture.customerB,
+      query: BOOK,
+      params: [eventId, randomUUID()],
+      release: "commit",
+    })
+    expect(second.error).toMatchObject({ code: "P0001", message: "EVENT_FULL" })
+
+    const bookings = await sql<{ customer_id: string; booked_by: string }>(
+      "select customer_id, booked_by from public.bookings where event_id = $1",
+      [eventId]
+    )
+    expect(bookings).toEqual([
+      { customer_id: fixture.customerA, booked_by: "admin" },
+    ])
+    const byId = await balances(fixture)
+    expect(byId[fixture.entitlementOf[fixture.customerB]]).toMatchObject({
+      available: 4,
+      reserved: 0,
+    })
+  }, 30_000)
+
+  it("the customer books first: Tal gets EVENT_FULL and no entry is taken", async () => {
+    const eventId = randomUUID()
+    const fixture = await seedRace("race_admin_second", [eventId])
+    const admin = await seedAdmin()
+    await insertEvent(eventId, { capacity: 1 })
+
+    const second = await race({
+      hold: async (a) => {
+        await asAuthenticated(a, fixture.customerB)
+        await a.query(BOOK, [eventId, randomUUID()])
+      },
+      customer: admin,
+      query: ADMIN_BOOK,
+      params: [fixture.customerA, eventId, randomUUID()],
+      release: "commit",
+    })
+    expect(second.error).toMatchObject({ code: "P0001", message: "EVENT_FULL" })
+
+    const bookings = await sql<{ customer_id: string }>(
+      "select customer_id from public.bookings where event_id = $1",
+      [eventId]
+    )
+    expect(bookings).toEqual([{ customer_id: fixture.customerB }])
+    const byId = await balances(fixture)
+    expect(byId[fixture.entitlementOf[fixture.customerA]]).toMatchObject({
+      available: 4,
+      reserved: 0,
+    })
+  }, 30_000)
 })

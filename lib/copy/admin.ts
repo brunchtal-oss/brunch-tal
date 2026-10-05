@@ -471,6 +471,55 @@ export const adminCopy = {
       createdWithoutImage:
         "המפגש נוצר, אבל התמונה לא נשמרה. אפשר לבחור אותה שוב ולשמור כאן",
     },
+    // The session's details, the morning view and the manual booking (story
+    // 3.4, wording from the spec's design notes).
+    attendees: "מי מגיעה",
+    manualBooking: "רישום ידני",
+    edit: "עריכה",
+    morningView: "למבט בוקר המפגש",
+    toDetails: "לפרטי המפגש",
+    bookForDate: "לרישום לתאריך",
+    summary: {
+      places: "מקומות",
+      bookings: "נרשמות",
+      babies: "תינוקות",
+      allergies: "אלרגיות",
+    },
+    noAttendees: "עוד אין נרשמות",
+    couple: "×2",
+    pendingJoin: "לקוחה חדשה · ממתינה להצטרפות",
+    detailsRemoved: "פרטי הלקוחה הוסרו",
+    companion: (note: string) => `מלווה: ${note}`,
+    // A baby's age on the session's day, computed for display only.
+    babyLine: (name: string, age: string) => (age ? `${name} · ${age}` : name),
+    babyAge: {
+      newborn: "פחות משבוע",
+      weeks: (n: number) =>
+        n === 1 ? "שבוע" : n === 2 ? "שבועיים" : `${n} שבועות`,
+      months: (n: number) =>
+        n === 1 ? "חודש" : n === 2 ? "חודשיים" : `${n} חודשים`,
+    },
+    // "({n}/{n})" when every place is taken; a couple session with one place
+    // left is full too.
+    full: (occupied: number, capacity: number) =>
+      `המפגש מלא (${occupied}/${capacity})`,
+    raiseCapacity: "להעלות את המכסה",
+    addPayment: "הוספת תשלום",
+    willUse: (product: string, expiresOn: string) =>
+      `ינוצל: כניסה מ${product}, בתוקף עד ${expiresOn}`,
+    bookCustomer: (name: string) => `לרשום את ${name}`,
+    booked: (name: string) => `${name} נרשמה למפגש`,
+    bookAnother: "רישום לקוחה נוספת",
+    chooseSession: "בחירת מפגש",
+    noBookableSessions: "אין מפגש פתוח לרישום",
+    // A refusal on the manual booking screen, worded for Tal (lib/errors.ts
+    // speaks to the customer). Any other code keeps errorMessage.
+    bookRefusal: {
+      NO_MATCHING_ENTITLEMENT: "ללקוחה אין זכות שמתאימה למפגש הזה",
+      ENTITLEMENT_EXPIRED_ON_DATE: "הזכות של הלקוחה אינה בתוקף ביום המפגש",
+      EVENT_FULL: "המפגש מלא. כדי לרשום אותה צריך קודם להעלות את המכסה",
+      EVENT_NOT_BOOKABLE: "המפגש לא פורסם, ולכן אי אפשר לרשום אליו",
+    } as Record<string, string>,
   },
   // value-change-row (story 2.6; EXPERIENCE › Component Patterns).
   valueChange: {

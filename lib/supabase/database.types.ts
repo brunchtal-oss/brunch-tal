@@ -1162,6 +1162,14 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_book_customer: {
+        Args: {
+          p_customer_id: string
+          p_event_id: string
+          p_idempotency_key: string
+        }
+        Returns: Json
+      }
       admin_create_event: {
         Args: { p_event: Json; p_idempotency_key: string }
         Returns: Json
@@ -1186,6 +1194,7 @@ export type Database = {
         Returns: Json
       }
       admin_get_content_page: { Args: { p_slug: string }; Returns: Json }
+      admin_get_event_details: { Args: { p_event_id: string }; Returns: Json }
       admin_issue_link: {
         Args: {
           p_idempotency_key: string
@@ -1281,6 +1290,10 @@ export type Database = {
           p_payment_method_id: string
           p_product_id: string
         }
+        Returns: Json
+      }
+      preview_admin_book_customer: {
+        Args: { p_customer_id: string; p_event_id: string }
         Returns: Json
       }
       preview_admin_set_product_price: {

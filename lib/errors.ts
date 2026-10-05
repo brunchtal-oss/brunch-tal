@@ -77,6 +77,8 @@ export const ERROR_MESSAGES = {
   MEDIA_NOT_UPLOADED: "העלאת התמונה לא הסתיימה. אפשר להעלות אותה שוב",
   MEDIA_NOT_COPIED: "פרסום התמונה לא הסתיים. אפשר לנסות שוב",
   MEDIA_NOT_PUBLISHED: "התמונה עוד לא פורסמה. אפשר לנסות לשמור שוב",
+  // Tal books a customer after the session's end (story 3.4).
+  EVENT_ENDED: "המפגש כבר הסתיים",
   // Raised by the adapter (never by SQL).
   INVALID_CREDENTIALS: "המייל או הסיסמה לא תואמים",
   // Correct password, but no active customer profile and not an admin.

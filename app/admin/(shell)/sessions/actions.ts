@@ -6,6 +6,8 @@ import { deletePublicMedia, publishMedia } from "@/lib/server/privileged/media"
 import { createClient } from "@/lib/supabase/server"
 import type { Json } from "@/lib/supabase/database.types"
 
+import { parseBookPreview, type BookPreview } from "./[id]/book/preview"
+
 // Session management (story 3.1). Every RPC runs with the admin's own
 // session (private.is_admin() inside, AD-4) and checks every value again;
 // these actions only check the shape. The idempotency key comes from the
@@ -172,4 +174,46 @@ export async function setSessionImageAction(input: {
   const saved = result.data as { hidden_paths?: string[] }
   await deletePublicMedia(client, saved.hidden_paths ?? [])
   return { ok: true, data: undefined }
+}
+
+// Manual booking (story 3.4): Tal books a customer for a session, also after
+// the registration close. admin_book_customer checks the customer, the
+// session, its end, the capacity and the funding again under its locks.
+export async function adminBookCustomerAction(input: {
+  customerId: string
+  eventId: string
+  idempotencyKey: string
+}): Promise<ActionResult<{ bookingId: string }>> {
+  if (
+    !UUID.test(input.customerId) ||
+    !UUID.test(input.eventId) ||
+    !UUID.test(input.idempotencyKey)
+  ) {
+    return { ok: false, code: "INVALID_INPUT" }
+  }
+  const result = await callRpc(await createClient(), "admin_book_customer", {
+    p_customer_id: input.customerId,
+    p_event_id: input.eventId,
+    p_idempotency_key: input.idempotencyKey,
+  })
+  if (!result.ok) return result
+  const booked = result.data as { booking_id: string }
+  return { ok: true, data: { bookingId: booked.booking_id } }
+}
+
+// The same checks without a lock or a write (what will be used, or why not).
+export async function previewAdminBookAction(input: {
+  customerId: string
+  eventId: string
+}): Promise<ActionResult<BookPreview>> {
+  if (!UUID.test(input.customerId) || !UUID.test(input.eventId)) {
+    return { ok: false, code: "INVALID_INPUT" }
+  }
+  const result = await callRpc(
+    await createClient(),
+    "preview_admin_book_customer",
+    { p_customer_id: input.customerId, p_event_id: input.eventId }
+  )
+  if (!result.ok) return result
+  return { ok: true, data: parseBookPreview(result.data) }
 }

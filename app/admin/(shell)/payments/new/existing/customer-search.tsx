@@ -30,13 +30,26 @@ export function answerFor<A extends { query: string }>(
   return canSearch(query) && answer?.query === query.trim() ? answer : null
 }
 
+// Where a result leads: ":id" in the template becomes the customer's id. The
+// payment form by default; the manual booking passes its own (story 3.4).
+export const PAYMENT_HREF = "/admin/payments/new/existing/:id"
+
+export function resultHref(template: string, id: string): string {
+  return template.replace(":id", encodeURIComponent(id))
+}
+
 type Answer =
   | { query: string; ok: true; matches: CustomerMatch[] }
   | { query: string; ok: false; code: ErrorCode }
 
 // Search as she types (after a short pause); only the answer to the latest
-// query is shown. Each result is one link to the form for that customer.
-export function CustomerSearch() {
+// query is shown. Each result is one link to the form for that customer (or
+// to hrefTemplate).
+export function CustomerSearch({
+  hrefTemplate = PAYMENT_HREF,
+}: {
+  hrefTemplate?: string
+} = {}) {
   const id = useId()
   const [query, setQuery] = useState("")
   const [answer, setAnswer] = useState<Answer | null>(null)
@@ -94,7 +107,7 @@ export function CustomerSearch() {
                 className="border-b border-border last:border-b-0"
               >
                 <Link
-                  href={`/admin/payments/new/existing/${match.id}`}
+                  href={resultHref(hrefTemplate, match.id)}
                   className="flex min-h-12 items-center justify-between gap-3 py-3 text-base"
                 >
                   <bdi className="min-w-0 break-words">
