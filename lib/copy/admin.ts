@@ -39,8 +39,8 @@ export const adminCopy = {
     // /admin/payments/new: whom the payment is for.
     choiceLegend: "למי התשלום?",
     // A new customer only: a name only Tal sees, until the customer joins.
-    payerLabel: "שם לזיהוי (לא חובה)",
-    payerLabelHint: "רק את רואה אותו. למשל: מיכל",
+    payerLabel: "שם לזיהוי",
+    payerLabelHint: "רק את רואה אותו",
     existingCustomer: "לקוחה קיימת",
     // /admin/payments/new/existing
     searchLabel: "חיפוש לפי שם או טלפון",
@@ -71,6 +71,26 @@ export const adminCopy = {
     successPurchase: (product: string, units: number, expiresOn: string) =>
       `${product} · ${units} כניסות · בתוקף עד ${expiresOn}`,
     toList: "לרשימת התשלומים",
+    // After approving a pinned product (story 3.11, wording approved by the
+    // user; two lines, no time, 2026-10-05). day: "{יום} DD.MM".
+    successPlacedLead: (product: string) => `${product} · המקום נשמר:`,
+    successPlacedSession: (concept: string, day: string) =>
+      `בראנץ׳ ${concept} · ${day}`,
+    // A pinned product's session (story 3.11, wording from the spec's design
+    // notes): a radio row of two lines, no time (user decision 2026-10-05).
+    // day: "{יום} DD.MM".
+    event: "מפגש",
+    eventPlaceholder: "בחרי מפגש",
+    eventOptionTitle: (concept: string) => `בראנץ׳ ${concept}`,
+    eventOptionDetails: (
+      day: string,
+      occupied: number,
+      capacity: number,
+      full: boolean
+    ) => `${day} · ${occupied}/${capacity}${full ? " · מלא" : ""}`,
+    eventNone: "אין מפגש פתוח שמתאים למוצר הזה",
+    previewEvent: (concept: string, day: string) =>
+      `מפגש: בראנץ׳ ${concept} · ${day}`,
     // The price_change dialog (lib/admin/sensitive-actions.ts has its title).
     priceChange: {
       body: "הסכום שונה ממחיר הקטלוג. בדקי לפני האישור.",

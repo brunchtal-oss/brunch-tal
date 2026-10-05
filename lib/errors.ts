@@ -55,6 +55,13 @@ export const ERROR_MESSAGES = {
     "הכרטיסייה אינה בתוקף ביום המפגש. אפשר לבחור מפגש מוקדם יותר.",
   NO_MATCHING_ENTITLEMENT:
     "אין לך כרגע כניסה שמתאימה למפגש הזה. ניתן לרכוש כניסה מתאימה",
+  // Pinned product approval (story 3.11): the session Tal picked does not
+  // take this product or this customer. EVENT_FULL and EVENT_NOT_BOOKABLE
+  // keep their wording.
+  EVENT_NOT_FIT: "המפגש הזה לא מתאים למוצר. בחרי מפגש אחר",
+  CUSTOMER_ALREADY_BOOKED: "הלקוחה כבר רשומה למפגש הזה. בחרי מפגש אחר",
+  // Wording approved by the user on 2026-10-05.
+  INTRO_NOT_ELIGIBLE: "בראנץ׳ היכרות מיועד רק ללקוחה חדשה",
   // A row changed between the read and the lock (AD-6).
   CONCURRENT_CHANGE: "משהו השתנה בינתיים. כדאי לרענן את הדף ולנסות שוב",
   // Tal changes the time or kind of a session with bookings (story 3.2,

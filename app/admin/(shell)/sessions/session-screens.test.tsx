@@ -88,12 +88,9 @@ describe("SessionCreateForm", () => {
       "Greek",
       copy.fields.startTime,
       copy.fields.endTime,
-      copy.kinds.regular,
-      copy.kinds.couple,
       copy.fields.description,
       copy.fields.capacity,
       copy.fields.price,
-      copy.fromConcept,
       copy.fromSettings,
       copy.priceEmpty,
       copy.create.submit,
@@ -105,6 +102,8 @@ describe("SessionCreateForm", () => {
       expect(html, text).toContain(text)
     }
     expect(html).toContain('value="14"')
+    // No kind field: the kind is the concept's (user decision 2026-10-05).
+    expect(html).not.toContain(copy.fields.kind)
     // The default hours from the settings; the draft button comes first so
     // Enter never publishes.
     expect(html).toContain('value="10:30"')

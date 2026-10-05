@@ -9,6 +9,7 @@ import {
   nextApprovalPhase,
   type ApprovalPhase,
 } from "./approval-history"
+import type { BookableEvent } from "./event-options"
 import {
   PaymentForm,
   type CustomerOption,
@@ -25,6 +26,7 @@ export function PaymentFormHost({
   customer,
   products,
   methods,
+  events,
   today,
   idempotencyKey,
 }: {
@@ -32,6 +34,8 @@ export function PaymentFormHost({
   customer: CustomerOption | null
   products: readonly ProductOption[]
   methods: readonly MethodOption[]
+  // The open sessions for a pinned product (story 3.11).
+  events: readonly BookableEvent[]
   today: string
   idempotencyKey: string
 }) {
@@ -75,6 +79,7 @@ export function PaymentFormHost({
       customer={customer}
       products={products}
       methods={methods}
+      events={events}
       today={today}
       idempotencyKey={session.key}
       onApproved={onApproved}

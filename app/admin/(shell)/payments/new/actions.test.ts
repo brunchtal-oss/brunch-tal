@@ -23,10 +23,13 @@ const PRODUCT = "11111111-1111-4111-8111-111111111111"
 const METHOD = "33333333-3333-4333-8333-333333333333"
 const KEY = "22222222-2222-4222-8222-222222222222"
 const CUSTOMER = "44444444-4444-4444-8444-444444444444"
+const EVENT = "55555555-5555-4555-8555-555555555555"
 const TOKEN = "t".repeat(43)
 const EXPIRES = "2026-10-03T07:42:00+00:00"
 
 const VALID: Record<string, string> = {
+  // A new customer's payer name is required (user decision 2026-10-05).
+  payerLabel: "Noa",
   productId: PRODUCT,
   paymentMethodId: METHOD,
   paidOn: "2026-10-01",
@@ -71,7 +74,7 @@ describe("approvePaymentAction", () => {
         kind: "link",
         link: `https://host.example/join/${TOKEN}`,
         linkExpiresAt: EXPIRES,
-        payerLabel: null,
+        payerLabel: "Noa",
       },
     })
     expect(callRpc).toHaveBeenCalledWith(
@@ -79,7 +82,7 @@ describe("approvePaymentAction", () => {
       "admin_approve_payment",
       expect.objectContaining({
         p_customer_id: null,
-        p_payer_label: null,
+        p_payer_label: "Noa",
         p_amount_override_reason: null,
         p_confirmed: false,
         p_duplicate_confirmed: false,
@@ -119,7 +122,7 @@ describe("approvePaymentAction", () => {
         kind: "link",
         link: null,
         linkExpiresAt: EXPIRES,
-        payerLabel: null,
+        payerLabel: "Noa",
       },
     })
   })
@@ -135,6 +138,7 @@ describe("approvePaymentAction", () => {
     ["a reason over 500", { amountOverrideReason: "x".repeat(501) }],
     ["a customer id that is not a uuid", { customerId: "x" }],
     ["a payer label over 40", { payerLabel: "x".repeat(41) }],
+    ["a new customer without a payer name", { payerLabel: "  " }],
     [
       "a payer label with an existing customer",
       {
@@ -169,6 +173,7 @@ describe("approvePaymentAction", () => {
         null,
         form({
           customerId: CUSTOMER,
+          payerLabel: "",
           amountAgorot: "44000",
           amountOverrideReason: " friend ",
           confirmed: "1",
@@ -213,6 +218,31 @@ describe("approvePaymentAction", () => {
     )
   })
 
+  it("sends the session of a pinned product, and refuses one that is not an id", async () => {
+    callRpc.mockResolvedValue(approved(TOKEN))
+    await approvePaymentAction(null, form({ eventId: EVENT }))
+    expect(callRpc).toHaveBeenCalledWith(
+      {},
+      "admin_approve_payment",
+      expect.objectContaining({ p_event_id: EVENT })
+    )
+    callRpc.mockReset()
+    await expect(
+      approvePaymentAction(null, form({ eventId: "x" }))
+    ).resolves.toEqual({ ok: false, code: "INVALID_INPUT" })
+    expect(callRpc).not.toHaveBeenCalled()
+  })
+
+  it("sends no session for a days product", async () => {
+    callRpc.mockResolvedValue(approved(TOKEN))
+    await approvePaymentAction(null, form())
+    expect(callRpc).toHaveBeenCalledWith(
+      {},
+      "admin_approve_payment",
+      expect.objectContaining({ p_event_id: null })
+    )
+  })
+
   it("passes an RPC code through", async () => {
     callRpc.mockResolvedValue({
       ok: false,
@@ -227,7 +257,7 @@ describe("approvePaymentAction", () => {
 
 const PREVIEW_INPUT = {
   customerId: null,
-  payerLabel: "",
+  payerLabel: "Noa",
   productId: PRODUCT,
   amountAgorot: 47200,
   paidOn: "2026-10-01",
@@ -256,7 +286,11 @@ describe("previewPaymentAction", () => {
       },
     })
     await expect(
-      previewPaymentAction({ ...PREVIEW_INPUT, customerId: CUSTOMER })
+      previewPaymentAction({
+        ...PREVIEW_INPUT,
+        customerId: CUSTOMER,
+        payerLabel: "",
+      })
     ).resolves.toEqual({
       ok: true,
       data: {
@@ -274,6 +308,7 @@ describe("previewPaymentAction", () => {
           },
         ],
         windowDays: 7,
+        event: null,
       },
     })
     expect(callRpc).toHaveBeenCalledWith(
@@ -286,10 +321,46 @@ describe("previewPaymentAction", () => {
     )
   })
 
+  it("sends a pinned product's session and returns it instead of the expiry", async () => {
+    callRpc.mockResolvedValue({
+      ok: true,
+      data: {
+        product_name: "Single",
+        units: 1,
+        expires_on: "2026-10-12",
+        expired: false,
+        customer_name: null,
+        similar_payments: [],
+        duplicate_window_days: 7,
+        event_id: EVENT,
+        event_starts_at: "2026-10-12T07:00:00+00:00",
+        concept_name: "Mothers",
+      },
+    })
+    await expect(
+      previewPaymentAction({ ...PREVIEW_INPUT, eventId: EVENT })
+    ).resolves.toMatchObject({
+      ok: true,
+      data: {
+        event: {
+          startsAt: "2026-10-12T07:00:00+00:00",
+          conceptName: "Mothers",
+        },
+      },
+    })
+    expect(callRpc).toHaveBeenCalledWith(
+      {},
+      "preview_admin_approve_payment",
+      expect.objectContaining({ p_event_id: EVENT })
+    )
+  })
+
   it.each([
+    { ...PREVIEW_INPUT, eventId: "x" },
     { ...PREVIEW_INPUT, productId: "x" },
     { ...PREVIEW_INPUT, customerId: "x" },
     { ...PREVIEW_INPUT, payerLabel: "x".repeat(41) },
+    { ...PREVIEW_INPUT, payerLabel: "" },
     {
       ...PREVIEW_INPUT,
       customerId: "44444444-4444-4444-8444-444444444444",

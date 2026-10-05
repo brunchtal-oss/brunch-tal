@@ -25,6 +25,7 @@ import {
   APPROVE,
   approve,
   approveParams,
+  DEFAULT_PAYER,
   insertProduct,
   seedMoney,
   type ApproveInput,
@@ -86,7 +87,7 @@ async function preview(
     extra.amount ?? 47200,
     extra.paidOn ?? f.today,
     extra.methodId ?? f.method,
-    extra.payerLabel ?? null,
+    extra.payerLabel ?? (customerId ? null : DEFAULT_PAYER),
   ])
   return rows[0].r
 }
@@ -349,14 +350,22 @@ describe("similar payments", () => {
           created_at: expect.any(String),
         },
       ])
-      // A new customer sees every payment.
-      expect((await preview(db, null, f)).similar_payments).toHaveLength(1)
+      // A new customer sees it only under the same name (2026-10-05).
+      expect((await preview(db, null, f)).similar_payments).toEqual([])
+      expect(
+        (await preview(db, null, f, { payerLabel: testName("money_a") }))
+          .similar_payments
+      ).toHaveLength(1)
 
       expect(
         await queryError(db, APPROVE, approveParams(cardFor(f, f.customerA)))
       ).toMatchObject({ code: "P0001", message: "DUPLICATE_CONFIRM_REQUIRED" })
       expect(
-        await queryError(db, APPROVE, approveParams(cardFor(f, null)))
+        await queryError(
+          db,
+          APPROVE,
+          approveParams(cardFor(f, null, { payerLabel: testName("money_a") }))
+        )
       ).toMatchObject({ code: "P0001", message: "DUPLICATE_CONFIRM_REQUIRED" })
 
       const saved = await approve(
@@ -391,7 +400,7 @@ describe("similar payments", () => {
     })
   })
 
-  it("ignore 8 days, another method and another customer, but not an unbound payment", async () => {
+  it("ignore 8 days, another method and another customer, but not an unbound payment under her name", async () => {
     await inRollback(async (db) => {
       const f = await seedMoney(db)
       const eightAgo = await addDays(db, f.today, -8)
@@ -410,15 +419,27 @@ describe("similar payments", () => {
 
       await approve(db, cardFor(f, f.customerB))
       expect((await preview(db, f.customerA, f)).similar_payments).toEqual([])
-      // ...but a new customer sees it.
-      expect((await preview(db, null, f)).similar_payments).toHaveLength(1)
+      // ...but a new customer under that customer's name sees it.
+      expect(
+        (await preview(db, null, f, { payerLabel: testName("money_b") }))
+          .similar_payments
+      ).toHaveLength(1)
 
+      // An unbound payment: only under her name (2026-10-05).
       await approve(db, cardFor(f, null, { duplicateConfirmed: true }))
+      expect((await preview(db, f.customerA, f)).similar_payments).toEqual([])
+      await approve(
+        db,
+        cardFor(f, null, {
+          payerLabel: ` ${testName("MONEY_A")} `,
+          duplicateConfirmed: true,
+        })
+      )
       const similar = (await preview(db, f.customerA, f)).similar_payments
       expect(similar).toEqual([
         {
           customer_name: null,
-          payer_label: null,
+          payer_label: testName("MONEY_A"),
           paid_on: f.today,
           created_at: expect.any(String),
         },
@@ -785,7 +806,7 @@ describe("similar approvals under concurrency", () => {
 })
 
 describe("payer label (שם לזיהוי)", () => {
-  it("tells two payers apart only when both labels exist and differ", async () => {
+  it("finds a payment only under the same name (any case, outer spaces)", async () => {
     await inRollback(async (db) => {
       const f = await seedMoney(db)
       await asAuthenticated(db, f.admin)
@@ -802,8 +823,6 @@ describe("payer label (שם לזיהוי)", () => {
           created_at: expect.any(String),
         },
       ])
-      expect(await similar(null)).toHaveLength(1)
-      expect(await similar("  ")).toHaveLength(1)
 
       // Mixed case of a Latin label is the same payer.
       const latin = await approve(db, cardFor(f, null, { payerLabel: "Noa" }))
@@ -814,9 +833,14 @@ describe("payer label (שם לזיהוי)", () => {
         )
       ).toEqual(["Noa"])
 
-      // A payment without a label is similar to a labelled one.
-      await approve(db, cardFor(f, null, { duplicateConfirmed: true }))
-      expect(await similar("דנה")).toHaveLength(1)
+      // A payment without a name (from before 2026-10-05) never matches.
+      await db.query("reset role")
+      await db.query(
+        "update public.payments set payer_label = null where id = $1",
+        [latin.payment_id]
+      )
+      await asAuthenticated(db, f.admin)
+      expect(await similar("Noa")).toEqual([])
 
       // The approval follows the same rule.
       expect(
@@ -829,7 +853,7 @@ describe("payer label (שם לזיהוי)", () => {
     })
   })
 
-  it("saves the trimmed label, empty as null, and audits it masked", async () => {
+  it("saves the trimmed label, refuses an empty one, and audits it masked", async () => {
     await inRollback(async (db) => {
       const f = await seedMoney(db)
       await asAuthenticated(db, f.admin)
@@ -837,18 +861,22 @@ describe("payer label (שם לזיהוי)", () => {
         db,
         cardFor(f, null, { payerLabel: " מיכל " })
       )
-      const blank = await approve(
-        db,
-        cardFor(f, null, { payerLabel: "   ", duplicateConfirmed: true })
-      )
+      // A new customer's name is required (2026-10-05).
+      expect(
+        await queryError(
+          db,
+          APPROVE,
+          approveParams(
+            cardFor(f, null, { payerLabel: "   ", duplicateConfirmed: true })
+          )
+        )
+      ).toMatchObject({ code: "P0001", message: "INVALID_INPUT" })
       await db.query("reset role")
       const { rows } = await db.query(
-        "select id, payer_label from public.payments where id = any($1::uuid[])",
-        [[named.payment_id, blank.payment_id]]
+        "select id, payer_label from public.payments where id = $1",
+        [named.payment_id]
       )
-      const labels = Object.fromEntries(rows.map((r) => [r.id, r.payer_label]))
-      expect(labels[named.payment_id as string]).toBe("מיכל")
-      expect(labels[blank.payment_id as string]).toBeNull()
+      expect(rows[0].payer_label).toBe("מיכל")
 
       const { rows: audit } = await db.query(
         `select before::text as before, after::text as after
@@ -962,6 +990,86 @@ describe("payer label (שם לזיהוי)", () => {
       )
       expect(ofPayment).toHaveLength(2)
       for (const row of ofPayment) expect(row.payer_label).toBeNull()
+    })
+  })
+})
+
+// Story 3.11, after the phone test (user decisions 2026-10-05).
+describe("similar payments: two names or two sessions are two purchases", () => {
+  const PINNED_PREVIEW =
+    "select public.preview_admin_approve_payment(null, $1, $2, $3, $4, $5::date, $6) as r"
+
+  it("the typed label against a bound customer's name: different -> not similar, the same (any case) -> similar", async () => {
+    await inRollback(async (db) => {
+      const f = await seedMoney(db)
+      await asAuthenticated(db, f.admin)
+      await approve(db, cardFor(f, f.customerA))
+
+      const similar = async (payerLabel: string | null) =>
+        (await preview(db, null, f, { payerLabel })).similar_payments
+      expect(await similar("Noa")).toEqual([])
+      expect(await similar(` ${testName("MONEY_A")} `)).toHaveLength(1)
+    })
+  })
+
+  it("a pinned purchase for another session is not similar; the same name and session still warns", async () => {
+    await inRollback(async (db) => {
+      const f = await seedMoney(db)
+      const { rows: products } = await db.query(
+        `insert into public.products (
+           name, type, price_agorot, units, validity_mode, validity_days,
+           allowed_weekdays, eligible_event_kind, party_size)
+         values ($1, 'single', 12800, 1, 'session', null, null, 'regular', 1)
+         returning id`,
+        [testName("single")]
+      )
+      const single = products[0].id
+      const session = async (days: number) => {
+        const { rows } = await db.query(
+          `insert into public.events (
+             concept_id, kind, starts_at, ends_at, capacity_adults,
+             registration_closes_at, status)
+           select c.id, 'regular', now() + make_interval(days => $1::int),
+             now() + make_interval(days => $1::int) + interval '2 hours', 12,
+             now() + make_interval(days => $1::int), 'published'
+           from public.concepts c where c.theme_key = 'mothers' limit 1
+           returning id`,
+          [days]
+        )
+        return rows[0].id as string
+      }
+      const first = await session(7)
+      const second = await session(14)
+
+      await asAuthenticated(db, f.admin)
+      const pinned = (eventId: string, extra: Partial<ApproveInput> = {}) =>
+        cardFor(f, null, {
+          productId: single,
+          eventId,
+          amount: 12800,
+          payerLabel: "Noa",
+          ...extra,
+        })
+      await approve(db, pinned(first))
+
+      const similar = async (eventId: string, payerLabel: string) => {
+        const { rows } = await db.query(PINNED_PREVIEW, [
+          payerLabel,
+          single,
+          eventId,
+          12800,
+          f.today,
+          f.method,
+        ])
+        return rows[0].r.similar_payments
+      }
+      expect(await similar(second, "Noa")).toEqual([])
+      expect(await similar(first, " noa ")).toHaveLength(1)
+      expect(
+        await queryError(db, APPROVE, approveParams(pinned(first)))
+      ).toMatchObject({ code: "P0001", message: "DUPLICATE_CONFIRM_REQUIRED" })
+      const other = await approve(db, pinned(second))
+      expect(other.booking_id).toEqual(expect.any(String))
     })
   })
 })

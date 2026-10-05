@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it, vi } from "vitest"
 
 import { adminCopy } from "@/lib/copy/admin"
+import { formatDayMonth, formatTime, formatWeekday } from "@/lib/time"
 
 import {
   ApprovedLink,
@@ -79,6 +80,61 @@ describe("ApprovedPurchase", () => {
   })
 })
 
+describe("a pinned product's success screens (story 3.11)", () => {
+  const placed = {
+    productName: "Single",
+    conceptName: "Mothers",
+    startsAt: "2026-10-12T07:00:00Z",
+  }
+  const lead = copy.successPlacedLead("Single")
+  // Monday 12.10, no time (user decision 2026-10-05).
+  const session = copy.successPlacedSession(
+    "Mothers",
+    `${formatWeekday(placed.startsAt)} ${formatDayMonth(placed.startsAt)}`
+  )
+
+  it("names the session instead of the entries for an existing customer", () => {
+    const html = renderToStaticMarkup(
+      <ApprovedPurchase
+        customerName="Dana"
+        productName="Single"
+        units={1}
+        expiresOn="2026-10-12"
+        placed={placed}
+      />
+    )
+    expect(html).toContain(lead)
+    expect(html).toContain(`${lead}</bdi><br/><bdi>${session}`)
+    expect(html).not.toContain(formatTime(placed.startsAt))
+    expect(html).not.toContain(copy.successPurchase("Single", 1, "12.10"))
+  })
+
+  it("names the session under the link for a new customer", () => {
+    const html = renderToStaticMarkup(
+      <ApprovedLink
+        link="https://host.example/join/abc"
+        linkExpiresAt={EXPIRES}
+        placed={placed}
+      />
+    )
+    expect(html).toContain(lead)
+    expect(html).toContain(`${lead}</bdi><br/><bdi>${session}`)
+    expect(html).not.toContain(formatTime(placed.startsAt))
+  })
+
+  it("a days product's link screen names no session", () => {
+    const html = renderToStaticMarkup(
+      <ApprovedLink
+        link="https://host.example/join/abc"
+        linkExpiresAt={EXPIRES}
+      />
+    )
+    // "המקום נשמר", the fixed words of the line.
+    const kept = copy.successPlacedLead("P").split(":")[0].split(" · ")[1]
+    expect(html).not.toContain(kept)
+  })
+})
+
 describe("previewKey", () => {
   const input = {
     customerId: null,
@@ -99,6 +155,7 @@ describe("previewKey", () => {
       { amountAgorot: 44000 },
       { paidOn: "2026-10-02" },
       { methodId: "n" },
+      { eventId: "e" },
     ]) {
       expect(previewKey({ ...input, ...change })).not.toBe(key)
     }
@@ -135,6 +192,34 @@ describe("submitBlock", () => {
     expect(
       submitBlock({ amountAgorot: 0, hasSimilar: true, duplicateChecked: true })
     ).toBeNull()
+    // A new customer without a payer name comes first (user decision
+    // 2026-10-05).
+    expect(
+      submitBlock({
+        payerMissing: true,
+        amountAgorot: null,
+        eventMissing: true,
+        hasSimilar: true,
+        duplicateChecked: false,
+      })
+    ).toBe("payer")
+    // A pinned product without its session (story 3.11), after the amount.
+    expect(
+      submitBlock({
+        amountAgorot: 0,
+        eventMissing: true,
+        hasSimilar: true,
+        duplicateChecked: false,
+      })
+    ).toBe("event")
+    expect(
+      submitBlock({
+        amountAgorot: null,
+        eventMissing: true,
+        hasSimilar: false,
+        duplicateChecked: false,
+      })
+    ).toBe("amount")
     expect(
       submitBlock({
         amountAgorot: 47200,

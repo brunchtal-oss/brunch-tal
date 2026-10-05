@@ -56,4 +56,7 @@ export const customerCopy = {
   // After the booking (the climax).
   climax: "המקום שלך סביב השולחן שמור",
   toMyBalance: "ליתרה שלי",
+  // A pinned purchase whose session has not started (story 3.11): shown
+  // instead of the balance card, before the product's message and button.
+  pinnedSaved: "המקום שלך שמור",
 } as const
