@@ -99,6 +99,7 @@ const EXPECTED_GRANTS = [
   "function public.book_sessions(p_items uuid[], p_idempotency_key uuid) authenticated EXECUTE",
   "function public.claim_join(p_token text, p_idempotency_key uuid) authenticated EXECUTE",
   "function public.get_event_availability(p_event_ids uuid[]) authenticated EXECUTE",
+  "function public.get_my_entitlements() authenticated EXECUTE",
   "function public.get_my_session_role() authenticated EXECUTE",
   "function public.issue_reset_token(p_user_id uuid) service_role EXECUTE",
   "function public.join_begin(p_token text, p_email text, p_phone text, p_idempotency_key uuid) service_role EXECUTE",

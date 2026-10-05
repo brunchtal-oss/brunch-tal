@@ -5,7 +5,7 @@ import { shellCopy } from "@/lib/copy/shell"
 // (lib/nav.test.ts checks that every href has a page.tsx); a later story adds
 // its item when it adds the screen. The icon is a key so the list stays plain
 // data that a Server Component can pass to the client tab bar.
-export type NavIcon = "home" | "sessions" | "payments" | "more"
+export type NavIcon = "home" | "sessions" | "payments" | "purchases" | "more"
 
 export type NavItem = {
   href: string
@@ -80,7 +80,18 @@ export function hasPublicSessions(
 
 export const customerNav: readonly NavItem[] = [
   { href: "/me", label: shellCopy.nav.home, icon: "home" },
-  { href: "/me/sessions", label: shellCopy.nav.sessions, icon: "sessions" },
+  {
+    href: "/me/sessions",
+    label: shellCopy.nav.customerSessions,
+    icon: "sessions",
+  },
+  // Purchase history (story 4.12, user decision 2026-10-06): every purchase
+  // with its receipt, and below it each purchase's detail.
+  {
+    href: "/me/purchases",
+    label: shellCopy.nav.purchases,
+    icon: "purchases",
+  },
 ]
 
 export const adminNav: readonly NavItem[] = [

@@ -3,201 +3,185 @@ import { describe, expect, it } from "vitest"
 import { customerCopy } from "@/lib/copy/customer"
 
 import {
-  buildPurchaseItems,
-  joinButtonHref,
-  type BalanceRow,
+  byPaidOnDesc,
+  entitlementName,
+  isEmptyHome,
+  isHomeCard,
+  isOpen,
+  parseMyEntitlements,
+  pastStatus,
+  type MyEntitlement,
 } from "./purchase-items"
 
-describe("joinButtonHref", () => {
-  const session = {
-    eventId: "ev-1",
-    startsAt: "2026-10-12T07:00:00Z",
-    conceptName: "יווני",
-  }
-
-  it("a card with entries goes to choosing dates", () => {
-    expect(joinButtonHref({ session: null, available: 2 }, true)).toBe(
-      "/me/sessions?select=1"
-    )
-  })
-
-  it("a card with no entries left, or another product, goes to the sessions list", () => {
-    expect(joinButtonHref({ session: null, available: 0 }, true)).toBe(
-      "/me/sessions"
-    )
-    expect(joinButtonHref({ session: null, available: 1 }, false)).toBe(
-      "/me/sessions"
-    )
-  })
-
-  it("a pinned purchase with its session goes to that session", () => {
-    expect(joinButtonHref({ session, available: 1 }, false)).toBe(
-      "/me/sessions/ev-1"
-    )
-  })
-})
-
-const balance = (overrides: Partial<BalanceRow> = {}): BalanceRow => ({
+// A row of get_my_entitlements as the RPC returns it (Design Notes).
+const rpcRow = (overrides: Record<string, unknown> = {}) => ({
   entitlement_id: "ent-1",
-  payment_id: "pay-1",
+  kind: "card",
+  status: "active",
+  product_name: "Card at purchase",
+  amount_agorot: 47200,
+  paid_on: "2026-09-23",
+  original_units: 4,
   available: 4,
   reserved: 0,
   used: 0,
-  expires_on: "2026-11-19",
+  expires_on: "2026-11-11",
+  is_expired: false,
+  expired_before_bound: false,
+  days_left: 30,
+  is_expiring: false,
+  is_used_up: false,
+  validity_days: 49,
+  pinned_event_id: null,
+  payment_id: "pay-1",
   ...overrides,
 })
 
-const rows = {
-  payments: [
-    {
-      id: "pay-1",
-      product_id: "prod-1",
-      amount_agorot: 47200,
-      paid_on: "2026-10-01",
-      product_snapshot: { name: "Card at purchase" },
-    },
-  ],
-  products: [
-    {
-      id: "prod-1",
-      post_join_message: "Current message",
-      post_join_button_label: "Current button",
-    },
-  ],
-}
+const entitlement = (overrides: Record<string, unknown> = {}): MyEntitlement =>
+  parseMyEntitlements([rpcRow(overrides)])[0]
 
-describe("buildPurchaseItems", () => {
-  it("takes the name from product_snapshot and the message from the current product", () => {
-    expect(buildPurchaseItems({ ...rows, balances: [balance()] })).toEqual([
+describe("parseMyEntitlements", () => {
+  it("maps the RPC row to camelCase", () => {
+    expect(parseMyEntitlements([rpcRow()])).toEqual([
       {
         id: "ent-1",
+        kind: "card",
+        status: "active",
         productName: "Card at purchase",
         amountAgorot: 47200,
-        paidOn: "2026-10-01",
+        paidOn: "2026-09-23",
+        originalUnits: 4,
         available: 4,
         reserved: 0,
-        expiresOn: "2026-11-19",
-        message: "Current message",
-        buttonLabel: "Current button",
+        used: 0,
+        expiresOn: "2026-11-11",
+        isExpired: false,
         expiredBeforeBound: false,
-        validityDays: null,
-        session: null,
+        daysLeft: 30,
+        isExpiring: false,
+        isUsedUp: false,
+        validityDays: 49,
+        pinnedEventId: null,
+        paymentId: "pay-1",
       },
     ])
   })
 
-  it("marks a card that expired before it was bound, with the validity days of its snapshot and no message", () => {
-    const [item] = buildPurchaseItems({
-      ...rows,
-      balances: [balance({ expired_before_bound: true })],
-      entitlements: [
-        { id: "ent-1", eligibility_snapshot: { validity_days: 49 } },
-      ],
-    })
-    expect(item).toMatchObject({
-      expiredBeforeBound: true,
-      validityDays: 49,
-      message: null,
-      buttonLabel: null,
-    })
-  })
-
-  it.each([[{}], [{ validity_days: null }], [null]])(
-    "has no validity days without them in the snapshot (%j)",
-    (snapshot) => {
-      const [item] = buildPurchaseItems({
-        ...rows,
-        balances: [balance({ expired_before_bound: true })],
-        entitlements: [{ id: "ent-1", eligibility_snapshot: snapshot }],
-      })
-      expect(item.validityDays).toBeNull()
-    }
-  )
-
-  it("skips a balance whose payment is not among the rows", () => {
-    expect(
-      buildPurchaseItems({
-        ...rows,
-        balances: [balance({ payment_id: "pay-other" })],
-      })
-    ).toEqual([])
-  })
-
   it.each([
-    ["reserved", { reserved: 1, available: 3 }],
-    ["used", { used: 1, available: 3 }],
-  ])("hides the message and button once something was %s", (_label, b) => {
-    const [item] = buildPurchaseItems({ ...rows, balances: [balance(b)] })
-    expect(item).toMatchObject({ message: null, buttonLabel: null })
+    ["no id", { entitlement_id: null }],
+    ["an unknown kind", { kind: "other" }],
+    ["no expiry", { expires_on: null }],
+    ["a fractional amount", { amount_agorot: 1.5 }],
+  ])("leaves out a row with %s", (_label, change) => {
+    expect(parseMyEntitlements([rpcRow(change)])).toEqual([])
   })
 
-  it("keeps an empty name for a snapshot without one", () => {
-    const [item] = buildPurchaseItems({
-      ...rows,
-      payments: [{ ...rows.payments[0], product_snapshot: {} }],
-      balances: [balance()],
-    })
-    expect(item.productName).toBe("")
+  it("is empty for anything but an array", () => {
+    expect(parseMyEntitlements(null)).toEqual([])
+    expect(parseMyEntitlements({})).toEqual([])
   })
 
-  describe("a pinned purchase (story 3.11)", () => {
-    const NOW = new Date("2026-10-05T08:00:00Z")
-    const pinned = {
-      ...rows,
-      balances: [balance({ available: 0, reserved: 1 })],
-      entitlements: [
-        { id: "ent-1", eligibility_snapshot: {}, pinned_event_id: "ev-1" },
-      ],
-      bookings: [
-        { payment_id: "pay-1", event_id: "ev-1", status: "confirmed" },
-      ],
-      sessions: [
-        {
-          id: "ev-1",
-          starts_at: "2026-10-12T07:00:00Z",
-          concept_name: "Mothers",
-        },
-      ],
-      now: NOW,
-    }
+  it("has no validity days without a positive number", () => {
+    expect(entitlement({ validity_days: null }).validityDays).toBeNull()
+    expect(entitlement({ validity_days: 0 }).validityDays).toBeNull()
+  })
+})
 
-    it("shows the session with the product's message and button while it has not started", () => {
-      const [item] = buildPurchaseItems(pinned)
-      expect(item).toMatchObject({
-        productName: customerCopy.sessionTitle("Mothers"),
-        session: {
-          eventId: "ev-1",
-          startsAt: "2026-10-12T07:00:00Z",
-          conceptName: "Mothers",
-        },
-        message: "Current message",
-        buttonLabel: "Current button",
-      })
-    })
+describe("isOpen and pastStatus", () => {
+  it.each([
+    ["an active card", {}, true, null],
+    [
+      "a card that expired before it was bound",
+      { is_expired: true, expired_before_bound: true },
+      true,
+      customerCopy.entitlementExpired,
+    ],
+    [
+      "an expired card",
+      { is_expired: true },
+      false,
+      customerCopy.entitlementExpired,
+    ],
+    [
+      "a used up card",
+      { available: 0, reserved: 0, used: 4, is_used_up: true },
+      false,
+      customerCopy.entitlementUsedUp,
+    ],
+    [
+      "a refunded one",
+      { status: "refunded" },
+      false,
+      customerCopy.entitlementCancelled,
+    ],
+    [
+      "a revoked one, even if not expired",
+      { status: "revoked" },
+      false,
+      customerCopy.entitlementCancelled,
+    ],
+  ])("%s", (_label, change, open, past) => {
+    const e = entitlement(change)
+    expect(isOpen(e)).toBe(open)
+    expect(pastStatus(e)).toBe(past)
+  })
+})
 
-    it.each([
-      ["the session started", { now: new Date("2026-10-12T07:00:00Z") }],
-      [
-        "the booking was cancelled",
-        {
-          bookings: [
-            { payment_id: "pay-1", event_id: "ev-1", status: "cancelled" },
-          ],
-        },
-      ],
-      ["there is no booking", { bookings: [] }],
-      [
-        "it was parked (nothing reserved)",
-        { bookings: [], balances: [balance({ available: 1, reserved: 0 })] },
-      ],
-      ["the session is unknown", { sessions: [] }],
-    ])("is not a session when %s", (_label, change) => {
-      const [item] = buildPurchaseItems({ ...pinned, ...change })
-      expect(item).toMatchObject({
-        session: null,
-        message: null,
-        buttonLabel: null,
-      })
-    })
+describe("entitlementName", () => {
+  it("names a pinned purchase by its concept, else by the product", () => {
+    const names = new Map([["ev-1", "Mothers"]])
+    expect(
+      entitlementName(entitlement({ pinned_event_id: "ev-1" }), names)
+    ).toBe(customerCopy.sessionTitle("Mothers"))
+    expect(entitlementName(entitlement(), names)).toBe("Card at purchase")
+    expect(
+      entitlementName(entitlement({ pinned_event_id: "ev-2" }), names)
+    ).toBe("Card at purchase")
+  })
+})
+
+describe("isHomeCard", () => {
+  it.each([
+    ["an active card", {}, true],
+    ["a card with only booked entries", { available: 0, reserved: 4 }, true],
+    [
+      "a used-up card",
+      { available: 0, reserved: 0, used: 4, is_used_up: true },
+      false,
+    ],
+    ["an expired card", { is_expired: true }, false],
+    [
+      "a card that expired before it was bound",
+      { is_expired: true, expired_before_bound: true },
+      false,
+    ],
+    ["a cancelled card", { status: "revoked" }, false],
+    ["a pinned single", { kind: "single", pinned_event_id: "ev-1" }, false],
+    ["a pinned couple", { kind: "couple", pinned_event_id: "ev-1" }, false],
+  ] as const)("%s", (_label, change, expected) => {
+    expect(isHomeCard(entitlement(change))).toBe(expected)
+  })
+})
+
+describe("isEmptyHome", () => {
+  it("is empty only with no session ahead and no active card", () => {
+    expect(isEmptyHome(0, 0)).toBe(true)
+    expect(isEmptyHome(1, 0)).toBe(false)
+    expect(isEmptyHome(0, 1)).toBe(false)
+  })
+})
+
+describe("byPaidOnDesc", () => {
+  it("puts the newest purchase first", () => {
+    const rows = [
+      { id: "a", paidOn: "2026-09-01" },
+      { id: "b", paidOn: "2026-10-01" },
+      { id: "c", paidOn: "2026-09-15" },
+    ]
+    expect([...rows].sort(byPaidOnDesc).map((r) => r.id)).toEqual([
+      "b",
+      "c",
+      "a",
+    ])
   })
 })

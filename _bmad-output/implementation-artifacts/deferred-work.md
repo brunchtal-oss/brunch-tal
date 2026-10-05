@@ -338,3 +338,23 @@
   target: 5.18 / 6.x
   summary: הקבצים הציבוריים מוגשים עם `cache-control: max-age=600` (נקבע בהעלאה ועובר בהעתקה). קובץ שהוסתר עלול להמשיך להיות מוגש כ-10 דקות אחרי המחיקה: מה-CDN של Supabase ומהמטמון של next/image (‏`images.minimumCacheTTL: 60`, ולכן ה-max-age של המקור קובע). להחליט לפני ההשקה אם זה מספיק.
   evidence: בבדיקת המסד של 5.4 הכתובת הציבורית החזירה 200 מיד אחרי המחיקה, ו-4xx רק עם query string חדש.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-4-12-personal-area-home-and-entitlements.md`
+  target: 3.6
+  summary: אחרי ביטול הרשמה, לבדוק שהבית ו-`/me/purchases` (`get_my_entitlements`) זהים למסך הכרטיסיות הפתוחות של טל (4.3). באותו סיפור להוסיף לבית את הקישור "לכל ההרשמות שלי" ל-`/me/bookings`, ואת פעולות הביטול וההזזה בכרטיס "המפגש הקרוב".
+  evidence: ‏4.12 נבנה לפני 3.6 ו-4.3. אין עדיין ביטול, `/me/bookings` או מסך כרטיסיות פתוחות (Never של spec 4.12).
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-4-12-personal-area-home-and-entitlements.md`
+  target: 3.12
+  summary: אחרי סיום מפגש (תנועת `use`), לבדוק שהכניסה עוברת מ"משוריינות" ל"נוצלו" בבית ובפירוט, שכרטיסייה שנוצלה כולה עוברת ל"קודמות", ושהמסך זהה למסך הכרטיסיות הפתוחות של טל.
+  evidence: ‏`is_used_up` ו-`used` נבדקו ב-`supabase/tests/my-entitlements.test.ts` בלי סיום מפגש אמיתי, כי 3.12 עוד לא נבנה.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-4-12-personal-area-home-and-entitlements.md`
+  target: (בלי יעד)
+  summary: בדיקה דטרמיניסטית ש-`days_left` ב-`get_my_entitlements` נספר לפי התאריך ב-`Asia/Jerusalem` ולא לפי UTC, גם בשעות שאחרי חצות המקומית.
+  evidence: הבדיקה הקיימת קובעת את `expires_on` באותו ביטוי שבו משתמש ה-RPC, ולכן `current_date` (‏UTC) היה נכשל רק בין חצות ל-02:00 או 03:00. הקוד נכון. חסר מנגנון להזרקת זמן לבדיקות המסד.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-4-12-personal-area-home-and-entitlements.md`
+  target: (הסיפור שיבנה ביטול תשלום)
+  summary: `get_my_entitlements` לא מחזיר את מצב התשלום (`payments.status`). כשיתווסף ביטול תשלום (`voided`), להחליט איך הזכות והסכום מוצגים ללקוחה, ולהוסיף לכך שדה ובדיקה.
+  evidence: ה-RPC מחזיר `amount_agorot` ו-`paid_on` מכל תשלום, בלי הבדל. אין היום פעולה שמבטלת תשלום (unverified, medium אם יתממש).

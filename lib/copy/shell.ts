@@ -18,6 +18,10 @@ export const shellCopy = {
     home: "בית",
     sessions: "מפגשים",
     payments: "תשלומים",
+    purchases: "היסטוריית רכישות",
+    // The customer's sessions tab (user decision 2026-10-06); the admin's
+    // stays "מפגשים".
+    customerSessions: "לו״ז בראנצ׳ים",
     more: "עוד",
     // The public pages (menu-sheet); also each page's h1 and <title>.
     publicSessions: "בראנצ׳ים",

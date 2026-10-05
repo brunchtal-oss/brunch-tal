@@ -10,12 +10,44 @@ function elapsed(days: number): string {
 }
 
 export const customerCopy = {
-  purchase: "אישור רכישה:",
-  purchasedOn: "נרכשה ב-",
-  balancesTitle: "הכניסות שלי",
-  available: (count: number) => `${count} זמינות`,
-  reserved: (count: number) => `${count} משוריינות`,
+  // The receipt of each purchase, only in the purchase history (user
+  // decision 2026-10-06: no receipt on home): "{₪}  נרכשה {DD.MM}  בתוקף
+  // עד {DD.MM}".
+  purchasedOn: "נרכשה",
   validUntil: "בתוקף עד",
+  // Only while the entitlement is expiring (is_expiring from the server).
+  daysLeft: (days: number) =>
+    days <= 0 ? "היום האחרון" : days === 1 ? "עוד יום אחד" : `עוד ${days} ימים`,
+  expiring: "עומדת לפוג",
+  // Home (story 4.12).
+  upcomingTitle: "המפגש הקרוב שלי",
+  // The later sessions, each a weekday and date linking to its page (user
+  // decision 2026-10-06).
+  moreUpcomingTitle: "הבראנצ׳ים הקרובים שלי",
+  // The active card: entries used and booked, out of all its entries.
+  cardTitle: "הכרטיסייה שלי",
+  usedOf: (used: number, total: number) => `ניצלת ${used}/${total}`,
+  bookedOf: (booked: number, total: number) => `נרשמת ${booked}/${total}`,
+  emptyHomeTitle: "השולחן מחכה לפעם הבאה",
+  // Purchase history (story 4.12, user decision 2026-10-06; the tab and
+  // the h1 are shellCopy.nav.purchases).
+  purchasesEmpty: "עוד אין כאן רכישות",
+  backToPurchases: "להיסטוריית הרכישות",
+  // The word of an ended purchase, in place of its validity.
+  entitlementUsedUp: "נוצלה",
+  entitlementExpired: "פגה",
+  entitlementCancelled: "בוטלה",
+  // The detail screen.
+  historyTitle: "יומן תנועות",
+  historyEmpty: "עוד אין תנועות",
+  movement: {
+    grant: "רכישה",
+    opening_balance: "יתרת פתיחה",
+    reserve: "שריון",
+    release: "שחרור",
+    use: "ניצול",
+    adjust: "תיקון",
+  },
   // A card that expired before it was bound (story 2.4, user decision
   // 2026-10-03); the toggletip explains why. Its contact phrase links to
   // Tal's WhatsApp.
@@ -25,7 +57,9 @@ export const customerCopy = {
   expiredBeforeBoundInfo: (days: number) =>
     `${elapsed(days)} מרכישת הכרטיסיה ולכן פג תוקפה. לבירורים צרי קשר`,
   contactPhrase: "צרי קשר",
-  sessionsTitle: "מפגשים",
+  // Also the tab's label (shellCopy.nav.customerSessions, user decision
+  // 2026-10-06).
+  sessionsTitle: "לו״ז בראנצ׳ים",
   sessionsSoon: "המפגשים יופיעו כאן בקרוב",
   // Self-booking (story 3.2, wording approved by the user on 2026-10-04).
   // The session title; never a regular/couple label for the customer.
@@ -56,9 +90,6 @@ export const customerCopy = {
   // After the booking (the climax).
   climax: "המקום שלך סביב השולחן שמור",
   toMyBalance: "ליתרה שלי",
-  // A pinned purchase whose session has not started (story 3.11): shown
-  // instead of the balance card, before the product's message and button.
-  pinnedSaved: "המקום שלך שמור",
   // Several dates with a card (story 3.3, wording from the spec's Design
   // Notes).
   selectDates: "לבחור כמה תאריכים",
