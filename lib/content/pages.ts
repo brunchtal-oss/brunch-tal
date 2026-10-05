@@ -3,11 +3,10 @@ import { cacheLife, cacheTag } from "next/cache"
 import { createPublicClient } from "@/lib/supabase/public"
 
 import { schemaForKind, type ContentByKind } from "./schema"
+import { visibleSection, type ParsedSection } from "./visible"
 
 // A published section of a public page, parsed with its kind's schema.
-export type PublishedSection = {
-  [K in keyof ContentByKind]: { kind: K; content: ContentByKind[K] }
-}[keyof ContentByKind]
+export type PublishedSection = ParsedSection
 
 // key -> section, in the page's order.
 export type PublishedSections = Record<string, PublishedSection>
@@ -18,7 +17,8 @@ export type PublishedSections = Record<string, PublishedSection>
 // content:<slug> for admin_publish_content. The site's footer (site) is also
 // tagged content:global, with the business details. A section that does not
 // parse (or whose kind has no schema) is left out, so the rest of the page
-// still shows. A read error is logged and gives {}: the page is shown
+// still shows; hidden sections and items are left out (visibleSection,
+// story 5.3). A read error is logged and gives {}: the page is shown
 // without its sections (and `next build` does not fail without the DB).
 export async function getPublishedSections(
   slug: string
@@ -38,15 +38,30 @@ export async function getPublishedSections(
     return {}
   }
 
+  return toSections(
+    (data ?? []).map((row) => ({
+      key: row.key,
+      kind: row.kind,
+      content: row.published_content,
+    }))
+  )
+}
+
+// key -> the visible part of each section that parses with its kind's
+// schema. Shared by the public pages (published content) and the admin
+// preview (the draft), so both show the same thing.
+export function toSections(
+  rows: readonly { key: string; kind: string; content: unknown }[]
+): PublishedSections {
   const sections: PublishedSections = {}
-  for (const row of data ?? []) {
-    const parsed = schemaForKind(row.kind)?.safeParse(row.published_content)
-    if (parsed?.success) {
-      sections[row.key] = {
-        kind: row.kind,
-        content: parsed.data,
-      } as PublishedSection
-    }
+  for (const row of rows) {
+    const parsed = schemaForKind(row.kind)?.safeParse(row.content)
+    if (!parsed?.success) continue
+    const visible = visibleSection({
+      kind: row.kind,
+      content: parsed.data,
+    } as PublishedSection)
+    if (visible) sections[row.key] = visible
   }
   return sections
 }

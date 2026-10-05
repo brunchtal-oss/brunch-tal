@@ -4,14 +4,18 @@ import { cn } from "@/lib/utils"
 import type { PageStatus } from "./content-items"
 
 // DESIGN.md › content-section-row: draft = pending, published = success,
-// unpublished changes = warning. Always a word; the dot is decorative.
-const CHIP: Record<PageStatus, { chip: string; dot: string }> = {
+// unpublished changes = warning, hidden = expired. Always a word; the dot is
+// decorative.
+export type ChipStatus = PageStatus | "hidden"
+
+const CHIP: Record<ChipStatus, { chip: string; dot: string }> = {
   draft: { chip: "bg-pending-tint text-pending", dot: "bg-pending-dot" },
   published: { chip: "bg-success-tint text-success", dot: "bg-success-dot" },
   changed: { chip: "bg-warning-tint text-warning", dot: "bg-warning-dot" },
+  hidden: { chip: "bg-expired-tint text-expired", dot: "bg-expired-dot" },
 }
 
-export function ContentStatusChip({ status }: { status: PageStatus }) {
+export function ContentStatusChip({ status }: { status: ChipStatus }) {
   return (
     <span
       className={cn(

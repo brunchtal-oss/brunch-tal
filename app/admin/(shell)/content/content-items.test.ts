@@ -1,15 +1,26 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  EDITABLE_PAGES,
+  EDITOR_PAGE_IDS,
   editorContent,
+  editorPageOf,
   fieldErrorMessage,
   fieldErrors,
+  findSectionRef,
   hasPendingDraft,
   isEditableSlug,
+  isEditorPageId,
   pageStatus,
   publishTags,
   sameContent,
+  sectionHidden,
+  sectionRefOf,
+  sectionStatus,
+  sectionSummary,
+  slugsOf,
   type ContentSection,
+  type SectionRef,
 } from "./content-items"
 
 function section(values: Partial<ContentSection>): ContentSection {
@@ -28,11 +39,57 @@ function section(values: Partial<ContentSection>): ContentSection {
 }
 
 describe("content items", () => {
-  it("edits home and contact only", () => {
-    expect(isEditableSlug("home")).toBe(true)
-    expect(isEditableSlug("contact")).toBe(true)
+  it("saves and publishes the slugs of the editor only", () => {
+    for (const slug of [
+      "home",
+      "about",
+      "how-it-works",
+      "gallery",
+      "contact",
+      "join-form",
+      "site",
+    ]) {
+      expect(isEditableSlug(slug)).toBe(true)
+    }
     expect(isEditableSlug("privacy")).toBe(false)
     expect(isEditableSlug("toString")).toBe(false)
+  })
+
+  it("groups the sections by where they are on the site", () => {
+    expect(EDITOR_PAGE_IDS).toEqual([
+      "home",
+      "how-it-works",
+      "gallery",
+      "contact",
+      "join-form",
+      "site",
+    ])
+    expect(EDITABLE_PAGES.home.map((ref) => `${ref.slug}/${ref.key}`)).toEqual([
+      "home/hero",
+      "home/intro",
+      "about/main",
+      "home/contact",
+    ])
+    expect(slugsOf("home")).toEqual(["home", "about"])
+    expect(slugsOf("contact")).toEqual(["contact"])
+    expect(isEditorPageId("about")).toBe(false)
+    expect(isEditorPageId("site")).toBe(true)
+    expect(isEditorPageId("constructor")).toBe(false)
+  })
+
+  it("finds a section by page and key, or by slug and key", () => {
+    expect(sectionRefOf("home", "main")).toEqual({
+      slug: "about",
+      key: "main",
+      kind: "text_block",
+    })
+    expect(sectionRefOf("home", "faq")).toBeNull()
+    expect(sectionRefOf("contact", "intro")?.slug).toBe("contact")
+    expect(findSectionRef("about", "main")?.kind).toBe("text_block")
+    expect(findSectionRef("home", "main")).toBeNull()
+    expect(findSectionRef("site", "footer")?.kind).toBe("footer")
+    expect(editorPageOf("gallery", "testimonials")).toBe("gallery")
+    expect(editorPageOf("about", "main")).toBe("home")
   })
 
   it("updates content:global for the business details and the footer", () => {
@@ -63,32 +120,84 @@ describe("content items", () => {
     ).toBe(expected)
   })
 
-  it("gives each page its chip", () => {
-    expect(pageStatus({ published_at: null, sections: [section({})] })).toBe(
+  it("gives each section its chip", () => {
+    const published = { published_at: "2026-10-04T10:00:00+00:00" }
+    expect(sectionStatus(published, null)).toBe("draft")
+    expect(sectionStatus({ published_at: null }, section({}))).toBe("draft")
+    expect(sectionStatus(published, section({ draft_content: { a: 1 } }))).toBe(
       "draft"
     )
     expect(
-      pageStatus({
-        published_at: null,
-        sections: [section({ draft_content: { a: 1 } })],
-      })
-    ).toBe("draft")
-    expect(
-      pageStatus({
-        published_at: "2026-10-04T10:00:00+00:00",
-        sections: [
-          section({ draft_content: { a: 1 }, published_content: { a: 1 } }),
-        ],
-      })
+      sectionStatus(
+        published,
+        section({ draft_content: { a: 1 }, published_content: { a: 1 } })
+      )
     ).toBe("published")
     expect(
-      pageStatus({
-        published_at: "2026-10-04T10:00:00+00:00",
-        sections: [
-          section({ draft_content: { a: 2 }, published_content: { a: 1 } }),
-        ],
-      })
+      sectionStatus(
+        published,
+        section({ draft_content: { a: 2 }, published_content: { a: 1 } })
+      )
     ).toBe("changed")
+  })
+
+  it("gives each page the chip of all its slugs", () => {
+    const at = "2026-10-04T10:00:00+00:00"
+    const done = section({
+      draft_content: { a: 1 },
+      published_content: { a: 1 },
+    })
+    const changed = section({
+      key: "main",
+      draft_content: { a: 2 },
+      published_content: { a: 1 },
+    })
+    expect(
+      pageStatus([
+        { slug: "home", published_at: null, sections: [section({})] },
+      ])
+    ).toBe("draft")
+    expect(
+      pageStatus([{ slug: "home", published_at: at, sections: [done] }])
+    ).toBe("published")
+    expect(
+      pageStatus([
+        { slug: "home", published_at: at, sections: [done] },
+        { slug: "about", published_at: at, sections: [changed] },
+      ])
+    ).toBe("changed")
+    // Only the page's own sections count.
+    expect(
+      pageStatus(
+        [
+          { slug: "home", published_at: at, sections: [done] },
+          { slug: "about", published_at: at, sections: [changed] },
+        ],
+        [{ slug: "home", key: "hero" }]
+      )
+    ).toBe("published")
+  })
+
+  it("says a section is hidden from what would be shown", () => {
+    expect(sectionHidden(null)).toBe(false)
+    expect(
+      sectionHidden(section({ published_content: { hidden: true } }))
+    ).toBe(true)
+    expect(
+      sectionHidden(
+        section({
+          draft_content: { a: 1 },
+          published_content: { hidden: true },
+        })
+      )
+    ).toBe(false)
+  })
+
+  it("sums a section up in its row", () => {
+    expect(sectionSummary({ title: "line 1\nline 2" })).toBe("line 1")
+    expect(sectionSummary({ items: [{}, {}] })).toContain("2")
+    expect(sectionSummary({ question: "q" })).toBe("q")
+    expect(sectionSummary({})).toBe("")
   })
 
   it("starts the editor from the draft, else the published content", () => {
@@ -103,26 +212,63 @@ describe("content items", () => {
     ).toEqual({ a: 2 })
   })
 
-  it("names the first error of each field", () => {
-    expect(fieldErrors("hero", { title: "t", cta_label: "c" })).toBeNull()
+  it("names the first error of each field, inside items too", () => {
+    const hero: SectionRef = { slug: "home", key: "hero", kind: "hero" }
+    expect(fieldErrors(hero, { title: "t", cta_label: "c" })).toBeNull()
     expect(
-      fieldErrors("hero", { title: "", cta_label: "x".repeat(41) })
+      fieldErrors(hero, { title: "", description: "x".repeat(301) })
     ).toEqual({
       title: { kind: "required" },
-      cta_label: { kind: "tooLong", max: 40 },
+      description: { kind: "tooLong", max: 300 },
     })
-    expect(fieldErrors("hero", {})).toMatchObject({
+    expect(fieldErrors(hero, {})).toMatchObject({
       title: { kind: "required" },
     })
     expect(
-      fieldErrors("business_details", {
-        whatsapp_phone: "abc",
-        navigation_url: "http://x.example",
-      })
+      fieldErrors(
+        { slug: "contact", key: "business_details", kind: "business_details" },
+        { whatsapp_phone: "abc", navigation_url: "http://x.example" }
+      )
     ).toEqual({
       whatsapp_phone: { kind: "phone" },
       navigation_url: { kind: "url" },
     })
+    expect(
+      fieldErrors(
+        { slug: "gallery", key: "testimonials", kind: "testimonials" },
+        {
+          items: [
+            { name: "a", text: "b" },
+            { name: "", text: "c" },
+          ],
+        }
+      )
+    ).toEqual({ "items.1.name": { kind: "required" } })
+    expect(
+      fieldErrors(
+        { slug: "site", key: "footer", kind: "footer" },
+        { items: [{ label: "x", url: "http://x.example" }] }
+      )
+    ).toEqual({ "items.0.url": { kind: "url" } })
+    expect(
+      fieldErrors(
+        { slug: "site", key: "footer", kind: "footer" },
+        { items: [{ label: "x", url: " " }] }
+      )
+    ).toEqual({ "items.0.url": { kind: "required" } })
+  })
+
+  it("requires the body by section, not by kind", () => {
+    const intro: SectionRef = { slug: "home", key: "intro", kind: "text_block" }
+    const contact: SectionRef = {
+      slug: "home",
+      key: "contact",
+      kind: "text_block",
+    }
+    expect(fieldErrors(intro, { title: "t", body: "" })).toEqual({
+      body: { kind: "required" },
+    })
+    expect(fieldErrors(contact, { title: "t", body: "" })).toBeNull()
   })
 
   it("has a message for each error", () => {

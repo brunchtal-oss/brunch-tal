@@ -130,26 +130,59 @@ export const adminCopy = {
   // publish (EXPERIENCE › admin states › site content).
   content: {
     title: "תוכן האתר",
+    // The editor's pages, grouped by where they are on the site (story 5.3).
     pages: {
       home: "בית",
-      contact: "פרטי העסק",
+      "how-it-works": "איך זה עובד",
+      gallery: "גלריה והמלצות",
+      contact: "יצירת קשר",
+      "join-form": "טופס ההצטרפות",
+      site: "פוטר",
     },
+    // The sections, by "slug/key".
+    sections: {
+      "home/hero": "הירו",
+      "home/intro": "פתיח",
+      "about/main": "אודות",
+      "home/contact": "יצירת קשר",
+      "how-it-works/steps": "שלבים",
+      "how-it-works/faq": "שאלות נפוצות",
+      "gallery/testimonials": "המלצות",
+      "contact/intro": "פתיח",
+      "contact/business_details": "פרטי העסק",
+      "join-form/photo_consent": "בקשת אישור התמונות",
+      "site/footer": "קישורים",
+    } as Record<string, string>,
+    // The row of "site" that leads to the business details (the footer's
+    // phone and address come from there).
+    footerDetails: {
+      title: "טלפון וכתובת",
+      detail: "נערכים בפרטי העסק",
+    },
+    // The testimonials are also shown on the home page.
+    alsoOnHome: "מוצג גם בדף הבית",
     // content-section-row chips (DESIGN › content-section-row).
     status: {
       draft: "טיוטה",
       published: "פורסם",
       changed: "שינויים שלא פורסמו",
+      hidden: "מוסתר",
     },
     notShown: "לא מוצג באתר עד שיפורסם",
     changedHint: "יש טיוטה שעוד לא פורסמה",
     publishedHint: "התוכן מופיע באתר",
     backToList: "לכל התוכן",
+    backToPage: (page: string) => `חזרה ל${page}`,
     saveDraft: "שמירת טיוטה",
     publish: "פרסום",
     preview: "תצוגה מקדימה",
     saved: "הטיוטה נשמרה. היא לא תוצג באתר עד הפרסום",
     published: "פורסם. האתר יציג את השינוי בטעינה הבאה",
     nothingToPublish: "לא בוצעו שינויים לפרסום",
+    // A preview of more than one slug (home and about) whose publish stopped
+    // after some of them were published.
+    partlyPublished: (error: string) =>
+      `חלק מהשינויים פורסמו, והשאר עוד לא. ${error}`,
     // A field the saved draft or the form refused (zod, lib/content/schema.ts).
     fieldError: {
       required: "צריך למלא את השדה הזה",
@@ -163,8 +196,87 @@ export const adminCopy = {
     hero: {
       title: "כותרת",
       description: "תיאור (לא חובה)",
-      ctaLabel: "תווית הכפתור",
-      ctaHint: "הכפתור יופיע באתר כשעמוד המפגשים ייפתח",
+    },
+    // text_block (story 5.3).
+    textBlock: {
+      eyebrow: "שורה קטנה מעל הכותרת (לא חובה)",
+      title: "כותרת",
+      body: "טקסט",
+      bodyOptional: "טקסט (לא חובה)",
+    },
+    // The title of a list section (steps, faq, testimonials).
+    listTitle: "כותרת הסקשן (לא חובה)",
+    steps: {
+      item: (n: number) => `שלב ${n}`,
+      add: "הוספת שלב",
+      title: "שם השלב",
+      body: "הסבר",
+    },
+    faq: {
+      item: (n: number) => `שאלה ${n}`,
+      add: "הוספת שאלה",
+      question: "שאלה",
+      answer: "תשובה",
+    },
+    testimonials: {
+      item: (n: number) => `המלצה ${n}`,
+      add: "הוספת המלצה",
+      name: "שם לתצוגה",
+      text: "טקסט ההמלצה",
+    },
+    footerLinks: {
+      item: (n: number) => `קישור ${n}`,
+      add: "הוספת קישור",
+      label: "שם לתצוגה",
+      labelHint: "למשל: אינסטגרם",
+      url: "כתובת",
+      urlHint: "מתחילה ב-https://. הקישור ייפתח בחלון חדש",
+    },
+    photoConsent: {
+      question: "השאלה",
+      questionHint: "כל שורה תוצג בשורה משלה",
+      yes: "תשובת ההסכמה",
+      no: "תשובת הסירוב",
+    },
+    // A list's items (DESIGN › content-section-row: reorder buttons, hide,
+    // delete). The item is named by its first field, else "{type} {n}".
+    item: {
+      moveUp: (name: string) => `להזיז את ${name} למעלה`,
+      moveDown: (name: string) => `להזיז את ${name} למטה`,
+      hide: "הסתרה",
+      show: "הצגה",
+      remove: "מחיקה",
+      // Announced (aria-live) after an action on an item.
+      moved: (name: string, position: number, total: number) =>
+        `הפריט ${name} במקום ${position} מתוך ${total}`,
+      hiddenNow: (name: string) => `הפריט ${name} מוסתר`,
+      shownNow: (name: string) => `הפריט ${name} מוצג`,
+      removed: (name: string) => `הפריט ${name} נמחק`,
+      // The inline confirm of a delete (user decision 2026-10-05).
+      confirmRemove: (name: string) => `למחוק את ${name}?`,
+      cancel: "ביטול",
+      added: "נוסף פריט חדש",
+    },
+    itemCount: (n: number) => (n === 1 ? "פריט אחד" : `${n} פריטים`),
+    emptyList: "אין פריטים. בלי פריט גלוי הסקשן לא מוצג באתר",
+    hiddenItemHint: "מוסתר, לא יוצג באתר",
+    // Hiding a whole section (text_block, steps, faq, testimonials).
+    hideSection: "הסתרת הסקשן",
+    showSection: "הצגת הסקשן",
+    sectionHiddenNotice: "הסקשן מוסתר. אחרי הפרסום הוא לא יוצג באתר",
+    // Undo in two levels (user decision 2026-10-05).
+    undo: {
+      // Back to the saved draft, without the server.
+      revert: "ביטול השינויים",
+      reverted: "השינויים בוטלו. הטופס חזר לטיוטה השמורה",
+      // The saved draft becomes what the site shows.
+      discard: "חזרה למה שמוצג באתר",
+      discardQuestion: "לחזור למה שמוצג באתר?",
+      discardDetail:
+        "הטיוטה השמורה של הסקשן הזה תימחק, והטופס יחזור לתוכן שמוצג עכשיו באתר",
+      discardConfirm: "חזרה למה שמוצג באתר",
+      discarded: "הטיוטה נמחקה. הטופס מציג את מה שמוצג באתר",
+      cancel: "ביטול",
     },
     business: {
       whatsappPhone: "מספר וואטסאפ",
@@ -177,9 +289,8 @@ export const adminCopy = {
       arrivalInstructions: "הוראות הגעה (לא חובה)",
       navigationUrl: "קישור ניווט (לא חובה)",
       navigationUrlHint: "למשל קישור מ-Google Maps או Waze, שמתחיל ב-https://",
-      paymentInstructions: "הוראות תשלום (לא חובה)",
     },
-    // /admin/content/home/preview
+    // /admin/content/<page>/preview
     previewTitle: "תצוגה מקדימה",
     previewBar: "תצוגה מקדימה — עוד לא פורסם",
     previewNoChanges: "תצוגה מקדימה — כמו שמוצג עכשיו באתר",

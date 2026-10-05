@@ -1,31 +1,21 @@
 import { Suspense } from "react"
-import { MessageCircleIcon } from "lucide-react"
 
-import { HomeHero } from "@/components/public/home-hero"
-import {
-  TestimonialsSection,
-  TextBlockSection,
-} from "@/components/public/sections"
+import { HomeView } from "@/components/public/page-views"
 import { UpcomingSessions } from "@/components/public/upcoming-sessions"
 import {
   getBusinessDetails,
   guestWhatsappHref,
 } from "@/lib/content/business-details"
-import { getPublishedSections, sectionContent } from "@/lib/content/pages"
+import { getPublishedSections } from "@/lib/content/pages"
 import { shellCopy } from "@/lib/copy/shell"
 
-const copy = shellCopy.public
-
-// The home page (stories 5.1, 5.2, 5.16): the hero, the short intro (home ›
-// intro), the upcoming sessions (up to 3, story 5.16), about (about › main;
-// it has no page of its own, user decision 2026-10-04), the testimonials
-// (gallery › testimonials) and contact (home › contact: a heading with the
-// WhatsApp button, shown only with a usable number; the business details
-// are on /contact). Everything but the sessions is published content read from the cache (content:home, content:about,
-// content:gallery, content:global) through the anon client, so a draft
-// never reaches it; a section without valid published content is not shown.
-// The sessions are dynamic (AD-2), inside <Suspense>, so the rest stays
-// cached; the area is not shown without sessions or when the read fails.
+// The home page (stories 5.1, 5.2, 5.16, 5.3): HomeView (the hero, the
+// intro, the upcoming sessions, about, the testimonials and contact), shared
+// with the admin preview. Everything but the sessions is published content
+// read from the cache (content:home, content:about, content:gallery,
+// content:global) through the anon client, so a draft never reaches it; a
+// section without valid, visible published content is not shown. The
+// sessions are dynamic (AD-2), inside <Suspense>, so the rest stays cached.
 // Title: the root default.
 export default async function HomePage() {
   const [home, about, gallery, details] = await Promise.all([
@@ -34,50 +24,19 @@ export default async function HomePage() {
     getPublishedSections("gallery"),
     getBusinessDetails(),
   ])
-  const hero = sectionContent(home, "hero", "hero")
-  const intro = sectionContent(home, "intro", "text_block")
-  const aboutMain = sectionContent(about, "main", "text_block")
-  const testimonials = sectionContent(gallery, "testimonials", "testimonials")
-  const contact = sectionContent(home, "contact", "text_block")
-  const whatsappHref = guestWhatsappHref(details)
 
   return (
-    <>
-      <HomeHero
-        hero={hero}
-        name={details?.business_name ?? shellCopy.wordmark}
-      />
-      {intro && <TextBlockSection content={intro} />}
-      <Suspense fallback={null}>
-        <UpcomingSessions />
-      </Suspense>
-      {aboutMain && <TextBlockSection content={aboutMain} />}
-      {testimonials && (
-        <TestimonialsSection
-          content={testimonials}
-          label={copy.sections.testimonials}
-        />
-      )}
-      {contact && whatsappHref && (
-        <TextBlockSection content={contact}>
-          <div className="mt-6 flex justify-center">
-            <a
-              href={whatsappHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-[4px] border border-success px-5 py-2 text-base leading-[1.2] font-semibold text-success hover:bg-success-tint"
-            >
-              <MessageCircleIcon
-                aria-hidden
-                strokeWidth={1.8}
-                className="size-5"
-              />
-              {copy.contact.whatsappLink}
-              <span className="sr-only"> {copy.contact.opensOutside}</span>
-            </a>
-          </div>
-        </TextBlockSection>
-      )}
-    </>
+    <HomeView
+      home={home}
+      about={about}
+      gallery={gallery}
+      name={details?.business_name ?? shellCopy.wordmark}
+      whatsappHref={guestWhatsappHref(details)}
+      sessions={
+        <Suspense fallback={null}>
+          <UpcomingSessions />
+        </Suspense>
+      }
+    />
   )
 }

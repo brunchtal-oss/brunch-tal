@@ -34,12 +34,14 @@ export const photoConsentSchema = z.object({
 
 export type PhotoConsentContent = z.infer<typeof photoConsentSchema>
 
-// home › hero (story 5.1): the title, an optional description and the label
-// of the button to the sessions. The photo arrives in 5.4.
+// home › hero (story 5.1): the title and an optional description. The photo
+// arrives in 5.4. cta_label is no longer edited or shown (the hero has no
+// button, user decision 2026-10-05); it stays optional so a hero published
+// with it still parses (story 5.3).
 export const heroSchema = z.object({
   title: z.string().trim().min(1).max(80),
   description: optionalText(300),
-  cta_label: z.string().trim().min(1).max(40),
+  cta_label: optionalText(40),
 })
 
 export type HeroContent = z.infer<typeof heroSchema>
@@ -75,8 +77,13 @@ export const businessDetailsSchema = z.object({
 export type BusinessDetailsContent = z.infer<typeof businessDetailsSchema>
 
 // Story 5.2: the kinds of the public pages. Each is shown only when it
-// parses; a list without items is not a section.
+// parses; a list without a visible item is not a section
+// (lib/content/visible.ts).
 const requiredText = (max: number) => z.string().trim().min(1).max(max)
+
+// Story 5.3: a hidden section or item is published like any change and is
+// not shown on the site or in the preview (lib/content/visible.ts).
+const hidden = z.boolean().optional()
 
 // A heading with its text (home › intro, home › contact, about › main,
 // contact › intro). The body keeps its line breaks; it is optional, so a
@@ -85,6 +92,7 @@ export const textBlockSchema = z.object({
   eyebrow: optionalText(60),
   title: requiredText(120),
   body: optionalText(5000),
+  hidden,
 })
 
 export type TextBlockContent = z.infer<typeof textBlockSchema>
@@ -93,9 +101,16 @@ export type TextBlockContent = z.infer<typeof textBlockSchema>
 export const stepsSchema = z.object({
   title: optionalText(120),
   items: z
-    .array(z.object({ title: requiredText(120), body: requiredText(1000) }))
-    .min(1)
+    .array(
+      z.object({
+        title: requiredText(120),
+        body: requiredText(1000),
+        hidden,
+      })
+    )
+    .min(0)
     .max(30),
+  hidden,
 })
 
 export type StepsContent = z.infer<typeof stepsSchema>
@@ -105,10 +120,15 @@ export const faqSchema = z.object({
   title: optionalText(120),
   items: z
     .array(
-      z.object({ question: requiredText(300), answer: requiredText(3000) })
+      z.object({
+        question: requiredText(300),
+        answer: requiredText(3000),
+        hidden,
+      })
     )
-    .min(1)
+    .min(0)
     .max(60),
+  hidden,
 })
 
 export type FaqContent = z.infer<typeof faqSchema>
@@ -118,16 +138,35 @@ export type FaqContent = z.infer<typeof faqSchema>
 export const testimonialsSchema = z.object({
   title: optionalText(120),
   items: z
-    .array(z.object({ name: requiredText(80), text: requiredText(1500) }))
-    .min(1)
+    .array(
+      z.object({ name: requiredText(80), text: requiredText(1500), hidden })
+    )
+    .min(0)
     .max(60),
+  hidden,
 })
 
 export type TestimonialsContent = z.infer<typeof testimonialsSchema>
 
-// site › footer: the footer's text (tag content:global).
+// site › footer (tag content:global, story 5.3): links shown in the footer
+// (a display name and an https:// address, e.g. social networks). The old
+// text still parses and is not shown; the editor saves only the items.
 export const footerSchema = z.object({
-  text: requiredText(500),
+  text: optionalText(500),
+  items: z
+    .array(
+      z.object({
+        label: requiredText(60),
+        url: z
+          .string()
+          .trim()
+          .min(1)
+          .pipe(z.url({ protocol: /^https$/ }).max(500)),
+        hidden,
+      })
+    )
+    .max(30)
+    .optional(),
 })
 
 export type FooterContent = z.infer<typeof footerSchema>
@@ -155,4 +194,28 @@ export function schemaForKind(kind: string) {
   return Object.hasOwn(contentSchemas, kind)
     ? contentSchemas[kind as ContentKind]
     : null
+}
+
+// The text blocks whose body is required (story 5.3). home › contact stays a
+// heading with the WhatsApp button.
+export const BODY_REQUIRED_SECTIONS: readonly string[] = [
+  "home/intro",
+  "about/main",
+  "contact/intro",
+]
+
+const textBlockWithBodySchema = textBlockSchema.extend({
+  body: requiredText(5000),
+})
+
+// The schema the editor and its Server Actions check a section with: the
+// kind's schema, stricter for some sections. The site keeps parsing by kind
+// (schemaForKind), so content that is already published is not refused.
+export function schemaForSection(slug: string, key: string, kind: string) {
+  if (
+    kind === "text_block" &&
+    BODY_REQUIRED_SECTIONS.includes(`${slug}/${key}`)
+  )
+    return textBlockWithBodySchema
+  return schemaForKind(kind)
 }

@@ -6,7 +6,11 @@ import {
   getBusinessDetails,
   guestWhatsappHref,
 } from "@/lib/content/business-details"
-import { getPublishedPageSlugs } from "@/lib/content/pages"
+import {
+  getPublishedPageSlugs,
+  getPublishedSections,
+  sectionContent,
+} from "@/lib/content/pages"
 import { shellCopy } from "@/lib/copy/shell"
 import { publicLegalNav } from "@/lib/nav"
 import { cn } from "@/lib/utils"
@@ -17,16 +21,19 @@ import { cn } from "@/lib/utils"
 // link and the footer's contact lines come from the published business
 // details (content:global), read from the cache with the anon client;
 // without them the WORDMARK and no bar. The footer links to a legal page
-// once it is published.
+// once it is published, and shows the visible links of site › footer
+// (content:site, content:global; story 5.3).
 export default async function PublicLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const [details, legalSlugs] = await Promise.all([
+  const [details, legalSlugs, site] = await Promise.all([
     getBusinessDetails(),
     getPublishedPageSlugs(publicLegalNav.map((item) => item.slug)),
+    getPublishedSections("site"),
   ])
+  const footerLinks = sectionContent(site, "footer", "footer")?.items ?? []
   const name = details?.business_name ?? shellCopy.wordmark
   const whatsappHref = guestWhatsappHref(details)
 
@@ -42,6 +49,7 @@ export default async function PublicLayout({
       <SiteFooter
         details={details}
         legal={publicLegalNav.filter((item) => legalSlugs.includes(item.slug))}
+        links={footerLinks}
         className={cn(
           // Room for the fixed whatsapp-bar (48px + 16px from the edge +
           // safe area, plus air) inside the footer's band, so its text ends

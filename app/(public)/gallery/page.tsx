@@ -1,40 +1,28 @@
 import type { Metadata } from "next"
 
-import {
-  EmptyPublicPage,
-  PublicPageHeading,
-} from "@/components/public/public-page"
-import { TestimonialsSection } from "@/components/public/sections"
+import { GalleryView } from "@/components/public/page-views"
 import {
   getBusinessDetails,
   guestWhatsappHref,
 } from "@/lib/content/business-details"
-import { getPublishedSections, sectionContent } from "@/lib/content/pages"
+import { getPublishedSections } from "@/lib/content/pages"
 import { shellCopy } from "@/lib/copy/shell"
 
-const title = shellCopy.nav.gallery
+export const metadata: Metadata = { title: shellCopy.nav.gallery }
 
-export const metadata: Metadata = { title }
-
-// /gallery (story 5.2): the text testimonials, published content from the
-// cache (content:gallery). The photos arrive in 5.4.
+// /gallery (stories 5.2, 5.3): the text testimonials (GalleryView, shared
+// with the admin preview), published content from the cache
+// (content:gallery); hidden testimonials are left out. The photos arrive in
+// 5.4.
 export default async function GalleryPage() {
-  const sections = await getPublishedSections("gallery")
-  const testimonials = sectionContent(sections, "testimonials", "testimonials")
-
+  const [sections, details] = await Promise.all([
+    getPublishedSections("gallery"),
+    getBusinessDetails(),
+  ])
   return (
-    <>
-      <PublicPageHeading>{title}</PublicPageHeading>
-      {testimonials ? (
-        <TestimonialsSection
-          content={testimonials}
-          label={shellCopy.public.sections.testimonials}
-        />
-      ) : (
-        <EmptyPublicPage
-          whatsappHref={guestWhatsappHref(await getBusinessDetails())}
-        />
-      )}
-    </>
+    <GalleryView
+      sections={sections}
+      whatsappHref={guestWhatsappHref(details)}
+    />
   )
 }

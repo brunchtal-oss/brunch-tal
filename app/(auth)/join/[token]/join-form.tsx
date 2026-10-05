@@ -11,6 +11,7 @@ import Link from "next/link"
 
 import { PasswordInput } from "@/components/auth/password-input"
 import { ContactText } from "@/components/shared/contact-text"
+import { PhotoConsentFieldset } from "@/components/shared/photo-consent-fieldset"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button, buttonVariants } from "@/components/ui/button"
 import {
@@ -202,7 +203,6 @@ export function JoinForm({
   const confirm = wiring("confirm")
   const privacy = wiring("privacy")
   const photo = errorFor("photoConsent")
-  const questionLines = photoConsent.question.split("\n")
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
@@ -455,46 +455,10 @@ export function JoinForm({
         )}
       </Field>
 
-      <fieldset
-        role="radiogroup"
-        aria-required
-        aria-invalid={photo ? true : undefined}
-        aria-describedby={photo ? "photoConsent-error" : undefined}
-        className="flex flex-col gap-3"
-      >
-        <legend className="mb-3 text-base">
-          {questionLines.map((line, index) => (
-            <span key={index} className="block">
-              {line}
-            </span>
-          ))}
-        </legend>
-        {(
-          [
-            ["yes", photoConsent.yes_label],
-            ["no", photoConsent.no_label],
-          ] as const
-        ).map(([value, label]) => (
-          <div key={value} className="flex items-center gap-3">
-            <input
-              id={`photoConsent-${value}`}
-              type="radio"
-              name="photoConsent"
-              value={value}
-              required
-              className="size-5 shrink-0 accent-primary"
-            />
-            <label htmlFor={`photoConsent-${value}`} className="text-base">
-              {label}
-            </label>
-          </div>
-        ))}
-        {photo && (
-          <p id="photoConsent-error" className="text-sm text-destructive">
-            {messageOf(photo.message)}
-          </p>
-        )}
-      </fieldset>
+      <PhotoConsentFieldset
+        content={photoConsent}
+        error={photo ? messageOf(photo.message) : undefined}
+      />
 
       {state?.status === "identity_retry" && (
         <Alert variant="destructive">

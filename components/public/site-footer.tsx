@@ -17,14 +17,18 @@ const LINK =
 // when there is one), the legal links whose pages are published (legal; 5.5)
 // and the fixed admin entrance. No business name and no footer text (user
 // decision 2026-10-04). A missing field is not shown. The install guide
-// link (story 5.9) is always there.
+// link (story 5.9) is always there. Above the fixed links, the links Tal
+// adds in the content editor (site › footer, story 5.3; e.g. social
+// networks), each opening in a new tab.
 export function SiteFooter({
   details,
   legal,
+  links = [],
   className,
 }: {
   details: BusinessDetailsContent | null
   legal: readonly { href: string; label: string }[]
+  links?: readonly { label: string; url: string }[]
   className?: string
 }) {
   return (
@@ -71,6 +75,24 @@ export function SiteFooter({
               </div>
             )}
           </dl>
+        )}
+
+        {links.length > 0 && (
+          <ul className="flex flex-wrap items-center gap-x-5 text-[15px]">
+            {links.map((link, index) => (
+              <li key={index}>
+                <a
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={LINK}
+                >
+                  {link.label}
+                  <span className="sr-only"> {copy.contact.opensOutside}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
         )}
 
         <nav

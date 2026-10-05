@@ -163,6 +163,7 @@
   target: 5.3
   summary: עורך לסקשנים החדשים (`text_block`, ‏`steps`, ‏`faq`, ‏`testimonials`, ‏`footer`) והעמודים `about`, ‏`how-it-works`, ‏`gallery`, ‏`site`, כולל תצוגה מקדימה. היום התוכן שלהם מוזן רק כשורות בדויות במסד הפיתוח. ב-`publishTags` כבר יש `site` ← `content:global`.
   evidence: ‏`EDITABLE_PAGES` ב-`content-items.ts` כולל רק `home` (הירו) ו-`contact` (פרטי העסק).
+  status: נסגר ב-5.3 (2026-10-05). העורך מקבץ את כל הסקשנים לפי המקום באתר, עם טיוטה, תצוגה מקדימה ופרסום (`/admin/content/[slug]`).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-2-public-pages-static.md`
   target: 5.4
@@ -193,16 +194,19 @@
   target: 5.3
   summary: ‏`body` של `text_block` אופציונלי בשביל `home/contact`, אבל אותה סכמה משמשת את `home/intro`, ‏`about/main` ו-`contact/intro`. בעורך של 5.3 צריך לחייב טקסט בסקשנים האלה (חובה לכל סקשן, לא לכל kind).
   evidence: ביקורת התיקונים של 5.2 (2026-10-04).
+  status: נסגר ב-5.3 (2026-10-05). ‏`schemaForSection` מחייב `body` בשלושת הסקשנים, בעורך וב-Action. האתר ממשיך לפרסר לפי kind.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-2-public-pages-static.md`
   target: 5.3
   summary: הוראות התשלום כבר לא מוצגות באתר הציבורי (החלטת המשתמשת 2026-10-04), אבל השדה עדיין נערך בפרטי העסק. צריך להחליט איפה הן מוצגות (למשל אחרי הצטרפות או באזור האישי), או להסתיר את השדה.
   evidence: ‏`FIELDS` ב-`app/admin/(shell)/content/contact/page.tsx` עדיין כולל את `payment_instructions`.
+  status: נסגר ב-5.3 (2026-10-05, החלטת המשתמשת). השדה יצא מעורך פרטי העסק. הערך נשאר בסכמה ובמסד, והעורך שומר אותו בכל שמירה. איפה להציג אותן: רשומה חדשה למטה.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-2-public-pages-static.md`
   target: 5.3
   summary: הסקשן `site/footer` כבר לא מוצג (הפוטר בלי שם העסק ובלי טקסט, החלטת המשתמשת 2026-10-04). העורך של 5.3 לא צריך לכלול אותו, וכדאי להחליט אם להסיר את השורה מהמסד.
   evidence: ‏`app/(public)/layout.tsx` כבר לא קורא את `site`.
+  status: נסגר ב-5.3 (2026-10-05, החלטת המשתמשת): נכנס לעורך. עמוד "פוטר" עם רשימת קישורים (שם וכתובת `https://`), שמוצגים בפוטר מעל הקישורים הקבועים. הטקסט הישן עדיין עובר את הסכמה ולא מוצג. השורה `site/footer` נשארת, ולכן אין מחיקה ב-5.19.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-2-self-booking-tracer-with-a-card.md`
   target: 5.16
@@ -303,4 +307,10 @@
   target: 5.3
   summary: ההירו כבר לא מציג כפתור (החלטת המשתמשת 2026-10-05), אבל `cta_label` עדיין שדה חובה בסכמת `hero` (`lib/content/schema.ts`) ובעורך (`app/admin/(shell)/content/home/page.tsx`). להסיר את השדה מהעורך ולהפוך אותו לאופציונלי בסכמה, בלי לפסול תוכן שכבר פורסם.
   evidence: ‏`HomeHero` לא קורא את `hero.cta_label` מאז 5.16.
+  status: נסגר ב-5.3 (2026-10-05). ‏`cta_label` אופציונלי בסכמה ויצא מהעורך. הירו שפורסם איתו עדיין עובר, ושמירה מהעורך מורידה אותו.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-3-full-content-editor-and-testimonials.md`
+  target: (בלי יעד)
+  summary: להחליט איפה מוצגות הוראות התשלום (למשל אחרי הצטרפות או באזור האישי). השדה `payment_instructions` נשאר בסכמת פרטי העסק ובמסד, אבל לא נערך ולא מוצג.
+  evidence: החלטת המשתמשת 2026-10-05: השדה יוצא מעורך פרטי העסק, והמקום שלו נרשם כאן.
 

@@ -2,23 +2,25 @@
 
 import { updateTag } from "next/cache"
 
-import { schemaForKind } from "@/lib/content/schema"
+import { schemaForSection } from "@/lib/content/schema"
 import type { ActionResult } from "@/lib/errors"
 import { callRpc } from "@/lib/rpc"
 import { createClient } from "@/lib/supabase/server"
 
 import {
-  EDITABLE_PAGES,
+  findSectionRef,
   hasPendingDraft,
   isEditableSlug,
   publishTags,
+  type ContentObject,
   type ContentPage,
 } from "./content-items"
 
-// Save a draft and publish a page (story 5.1). The action is the shape gate
-// (AD-16): the draft is parsed with its kind's zod schema before it is saved,
-// and every draft that would be published is parsed again before
-// admin_publish_content; the RPCs enforce the admin, the object and the
+// Save a section's draft and publish a page (stories 5.1, 5.3). The action
+// is the shape gate (AD-16): only a section of the editor (slug, key) is
+// saved, its draft is parsed with the section's zod schema
+// (schemaForSection) before it is saved, and every draft that would be
+// published is parsed again before admin_publish_content; the RPCs enforce the admin, the object and the
 // version. After a publish the page's cache tags are updated (publishTags:
 // the business details and the footer also update content:global). The
 // idempotency key comes from the editor (AD-5).
@@ -38,35 +40,70 @@ async function readPage(
 
 export async function saveContentDraftAction(input: {
   slug: string
+  key: string
   content: unknown
 }): Promise<ActionResult> {
-  if (!isEditableSlug(input.slug)) return { ok: false, code: "INVALID_INPUT" }
-  const { key } = EDITABLE_PAGES[input.slug]
+  const ref = findSectionRef(input.slug, input.key)
+  if (!ref) return { ok: false, code: "INVALID_INPUT" }
 
   const client = await createClient()
-  const page = await readPage(client, input.slug)
+  const page = await readPage(client, ref.slug)
   if (!page.ok) return page
-  const section = page.data.sections.find((s) => s.key === key)
+  const section = page.data.sections.find((s) => s.key === ref.key)
   if (!section) return { ok: false, code: "NOT_FOUND" }
 
-  const schema = schemaForKind(section.kind)
+  const schema = schemaForSection(ref.slug, ref.key, section.kind)
   const parsed = schema?.safeParse(input.content)
   if (!parsed?.success) {
-    const field = parsed?.error.issues[0]?.path[0]
-    return typeof field === "string"
-      ? { ok: false, code: "INVALID_INPUT", detail: { field } }
+    // The field's path: "title", or "items.2.text" in a list.
+    const path = parsed?.error.issues[0]?.path
+    return path && path.length > 0
+      ? {
+          ok: false,
+          code: "INVALID_INPUT",
+          detail: { field: path.map(String).join(".") },
+        }
       : { ok: false, code: "INVALID_INPUT" }
   }
 
   // JSON drops the optional fields that were left empty (undefined).
   const content = JSON.parse(JSON.stringify(parsed.data))
   const saved = await callRpc(client, "admin_set_content_draft", {
-    p_slug: input.slug,
-    p_key: key,
+    p_slug: ref.slug,
+    p_key: ref.key,
     p_content: content,
   })
   if (!saved.ok) return saved
   return { ok: true, data: undefined }
+}
+
+// "Back to what the site shows" (story 5.3, user decision 2026-10-05): the
+// section's draft becomes its published content ({} when it was never
+// published), through admin_set_content_draft. No schema check: it copies
+// what is already published. Returns that content, so the editor resets its
+// form to it.
+export async function discardContentDraftAction(input: {
+  slug: string
+  key: string
+}): Promise<ActionResult<{ content: ContentObject }>> {
+  const ref = findSectionRef(input.slug, input.key)
+  if (!ref) return { ok: false, code: "INVALID_INPUT" }
+
+  const client = await createClient()
+  const page = await readPage(client, ref.slug)
+  if (!page.ok) return page
+  const section = page.data.sections.find((s) => s.key === ref.key)
+  if (!section) return { ok: false, code: "NOT_FOUND" }
+
+  const content = section.published_content ?? {}
+  const saved = await callRpc(client, "admin_set_content_draft", {
+    p_slug: ref.slug,
+    p_key: ref.key,
+    // A copy as JSON (the RPC's jsonb parameter).
+    p_content: JSON.parse(JSON.stringify(content)),
+  })
+  if (!saved.ok) return saved
+  return { ok: true, data: { content } }
 }
 
 export async function publishContentAction(input: {
@@ -83,7 +120,7 @@ export async function publishContentAction(input: {
 
   // Nothing is published unless every pending draft passes its schema.
   for (const section of page.data.sections.filter(hasPendingDraft)) {
-    const schema = schemaForKind(section.kind)
+    const schema = schemaForSection(input.slug, section.key, section.kind)
     if (!schema?.safeParse(section.draft_content).success) {
       return {
         ok: false,

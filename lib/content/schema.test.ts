@@ -7,6 +7,7 @@ import {
   heroSchema,
   photoConsentSchema,
   schemaForKind,
+  schemaForSection,
   stepsSchema,
   testimonialsSchema,
   textBlockSchema,
@@ -54,12 +55,18 @@ describe("heroSchema", () => {
   it.each([
     ["no title", { ...hero, title: undefined }],
     ["an empty title", { ...hero, title: " " }],
-    ["an empty button label", { ...hero, cta_label: "" }],
     ["a title over 80", { ...hero, title: "x".repeat(81) }],
     ["a description over 300", { ...hero, description: "x".repeat(301) }],
-    ["a button label over 40", { ...hero, cta_label: "x".repeat(41) }],
   ])("refuses %s", (_label, value) => {
     expect(heroSchema.safeParse(value).success).toBe(false)
+  })
+
+  it("still parses a hero published with a button label, and one without", () => {
+    expect(heroSchema.safeParse(hero).success).toBe(true)
+    expect(heroSchema.safeParse({ title: "t" }).success).toBe(true)
+    expect(heroSchema.parse({ title: "t", cta_label: "" })).toEqual({
+      title: "t",
+    })
   })
 
   it("accepts the limits", () => {
@@ -141,11 +148,22 @@ describe("list schemas", () => {
     [stepsSchema, { title: "t", body: "b" }],
     [faqSchema, { question: "q", answer: "a" }],
     [testimonialsSchema, { name: "n", text: "t" }],
-  ] as const)("parses items and refuses an empty list", (schema, item) => {
-    expect(schema.safeParse({ items: [item] }).success).toBe(true)
-    expect(schema.safeParse({ items: [] }).success).toBe(false)
-    expect(schema.safeParse({}).success).toBe(false)
-  })
+  ] as const)(
+    "parses items, an empty list and hidden flags, not a missing list",
+    (schema, item) => {
+      expect(schema.safeParse({ items: [item] }).success).toBe(true)
+      // An empty list is saved and published; the site does not show it.
+      expect(schema.safeParse({ items: [] }).success).toBe(true)
+      expect(
+        schema.safeParse({ hidden: true, items: [{ ...item, hidden: true }] })
+          .success
+      ).toBe(true)
+      expect(
+        schema.safeParse({ items: [{ ...item, hidden: "yes" }] }).success
+      ).toBe(false)
+      expect(schema.safeParse({}).success).toBe(false)
+    }
+  )
 
   it("refuses a step without a body", () => {
     expect(
@@ -165,9 +183,62 @@ describe("list schemas", () => {
 })
 
 describe("footerSchema", () => {
-  it("needs a text", () => {
+  it("still parses the old text, and links", () => {
     expect(footerSchema.safeParse({ text: "f" }).success).toBe(true)
-    expect(footerSchema.safeParse({ text: "" }).success).toBe(false)
+    expect(footerSchema.safeParse({}).success).toBe(true)
+    expect(
+      footerSchema.safeParse({
+        items: [
+          { label: "Instagram", url: " https://instagram.com/x " },
+          { label: "f", url: "https://f.example", hidden: true },
+        ],
+      }).success
+    ).toBe(true)
+  })
+
+  it.each([
+    ["http", { label: "x", url: "http://instagram.com/x" }],
+    ["text that is not a link", { label: "x", url: "instagram" }],
+    ["no label", { label: " ", url: "https://x.example" }],
+    ["an empty address", { label: "x", url: " " }],
+    ["javascript", { label: "x", url: "javascript:alert(1)" }],
+  ])("refuses a link with %s", (_label, item) => {
+    expect(footerSchema.safeParse({ items: [item] }).success).toBe(false)
+  })
+})
+
+describe("textBlockSchema hidden", () => {
+  it("parses a hidden block", () => {
+    expect(
+      textBlockSchema.safeParse({ title: "t", hidden: true }).success
+    ).toBe(true)
+  })
+})
+
+describe("schemaForSection", () => {
+  it.each(["home/intro", "about/main", "contact/intro"])(
+    "requires the body of %s",
+    (section) => {
+      const [slug, key] = section.split("/")
+      const schema = schemaForSection(slug, key, "text_block")
+      expect(schema?.safeParse({ title: "t" }).success).toBe(false)
+      expect(schema?.safeParse({ title: "t", body: " " }).success).toBe(false)
+      expect(schema?.safeParse({ title: "t", body: "b" }).success).toBe(true)
+    }
+  )
+
+  it("keeps home › contact a heading only", () => {
+    expect(
+      schemaForSection("home", "contact", "text_block")?.safeParse({
+        title: "t",
+      }).success
+    ).toBe(true)
+  })
+
+  it("uses the kind's schema for the other sections", () => {
+    expect(schemaForSection("home", "hero", "hero")).toBe(heroSchema)
+    expect(schemaForSection("site", "footer", "footer")).toBe(footerSchema)
+    expect(schemaForSection("home", "x", "odd")).toBeNull()
   })
 })
 
