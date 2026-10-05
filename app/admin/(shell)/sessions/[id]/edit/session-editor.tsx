@@ -27,7 +27,7 @@ import {
   type SessionDraft,
   type SessionRow,
 } from "../../session-draft"
-import { KindField, SessionField, WhenFields } from "../../session-fields"
+import { SessionField, WhenFields } from "../../session-fields"
 
 const copy = adminCopy.sessions
 
@@ -130,17 +130,6 @@ export function SessionEditor({ row }: { row: SessionRow }) {
                 }}
               />
             </fieldset>
-          )}
-        </li>
-        <li className="py-5">
-          {fieldRow(
-            "kind",
-            copy.fields.kind,
-            <KindField
-              name="kind"
-              value={draft.kind}
-              onChange={(kind) => update({ kind })}
-            />
           )}
         </li>
         <li className="py-5">

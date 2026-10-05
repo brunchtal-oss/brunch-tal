@@ -24,12 +24,7 @@ import {
   type DraftField,
   type SessionDraft,
 } from "../session-draft"
-import {
-  ConceptField,
-  KindField,
-  SessionField,
-  WhenFields,
-} from "../session-fields"
+import { ConceptField, SessionField, WhenFields } from "../session-fields"
 
 const copy = adminCopy.sessions
 
@@ -44,8 +39,9 @@ const FIELD_SELECTORS: Record<DraftField, string> = {
   closes: "#closes",
 }
 
-// The create form (story 3.1). The concept comes first: it fills the kind
-// and the description ("מהקונספט"), and the kind fills the capacity from the
+// The create form (story 3.1). The concept comes first: it sets the kind
+// (always the concept's, no kind field: user decision 2026-10-05) and fills
+// the description ("מהקונספט"), and the kind fills the capacity from the
 // settings ("לפי ההגדרות"); the times start with the settings' hours. Tal may
 // change each of them. The close is optional: empty follows the settings'
 // rule, shown in words (the date itself is computed only in the database,
@@ -194,18 +190,6 @@ export function SessionCreateForm({
         hint={
           closeRule
             ? copy.create.closesRule(closeRule.daysBefore, closeRule.time)
-            : null
-        }
-      />
-      <KindField
-        name="kind"
-        value={draft.kind}
-        onChange={(kind) =>
-          update({ kind, capacityText: capacityFor(kind, capacityDefaults) })
-        }
-        hint={
-          concept && draft.kind === concept.default_kind
-            ? copy.fromConcept
             : null
         }
       />

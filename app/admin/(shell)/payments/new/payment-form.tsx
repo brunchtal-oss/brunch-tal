@@ -16,7 +16,12 @@ import { SensitiveConfirmDialog } from "@/components/admin/sensitive-confirm-dia
 import { InlineNotice } from "@/components/shared/inline-notice"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
+import {
+  Field,
+  FieldDescription,
+  FieldLabel,
+  FieldTitle,
+} from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { Spinner } from "@/components/ui/spinner"
@@ -33,6 +38,7 @@ import {
   formatDayMonth,
   formatLocalDate,
   formatSessionDateTime,
+  formatWeekday,
 } from "@/lib/time"
 
 import {
@@ -41,13 +47,32 @@ import {
   type ApprovePaymentState,
   type PaymentPreview,
 } from "./actions"
+import {
+  eventOptionsFor,
+  type BookableEvent,
+  type EventOption,
+  type PinnedProductRules,
+} from "./event-options"
 
 const copy = adminCopy.payments
 const BUTTON = "h-12 text-base"
 const PREVIEW_DEBOUNCE_MS = 250
 
-export type ProductOption = { id: string; name: string; priceAgorot: number }
+export type ProductOption = {
+  id: string
+  name: string
+  priceAgorot: number
+  // A pinned product (validity_mode 'session', story 3.11): the rules of its
+  // session field; null for a days product.
+  pinned?: PinnedProductRules | null
+}
 export type MethodOption = { id: string; name: string }
+// A pinned product's session, as chosen in the form (story 3.11).
+export type PlacedSession = {
+  productName: string
+  conceptName: string
+  startsAt: string
+}
 // phone: already formatted for display (formatLocalPhone), or empty.
 export type CustomerOption = { id: string; name: string; phone: string }
 
@@ -61,6 +86,8 @@ export function previewKey(input: {
   // Trimmed; a different label may make a similar payment another payer's.
   payerLabel: string
   productId: string
+  // A pinned product's session; empty for a days product.
+  eventId?: string
   amountAgorot: number | null
   paidOn: string
   methodId: string
@@ -71,28 +98,37 @@ export function previewKey(input: {
     input.customerId ?? "",
     input.payerLabel,
     input.productId,
+    input.eventId ?? "",
     input.amountAgorot,
     input.paidOn,
     input.methodId,
   ].join("|")
 }
 
-// What blocks the approval on the screen, before any request: an amount that
-// cannot be read, a similar payment that was not checked as separate. A
-// changed amount opens the dialog instead (it is confirmed there).
+// What blocks the approval on the screen, before any request (in the order of
+// the fields): a new customer without a payer name (required, user decision
+// 2026-10-05), an amount that cannot be read, a pinned product without its
+// session, a similar payment
+// that was not checked as separate. A changed amount opens the dialog
+// instead (it is confirmed there).
 export function submitBlock(input: {
+  payerMissing?: boolean
   amountAgorot: number | null
+  eventMissing?: boolean
   hasSimilar: boolean
   duplicateChecked: boolean
-}): "amount" | "duplicate" | null {
+}): "payer" | "amount" | "event" | "duplicate" | null {
+  if (input.payerMissing) return "payer"
   if (input.amountAgorot === null) return "amount"
+  if (input.eventMissing) return "event"
   if (input.hasSimilar && !input.duplicateChecked) return "duplicate"
   return null
 }
 
 // Tal approves a payment (CAP-2, CAP-6): for a new customer (no customer
 // field, a join link) or for an existing one (her name at the head, the
-// purchase is hers at once). Product (days products only until E3), amount
+// purchase is hers at once). Product (a pinned one asks for its session,
+// story 3.11), amount
 // from the product and editable (a change asks for the price_change
 // dialog), purchase date, payment method, reference and note folded. "What
 // will be created" comes from the same plan as the approval (AD-7), with the
@@ -101,6 +137,7 @@ export function PaymentForm({
   customer,
   products,
   methods,
+  events = [],
   today,
   idempotencyKey,
   onApproved,
@@ -108,6 +145,8 @@ export function PaymentForm({
   customer: CustomerOption | null
   products: readonly ProductOption[]
   methods: readonly MethodOption[]
+  // The open sessions (admin_list_bookable_events) for a pinned product.
+  events?: readonly BookableEvent[]
   today: string
   idempotencyKey: string
   // Called once when the approval succeeded (payment-form-host.tsx pushes
@@ -117,6 +156,8 @@ export function PaymentForm({
   const router = useRouter()
   const formRef = useRef<HTMLFormElement>(null)
   const amountRef = useRef<HTMLInputElement>(null)
+  const eventRef = useRef<HTMLFieldSetElement>(null)
+  const eventNoneRef = useRef<HTMLParagraphElement>(null)
   const [state, formAction, pending] = useActionState<
     ApprovePaymentState,
     FormData
@@ -126,9 +167,16 @@ export function PaymentForm({
     products[0] ? formatAgorotInput(products[0].priceAgorot) : ""
   )
   const [amountError, setAmountError] = useState(false)
+  const [eventId, setEventId] = useState("")
+  const [eventError, setEventError] = useState(false)
+  // The pinned session sent with the approval, for the success screen (the
+  // list may change after the refresh).
+  const [placed, setPlaced] = useState<PlacedSession | null>(null)
   const [reason, setReason] = useState("")
   const [paidOn, setPaidOn] = useState(today)
   const [payerLabel, setPayerLabel] = useState("")
+  const [payerError, setPayerError] = useState(false)
+  const payerRef = useRef<HTMLInputElement>(null)
   const [methodId, setMethodId] = useState(methods[0]?.id ?? "")
   const [duplicateChecked, setDuplicateChecked] = useState(false)
   const [localError, setLocalError] = useState<ErrorCode | null>(null)
@@ -144,6 +192,11 @@ export function PaymentForm({
   const [duplicateErrorDismissed, setDuplicateErrorDismissed] = useState(false)
 
   const product = products.find((p) => p.id === productId)
+  const pinned = product?.pinned ?? null
+  const eventOptions = pinned ? eventOptionsFor(pinned, events) : []
+  // Only a session that is still offered and has room counts as chosen.
+  const chosenEvent = eventOptions.find((e) => e.id === eventId && !e.full)
+  const sentEventId = pinned ? (chosenEvent?.id ?? "") : ""
   const amountAgorot = parseShekelsToAgorot(amountText)
   const changed =
     product !== undefined &&
@@ -154,6 +207,7 @@ export function PaymentForm({
     customerId: customer?.id ?? null,
     payerLabel: trimmedLabel,
     productId: product?.id ?? "",
+    eventId: sentEventId,
     amountAgorot,
     paidOn,
     methodId,
@@ -164,6 +218,10 @@ export function PaymentForm({
 
   useEffect(() => {
     if (!currentKey || !product || amountAgorot === null) return
+    // A new customer is previewed once her payer name is typed.
+    if (!customer && !trimmedLabel) return
+    // A pinned product is previewed once its session is chosen.
+    if (product.pinned && !sentEventId) return
     const request = ++previewRequest.current
     const timer = setTimeout(() => {
       startTransition(async () => {
@@ -171,6 +229,7 @@ export function PaymentForm({
           customerId: customer?.id ?? null,
           payerLabel: trimmedLabel,
           productId: product.id,
+          eventId: sentEventId || null,
           amountAgorot,
           paidOn,
           methodId,
@@ -186,14 +245,18 @@ export function PaymentForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentKey, previewNonce])
 
-  // A method hidden or a price changed in the meantime: reload the lists. A
+  // A method hidden, a price changed or a session filled or closed in the
+  // meantime: reload the lists. A
   // similar payment created in the meantime: reload the preview, which then
   // shows it.
   useEffect(() => {
     if (!state || state.ok) return
     if (
       state.code === "PAYMENT_METHOD_NOT_SELECTABLE" ||
-      state.code === "CONFIRM_REQUIRED"
+      state.code === "CONFIRM_REQUIRED" ||
+      // The session list's places are stale (story 3.11).
+      state.code === "EVENT_FULL" ||
+      state.code === "EVENT_NOT_BOOKABLE"
     ) {
       router.refresh()
     }
@@ -208,9 +271,13 @@ export function PaymentForm({
     onApprovedRef.current = onApproved
   })
   const approved = state?.ok === true
+  // The approval took a place: the session list's counts are reloaded for
+  // the next payment (story 3.11).
   useEffect(() => {
-    if (approved) onApprovedRef.current?.()
-  }, [approved])
+    if (!approved) return
+    onApprovedRef.current?.()
+    router.refresh()
+  }, [approved, router])
 
   if (state?.ok) {
     if (state.data.kind === "existing" && customer) {
@@ -220,6 +287,7 @@ export function PaymentForm({
           productName={state.data.productName}
           units={state.data.units}
           expiresOn={state.data.expiresOn}
+          placed={placed}
         />
       )
     }
@@ -229,6 +297,7 @@ export function PaymentForm({
           link={state.data.link}
           linkExpiresAt={state.data.linkExpiresAt}
           payerLabel={state.data.payerLabel}
+          placed={placed}
         />
       )
     }
@@ -241,6 +310,8 @@ export function PaymentForm({
     const next = products.find((p) => p.id === id)
     setAmountText(next ? formatAgorotInput(next.priceAgorot) : "")
     setAmountError(false)
+    setEventId("")
+    setEventError(false)
     setDuplicateChecked(false)
   }
 
@@ -249,6 +320,15 @@ export function PaymentForm({
     if (!form) return
     const data = new FormData(form)
     if (confirmed) data.set("confirmed", "1")
+    setPlaced(
+      product && chosenEvent
+        ? {
+            productName: product.name,
+            conceptName: chosenEvent.conceptName,
+            startsAt: chosenEvent.startsAt,
+          }
+        : null
+    )
     setLocalError(null)
     setDuplicateErrorDismissed(false)
     // Dispatched by hand so the fields keep their values after an error.
@@ -259,13 +339,32 @@ export function PaymentForm({
     event.preventDefault()
     if (pending) return
     const block = submitBlock({
+      payerMissing: !customer && !trimmedLabel,
       amountAgorot,
+      eventMissing: pinned !== null && !sentEventId,
       hasSimilar: similar.length > 0,
       duplicateChecked,
     })
+    if (block === "payer") {
+      setPayerError(true)
+      payerRef.current?.focus()
+      return
+    }
     if (block === "amount") {
       setAmountError(true)
       amountRef.current?.focus()
+      return
+    }
+    if (block === "event") {
+      setEventError(true)
+      // The first session that can be chosen; with every one full, the group.
+      const target =
+        eventRef.current?.querySelector<HTMLInputElement>(
+          "input:not(:disabled)"
+        ) ??
+        eventRef.current ??
+        eventNoneRef.current
+      target?.focus()
       return
     }
     if (block === "duplicate") {
@@ -300,6 +399,7 @@ export function PaymentForm({
       <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
       <input type="hidden" name="customerId" value={customer?.id ?? ""} />
       <input type="hidden" name="amountAgorot" value={amountAgorot ?? ""} />
+      <input type="hidden" name="eventId" value={sentEventId} />
       <input
         type="hidden"
         name="duplicateConfirmed"
@@ -327,9 +427,12 @@ export function PaymentForm({
             {copy.allLinks}
           </Link>
           <p className="text-base font-semibold">{copy.newCustomer}</p>
-          <Field>
-            <FieldLabel htmlFor="payerLabel">{copy.payerLabel}</FieldLabel>
+          <Field data-invalid={payerError || undefined}>
+            <FieldLabel htmlFor="payerLabel">
+              {copy.payerLabel} {authCopy.required}
+            </FieldLabel>
             <Input
+              ref={payerRef}
               id="payerLabel"
               name="payerLabel"
               value={payerLabel}
@@ -342,10 +445,23 @@ export function PaymentForm({
                 if (next.trim() !== payerLabel.trim())
                   setDuplicateChecked(false)
                 setPayerLabel(next)
+                if (next.trim()) setPayerError(false)
               }}
-              aria-describedby="payerLabel-hint"
+              required
+              aria-required
+              aria-invalid={payerError || undefined}
+              aria-describedby={
+                payerError
+                  ? "payerLabel-error payerLabel-hint"
+                  : "payerLabel-hint"
+              }
               className="h-12 text-base"
             />
+            {payerError && (
+              <p id="payerLabel-error" className="text-[15px] text-error">
+                {errorMessage("FIELD_REQUIRED")}
+              </p>
+            )}
             <FieldDescription id="payerLabel-hint">
               {copy.payerLabelHint}
             </FieldDescription>
@@ -373,6 +489,47 @@ export function PaymentForm({
           ))}
         </NativeSelect>
       </Field>
+
+      {pinned && (
+        <Field data-invalid={eventError || undefined}>
+          {eventOptions.length === 0 ? (
+            // No control to label: the title and the reason, which takes
+            // the focus (and the error) when the approval is blocked.
+            <>
+              <FieldTitle id="event-title">
+                {copy.event} {authCopy.required}
+              </FieldTitle>
+              <p
+                ref={eventNoneRef}
+                id="event-none"
+                tabIndex={-1}
+                aria-labelledby="event-title event-none"
+                aria-describedby={eventError ? "event-error" : undefined}
+                className="text-[15px] text-muted-foreground outline-none"
+              >
+                {copy.eventNone}
+              </p>
+            </>
+          ) : (
+            <EventRadioGroup
+              ref={eventRef}
+              options={eventOptions}
+              value={chosenEvent ? chosenEvent.id : ""}
+              invalid={eventError}
+              onChange={(id) => {
+                setEventId(id)
+                setEventError(false)
+                setDuplicateChecked(false)
+              }}
+            />
+          )}
+          {eventError && (
+            <p id="event-error" className="text-[15px] text-error">
+              {errorMessage("PINNED_EVENT_REQUIRED")}
+            </p>
+          )}
+        </Field>
+      )}
 
       {product && (
         <Field data-invalid={amountError || undefined}>
@@ -586,12 +743,25 @@ function PreviewBox({
           />
           {copy.previewUnits(preview.productName, preview.units)}
         </p>
-        <p>
-          {copy.previewExpires}{" "}
-          <time dateTime={formatLocalDate(preview.expiresOn)}>
-            <bdi>{formatDayMonth(preview.expiresOn)}</bdi>
-          </time>
-        </p>
+        {preview.event ? (
+          <p>
+            <time dateTime={preview.event.startsAt}>
+              <bdi>
+                {copy.previewEvent(
+                  preview.event.conceptName,
+                  sessionDay(preview.event.startsAt)
+                )}
+              </bdi>
+            </time>
+          </p>
+        ) : (
+          <p>
+            {copy.previewExpires}{" "}
+            <time dateTime={formatLocalDate(preview.expiresOn)}>
+              <bdi>{formatDayMonth(preview.expiresOn)}</bdi>
+            </time>
+          </p>
+        )}
         <p className="text-muted-foreground">
           {customer
             ? copy.previewForCustomer(preview.customerName ?? customer.name)
@@ -677,11 +847,14 @@ export function ApprovedPurchase({
   productName,
   units,
   expiresOn,
+  placed = null,
 }: {
   customerName: string
   productName: string
   units: number
   expiresOn: string
+  // A pinned product: its session instead of the entries and expiry.
+  placed?: PlacedSession | null
 }) {
   const noticeRef = useRef<HTMLDivElement>(null)
 
@@ -698,7 +871,13 @@ export function ApprovedPurchase({
       </div>
       <p className="rounded-xl bg-muted px-4 py-3 text-[15px] font-semibold">
         <bdi>
-          {copy.successPurchase(productName, units, formatDayMonth(expiresOn))}
+          {placed
+            ? placedLines(placed)
+            : copy.successPurchase(
+                productName,
+                units,
+                formatDayMonth(expiresOn)
+              )}
         </bdi>
       </p>
       <AnotherPayment />
@@ -722,10 +901,13 @@ export function ApprovedLink({
   link,
   linkExpiresAt,
   payerLabel = null,
+  placed = null,
 }: {
   link: string | null
   linkExpiresAt: string
   payerLabel?: string | null
+  // A pinned product: the session whose place was kept.
+  placed?: PlacedSession | null
 }) {
   const noticeRef = useRef<HTMLDivElement>(null)
 
@@ -771,7 +953,107 @@ export function ApprovedLink({
         <LinkShare link={link} />
       </div>
 
+      {placed && (
+        <p className="rounded-xl bg-muted px-4 py-3 text-[15px] font-semibold">
+          {placedLines(placed)}
+        </p>
+      )}
+
       <AnotherPayment />
     </div>
+  )
+}
+
+// "{יום} DD.MM": the admin's brunch details never show the time (user
+// decision 2026-10-05).
+function sessionDay(value: string): string {
+  return `${formatWeekday(value)} ${formatDayMonth(value)}`
+}
+
+// "{product} · המקום נשמר:" and, on a new line, the session.
+function placedLines(placed: PlacedSession) {
+  return (
+    <>
+      <bdi>{copy.successPlacedLead(placed.productName)}</bdi>
+      <br />
+      <bdi>
+        {copy.successPlacedSession(
+          placed.conceptName,
+          sessionDay(placed.startsAt)
+        )}
+      </bdi>
+    </>
+  )
+}
+
+// The session of a pinned product (story 3.11): DESIGN.md › radio-card, one
+// row per session in two lines (no time, user decision 2026-10-05). Native
+// radios in a fieldset, so the arrow keys move between them; a full session
+// is shown, marked and cannot be chosen.
+function EventRadioGroup({
+  ref,
+  options,
+  value,
+  invalid,
+  onChange,
+}: {
+  ref: React.Ref<HTMLFieldSetElement>
+  options: readonly EventOption[]
+  value: string
+  invalid: boolean
+  onChange: (id: string) => void
+}) {
+  return (
+    <fieldset
+      ref={ref}
+      tabIndex={-1}
+      aria-required
+      aria-invalid={invalid || undefined}
+      aria-describedby={invalid ? "event-error" : "event-hint"}
+      className="flex flex-col gap-2 outline-none"
+    >
+      <legend className="mb-1 text-sm font-medium">
+        {copy.event} {authCopy.required}
+      </legend>
+      <p id="event-hint" className="mb-1 text-[15px] text-muted-foreground">
+        {copy.eventPlaceholder}
+      </p>
+      {options.map((option) => (
+        <label
+          key={option.id}
+          className="group flex min-h-12 cursor-pointer items-center gap-3 rounded-sm border border-muted-foreground bg-card px-3.5 py-2.5 text-base has-checked:border-foreground has-checked:bg-muted has-focus-visible:ring-2 has-focus-visible:ring-primary has-focus-visible:ring-offset-2 has-focus-visible:ring-offset-background has-disabled:cursor-not-allowed has-disabled:border-border has-disabled:text-muted-foreground"
+        >
+          <input
+            type="radio"
+            name="event"
+            value={option.id}
+            checked={value === option.id}
+            disabled={option.full}
+            onChange={() => onChange(option.id)}
+            required
+            className="sr-only"
+          />
+          <span
+            aria-hidden
+            className="flex size-5 shrink-0 items-center justify-center rounded-full border-[1.5px] border-muted-foreground group-has-checked:border-primary group-has-disabled:border-border"
+          >
+            <span className="size-2.5 rounded-full bg-primary opacity-0 group-has-checked:opacity-100" />
+          </span>
+          <span className="flex min-w-0 flex-col">
+            <span className="font-semibold break-words">
+              {copy.eventOptionTitle(option.conceptName)}
+            </span>
+            <bdi className="text-[15px]">
+              {copy.eventOptionDetails(
+                sessionDay(option.startsAt),
+                option.occupied,
+                option.capacity,
+                option.full
+              )}
+            </bdi>
+          </span>
+        </label>
+      ))}
+    </fieldset>
   )
 }

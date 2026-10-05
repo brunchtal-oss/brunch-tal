@@ -17,7 +17,7 @@ const MAX_REASON = 500
 const MAX_QUERY = 100
 const MAX_PAYER_LABEL = 40
 // The generated Args type marks every parameter as required and non-null;
-// a card has no session, a new customer has no id, and these optional fields
+// a days product has no session, a new customer has no id, and these optional fields
 // may be empty.
 const NONE = null as unknown as string
 
@@ -40,6 +40,9 @@ export type PaymentPreview = {
   customerName: string | null
   similar: SimilarPayment[]
   windowDays: number
+  // A pinned product (story 3.11): the session the booking is placed in,
+  // shown instead of the expiry; null for a days product.
+  event: { startsAt: string; conceptName: string } | null
 }
 
 type PlanResult = {
@@ -55,6 +58,9 @@ type PlanResult = {
     created_at: string
   }[]
   duplicate_window_days: number
+  event_id?: string | null
+  event_starts_at?: string | null
+  concept_name?: string | null
 }
 
 // "What will be created" (AD-7): the same private.plan_approve_payment the
@@ -64,16 +70,21 @@ export async function previewPaymentAction(input: {
   // A new customer only; empty = none.
   payerLabel: string
   productId: string
+  // A pinned product's session (story 3.11); null or missing for a days
+  // product.
+  eventId?: string | null
   amountAgorot: number
   paidOn: string
   methodId: string
 }): Promise<ActionResult<PaymentPreview>> {
+  const eventId = input.eventId ?? null
   const payerLabel =
     typeof input.payerLabel === "string" ? input.payerLabel.trim() : ""
   if (
     (input.customerId !== null && !UUID.test(input.customerId)) ||
     !validPayerLabel(payerLabel, input.customerId !== null) ||
     !UUID.test(input.productId) ||
+    (eventId !== null && !UUID.test(eventId)) ||
     !UUID.test(input.methodId) ||
     !DATE.test(input.paidOn) ||
     !Number.isSafeInteger(input.amountAgorot) ||
@@ -88,7 +99,7 @@ export async function previewPaymentAction(input: {
       p_customer_id: input.customerId ?? NONE,
       p_payer_label: payerLabel || NONE,
       p_product_id: input.productId,
-      p_event_id: NONE,
+      p_event_id: eventId ?? NONE,
       p_amount_agorot: input.amountAgorot,
       p_paid_on: input.paidOn,
       p_payment_method_id: input.methodId,
@@ -111,6 +122,13 @@ export async function previewPaymentAction(input: {
         createdAt: p.created_at,
       })),
       windowDays: plan.duplicate_window_days,
+      event:
+        plan.event_id && plan.event_starts_at
+          ? {
+              startsAt: plan.event_starts_at,
+              conceptName: plan.concept_name ?? "",
+            }
+          : null,
     },
   }
 }
@@ -142,10 +160,11 @@ type ApproveResult = {
   reissue_required?: boolean
 }
 
-// Up to 40 characters, and only for a new customer (the RPC checks again).
+// Only for a new customer, and then required (user decision 2026-10-05), up
+// to 40 characters (the RPC checks again).
 function validPayerLabel(label: string, existingCustomer: boolean): boolean {
-  if (label === "") return true
-  return !existingCustomer && label.length <= MAX_PAYER_LABEL
+  if (existingCustomer) return label === ""
+  return label !== "" && label.length <= MAX_PAYER_LABEL
 }
 
 function field(formData: FormData, name: string): string {
@@ -160,6 +179,8 @@ export async function approvePaymentAction(
   const customerId = field(formData, "customerId")
   const payerLabel = field(formData, "payerLabel")
   const productId = field(formData, "productId")
+  // A pinned product's session (story 3.11); empty for a days product.
+  const eventId = field(formData, "eventId")
   const methodId = field(formData, "paymentMethodId")
   const paidOn = field(formData, "paidOn")
   const amountText = field(formData, "amountAgorot")
@@ -175,6 +196,7 @@ export async function approvePaymentAction(
     (customerId !== "" && !UUID.test(customerId)) ||
     !validPayerLabel(payerLabel, customerId !== "") ||
     !UUID.test(productId) ||
+    (eventId !== "" && !UUID.test(eventId)) ||
     !UUID.test(methodId) ||
     !DATE.test(paidOn) ||
     !Number.isSafeInteger(amount) ||
@@ -193,7 +215,7 @@ export async function approvePaymentAction(
     p_customer_id: customerId || NONE,
     p_payer_label: payerLabel || NONE,
     p_product_id: productId,
-    p_event_id: NONE,
+    p_event_id: eventId || NONE,
     p_amount_agorot: amount,
     p_amount_override_reason: reason || NONE,
     p_paid_on: paidOn,

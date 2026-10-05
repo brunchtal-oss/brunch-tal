@@ -1114,6 +1114,7 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_list_bookable_events: { Args: never; Returns: Json }
       admin_list_links: { Args: never; Returns: Json }
       admin_list_payments: { Args: never; Returns: Json }
       admin_publish_content: {

@@ -23,7 +23,7 @@ import {
 } from "./support/money"
 
 const PREVIEW =
-  "select public.preview_admin_approve_payment(null, null, $1, $2, $3, $4::date, null) as r"
+  "select public.preview_admin_approve_payment(null, 'Test payer', $1, $2, $3, $4::date, null) as r"
 
 function cardInput(f: MoneyFixture, extra: Partial<ApproveInput> = {}) {
   return {
@@ -144,9 +144,12 @@ describe("admin_approve_payment", () => {
          where entity_id = any($1::uuid[]) order by entity_type`,
         [[r.payment_id, r.entitlement_id, r.token_id]]
       )
+      // The payment has two rows: the core's insert and the payer name
+      // (required for a new customer since 2026-10-05).
       expect(audit.map((a) => [a.entity_type, a.entity_id])).toEqual([
         ["activation_tokens", r.token_id],
         ["entitlements", r.entitlement_id],
+        ["payments", r.payment_id],
         ["payments", r.payment_id],
       ])
       for (const row of audit) {
@@ -190,7 +193,8 @@ describe("admin_approve_payment", () => {
           "select 1 from public.audit_log where entity_id = any($1::uuid[])",
           [[first.payment_id, first.entitlement_id, first.token_id]]
         )
-      ).toBe(3)
+        // The payment's second row is its payer name (2026-10-05).
+      ).toBe(4)
     })
   })
 
@@ -288,8 +292,9 @@ describe("admin_approve_payment", () => {
         expect(payments).toEqual([
           { amount_agorot: amount, amount_override_reason: "gift" },
         ])
+        // The core's row keeps the reason; the payer name's row has none.
         const { rows: audit } = await db.query(
-          "select reason from public.audit_log where entity_id = $1",
+          "select reason from public.audit_log where entity_id = $1 and reason is not null",
           [r.payment_id]
         )
         expect(audit).toEqual([{ reason: "gift" }])
@@ -338,7 +343,9 @@ describe("admin_approve_payment", () => {
     })
   })
 
-  it("rejects a pinned product with or without a session, creating nothing", async () => {
+  // Story 3.11: PINNED_NOT_AVAILABLE is gone; placement is tested in
+  // pinned-approval.test.ts.
+  it("rejects a pinned product without a session or with an unknown one, creating nothing", async () => {
     await inRollback(async (db) => {
       const f = await seedMoney(db)
       const single = await insertProduct(db, {
@@ -349,7 +356,10 @@ describe("admin_approve_payment", () => {
         validityMode: "session",
       })
       await asAuthenticated(db, f.admin)
-      for (const eventId of [null, randomUUID()]) {
+      for (const [eventId, code] of [
+        [null, "PINNED_EVENT_REQUIRED"],
+        [randomUUID(), "EVENT_NOT_BOOKABLE"],
+      ] as const) {
         const error = await queryError(
           db,
           APPROVE,
@@ -362,14 +372,11 @@ describe("admin_approve_payment", () => {
             key: randomUUID(),
           })
         )
-        expect(error).toMatchObject({
-          code: "P0001",
-          message: "PINNED_NOT_AVAILABLE",
-        })
+        expect(error).toMatchObject({ code: "P0001", message: code })
         expect(
           (await queryError(db, PREVIEW, [single, eventId, 12800, f.today]))
             ?.message
-        ).toBe("PINNED_NOT_AVAILABLE")
+        ).toBe(code)
       }
       await db.query("reset role")
       expect(await paymentsOf(db, single)).toBe(0)

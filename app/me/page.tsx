@@ -12,7 +12,7 @@ import { customerCopy } from "@/lib/copy/customer"
 import { shellCopy } from "@/lib/copy/shell"
 import { formatAgorot } from "@/lib/money"
 import { createClient } from "@/lib/supabase/server"
-import { formatDayMonth } from "@/lib/time"
+import { formatDayMonth, formatSessionDateTime } from "@/lib/time"
 
 import { buildPurchaseItems } from "./purchase-items"
 
@@ -54,7 +54,9 @@ async function Greeting() {
 // extended): the purchase confirmation (from the
 // payment and its product_snapshot), the balance (entitlement_balances), and
 // the current product's message and button while nothing was reserved from
-// it yet (CAP-4), built in purchase-items.ts. RLS limits every read to the
+// it yet (CAP-4), built in purchase-items.ts. A pinned purchase whose session
+// has not started is shown as that session (story 3.11), with the product's
+// message and a button to the session's page. RLS limits every read to the
 // customer's own rows.
 async function Purchases() {
   const supabase = await createClient()
@@ -78,30 +80,58 @@ async function Purchases() {
   if (payments.error) throw new Error("purchases failed")
 
   const productIds = [...new Set(payments.data.map((p) => p.product_id))]
-  const expiredIds = balances.flatMap((b) =>
-    b.expired_before_bound && b.entitlement_id ? [b.entitlement_id] : []
+  const entitlementIds = balances.flatMap((b) =>
+    b.entitlement_id ? [b.entitlement_id] : []
   )
+  const hasExpired = balances.some((b) => b.expired_before_bound)
   const [products, entitlements, contactHref] = await Promise.all([
     supabase
       .from("products")
       .select("id, post_join_message, post_join_button_label")
       .in("id", productIds),
-    expiredIds.length
-      ? supabase
-          .from("entitlements")
-          .select("id, eligibility_snapshot")
-          .in("id", expiredIds)
-      : Promise.resolve({ data: [], error: null }),
-    expiredIds.length ? getWhatsappHref() : Promise.resolve(null),
+    supabase
+      .from("entitlements")
+      .select("id, eligibility_snapshot, pinned_event_id")
+      .in("id", entitlementIds),
+    hasExpired ? getWhatsappHref() : Promise.resolve(null),
   ])
   if (products.error) throw new Error("products failed")
   if (entitlements.error) throw new Error("entitlements failed")
+
+  // The bookings and sessions of the pinned purchases (story 3.11).
+  const eventIds = [
+    ...new Set(entitlements.data.flatMap((e) => e.pinned_event_id ?? [])),
+  ]
+  const [bookings, sessions] = eventIds.length
+    ? await Promise.all([
+        supabase
+          .from("bookings")
+          .select("payment_id, event_id, status")
+          .in("payment_id", paymentIds)
+          .in("event_id", eventIds),
+        supabase
+          .from("events")
+          .select("id, starts_at, concepts(name)")
+          .in("id", eventIds),
+      ])
+    : [
+        { data: [], error: null },
+        { data: [], error: null },
+      ]
+  if (bookings.error) throw new Error("bookings failed")
+  if (sessions.error) throw new Error("sessions failed")
 
   const items = buildPurchaseItems({
     balances,
     payments: payments.data,
     products: products.data,
     entitlements: entitlements.data,
+    bookings: bookings.data,
+    sessions: sessions.data.map((e) => ({
+      id: e.id,
+      starts_at: e.starts_at,
+      concept_name: e.concepts?.name ?? "",
+    })),
   })
   if (items.length === 0) return null
 
@@ -120,23 +150,41 @@ async function Purchases() {
               <bdi>{formatDayMonth(item.paidOn)}</bdi>
             </time>
           </p>
-          <BalanceCard
-            available={item.available}
-            reserved={item.reserved}
-            expiresOn={item.expiresOn}
-            expiredNote={
-              item.expiredBeforeBound ? (
-                <ExpiredCardNote
-                  days={item.validityDays}
-                  contactHref={contactHref}
-                />
-              ) : null
-            }
-          />
+          {item.session ? (
+            <div className="flex flex-col gap-1 rounded-xl bg-muted px-4 py-3">
+              <p className="text-base font-semibold">
+                {customerCopy.pinnedSaved}
+              </p>
+              <p className="text-[15px]">
+                {customerCopy.sessionTitle(item.session.conceptName)} ·{" "}
+                <time dateTime={item.session.startsAt}>
+                  <bdi>{formatSessionDateTime(item.session.startsAt)}</bdi>
+                </time>
+              </p>
+            </div>
+          ) : (
+            <BalanceCard
+              available={item.available}
+              reserved={item.reserved}
+              expiresOn={item.expiresOn}
+              expiredNote={
+                item.expiredBeforeBound ? (
+                  <ExpiredCardNote
+                    days={item.validityDays}
+                    contactHref={contactHref}
+                  />
+                ) : null
+              }
+            />
+          )}
           {item.message && <p className="text-base">{item.message}</p>}
           {item.buttonLabel && (
             <Link
-              href="/me/sessions"
+              href={
+                item.session
+                  ? `/me/sessions/${item.session.eventId}`
+                  : "/me/sessions"
+              }
               className={buttonVariants({
                 size: "lg",
                 className: "h-12 max-w-xs text-base",
