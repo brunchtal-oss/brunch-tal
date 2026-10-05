@@ -52,7 +52,7 @@ const ROW: SessionRow = {
 }
 
 describe("SessionsList", () => {
-  it("shows the title, the chip and the places; a row opens the editor", () => {
+  it("shows the title, the chip and the places; a row opens its details (story 3.4)", () => {
     const html = renderToStaticMarkup(
       <SessionsList rows={[ROW, { ...ROW, id: "x", status: "published" }]} />
     )
@@ -60,7 +60,8 @@ describe("SessionsList", () => {
     expect(html).toContain(copy.status.draft)
     expect(html).toContain(copy.status.published)
     expect(html).toContain(copy.places(14))
-    expect(html).toContain(`/admin/sessions/${ROW.id}/edit`)
+    expect(html).toContain(`href="/admin/sessions/${ROW.id}"`)
+    expect(html).not.toContain(`/admin/sessions/${ROW.id}/edit`)
   })
 
   it("an empty list points at a new session", () => {

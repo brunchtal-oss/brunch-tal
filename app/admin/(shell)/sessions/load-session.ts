@@ -29,3 +29,25 @@ export function toSessionRow(row: {
     concept_name: concepts?.name ?? "",
   }
 }
+
+// The PostgREST filter of /admin/sessions: every draft, and every published
+// session that has not ended by `now` (an ISO instant), so on the morning Tal
+// still reaches a running session (manual booking until ends_at, story 3.4).
+// Display only (which rows to list), not a business decision (AD-8).
+export function sessionsListFilter(now: string): string {
+  return `status.eq.draft,and(status.eq.published,ends_at.gt.${now})`
+}
+
+// A cancelled or completed session, or one whose end has passed by `now`, is
+// shown read-only: no manual booking and no editing (user decision
+// 2026-10-05). Display only; admin_book_customer checks the end again.
+export function isReadOnlySession(
+  row: { status: EventStatus; ends_at: string },
+  now: Date
+): boolean {
+  return (
+    row.status === "cancelled" ||
+    row.status === "completed" ||
+    Date.parse(row.ends_at) <= now.getTime()
+  )
+}

@@ -9,7 +9,11 @@ import { adminCopy } from "@/lib/copy/admin"
 import { shellCopy } from "@/lib/copy/shell"
 import { createClient } from "@/lib/supabase/server"
 
-import { SESSION_COLUMNS, toSessionRow } from "./load-session"
+import {
+  SESSION_COLUMNS,
+  sessionsListFilter,
+  toSessionRow,
+} from "./load-session"
 import { SessionsList } from "./sessions-list"
 
 const copy = adminCopy.sessions
@@ -19,7 +23,7 @@ export const metadata: Metadata = {
 }
 
 // The sessions (CAP-12): every draft and every published session that has
-// not started yet, by date, each with its status-chip. Rendered inside the
+// not ended yet, by date, each with its status-chip. Rendered inside the
 // admin shell's <Suspense> gate.
 export default function SessionsPage() {
   return (
@@ -52,7 +56,7 @@ async function SessionsContent() {
   const { data, error } = await supabase
     .from("events")
     .select(SESSION_COLUMNS)
-    .or(`status.eq.draft,and(status.eq.published,starts_at.gte.${now})`)
+    .or(sessionsListFilter(now))
     .order("starts_at")
     .order("id")
   if (error) throw new Error("sessions list failed")
