@@ -1,27 +1,33 @@
 import { Suspense } from "react"
 import type { Metadata } from "next"
 import Link from "next/link"
+import { ChevronLeftIcon } from "lucide-react"
 
 import { BalanceCard } from "@/components/customer/balance-card"
-import { ExpiredCardNote } from "@/components/customer/expired-card-note"
 import { PageHeading } from "@/components/shared/page-heading"
+import { SessionCard } from "@/components/shared/session-card"
 import { SignOutButton } from "@/components/shared/sign-out-button"
+import { StatusChip } from "@/components/shared/status-chip"
 import { buttonVariants } from "@/components/ui/button"
 import { getWhatsappHref } from "@/lib/content/business-details"
 import { customerCopy } from "@/lib/copy/customer"
 import { shellCopy } from "@/lib/copy/shell"
-import { formatAgorot } from "@/lib/money"
 import { createClient } from "@/lib/supabase/server"
-import { formatDayMonth, formatSessionDateTime } from "@/lib/time"
+import {
+  formatAccessibleDateTime,
+  formatDayMonth,
+  formatWeekday,
+} from "@/lib/time"
 
-import { buildPurchaseItems, joinButtonHref } from "./purchase-items"
+import { loadMyEntitlements } from "./load-entitlements"
+import { isEmptyHome, isHomeCard, type SessionRow } from "./purchase-items"
 
 export const metadata: Metadata = {
   title: shellCopy.customer.homeTitle,
 }
 
 // Rendered inside the layout's <Suspense> customer gate. Sign-out stays here
-// until the profile screen exists.
+// until 5.7 moves it to the top bar.
 export default function MePage() {
   return (
     <>
@@ -30,10 +36,12 @@ export default function MePage() {
           <Greeting />
         </Suspense>
       </PageHeading>
-      <Suspense fallback={null}>
-        <Purchases />
+      <Suspense
+        fallback={<p className="text-muted-foreground">{shellCopy.loading}</p>}
+      >
+        <Home />
       </Suspense>
-      <SignOutButton className="max-w-xs" />
+      <SignOutButton className="mt-4 max-w-xs" />
     </>
   )
 }
@@ -49,154 +57,178 @@ async function Greeting() {
   return shellCopy.customer.greeting(profile?.full_name ?? "")
 }
 
-// Every active entitlement that has not expired, or that expired before it
-// was bound (shown with "expired" and its toggletip, story 2.4; never
-// extended): the purchase confirmation (from the
-// payment and its product_snapshot), the balance (entitlement_balances), and
-// the current product's message and button while nothing was reserved from
-// it yet (CAP-4), built in purchase-items.ts. A pinned purchase whose session
-// has not started is shown as that session (story 3.11), with the product's
-// message and a button to the session's page. RLS limits every read to the
-// customer's own rows.
-async function Purchases() {
+// The home (story 4.12, user decisions 2026-10-06), three sections in this
+// order, each under a real heading: her next session (her nearest
+// confirmed booking, a session-card); "הבראנצ׳ים הקרובים שלי", the later
+// ones, one row each with only the weekday and date, linking to its page;
+// and only an active card ("הכרטיסייה שלי"). No message blocks and no
+// receipts (the receipts are in the purchase history, its own tab). A card
+// that ended leaves home; a pinned purchase shows only as its session.
+// With neither a session ahead nor an active card: the empty-state. The
+// card's values come from get_my_entitlements; RLS limits the other reads
+// to her own rows.
+async function Home() {
   const supabase = await createClient()
-  const { data: balances, error } = await supabase
-    .from("entitlement_balances")
-    .select(
-      "entitlement_id, payment_id, available, reserved, used, expires_on, expired_before_bound"
-    )
-    .eq("status", "active")
-    .or("is_expired.eq.false,expired_before_bound.eq.true")
-    .order("expires_on")
-    .order("entitlement_id")
-  if (error) throw new Error("entitlement_balances failed")
-  if (!balances?.length) return null
-
-  const paymentIds = balances.flatMap((b) => b.payment_id ?? [])
-  const payments = await supabase
-    .from("payments")
-    .select("id, product_id, amount_agorot, paid_on, product_snapshot")
-    .in("id", paymentIds)
-  if (payments.error) throw new Error("purchases failed")
-
-  const productIds = [...new Set(payments.data.map((p) => p.product_id))]
-  const entitlementIds = balances.flatMap((b) =>
-    b.entitlement_id ? [b.entitlement_id] : []
-  )
-  const hasExpired = balances.some((b) => b.expired_before_bound)
-  const [products, entitlements, contactHref] = await Promise.all([
-    supabase
-      .from("products")
-      .select("id, post_join_message, post_join_button_label")
-      .in("id", productIds),
-    supabase
-      .from("entitlements")
-      .select("id, eligibility_snapshot, pinned_event_id, kind")
-      .in("id", entitlementIds),
-    hasExpired ? getWhatsappHref() : Promise.resolve(null),
+  const [entitlements, bookingsResult] = await Promise.all([
+    loadMyEntitlements(supabase),
+    supabase.from("bookings").select("event_id").eq("status", "confirmed"),
   ])
-  if (products.error) throw new Error("products failed")
-  if (entitlements.error) throw new Error("entitlements failed")
+  if (bookingsResult.error) throw new Error("bookings failed")
 
-  // The bookings and sessions of the pinned purchases (story 3.11).
-  const eventIds = [
-    ...new Set(entitlements.data.flatMap((e) => e.pinned_event_id ?? [])),
-  ]
-  const [bookings, sessions] = eventIds.length
-    ? await Promise.all([
-        supabase
-          .from("bookings")
-          .select("payment_id, event_id, status")
-          .in("payment_id", paymentIds)
-          .in("event_id", eventIds),
-        supabase
-          .from("events")
-          .select("id, starts_at, concepts(name)")
-          .in("id", eventIds),
-      ])
-    : [
-        { data: [], error: null },
-        { data: [], error: null },
-      ]
-  if (bookings.error) throw new Error("bookings failed")
-  if (sessions.error) throw new Error("sessions failed")
+  // Display only (which bookings are still ahead), not a business decision
+  // (AD-8): the server filters and orders by starts_at.
+  const now = new Date().toISOString()
+  const bookedIds = [...new Set(bookingsResult.data.map((b) => b.event_id))]
+  const upcomingResult = bookedIds.length
+    ? await supabase
+        .from("events")
+        .select("id, starts_at, concepts(name)")
+        .in("id", bookedIds)
+        .eq("status", "published")
+        .gt("starts_at", now)
+        .order("starts_at")
+        .order("id")
+    : { data: [], error: null }
+  if (upcomingResult.error) throw new Error("upcoming sessions failed")
+  const upcoming: SessionRow[] = upcomingResult.data.map((e) => ({
+    id: e.id,
+    starts_at: e.starts_at,
+    concept_name: e.concepts?.name ?? "",
+  }))
+  const cards = entitlements.filter(isHomeCard)
 
-  const items = buildPurchaseItems({
-    balances,
-    payments: payments.data,
-    products: products.data,
-    entitlements: entitlements.data,
-    bookings: bookings.data,
-    sessions: sessions.data.map((e) => ({
-      id: e.id,
-      starts_at: e.starts_at,
-      concept_name: e.concepts?.name ?? "",
-    })),
-  })
-  if (items.length === 0) return null
+  if (isEmptyHome(upcoming.length, cards.length)) {
+    return <EmptyHome contactHref={await getWhatsappHref()} />
+  }
 
-  // The cards, whose join button may go straight to choosing dates
-  // (joinButtonHref, story 3.3).
-  const cardIds = new Set(
-    entitlements.data.flatMap((e) => (e.kind === "card" ? [e.id] : []))
-  )
-
+  const [next, ...later] = upcoming
   return (
-    <section aria-labelledby="balances-title" className="flex flex-col gap-6">
-      <h2 id="balances-title" className="text-xl font-light">
-        {customerCopy.balancesTitle}
-      </h2>
-      {items.map((item) => (
-        <div key={item.id} className="flex flex-col gap-3">
-          <p className="text-[15px] text-muted-foreground">
-            {customerCopy.purchase} {item.productName} ·{" "}
-            <bdi>{formatAgorot(item.amountAgorot)}</bdi> ·{" "}
-            {customerCopy.purchasedOn}
-            <time dateTime={item.paidOn}>
-              <bdi>{formatDayMonth(item.paidOn)}</bdi>
-            </time>
-          </p>
-          {item.session ? (
-            <div className="flex flex-col gap-1 rounded-xl bg-muted px-4 py-3">
-              <p className="text-base font-semibold">
-                {customerCopy.pinnedSaved}
-              </p>
-              <p className="text-[15px]">
-                {customerCopy.sessionTitle(item.session.conceptName)} ·{" "}
-                <time dateTime={item.session.startsAt}>
-                  <bdi>{formatSessionDateTime(item.session.startsAt)}</bdi>
-                </time>
-              </p>
-            </div>
-          ) : (
-            <BalanceCard
-              available={item.available}
-              reserved={item.reserved}
-              expiresOn={item.expiresOn}
-              expiredNote={
-                item.expiredBeforeBound ? (
-                  <ExpiredCardNote
-                    days={item.validityDays}
-                    contactHref={contactHref}
+    <div className="flex flex-col gap-10">
+      {next && (
+        <HomeSection id="next" title={customerCopy.upcomingTitle}>
+          <SessionCard
+            href={`/me/sessions/${next.id}`}
+            conceptName={next.concept_name}
+            startsAt={next.starts_at}
+            headingLevel={3}
+            photoAspect="aspect-[5/2]"
+            statusText={customerCopy.booked}
+            status={
+              <StatusChip tone="success">{customerCopy.booked}</StatusChip>
+            }
+          />
+        </HomeSection>
+      )}
+
+      {later.length > 0 && (
+        <HomeSection id="later" title={customerCopy.moreUpcomingTitle}>
+          <ul className="flex flex-col divide-y divide-border border-y border-border">
+            {later.map((session) => (
+              <li key={session.id}>
+                <Link
+                  href={`/me/sessions/${session.id}`}
+                  className="flex min-h-12 items-center justify-between gap-3 rounded-[4px] text-base"
+                >
+                  <span className="sr-only">
+                    {customerCopy.sessionTitle(session.concept_name)},{" "}
+                    {formatAccessibleDateTime(session.starts_at)}
+                  </span>
+                  <time aria-hidden dateTime={session.starts_at}>
+                    {formatWeekday(session.starts_at)}{" "}
+                    <bdi className="font-semibold">
+                      {formatDayMonth(session.starts_at)}
+                    </bdi>
+                  </time>
+                  <ChevronLeftIcon
+                    aria-hidden
+                    strokeWidth={1.5}
+                    className="size-5 shrink-0 text-muted-foreground"
                   />
-                ) : null
-              }
-            />
-          )}
-          {item.message && <p className="text-base">{item.message}</p>}
-          {item.buttonLabel && (
-            <Link
-              href={joinButtonHref(item, cardIds.has(item.id))}
-              className={buttonVariants({
-                size: "lg",
-                className: "h-12 max-w-xs text-base",
-              })}
-            >
-              {item.buttonLabel}
-            </Link>
-          )}
-        </div>
-      ))}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </HomeSection>
+      )}
+
+      {cards.length > 0 && (
+        <HomeSection id="card" title={customerCopy.cardTitle}>
+          <ul className="flex flex-col gap-3">
+            {cards.map((card) => (
+              <li key={card.id}>
+                <BalanceCard
+                  href={`/me/purchases/${card.id}`}
+                  productName={card.productName}
+                  used={card.used}
+                  reserved={card.reserved}
+                  total={card.originalUnits}
+                  expiresOn={card.expiresOn}
+                  daysLeft={card.daysLeft}
+                  isExpiring={card.isExpiring}
+                />
+              </li>
+            ))}
+          </ul>
+        </HomeSection>
+      )}
+
+      {/* Story 5.7: the unread notifications go here, after the card. */}
+    </div>
+  )
+}
+
+// One section of home: a real heading (DESIGN.md › heading face, light),
+// then its content; the same spacing everywhere.
+function HomeSection({
+  id,
+  title,
+  children,
+}: {
+  id: string
+  title: string
+  children: React.ReactNode
+}) {
+  return (
+    <section aria-labelledby={`${id}-title`} className="flex flex-col gap-3">
+      <h2
+        id={`${id}-title`}
+        className="font-heading text-xl leading-tight font-light"
+      >
+        {title}
+      </h2>
+      {children}
+    </section>
+  )
+}
+
+// EXPERIENCE.md › State Patterns: no session ahead and no active card. The
+// contact button opens WhatsApp (to buy again); without published business
+// details it is left out. The purchases stay in their tab.
+function EmptyHome({ contactHref }: { contactHref: string | null }) {
+  return (
+    <section
+      aria-labelledby="empty-title"
+      className="flex flex-col items-start gap-4 py-10"
+    >
+      <h2
+        id="empty-title"
+        className="font-heading text-[26px] leading-[1.2] font-light"
+      >
+        {customerCopy.emptyHomeTitle}
+      </h2>
+      {contactHref && (
+        <a
+          href={contactHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={buttonVariants({
+            size: "lg",
+            className: "h-12 w-full max-w-xs text-base",
+          })}
+        >
+          {customerCopy.contactPhrase}
+        </a>
+      )}
     </section>
   )
 }

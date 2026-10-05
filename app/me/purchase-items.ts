@@ -1,198 +1,159 @@
-// What /me shows for each active entitlement that has not expired, or that
-// expired before it was bound (story 2.4), built from the rows
-// RLS returned (pure: rows in, items out). The product name comes from the
-// payment's product_snapshot (past purchases read the snapshot); the message
-// and button come from the current product, and only while nothing was
-// reserved or used from the entitlement yet (user decision 2026-10-01).
-// A pinned purchase (story 3.11) whose booking is confirmed and whose session
-// has not started is shown as that session, with the product's message and
-// button, instead of the balance; otherwise it never shows them. A pinned
-// purchase is named "בראנץ׳ {concept}", not by the product (user decision
-// 2026-10-05).
+// What the customer's home and purchase history show (story 4.12), built
+// from the rows of get_my_entitlements (pure: rows in, items out). Every
+// balance and derived state (days_left, is_expiring, is_used_up,
+// is_expired) comes from the RPC (AD-14, AD-8); nothing is computed from a
+// clock here. The product name comes from the payment's product_snapshot;
+// a pinned purchase is named "בראנץ׳ {concept}", not by the product (user
+// decision 2026-10-05). Home has no message blocks and no receipts (user
+// decision 2026-10-06).
 
 import { customerCopy } from "@/lib/copy/customer"
 
-export type BalanceRow = {
-  entitlement_id: string | null
-  payment_id: string | null
-  available: number | null
-  reserved: number | null
-  used: number | null
-  expires_on: string | null
-  expired_before_bound?: boolean | null
-}
+export type EntitlementKind = "card" | "single" | "intro" | "couple"
 
-// entitlements.eligibility_snapshot of the shown entitlements: the validity
-// days of the card at purchase; pinned_event_id: the session of a pinned
-// purchase.
-export type EntitlementRow = {
+// One row of get_my_entitlements, in camelCase.
+export type MyEntitlement = {
   id: string
-  eligibility_snapshot: unknown
-  pinned_event_id?: string | null
-}
-
-// The customer's own bookings of the shown pinned purchases.
-export type BookingRow = {
-  payment_id: string | null
-  event_id: string
+  kind: EntitlementKind
   status: string
-}
-
-// The sessions of those bookings, with the concept's name.
-export type SessionRow = {
-  id: string
-  starts_at: string
-  concept_name: string
-}
-
-export type PinnedSession = {
-  eventId: string
-  startsAt: string
-  conceptName: string
-}
-
-export type PaymentRow = {
-  id: string
-  product_id: string
-  amount_agorot: number
-  paid_on: string
-  product_snapshot: unknown
-}
-
-export type ProductRow = {
-  id: string
-  post_join_message: string | null
-  post_join_button_label: string | null
-}
-
-export type PurchaseItem = {
-  id: string
   productName: string
   amountAgorot: number
   paidOn: string
+  originalUnits: number
   available: number
   reserved: number
+  used: number
   expiresOn: string
-  // null while something was already reserved or used from it, and for a
-  // card that expired before it was bound.
-  message: string | null
-  buttonLabel: string | null
-  // The card expired before it reached the customer; validityDays (from the
-  // snapshot) explains it, null when unknown.
+  isExpired: boolean
   expiredBeforeBound: boolean
+  daysLeft: number
+  isExpiring: boolean
+  isUsedUp: boolean
   validityDays: number | null
-  // A pinned purchase with a confirmed booking for a session that has not
-  // started: shown as the session (no balance card); otherwise null.
-  session: PinnedSession | null
+  pinnedEventId: string | null
+  paymentId: string
 }
 
-function validityDays(snapshot: unknown): number | null {
-  const days = (snapshot as { validity_days?: unknown } | null)?.validity_days
-  return typeof days === "number" && Number.isInteger(days) && days > 0
-    ? days
-    : null
-}
+const KINDS: readonly EntitlementKind[] = ["card", "single", "intro", "couple"]
 
-export function buildPurchaseItems(rows: {
-  balances: readonly BalanceRow[]
-  payments: readonly PaymentRow[]
-  products: readonly ProductRow[]
-  entitlements?: readonly EntitlementRow[]
-  bookings?: readonly BookingRow[]
-  sessions?: readonly SessionRow[]
-  // The server's clock (a session that started is no longer "saved").
-  now?: Date
-}): PurchaseItem[] {
-  const now = rows.now ?? new Date()
-  return rows.balances.flatMap((balance) => {
-    const payment = rows.payments.find((p) => p.id === balance.payment_id)
-    if (!payment || !balance.expires_on) return []
-    const product = rows.products.find((p) => p.id === payment.product_id)
-    const snapshot = payment.product_snapshot as { name?: unknown } | null
-    const expiredBeforeBound = balance.expired_before_bound === true
-    const untouched =
-      !expiredBeforeBound &&
-      (balance.reserved ?? 0) === 0 &&
-      (balance.used ?? 0) === 0
-    const entitlement = rows.entitlements?.find(
-      (e) => e.id === balance.entitlement_id
-    )
-    const pinnedConcept = entitlement?.pinned_event_id
-      ? (rows.sessions?.find((e) => e.id === entitlement.pinned_event_id)
-          ?.concept_name ?? null)
-      : null
-    const session = pinnedSession(
-      entitlement?.pinned_event_id ?? null,
-      payment.id,
-      rows.bookings ?? [],
-      rows.sessions ?? [],
-      now
-    )
-    // A pinned purchase shows the product's message and button only as its
-    // live session: self-booking never uses it (parked, cancelled, started).
-    const isPinned = Boolean(entitlement?.pinned_event_id)
-    const showProduct = session !== null || (untouched && !isPinned)
+const str = (v: unknown): string | null => (typeof v === "string" ? v : null)
+const int = (v: unknown): number | null =>
+  typeof v === "number" && Number.isInteger(v) ? v : null
+
+/** The RPC's jsonb; a malformed row is left out. */
+export function parseMyEntitlements(data: unknown): MyEntitlement[] {
+  if (!Array.isArray(data)) return []
+  return data.flatMap((raw): MyEntitlement[] => {
+    if (!raw || typeof raw !== "object") return []
+    const r = raw as Record<string, unknown>
+    const id = str(r.entitlement_id)
+    const paymentId = str(r.payment_id)
+    const kind = KINDS.find((k) => k === r.kind)
+    const expiresOn = str(r.expires_on)
+    const paidOn = str(r.paid_on)
+    const amount = int(r.amount_agorot)
+    const daysLeft = int(r.days_left)
+    if (
+      !id ||
+      !paymentId ||
+      !kind ||
+      !expiresOn ||
+      !paidOn ||
+      amount === null ||
+      daysLeft === null
+    ) {
+      return []
+    }
+    const validity = int(r.validity_days)
     return [
       {
-        id: balance.entitlement_id ?? payment.id,
-        productName: pinnedConcept
-          ? customerCopy.sessionTitle(pinnedConcept)
-          : typeof snapshot?.name === "string"
-            ? snapshot.name
-            : "",
-        amountAgorot: payment.amount_agorot,
-        paidOn: payment.paid_on,
-        available: balance.available ?? 0,
-        reserved: balance.reserved ?? 0,
-        expiresOn: balance.expires_on,
-        message: showProduct ? (product?.post_join_message ?? null) : null,
-        buttonLabel: showProduct
-          ? (product?.post_join_button_label ?? null)
-          : null,
-        expiredBeforeBound,
-        validityDays: expiredBeforeBound
-          ? validityDays(entitlement?.eligibility_snapshot)
-          : null,
-        session,
+        id,
+        kind,
+        status: str(r.status) ?? "",
+        productName: str(r.product_name) ?? "",
+        amountAgorot: amount,
+        paidOn,
+        originalUnits: int(r.original_units) ?? 0,
+        available: int(r.available) ?? 0,
+        reserved: int(r.reserved) ?? 0,
+        used: int(r.used) ?? 0,
+        expiresOn,
+        isExpired: r.is_expired === true,
+        expiredBeforeBound: r.expired_before_bound === true,
+        daysLeft,
+        isExpiring: r.is_expiring === true,
+        isUsedUp: r.is_used_up === true,
+        validityDays: validity !== null && validity > 0 ? validity : null,
+        pinnedEventId: str(r.pinned_event_id),
+        paymentId,
       },
     ]
   })
 }
 
 /**
- * Where the product's button leads: a pinned purchase to its session; a
- * card with entries left straight to choosing dates (story 3.3,
- * EXPERIENCE.md "בואי נבחר תאריכים"); anything else to the sessions list.
+ * Open: active, not expired (or expired before it was bound, shown with its
+ * note, story 2.4) and not used up.
  */
-export function joinButtonHref(
-  item: Pick<PurchaseItem, "session" | "available">,
-  isCard: boolean
-): string {
-  if (item.session) return `/me/sessions/${item.session.eventId}`
-  if (isCard && item.available > 0) return "/me/sessions?select=1"
-  return "/me/sessions"
+export function isOpen(e: MyEntitlement): boolean {
+  return (
+    e.status === "active" &&
+    (!e.isExpired || e.expiredBeforeBound) &&
+    !e.isUsedUp
+  )
 }
 
-function pinnedSession(
-  eventId: string | null,
-  paymentId: string,
-  bookings: readonly BookingRow[],
-  sessions: readonly SessionRow[],
-  now: Date
-): PinnedSession | null {
-  if (!eventId) return null
-  const booked = bookings.some(
-    (b) =>
-      b.payment_id === paymentId &&
-      b.event_id === eventId &&
-      b.status === "confirmed"
+/**
+ * The word of a past entitlement's status-chip (expired tone): cancelled
+ * (status not active), expired, or used up; null for an open one.
+ */
+export function pastStatus(e: MyEntitlement): string | null {
+  if (e.status !== "active") return customerCopy.entitlementCancelled
+  if (e.isExpired) return customerCopy.entitlementExpired
+  if (e.isUsedUp) return customerCopy.entitlementUsedUp
+  return null
+}
+
+/** The shown name: "בראנץ׳ {concept}" for a pinned purchase, else the product. */
+export function entitlementName(
+  e: Pick<MyEntitlement, "pinnedEventId" | "productName">,
+  conceptNames: ReadonlyMap<string, string>
+): string {
+  const concept = e.pinnedEventId ? conceptNames.get(e.pinnedEventId) : null
+  return concept ? customerCopy.sessionTitle(concept) : e.productName
+}
+
+// A session ahead of her (her confirmed booking), from RLS.
+export type SessionRow = {
+  id: string
+  starts_at: string
+  concept_name: string
+}
+
+/**
+ * The home's card (user decision 2026-10-06): only an open, active card,
+ * never a pinned purchase. A card that ended (used up, expired, also before
+ * it was bound) leaves home and stays in the purchase history.
+ */
+export function isHomeCard(e: MyEntitlement): boolean {
+  return (
+    e.kind === "card" &&
+    e.pinnedEventId === null &&
+    !e.expiredBeforeBound &&
+    isOpen(e)
   )
-  const event = sessions.find((e) => e.id === eventId)
-  if (!booked || !event) return null
-  if (new Date(event.starts_at).getTime() <= now.getTime()) return null
-  return {
-    eventId,
-    startsAt: event.starts_at,
-    conceptName: event.concept_name,
-  }
+}
+
+/** No session ahead and no active card: the empty-state. */
+export function isEmptyHome(upcomingCount: number, cardCount: number): boolean {
+  return upcomingCount === 0 && cardCount === 0
+}
+
+/** The purchase history's order: newest purchase first (display only). */
+export function byPaidOnDesc(
+  a: Pick<MyEntitlement, "paidOn" | "id">,
+  b: Pick<MyEntitlement, "paidOn" | "id">
+): number {
+  if (a.paidOn !== b.paidOn) return a.paidOn < b.paidOn ? 1 : -1
+  return a.id < b.id ? 1 : a.id > b.id ? -1 : 0
 }

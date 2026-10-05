@@ -1172,6 +1172,7 @@ export type Database = {
         Args: { p_event_ids: string[] }
         Returns: Json
       }
+      get_my_entitlements: { Args: never; Returns: Json }
       get_my_session_role: { Args: never; Returns: string }
       issue_reset_token: { Args: { p_user_id: string }; Returns: Json }
       join_begin: {

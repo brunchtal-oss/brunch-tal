@@ -1,48 +1,110 @@
+import Link from "next/link"
+import { ChevronLeftIcon } from "lucide-react"
+
+import { StatusChip } from "@/components/shared/status-chip"
 import { customerCopy } from "@/lib/copy/customer"
 import { formatDayMonth, formatLocalDate } from "@/lib/time"
+import { cn } from "@/lib/utils"
 
-// DESIGN.md › balance-card: muted background, 8px corners, a decorative
-// accent dot; the numbers in body-strong, then "בתוקף עד DD.MM" in
-// ink-muted (no redemption weekdays: user decision 2026-10-02). All values
-// come from entitlement_balances (AD-14); nothing is computed here.
-// expiredNote: a card that expired before it was bound (story 2.4, user
-// decision 2026-10-03) shows only that note, without the counts.
+// The meter is drawn only for a card of a few entries; beyond that the text
+// alone says it.
+export const METER_MAX = 12
+
+// DESIGN.md › balance-card, on home only: the active card (user decision
+// 2026-10-06). The product name links to the purchase's detail (a single
+// target: its ::after covers the card; the chevron is decorative). Under
+// it, one plate per entry: filled for used, accent for booked, an empty
+// ring for free (decorative: the line after it says it in words), then
+// "ניצלת X/N · נרשמת Y/N" and "בתוקף עד DD.MM". Expiring (is_expiring from
+// the server): "עוד n ימים" and a warning status-chip, no button. All
+// values come from get_my_entitlements (AD-14); nothing is computed here.
 export function BalanceCard({
-  available,
+  href,
+  productName,
+  used,
   reserved,
+  total,
   expiresOn,
-  expiredNote = null,
+  daysLeft,
+  isExpiring = false,
 }: {
-  available: number
+  href: string
+  productName: string
+  used: number
   reserved: number
+  total: number
   expiresOn: string
-  expiredNote?: React.ReactNode
+  daysLeft?: number
+  isExpiring?: boolean
 }) {
-  if (expiredNote) {
-    return (
-      <div className="flex flex-col gap-1 rounded-xl bg-muted px-4 py-3">
-        {expiredNote}
-      </div>
-    )
-  }
   return (
-    <div className="flex flex-col gap-1 rounded-xl bg-muted px-4 py-3">
-      <p className="flex items-center gap-2 font-semibold">
-        <span
-          aria-hidden
-          className="size-2 shrink-0 rounded-full bg-brand-accent"
-        />
-        <span>
-          <bdi>{customerCopy.available(available)}</bdi> ·{" "}
-          <bdi>{customerCopy.reserved(reserved)}</bdi>
-        </span>
-      </p>
-      <p className="text-[15px] text-muted-foreground">
-        {customerCopy.validUntil}{" "}
-        <time dateTime={formatLocalDate(expiresOn)}>
-          <bdi>{formatDayMonth(expiresOn)}</bdi>
-        </time>
-      </p>
+    <div className="relative flex flex-col gap-3 rounded-lg bg-muted px-4 py-4 pe-10">
+      <Link
+        href={href}
+        className="self-start rounded-[4px] text-[17px] font-semibold after:absolute after:inset-0 after:rounded-lg after:content-['']"
+      >
+        <bdi>{productName}</bdi>
+      </Link>
+      {total > 0 && total <= METER_MAX && (
+        <EntryMeter used={used} reserved={reserved} total={total} />
+      )}
+      <div className="flex flex-col gap-0.5">
+        <p className="flex flex-wrap gap-x-4 text-base">
+          <bdi>{customerCopy.usedOf(used, total)}</bdi>
+          <bdi>{customerCopy.bookedOf(reserved, total)}</bdi>
+        </p>
+        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[15px] text-muted-foreground">
+          <span>
+            {customerCopy.validUntil}{" "}
+            <time dateTime={formatLocalDate(expiresOn)}>
+              <bdi>{formatDayMonth(expiresOn)}</bdi>
+            </time>
+            {isExpiring && daysLeft !== undefined && (
+              <> · {customerCopy.daysLeft(daysLeft)}</>
+            )}
+          </span>
+          {isExpiring && (
+            <StatusChip tone="warning">{customerCopy.expiring}</StatusChip>
+          )}
+        </p>
+      </div>
+      <ChevronLeftIcon
+        aria-hidden
+        strokeWidth={1.5}
+        className="absolute end-3 top-1/2 size-5 -translate-y-1/2 text-muted-foreground"
+      />
     </div>
+  )
+}
+
+// One plate per entry, in order: used, then booked, then free.
+export function EntryMeter({
+  used,
+  reserved,
+  total,
+}: {
+  used: number
+  reserved: number
+  total: number
+}) {
+  return (
+    <span aria-hidden className="flex gap-2">
+      {Array.from({ length: total }, (_, i) => (
+        <span
+          key={i}
+          data-entry={
+            i < used ? "used" : i < used + reserved ? "booked" : "free"
+          }
+          className={cn(
+            "size-4 rounded-full",
+            i < used
+              ? "bg-primary"
+              : i < used + reserved
+                ? "bg-brand-accent"
+                : "border border-brand-accent"
+          )}
+        />
+      ))}
+    </span>
   )
 }
