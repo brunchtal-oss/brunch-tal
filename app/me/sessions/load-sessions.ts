@@ -12,7 +12,7 @@ import { parseAvailability, type Availability } from "./session-status"
 // the availability labels (get_event_availability; never a number).
 
 export const SESSION_COLUMNS =
-  "id, kind, status, description, starts_at, display_price_agorot, concepts(name)"
+  "id, kind, status, description, starts_at, display_price_agorot, concepts(name, description)"
 
 export type CustomerSession = {
   id: string
@@ -25,7 +25,9 @@ export type CustomerSession = {
 }
 
 // The concept is never missing (a required FK); the table's checks
-// guarantee the kind.
+// guarantee the kind. The description is the session's, else the concept's
+// (user's decision 2026-10-05, as on the public session page); a blank text
+// counts as not entered.
 export function toCustomerSession(row: {
   id: string
   kind: string
@@ -35,12 +37,16 @@ export function toCustomerSession(row: {
   display_price_agorot: number | null
   concepts: {
     name: string
+    description: string | null
   } | null
 }): CustomerSession {
   const { concepts, ...rest } = row
+  const text = (value: string | null | undefined) =>
+    value && value.trim() ? value : null
   return {
     ...rest,
     kind: rest.kind === "couple" ? "couple" : "regular",
+    description: text(rest.description) ?? text(concepts?.description),
     concept_name: concepts?.name ?? "",
   }
 }
