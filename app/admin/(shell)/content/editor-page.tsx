@@ -2,6 +2,8 @@ import { randomUUID } from "node:crypto"
 
 import { schemaForSection } from "@/lib/content/schema"
 import { adminCopy } from "@/lib/copy/admin"
+import { signedDraftUrls } from "@/lib/media/drafts"
+import { createClient } from "@/lib/supabase/server"
 
 import { ContentEditor } from "./content-editor"
 import {
@@ -15,7 +17,12 @@ import {
 } from "./content-items"
 import { ContentStatusChip, statusHint } from "./content-status-chip"
 import { loadContentPage } from "./load-page"
-import { fromContent, keptFields, sectionSpec } from "./section-fields"
+import {
+  fromContent,
+  keptFields,
+  sectionSpec,
+  stateImages,
+} from "./section-fields"
 
 const copy = adminCopy.content
 
@@ -45,6 +52,12 @@ export async function EditorContent({
 
   const status = sectionStatus(page, section)
   const hidden = sectionHidden(section)
+  // Story 5.4: the saved images' draft files, for the editor's previews.
+  const initial = fromContent(spec, content)
+  const previewUrls = await signedDraftUrls(
+    await createClient(),
+    stateImages(initial).map((image) => image.media_id)
+  )
 
   return (
     <>
@@ -59,7 +72,8 @@ export async function EditorContent({
         slug={ref.slug}
         sectionKey={ref.key}
         kind={section.kind}
-        initial={fromContent(spec, content)}
+        initial={initial}
+        previewUrls={previewUrls}
         keep={keptFields(ref, content)}
         hasPending={pending}
         publishKey={randomUUID()}

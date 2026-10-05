@@ -5,6 +5,8 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { ChevronDownIcon, ChevronUpIcon, PlusIcon } from "lucide-react"
 
+import { ImageUploadField } from "@/components/admin/image-upload-field"
+import { RadioCardGroup } from "@/components/admin/radio-card"
 import { InlineNotice } from "@/components/shared/inline-notice"
 import { Button } from "@/components/ui/button"
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
@@ -17,6 +19,7 @@ import { newIdempotencyKey } from "@/lib/idempotency"
 import { cn } from "@/lib/utils"
 
 import {
+  createMediaAction,
   discardContentDraftAction,
   publishContentAction,
   saveContentDraftAction,
@@ -40,10 +43,13 @@ import {
   moveItem,
   removeItem,
   sectionSpec,
+  shownFor,
   toContent,
   toggleItemHidden,
   type EditorItem,
   type EditorState,
+  type ImageField,
+  type ImageValue,
   type ListField,
   type TextField,
 } from "./section-fields"
@@ -80,7 +86,10 @@ export function ContentEditor({
   draftInvalid,
   backHref = "/admin/content",
   backLabel = copy.backToList,
+  previewUrls = {},
 }: {
+  // Signed URLs of the saved images' draft files, by media id (story 5.4).
+  previewUrls?: Record<string, string>
   slug: EditableSlug
   sectionKey: string
   kind: string
@@ -144,7 +153,9 @@ export function ContentEditor({
     focusTarget.current = null
     const element =
       target === "error"
-        ? formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')
+        ? formRef.current?.querySelector<HTMLElement>(
+            '[aria-invalid="true"], [data-focus-error="true"]'
+          )
         : document.getElementById(target)
     element?.focus()
   })
@@ -297,10 +308,17 @@ export function ContentEditor({
   function onAdd(field: ListField) {
     nextId.current += 1
     const id = `n${nextId.current}`
-    update({ ...state, items: addItem(state.items, field, id) })
+    const items = addItem(state.items, field, id)
+    update({ ...state, items })
     setAnnouncement(copy.item.added)
+    // The new item's first shown field (a choice is a radio group: its
+    // first option).
+    const added = items[items.length - 1]
+    const first = field.fields.find((sub) => shownFor(sub, added.values))
     setFocusTarget(
-      fieldId(`items.${state.items.length}.${field.fields[0].name}`)
+      first?.type === "choice"
+        ? `${id}-${first.name}-0`
+        : fieldId(`items.${state.items.length}.${first?.name ?? ""}`)
     )
   }
 
@@ -379,12 +397,38 @@ export function ContentEditor({
               update({ ...state, text: { ...state.text, [field.name]: value } })
             }
           />
+        ) : field.type === "image" ? (
+          <ImageInput
+            key={field.name}
+            field={field}
+            path={field.name}
+            value={state.images?.[field.name] ?? null}
+            previewUrls={previewUrls}
+            error={errors?.[field.name]}
+            onChange={(value) =>
+              update({
+                ...state,
+                images: { ...state.images, [field.name]: value },
+              })
+            }
+          />
         ) : (
           <ItemList
             key={field.name}
             field={field}
             items={state.items}
             errors={errors}
+            previewUrls={previewUrls}
+            onImage={(index, name, value) =>
+              update({
+                ...state,
+                items: state.items.map((item, i) =>
+                  i === index
+                    ? { ...item, images: { ...item.images, [name]: value } }
+                    : item
+                ),
+              })
+            }
             onChange={(index, name, value) =>
               update({
                 ...state,
@@ -581,6 +625,43 @@ function TextInput({
   )
 }
 
+// An image field (story 5.4): image-upload-field with the field's aspect,
+// its saved draft file as the preview, and its error under it.
+function ImageInput({
+  field,
+  path,
+  value,
+  previewUrls,
+  error,
+  removable = true,
+  onChange,
+}: {
+  field: ImageField
+  path: string
+  value: ImageValue | null
+  previewUrls: Record<string, string>
+  error: FieldError | undefined
+  // false in a list item: deleting the item removes its image.
+  removable?: boolean
+  onChange: (value: ImageValue | null) => void
+}) {
+  return (
+    <ImageUploadField
+      id={fieldId(path)}
+      label={field.label}
+      hint={field.hint}
+      altHint={field.altHint}
+      aspectRatio={field.aspects[0]?.ratio}
+      value={value}
+      previewUrl={value ? previewUrls[value.media_id] : null}
+      error={error ? fieldErrorMessage(error) : null}
+      onChange={onChange}
+      createMedia={createMediaAction}
+      removable={removable}
+    />
+  )
+}
+
 const ICON_BUTTON =
   "size-11 rounded-[4px] border-foreground bg-transparent p-0 aria-disabled:opacity-50"
 const LINK_BUTTON =
@@ -657,7 +738,9 @@ export function ItemList({
   field,
   items,
   errors,
+  previewUrls = {},
   onChange,
+  onImage,
   onAdd,
   onMove,
   onToggleHidden,
@@ -669,7 +752,9 @@ export function ItemList({
   field: ListField
   items: readonly EditorItem[]
   errors: Errors | null
+  previewUrls?: Record<string, string>
   onChange: (index: number, name: string, value: string) => void
+  onImage?: (index: number, name: string, value: ImageValue | null) => void
   onAdd: () => void
   onMove: (index: number, delta: -1 | 1) => void
   onToggleHidden: (index: number) => void
@@ -690,6 +775,17 @@ export function ItemList({
       </h2>
       {listError && (
         <p className="text-[15px] text-error">{fieldErrorMessage(listError)}</p>
+      )}
+      {field.addAtTop && items.length > 0 && (
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onAdd}
+          className={cn(OUTLINE, "self-start")}
+        >
+          <PlusIcon aria-hidden strokeWidth={1.5} className="size-5" />
+          {field.addLabel}
+        </Button>
       )}
       {items.length === 0 ? (
         <p className="text-[15px] text-muted-foreground">{copy.emptyList}</p>
@@ -719,11 +815,39 @@ export function ItemList({
                     {copy.hiddenItemHint}
                   </p>
                 )}
-                {field.fields.map((sub) => {
+                {field.fields.map((sub, subIndex) => {
+                  if (!shownFor(sub, item.values)) return null
                   const path = `items.${index}.${sub.name}`
+                  const key = `${sub.name}-${subIndex}`
+                  if (sub.type === "choice") {
+                    return (
+                      <RadioCardGroup
+                        key={key}
+                        legend={sub.label}
+                        name={`${item.id}-${sub.name}`}
+                        options={sub.options}
+                        value={item.values[sub.name] ?? sub.defaultValue}
+                        onChange={(value) => onChange(index, sub.name, value)}
+                      />
+                    )
+                  }
+                  if (sub.type === "image") {
+                    return (
+                      <ImageInput
+                        key={key}
+                        field={sub}
+                        path={path}
+                        value={item.images?.[sub.name] ?? null}
+                        previewUrls={previewUrls}
+                        error={errors?.[path]}
+                        removable={false}
+                        onChange={(value) => onImage?.(index, sub.name, value)}
+                      />
+                    )
+                  }
                   return (
                     <TextInput
-                      key={sub.name}
+                      key={key}
                       field={sub}
                       path={path}
                       value={item.values[sub.name] ?? ""}

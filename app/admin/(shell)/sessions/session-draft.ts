@@ -39,8 +39,16 @@ export type CapacityDefaults = Record<EventKind, number> | null
 // when the settings could not be read (the times then start empty).
 export type TimeDefaults = { start: string; end: string } | null
 
+// A session's image (story 5.4), as image-upload-field edits it.
+export type SessionImage = {
+  media_id: string
+  alt: string
+  focus_x: number
+  focus_y: number
+}
+
 // A session as the screens read it (public.events, admin RLS, with its
-// concept's name).
+// concept's name and its image).
 export type SessionRow = {
   id: string
   concept_name: string
@@ -53,6 +61,21 @@ export type SessionRow = {
   registration_close_overridden: boolean
   status: EventStatus
   display_price_agorot: number | null
+  image?: SessionImage | null
+}
+
+// Whether the image in the form differs from the saved one (story 5.4).
+export function imageChanged(
+  saved: SessionImage | null | undefined,
+  next: SessionImage | null
+): boolean {
+  if (!saved || !next) return (saved ?? null) !== next
+  return (
+    saved.media_id !== next.media_id ||
+    saved.alt.trim() !== next.alt.trim() ||
+    saved.focus_x !== next.focus_x ||
+    saved.focus_y !== next.focus_y
+  )
 }
 
 // What the fields hold (text as typed). date "YYYY-MM-DD", times "HH:MM",

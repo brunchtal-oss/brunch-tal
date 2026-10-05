@@ -2,6 +2,13 @@ import "server-only"
 
 import type { SupabaseClient } from "@supabase/supabase-js"
 
+import {
+  CONCEPT_IMAGE_SELECT,
+  SESSION_IMAGE_SELECT,
+  sessionPhoto,
+  type MediaRow,
+  type SessionPhotoData,
+} from "@/lib/media/photo"
 import { callRpc } from "@/lib/rpc"
 import type { Database } from "@/lib/supabase/database.types"
 
@@ -11,8 +18,9 @@ import { parseAvailability, type Availability } from "./session-status"
 // (RLS): published sessions and their concept, her confirmed bookings, and
 // the availability labels (get_event_availability; never a number).
 
-export const SESSION_COLUMNS =
-  "id, kind, status, description, starts_at, display_price_agorot, concepts(name, description)"
+// With the photo (story 5.4): the session's image, else its concept's
+// (RLS: published images only).
+export const SESSION_COLUMNS = `id, kind, status, description, starts_at, display_price_agorot, ${SESSION_IMAGE_SELECT}, concepts(name, description, ${CONCEPT_IMAGE_SELECT})`
 
 export type CustomerSession = {
   id: string
@@ -22,6 +30,7 @@ export type CustomerSession = {
   starts_at: string
   display_price_agorot: number | null
   concept_name: string
+  photo: SessionPhotoData | null
 }
 
 // The concept is never missing (a required FK); the table's checks
@@ -35,12 +44,14 @@ export function toCustomerSession(row: {
   description: string | null
   starts_at: string
   display_price_agorot: number | null
+  image?: MediaRow | null
   concepts: {
     name: string
     description: string | null
+    default_image?: MediaRow | null
   } | null
 }): CustomerSession {
-  const { concepts, ...rest } = row
+  const { concepts, image, ...rest } = row
   const text = (value: string | null | undefined) =>
     value && value.trim() ? value : null
   return {
@@ -48,6 +59,7 @@ export function toCustomerSession(row: {
     kind: rest.kind === "couple" ? "couple" : "regular",
     description: text(rest.description) ?? text(concepts?.description),
     concept_name: concepts?.name ?? "",
+    photo: sessionPhoto(image, concepts?.default_image),
   }
 }
 

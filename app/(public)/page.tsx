@@ -6,7 +6,7 @@ import {
   getBusinessDetails,
   guestWhatsappHref,
 } from "@/lib/content/business-details"
-import { getPublishedSections } from "@/lib/content/pages"
+import { getPublishedPage } from "@/lib/content/pages"
 import { shellCopy } from "@/lib/copy/shell"
 
 // The home page (stories 5.1, 5.2, 5.16, 5.3): HomeView (the hero, the
@@ -19,17 +19,18 @@ import { shellCopy } from "@/lib/copy/shell"
 // Title: the root default.
 export default async function HomePage() {
   const [home, about, gallery, details] = await Promise.all([
-    getPublishedSections("home"),
-    getPublishedSections("about"),
-    getPublishedSections("gallery"),
+    getPublishedPage("home"),
+    getPublishedPage("about"),
+    getPublishedPage("gallery"),
     getBusinessDetails(),
   ])
 
   return (
     <HomeView
-      home={home}
-      about={about}
-      gallery={gallery}
+      home={home.sections}
+      about={about.sections}
+      gallery={gallery.sections}
+      images={{ ...home.images, ...about.images, ...gallery.images }}
       name={details?.business_name ?? shellCopy.wordmark}
       whatsappHref={guestWhatsappHref(details)}
       sessions={

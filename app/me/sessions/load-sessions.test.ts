@@ -16,7 +16,7 @@ const ROW = {
 // concept's (user's decision 2026-10-05).
 describe("toCustomerSession", () => {
   it("reads the concept's description too", () => {
-    expect(SESSION_COLUMNS).toContain("concepts(name, description)")
+    expect(SESSION_COLUMNS).toContain("concepts(name, description,")
   })
 
   it("keeps the session's description over the concept's", () => {
@@ -40,5 +40,39 @@ describe("toCustomerSession", () => {
         concepts: { name: "concept", description: null },
       }).description
     ).toBeNull()
+  })
+})
+
+// Story 5.4: the photo is the session's, else its concept's, else none.
+describe("toCustomerSession photo", () => {
+  const media = (path: string, alt: string | null = null) => ({
+    public_path: path,
+    alt_text: alt,
+    focus_x: 30,
+    focus_y: 70,
+  })
+
+  it("takes the session's own photo", () => {
+    const photo = toCustomerSession({
+      ...ROW,
+      image: media("own.jpg", "שולחן"),
+      concepts: { ...ROW.concepts, default_image: media("concept.jpg") },
+    }).photo
+    expect(photo?.photoUrl).toMatch(/\/media-public\/own\.jpg$/)
+    expect(photo).toMatchObject({ photoAlt: "שולחן", focusX: 30, focusY: 70 })
+  })
+
+  it("falls back to the concept's photo", () => {
+    const photo = toCustomerSession({
+      ...ROW,
+      image: null,
+      concepts: { ...ROW.concepts, default_image: media("concept.jpg") },
+    }).photo
+    expect(photo?.photoUrl).toMatch(/\/media-public\/concept\.jpg$/)
+    expect(photo?.photoAlt).toBe("")
+  })
+
+  it("has no photo without either", () => {
+    expect(toCustomerSession(ROW).photo).toBeNull()
   })
 })

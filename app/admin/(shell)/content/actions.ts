@@ -3,8 +3,10 @@
 import { updateTag } from "next/cache"
 
 import { schemaForSection } from "@/lib/content/schema"
+import { visibleImages } from "@/lib/content/visible"
 import type { ActionResult } from "@/lib/errors"
 import { callRpc } from "@/lib/rpc"
+import { deletePublicMedia, publishMedia } from "@/lib/server/privileged/media"
 import { createClient } from "@/lib/supabase/server"
 
 import {
@@ -36,6 +38,23 @@ async function readPage(
   })
   if (!result.ok) return result
   return { ok: true, data: result.data as unknown as ContentPage }
+}
+
+// A new image row (story 5.4): the browser then uploads the file to
+// media-drafts/<mediaId> with the admin's session (the storage policy allows
+// only that name). The key is one per chosen file (AD-5).
+export async function createMediaAction(input: {
+  idempotencyKey: string
+}): Promise<ActionResult<{ mediaId: string }>> {
+  if (!UUID.test(input.idempotencyKey)) {
+    return { ok: false, code: "INVALID_INPUT" }
+  }
+  const result = await callRpc(await createClient(), "admin_create_media", {
+    p_idempotency_key: input.idempotencyKey,
+  })
+  if (!result.ok) return result
+  const created = result.data as { media_id: string }
+  return { ok: true, data: { mediaId: created.media_id } }
 }
 
 export async function saveContentDraftAction(input: {
@@ -130,6 +149,20 @@ export async function publishContentAction(input: {
     }
   }
 
+  // Story 5.4 (AD-21): every image a pending draft shows is published first
+  // (begin, copy, finish). An image whose upload did not finish
+  // (MEDIA_NOT_UPLOADED) is skipped: the site leaves its item out. Any other
+  // failure stops here, before the page is published; a retry continues.
+  const seen = new Set<string>()
+  for (const section of page.data.sections.filter(hasPendingDraft)) {
+    for (const image of visibleImages(section.draft_content)) {
+      if (seen.has(image.media_id)) continue
+      seen.add(image.media_id)
+      const done = await publishMedia(client, image)
+      if (!done.ok && done.code !== "MEDIA_NOT_UPLOADED") return done
+    }
+  }
+
   const result = await callRpc(client, "admin_publish_content", {
     p_slug: input.slug,
     p_idempotency_key: input.idempotencyKey,
@@ -138,7 +171,12 @@ export async function publishContentAction(input: {
   const published = result.data as {
     published_version: number
     changed: number
+    hidden_paths?: string[]
   }
+
+  // The RPC already marked them hidden; a failed delete is returned again by
+  // the next publish.
+  await deletePublicMedia(client, published.hidden_paths ?? [])
 
   for (const tag of publishTags(input.slug)) updateTag(tag)
 

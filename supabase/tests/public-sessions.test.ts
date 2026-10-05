@@ -9,26 +9,74 @@ import { PUBLIC_SESSION_COLUMNS } from "@/lib/sessions/public"
 
 import { inRollback, testName, type Db } from "./support/db"
 
-// PUBLIC_SESSION_COLUMNS as SQL: the event's own columns, and the embedded
-// concept as a json object with its listed columns.
+// Splits a PostgREST select list on its top-level commas.
+function topLevel(list: string): string[] {
+  const parts: string[] = []
+  let depth = 0
+  let current = ""
+  for (const char of list) {
+    if (char === "(") depth++
+    if (char === ")") depth--
+    if (char === "," && depth === 0) {
+      parts.push(current.trim())
+      current = ""
+    } else current += char
+  }
+  if (current.trim()) parts.push(current.trim())
+  return parts
+}
+
+// The column an image embed (story 5.4) follows, by its foreign key.
+const IMAGE_FKS: Record<string, string> = {
+  events_image_id_fkey: "e.image_id",
+  concepts_default_image_id_fkey: "c.default_image_id",
+}
+
+// One select item as SQL: a column of `table`, or an image embed
+// (alias:media_assets!fk(cols)) as a json subselect, read as anon so RLS
+// on media_assets applies.
+function itemSql(item: string, table: string): { key: string; sql: string } {
+  const image = /^(\w+):media_assets!(\w+)\(([^)]*)\)$/.exec(item)
+  if (image) {
+    const [, alias, fk, cols] = image
+    const fields = cols
+      .split(",")
+      .map((c) => `'${c.trim()}', m.${c.trim()}`)
+      .join(", ")
+    return {
+      key: alias,
+      sql: `(select json_build_object(${fields}) from public.media_assets m where m.id = ${IMAGE_FKS[fk]})`,
+    }
+  }
+  return { key: item, sql: `${table}.${item}` }
+}
+
+// PUBLIC_SESSION_COLUMNS as SQL: the event's own columns, its image, and the
+// embedded concept as a json object with its listed columns (and image).
 function selectionSql(): {
   sql: string
   keys: string[]
   conceptKeys: string[]
 } {
-  const embed = /concepts\(([^)]*)\)/.exec(PUBLIC_SESSION_COLUMNS)
-  if (!embed) throw new Error("PUBLIC_SESSION_COLUMNS embeds no concept")
-  const conceptKeys = embed[1].split(",").map((c) => c.trim())
-  const keys = PUBLIC_SESSION_COLUMNS.replace(embed[0], "concepts")
-    .split(",")
-    .map((c) => c.trim())
-  const columns = keys.map((key) =>
-    key === "concepts"
-      ? `json_build_object(${conceptKeys
-          .map((c) => `'${c}', c.${c}`)
-          .join(", ")}) as concepts`
-      : `e.${key}`
-  )
+  const keys: string[] = []
+  let conceptKeys: string[] = []
+  const columns = topLevel(PUBLIC_SESSION_COLUMNS).map((item) => {
+    const concept = /^concepts\((.*)\)$/.exec(item)
+    if (concept) {
+      const inner = topLevel(concept[1]).map((sub) => itemSql(sub, "c"))
+      conceptKeys = inner.map((sub) => sub.key)
+      keys.push("concepts")
+      return `json_build_object(${inner
+        .map((sub) => `'${sub.key}', ${sub.sql}`)
+        .join(", ")}) as concepts`
+    }
+    const own = itemSql(item, "e")
+    keys.push(own.key)
+    return `${own.sql} as ${own.key}`
+  })
+  if (!keys.includes("concepts")) {
+    throw new Error("PUBLIC_SESSION_COLUMNS embeds no concept")
+  }
   return {
     sql: `select ${columns.join(", ")}
           from public.events e join public.concepts c on c.id = e.concept_id

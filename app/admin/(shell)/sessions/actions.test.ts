@@ -2,12 +2,21 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import {
   createEventAction,
+  createSessionMediaAction,
   duplicateEventAction,
   publishEventAction,
+  setSessionImageAction,
   updateEventAction,
 } from "./actions"
 
 const callRpc = vi.fn()
+const publishMedia = vi.fn()
+const deletePublicMedia = vi.fn()
+
+vi.mock("@/lib/server/privileged/media", () => ({
+  publishMedia: (...args: unknown[]) => publishMedia(...args),
+  deletePublicMedia: (...args: unknown[]) => deletePublicMedia(...args),
+}))
 
 vi.mock("@/lib/rpc", () => ({
   callRpc: (...args: unknown[]) => callRpc(...args),
@@ -21,6 +30,10 @@ const KEY = "22222222-2222-4222-8222-222222222222"
 
 beforeEach(() => {
   callRpc.mockReset()
+  publishMedia.mockReset()
+  publishMedia.mockResolvedValue({ ok: true, data: undefined })
+  deletePublicMedia.mockReset()
+  deletePublicMedia.mockResolvedValue(true)
 })
 
 describe("createEventAction", () => {
@@ -149,5 +162,85 @@ describe("duplicateEventAction", () => {
       })
     ).resolves.toEqual({ ok: false, code: "INVALID_INPUT" })
     expect(callRpc).not.toHaveBeenCalled()
+  })
+})
+
+// Story 5.4: a session's image.
+const MEDIA_ID = "33333333-3333-4333-8333-333333333333"
+const IMAGE = { media_id: MEDIA_ID, alt: "שולחן", focus_x: 40, focus_y: 60 }
+
+describe("setSessionImageAction", () => {
+  it("publishes the image, sets it, then deletes the freed file", async () => {
+    callRpc.mockResolvedValue({
+      ok: true,
+      data: { hidden_paths: ["44444444-4444-4444-8444-444444444444.jpg"] },
+    })
+    await expect(
+      setSessionImageAction({ eventId: EVENT_ID, image: IMAGE })
+    ).resolves.toEqual({ ok: true, data: undefined })
+    expect(publishMedia).toHaveBeenCalledWith({ session: true }, IMAGE)
+    expect(callRpc).toHaveBeenCalledWith(
+      { session: true },
+      "admin_set_event_image",
+      { p_event_id: EVENT_ID, p_media_id: MEDIA_ID }
+    )
+    expect(deletePublicMedia).toHaveBeenCalledWith({ session: true }, [
+      "44444444-4444-4444-8444-444444444444.jpg",
+    ])
+    // The order: publish, then set, then delete.
+    expect(publishMedia.mock.invocationCallOrder[0]).toBeLessThan(
+      callRpc.mock.invocationCallOrder[0]
+    )
+    expect(callRpc.mock.invocationCallOrder[0]).toBeLessThan(
+      deletePublicMedia.mock.invocationCallOrder[0]
+    )
+  })
+
+  it("removes the image with null, without publishing anything", async () => {
+    callRpc.mockResolvedValue({ ok: true, data: { hidden_paths: [] } })
+    await setSessionImageAction({ eventId: EVENT_ID, image: null })
+    expect(publishMedia).not.toHaveBeenCalled()
+    expect(callRpc).toHaveBeenCalledWith(
+      { session: true },
+      "admin_set_event_image",
+      { p_event_id: EVENT_ID, p_media_id: null }
+    )
+  })
+
+  it("stops when the image did not publish", async () => {
+    publishMedia.mockResolvedValue({ ok: false, code: "MEDIA_NOT_COPIED" })
+    await expect(
+      setSessionImageAction({ eventId: EVENT_ID, image: IMAGE })
+    ).resolves.toEqual({ ok: false, code: "MEDIA_NOT_COPIED" })
+    expect(callRpc).not.toHaveBeenCalled()
+    expect(deletePublicMedia).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    ["a bad session id", { eventId: "x", image: IMAGE }],
+    [
+      "a bad image id",
+      { eventId: EVENT_ID, image: { ...IMAGE, media_id: "x" } },
+    ],
+    [
+      "a focus out of range",
+      { eventId: EVENT_ID, image: { ...IMAGE, focus_x: 101 } },
+    ],
+  ])("refuses %s", async (_label, input) => {
+    await expect(setSessionImageAction(input)).resolves.toEqual({
+      ok: false,
+      code: "INVALID_INPUT",
+    })
+    expect(publishMedia).not.toHaveBeenCalled()
+    expect(callRpc).not.toHaveBeenCalled()
+  })
+})
+
+describe("createSessionMediaAction", () => {
+  it("creates the image row with the screen's key", async () => {
+    callRpc.mockResolvedValue({ ok: true, data: { media_id: MEDIA_ID } })
+    await expect(
+      createSessionMediaAction({ idempotencyKey: KEY })
+    ).resolves.toEqual({ ok: true, data: { mediaId: MEDIA_ID } })
   })
 })

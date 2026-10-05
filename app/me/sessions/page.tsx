@@ -84,7 +84,9 @@ async function SessionsList({ searchParams }: { searchParams: SearchParams }) {
     .order("id")
     .limit(100)
   if (error) throw new Error("sessions list failed")
-  const sessions = data.map(toCustomerSession)
+  const sessions = (
+    data as unknown as Parameters<typeof toCustomerSession>[0][]
+  ).map(toCustomerSession)
 
   if (sessions.length === 0) {
     return <p className="text-[17px]">{customerCopy.sessionsEmpty}</p>
@@ -146,6 +148,7 @@ async function SessionsList({ searchParams }: { searchParams: SearchParams }) {
               <SessionCard
                 href={`/me/sessions/${session.id}`}
                 conceptName={session.concept_name}
+                photo={session.photo}
                 startsAt={session.starts_at}
                 statusText={status?.text}
                 status={

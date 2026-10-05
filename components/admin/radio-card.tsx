@@ -35,12 +35,14 @@ export function RadioCardGroup({
       <div
         className={cn("grid gap-2", twoColumns ? "grid-cols-2" : "grid-cols-1")}
       >
-        {options.map((option) => (
+        {options.map((option, index) => (
           <label
             key={option.value}
             className="group flex min-h-12 cursor-pointer items-center gap-3 rounded-sm border border-muted-foreground bg-card px-3.5 py-2 text-base has-checked:border-foreground has-checked:bg-muted has-focus-visible:ring-2 has-focus-visible:ring-primary has-focus-visible:ring-offset-2 has-focus-visible:ring-offset-background"
           >
             <input
+              // "<name>-<n>": a target to move the focus to.
+              id={`${name}-${index}`}
               type="radio"
               name={name}
               value={option.value}

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import {
+  getPublishedPage,
   getPublishedPageSlugs,
   getPublishedSections,
   sectionContent,
@@ -156,5 +157,67 @@ describe("sectionContent", () => {
     expect(sectionContent(sections, "steps", "faq")).toBeNull()
     expect(sectionContent(sections, "faq", "faq")).toBeNull()
     expect(sectionContent(sections, "toString", "faq")).toBeNull()
+  })
+})
+
+// Story 5.4: the images of a page come from media_assets (anon, published
+// rows only); an item whose image does not resolve is left out.
+describe("getPublishedPage", () => {
+  const A = "3f8b1c2a-1d4e-4a8b-9c0d-2e3f4a5b6c7d"
+  const B = "4f8b1c2a-1d4e-4a8b-9c0d-2e3f4a5b6c7d"
+  const GALLERY = {
+    items: [
+      { image: { media_id: A, focus_x: 20, focus_y: 80 } },
+      { image: { media_id: B, focus_x: 50, focus_y: 50 } },
+    ],
+  }
+
+  beforeEach(() => {
+    order.mockResolvedValue({
+      data: [{ key: "photos", kind: "gallery", published_content: GALLERY }],
+      error: null,
+    })
+  })
+
+  it("resolves the published images and drops an item that does not resolve", async () => {
+    inList.mockResolvedValue({
+      data: [
+        {
+          id: A,
+          public_path: `${A}.jpg`,
+          alt_text: "שולחן",
+          focus_x: 20,
+          focus_y: 80,
+        },
+      ],
+      error: null,
+    })
+    const page = await getPublishedPage("gallery")
+    expect(select).toHaveBeenCalledWith(
+      "id, public_path, alt_text, focus_x, focus_y"
+    )
+    expect(inList).toHaveBeenCalledWith("id", [A, B])
+    expect(page.images[A].src).toMatch(
+      new RegExp(`/storage/v1/object/public/media-public/${A}\\.jpg$`)
+    )
+    expect(page.images[A]).toMatchObject({
+      alt: "שולחן",
+      focusX: 20,
+      focusY: 80,
+    })
+    expect(page.images[B]).toBeUndefined()
+    expect(page.sections.photos).toEqual({
+      kind: "gallery",
+      content: { items: [GALLERY.items[0]] },
+    })
+  })
+
+  it("gives no images when the read fails", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {})
+    inList.mockResolvedValue({ data: null, error: { message: "down" } })
+    const page = await getPublishedPage("gallery")
+    expect(page.images).toEqual({})
+    // Without a resolved image the gallery is not a section.
+    expect(page.sections.photos).toBeUndefined()
   })
 })

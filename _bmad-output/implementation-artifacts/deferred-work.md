@@ -158,6 +158,7 @@
   target: 5.4
   summary: הסתרת `whatsapp-bar` (‏`inert` ו-`visibility: hidden`) כל עוד כפתור ההירו גלוי, והופעה כשהוא יוצא מהמסך.
   evidence: ‏EXPERIENCE › `whatsapp-bar`. כפתור ההירו לא מוצג עד 3.2, ולכן היום הפס גלוי תמיד (כמו בעמוד בלי כפתור הירו). אם 3.2 נבנה אחרי 5.4, הסיפור שמוסיף את הכפתור לוקח את זה.
+  status: לא רלוונטי, החלטת המשתמשת 2026-10-05: מאז 2026-10-05 אין בהירו כפתור, ולכן הפס גלוי תמיד.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-2-public-pages-static.md`
   target: 5.3
@@ -169,6 +170,7 @@
   target: 5.4
   summary: תמונות באודות, בגלריה ובהמלצות (המלצה כתמונה), וצילום בהירו.
   evidence: 5.2 מציג המלצות טקסט בלבד, לפי ה-spec.
+  status: נסגר ב-5.4 (2026-10-05). צילום בהירו (עם scrim), תמונה ב-about › main, הסקשן החדש `gallery/photos` ב-`/gallery` לפני ההמלצות, והמלצה כתמונה. בכל תמונה טקסט חלופי מומלץ ונקודת מוקד.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-1-concepts-and-session-management.md`
   target: 4.7
@@ -184,6 +186,7 @@
   target: 5.4
   summary: המלצות כתמונות (צילומי מסך של ביקורות מוואטסאפ), עם טקסט חלופי. לפני פרסום מסתירים שם ומספר טלפון, ורק באישור הכותבת.
   evidence: בקשת המשתמשת 2026-10-04. מסמך המקור (מפת האתר) אוסר פרסום מזוהה בלי אישור.
+  status: נסגר ב-5.4 (2026-10-05). פריט המלצה עם `kind: "image"`. טל מעלה צילום שכבר ערכה בטלפון (השם והטלפון הוסתרו), בלי צ׳קבוקס הסכמה: האחריות שלה היא האישור (החלטת המשתמשת, memlog של ה-UX). הטקסט החלופי מומלץ ומציע תמלול קצר.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-2-public-pages-static.md`
   target: 5.16
@@ -302,6 +305,7 @@
   target: 5.4
   summary: בכרטיסי "הבראנצ׳ים הקרובים" בבית, תמונת המפגש (או הקונספט) בצד שמאל של המלבן (inline-end ב-RTL), במקום הצילום ביחס 5:2 למעלה. ב-`/sessions` ובראש עמוד המפגש בלי שינוי.
   evidence: החלטת המשתמשת 2026-10-05, בבדיקה בטלפון של 5.16 (memlog של ה-UX).
+  status: נסגר ב-5.4 (2026-10-05). ‏`SessionCard` עם `layout="horizontal"`: צילום ריבועי ב-inline-end.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-16-public-session-pages.md`
   target: 5.3
@@ -314,3 +318,23 @@
   summary: להחליט איפה מוצגות הוראות התשלום (למשל אחרי הצטרפות או באזור האישי). השדה `payment_instructions` נשאר בסכמת פרטי העסק ובמסד, אבל לא נערך ולא מוצג.
   evidence: החלטת המשתמשת 2026-10-05: השדה יוצא מעורך פרטי העסק, והמקום שלו נרשם כאן.
 
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-4-media-upload-and-publish.md`
+  target: 4.1
+  summary: תמונה שתקועה ב-`copying` יותר מ-15 דקות מופיעה ב"לטיפול" (`admin_get_attention_items()`, ‏AD-21), עם פעולה לפרסם שוב.
+  evidence: ‏5.4 בנה את המצב ואת ה-retry (פרסום חוזר ממשיך מהמצב השמור), אבל "לטיפול" עוד לא קיים. זו ההרחבה הראשונה מתוך ארבע (5.4, ‏5.5, ‏5.8, ‏5.10).
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-4-media-upload-and-publish.md`
+  target: מסך הקונספטים
+  summary: בורר תמונה לקונספט (`concepts.default_image_id`, שכבר במסד). ‏`photoUrl` כבר נופל לתמונת הקונספט כשאין תמונת מפגש. צריך RPC של אדמין שקובע את התמונה (פרסום + הסתרה של הקודמת, כמו `admin_set_event_image`).
+  evidence: החלטת המשתמשת 2026-10-05: בהדגמה רק תמונת מפגש.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-4-media-upload-and-publish.md`
+  target: 5.10
+  summary: ניקוי טיוטות יתומות ב-`media-drafts` ושורות `media_assets` במצב `draft` שלא שובצו (העלאה שנזנחה, תמונה שהוחלפה לפני שמירה), וקבצי טיוטה של תמונות שהוסתרו מזמן.
+  evidence: ‏5.4 לא מוחק קבצי טיוטה: הם משמשים לתצוגה המקדימה ולפרסום חוזר. ‏`hidden` מוחק רק את הקובץ הציבורי.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-4-media-upload-and-publish.md`
+  target: 5.18 / 6.x
+  summary: הקבצים הציבוריים מוגשים עם `cache-control: max-age=600` (נקבע בהעלאה ועובר בהעתקה). קובץ שהוסתר עלול להמשיך להיות מוגש כ-10 דקות אחרי המחיקה: מה-CDN של Supabase ומהמטמון של next/image (‏`images.minimumCacheTTL: 60`, ולכן ה-max-age של המקור קובע). להחליט לפני ההשקה אם זה מספיק.
+  evidence: בבדיקת המסד של 5.4 הכתובת הציבורית החזירה 200 מיד אחרי המחיקה, ו-4xx רק עם query string חדש.

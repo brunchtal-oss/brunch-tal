@@ -71,6 +71,12 @@ export const ERROR_MESSAGES = {
   // Tal lowers the capacity below the places already taken (story 3.2).
   CAPACITY_BELOW_BOOKED:
     "המכסה נמוכה ממספר המקומות שכבר תפוסים. אפשר להוריד אותה רק עד מספר התפוסים",
+  // Images (story 5.4): the file of an image did not reach the drafts; the
+  // copy to the public files did not finish (a retry continues it); a
+  // session's image that is not published yet.
+  MEDIA_NOT_UPLOADED: "העלאת התמונה לא הסתיימה. אפשר להעלות אותה שוב",
+  MEDIA_NOT_COPIED: "פרסום התמונה לא הסתיים. אפשר לנסות שוב",
+  MEDIA_NOT_PUBLISHED: "התמונה עוד לא פורסמה. אפשר לנסות לשמור שוב",
   // Raised by the adapter (never by SQL).
   INVALID_CREDENTIALS: "המייל או הסיסמה לא תואמים",
   // Correct password, but no active customer profile and not an admin.

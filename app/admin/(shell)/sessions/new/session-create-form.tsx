@@ -10,7 +10,7 @@ import { adminCopy } from "@/lib/copy/admin"
 import { errorMessage, type ErrorCode } from "@/lib/errors"
 import { newIdempotencyKey } from "@/lib/idempotency"
 
-import { createEventAction } from "../actions"
+import { createEventAction, setSessionImageAction } from "../actions"
 import {
   capacityFor,
   closesAfterStart,
@@ -23,8 +23,14 @@ import {
   type TimeDefaults,
   type DraftField,
   type SessionDraft,
+  type SessionImage,
 } from "../session-draft"
-import { ConceptField, SessionField, WhenFields } from "../session-fields"
+import {
+  ConceptField,
+  SessionField,
+  SessionImageField,
+  WhenFields,
+} from "../session-fields"
 
 const copy = adminCopy.sessions
 
@@ -49,7 +55,10 @@ const FIELD_SELECTORS: Record<DraftField, string> = {
 // with. Errors show under their field once she tried to save; nothing is
 // sent until they are fixed. "יצירת טיוטה" saves a draft and "פרסום" saves
 // and publishes in one request (user decision 2026-10-04). One idempotency
-// key per session (AD-5); a success goes back to the list.
+// key per session (AD-5); a success goes back to the list. Story 5.4: an
+// optional image, saved (published) right after the session is created; if
+// that fails the session exists, so the form goes to its editor, which says
+// the image was not saved and offers to save it again.
 export function SessionCreateForm({
   concepts,
   capacityDefaults,
@@ -81,6 +90,7 @@ export function SessionCreateForm({
           closesLocal: "",
         }
   )
+  const [image, setImage] = useState<SessionImage | null>(null)
   const [tried, setTried] = useState(false)
   const [pending, setPending] = useState<false | "draft" | "publish">(false)
   const [serverError, setServerError] = useState<{
@@ -94,6 +104,15 @@ export function SessionCreateForm({
   const problem = (field: DraftField) => {
     if (serverError?.field === field) return "invalid"
     return tried ? fieldError(field, draft) : null
+  }
+
+  // true when the image was saved (a thrown action counts as not saved).
+  async function saveImage(eventId: string, value: SessionImage) {
+    try {
+      return (await setSessionImageAction({ eventId, image: value })).ok
+    } catch {
+      return false
+    }
   }
 
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -118,6 +137,14 @@ export function SessionCreateForm({
           idempotencyKey,
         })
         if (result.ok) {
+          if (image && !(await saveImage(result.data.eventId, image))) {
+            // The session exists: its image is saved again in its editor.
+            setIdempotencyKey(newIdempotencyKey())
+            router.push(
+              `/admin/sessions/${result.data.eventId}/edit?image=failed`
+            )
+            return
+          }
           setIdempotencyKey(newIdempotencyKey())
           router.push("/admin/sessions")
           router.refresh()
@@ -234,6 +261,8 @@ export function SessionCreateForm({
         hint={copy.priceEmpty}
         maxLength={12}
       />
+
+      <SessionImageField value={image} onChange={setImage} />
 
       {serverError && (
         <InlineNotice tone="error">

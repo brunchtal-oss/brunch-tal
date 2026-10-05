@@ -52,6 +52,7 @@ export const shellCopy = {
       steps: "איך זה עובד",
       faq: "שאלות נפוצות",
       testimonials: "המלצות",
+      gallery: "גלריה",
     },
     // The public session pages and the home page's upcoming sessions
     // (story 5.16, user decision 2026-10-05).

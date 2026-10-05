@@ -27,10 +27,21 @@ const list = spec.fields.find((f) => f.type === "list") as ListField
 const item = (id: string, name: string): EditorItem => ({
   id,
   hidden: false,
-  values: { name, text: `${name} text` },
+  values: { kind: "text", name, text: `${name} text` },
 })
 
 describe("section fields", () => {
+  it("adds a second add button only to the gallery and the testimonials", () => {
+    const addAtTop = (kind: string) =>
+      sectionSpec({ slug: "gallery", key: "y", kind }).fields.some(
+        (f) => f.type === "list" && f.addAtTop === true
+      )
+    expect(addAtTop("gallery")).toBe(true)
+    expect(addAtTop("testimonials")).toBe(true)
+    expect(addAtTop("steps")).toBe(false)
+    expect(addAtTop("faq")).toBe(false)
+  })
+
   it("describes each edited kind", () => {
     for (const kind of [
       "hero",
@@ -38,6 +49,7 @@ describe("section fields", () => {
       "steps",
       "faq",
       "testimonials",
+      "gallery",
       "footer",
       "photo_consent",
       "business_details",
@@ -74,14 +86,84 @@ describe("section fields", () => {
       title: "T",
       hidden: true,
       items: [
-        { name: "a", text: "1" },
-        { name: "b", text: "2", hidden: true },
+        { kind: "text", name: "a", text: "1" },
+        { kind: "text", name: "b", text: "2", hidden: true },
       ],
     }
     const state = fromContent(spec, content)
     expect(state.items.map((i) => i.hidden)).toEqual([false, true])
     expect(state.hidden).toBe(true)
     expect(toContent(spec, state)).toEqual(content)
+  })
+
+  it("reads an old testimonial without a kind as text", () => {
+    const state = fromContent(spec, { items: [{ name: "a", text: "1" }] })
+    expect(state.items[0].values.kind).toBe("text")
+    expect(toContent(spec, state).items).toEqual([
+      { kind: "text", name: "a", text: "1" },
+    ])
+  })
+
+  it("saves an image testimonial with its image only (story 5.4)", () => {
+    const media = "3f8b1c2a-1d4e-4a8b-9c0d-2e3f4a5b6c7d"
+    const state = fromContent(spec, {
+      items: [
+        {
+          kind: "image",
+          image: { media_id: media, alt: "great", focus_x: 50, focus_y: 50 },
+          name: "",
+        },
+      ],
+    })
+    const content = toContent(spec, state)
+    expect(content.items).toEqual([
+      {
+        kind: "image",
+        image: { media_id: media, alt: "great", focus_x: 50, focus_y: 50 },
+        name: "",
+      },
+    ])
+    expect(fieldErrors(TESTIMONIALS, content)).toBeNull()
+
+    // Without the image: the error is under the image field.
+    const empty = {
+      ...state,
+      items: [{ ...state.items[0], images: { image: null } }],
+    }
+    expect(fieldErrors(TESTIMONIALS, toContent(spec, empty))).toEqual({
+      "items.0.image": { kind: "required" },
+    })
+  })
+
+  it("keeps a block image, without an empty alt", () => {
+    const hero = sectionSpec({ slug: "home", key: "hero", kind: "hero" })
+    const media = "3f8b1c2a-1d4e-4a8b-9c0d-2e3f4a5b6c7d"
+    const state = fromContent(hero, {
+      title: "t",
+      image: { media_id: media, alt: "", focus_x: 10, focus_y: 90 },
+    })
+    expect(state.images?.image).toEqual({
+      media_id: media,
+      alt: "",
+      focus_x: 10,
+      focus_y: 90,
+    })
+    expect(toContent(hero, state)).toEqual({
+      title: "t",
+      description: "",
+      image: { media_id: media, focus_x: 10, focus_y: 90 },
+    })
+    // Removed: no image in the content.
+    expect(
+      toContent(hero, { ...state, images: { image: null } }).image
+    ).toBeUndefined()
+  })
+
+  it("offers an image only in about › main among the text blocks", () => {
+    const fields = (slug: "about" | "home", key: string) =>
+      sectionSpec({ slug, key, kind: "text_block" }).fields.map((f) => f.type)
+    expect(fields("about", "main")).toContain("image")
+    expect(fields("home", "intro")).not.toContain("image")
   })
 
   it("drops a hero's old button label when saving", () => {
@@ -111,7 +193,8 @@ describe("section fields", () => {
     let items = [item("a", "Noa"), item("b", "Dana")]
     items = addItem(items, list, "n1")
     expect(items.map((i) => i.id)).toEqual(["a", "b", "n1"])
-    expect(items[2].values).toEqual({ name: "", text: "" })
+    expect(items[2].values).toEqual({ kind: "text", name: "", text: "" })
+    expect(items[2].images).toEqual({ image: null })
 
     items = moveItem(items, 2, -1)
     expect(items.map((i) => i.id)).toEqual(["a", "n1", "b"])
@@ -132,14 +215,17 @@ describe("section fields", () => {
       hidden: false,
     })
     expect(content.items).toEqual([
-      { name: "Noa", text: "Noa text", hidden: true },
-      { name: "Dana", text: "Dana text" },
+      { kind: "text", name: "Noa", text: "Noa text", hidden: true },
+      { kind: "text", name: "Dana", text: "Dana text" },
     ])
   })
 
   it("refuses a new testimonial without its text, next to the field", () => {
     const items = addItem([item("a", "Noa")], list, "n1")
-    items[1] = { ...items[1], values: { name: "Lea", text: "" } }
+    items[1] = {
+      ...items[1],
+      values: { kind: "text", name: "Lea", text: "" },
+    }
     const content = toContent(spec, { text: {}, items, hidden: false })
     const errors = fieldErrors(TESTIMONIALS, content)
     expect(errors).toEqual({ "items.1.text": { kind: "required" } })

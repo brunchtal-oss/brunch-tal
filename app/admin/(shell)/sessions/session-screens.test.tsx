@@ -14,6 +14,8 @@ vi.mock("./actions", () => ({
   updateEventAction: vi.fn(),
   publishEventAction: vi.fn(),
   duplicateEventAction: vi.fn(),
+  setSessionImageAction: vi.fn(),
+  createSessionMediaAction: vi.fn(),
 }))
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }),

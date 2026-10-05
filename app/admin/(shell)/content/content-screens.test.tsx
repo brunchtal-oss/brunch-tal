@@ -11,6 +11,7 @@ import { sectionSpec, type EditorState, type ListField } from "./section-fields"
 vi.mock("./actions", () => ({
   saveContentDraftAction: vi.fn(),
   publishContentAction: vi.fn(),
+  createMediaAction: vi.fn(),
 }))
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }),
@@ -47,8 +48,16 @@ function editor(
 const TESTIMONIALS: EditorState = {
   text: { title: "" },
   items: [
-    { id: "i0", hidden: false, values: { name: "Noa", text: "great" } },
-    { id: "i1", hidden: true, values: { name: "Dana", text: "lovely" } },
+    {
+      id: "i0",
+      hidden: false,
+      values: { kind: "text", name: "Noa", text: "great" },
+    },
+    {
+      id: "i1",
+      hidden: true,
+      values: { kind: "text", name: "Dana", text: "lovely" },
+    },
   ],
   hidden: false,
 }
@@ -128,7 +137,13 @@ describe("ContentEditor", () => {
   it("names an item without a name by its place", () => {
     const html = testimonials({
       ...TESTIMONIALS,
-      items: [{ id: "i0", hidden: false, values: { name: "", text: "" } }],
+      items: [
+        {
+          id: "i0",
+          hidden: false,
+          values: { kind: "text", name: "", text: "" },
+        },
+      ],
     })
     expect(html).toContain(copy.testimonials.item(1))
   })
@@ -256,5 +271,93 @@ describe("PreviewBar", () => {
     expect(html).toContain(copy.previewNoChanges)
     expect(html).not.toContain(copy.previewBar)
     expect(html).not.toContain(`>${copy.publish}<`)
+  })
+})
+
+// Story 5.4: image fields (image-upload-field) in the editor.
+const IMAGE_ID = "3f8b1c2a-1d4e-4a8b-9c0d-2e3f4a5b6c7d"
+const imageCopy = adminCopy.image
+
+describe("image fields", () => {
+  it("offers the hero a photo to choose", () => {
+    const html = editor()
+    expect(html).toContain(copy.blockImage)
+    expect(html).toContain(imageCopy.choose)
+    expect(html).toContain('accept="image/jpeg,image/png,image/webp"')
+  })
+
+  it("shows a saved photo with its focus point, alt (recommended) and remove", () => {
+    const html = editor({
+      initial: {
+        ...HERO,
+        images: {
+          image: { media_id: IMAGE_ID, alt: "שולחן", focus_x: 20, focus_y: 80 },
+        },
+      },
+      previewUrls: { [IMAGE_ID]: "https://x.example/signed" },
+    })
+    expect(html).toContain("https://x.example/signed")
+    expect(html).toContain(imageCopy.alt)
+    expect(html).toContain('value="שולחן"')
+    // No arrows (user decision 2026-10-06): a tap moves the focus point.
+    expect(html).not.toContain("נקודת המוקד למעלה")
+    expect(html).toContain(imageCopy.remove)
+    expect(html).toContain("left:20%;top:80%")
+    expect(html).not.toContain(imageCopy.notUploaded)
+  })
+
+  it("says the upload did not finish when the draft file is missing", () => {
+    const html = editor({
+      initial: {
+        ...HERO,
+        images: {
+          image: { media_id: IMAGE_ID, alt: "", focus_x: 50, focus_y: 50 },
+        },
+      },
+    })
+    expect(html).toContain(imageCopy.notUploaded)
+  })
+
+  it("lets a testimonial be text or an image", () => {
+    const html = testimonials({
+      text: { title: "" },
+      items: [
+        {
+          id: "i0",
+          hidden: false,
+          values: { kind: "image", name: "" },
+          images: { image: null },
+        },
+      ],
+      hidden: false,
+    })
+    expect(html).toContain(copy.testimonials.kinds.text)
+    expect(html).toContain(copy.testimonials.kinds.image)
+    expect(html).toContain(imageCopy.choose)
+    // The text fields of a text testimonial are not shown.
+    expect(html).not.toContain(copy.testimonials.text)
+  })
+
+  it("lists gallery photos", () => {
+    const html = editor({
+      slug: "gallery",
+      sectionKey: "photos",
+      kind: "gallery",
+      initial: {
+        text: { title: "" },
+        items: [
+          {
+            id: "i0",
+            hidden: false,
+            values: { caption: "בוקר" },
+            images: { image: null },
+          },
+        ],
+        hidden: false,
+      },
+    })
+    expect(html).toContain(copy.gallery.add)
+    expect(html).toContain(copy.gallery.caption)
+    expect(html).toContain(imageCopy.choose)
   })
 })

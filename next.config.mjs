@@ -14,6 +14,27 @@ function privateIPv4Addresses() {
 
 const noStore = { key: "Cache-Control", value: "private, no-store" }
 
+// Published images (story 5.4): next/image optimizes only the public files
+// of the Supabase project (media-public). Drafts are never optimized (the
+// admin preview uses signed URLs with `unoptimized`).
+function supabaseImagePatterns() {
+  const raw = process.env.NEXT_PUBLIC_SUPABASE_URL
+  if (!raw) return []
+  try {
+    const url = new URL(raw)
+    return [
+      {
+        protocol: url.protocol.replace(":", ""),
+        hostname: url.hostname,
+        port: url.port,
+        pathname: "/storage/v1/object/public/media-public/**",
+      },
+    ]
+  } catch {
+    return []
+  }
+}
+
 // /login?next=/join/<token> (an existing account logs in to claim a join
 // link, story 2.3) carries the token in its query: it is neither logged nor
 // sent as a referrer. The value may arrive encoded (%2F).
@@ -25,6 +46,13 @@ const nextConfig = {
   cacheComponents: true,
 
   allowedDevOrigins: privateIPv4Addresses(),
+
+  images: {
+    remotePatterns: supabaseImagePatterns(),
+    // A hidden (deleted) photo leaves the optimizer's cache within the
+    // upstream max-age (600s, set at upload) instead of the default 4 hours.
+    minimumCacheTTL: 60,
+  },
 
   // AGENTS.md is curated by hand; `next dev` must not append its own rules.
   agentRules: false,
