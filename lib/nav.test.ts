@@ -46,19 +46,20 @@ describe("navigation", () => {
     expect(existing.has(href)).toBe(true)
   })
 
-  it("shows the hero's button only with /sessions in the public navigation", () => {
+  it("knows whether /sessions is in the public navigation", () => {
     expect(hasPublicSessions([{ href: "/" }])).toBe(false)
     expect(hasPublicSessions([{ href: "/" }, { href: "/sessions" }])).toBe(true)
   })
 
-  it("lists the public pages in the menu's order, without /sessions yet", () => {
+  it("lists the public pages in the menu's order, /sessions after home", () => {
     expect(publicNav.map((item) => item.href)).toEqual([
       "/",
+      "/sessions",
       "/how-it-works",
       "/gallery",
       "/contact",
     ])
-    expect(hasPublicSessions()).toBe(false)
+    expect(hasPublicSessions()).toBe(true)
   })
 
   it("marks the current public page", () => {
@@ -67,6 +68,8 @@ describe("navigation", () => {
     expect(currentPublicHref("/contact/")).toBe("/contact")
     expect(currentPublicHref("/gallerys")).toBeNull()
     expect(currentPublicHref("/login")).toBeNull()
+    expect(currentPublicHref("/sessions")).toBe("/sessions")
+    expect(currentPublicHref("/sessions/1")).toBe("/sessions")
     expect(
       currentPublicHref("/sessions/1", [{ href: "/" }, { href: "/sessions" }])
     ).toBe("/sessions")

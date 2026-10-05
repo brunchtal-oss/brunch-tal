@@ -18,8 +18,6 @@ export type CustomerSession = {
   id: string
   kind: "regular" | "couple"
   status: string
-  // The session's description, else its concept's (story 3.11, user
-  // decision 2026-10-05).
   description: string | null
   starts_at: string
   display_price_agorot: number | null
@@ -27,7 +25,9 @@ export type CustomerSession = {
 }
 
 // The concept is never missing (a required FK); the table's checks
-// guarantee the kind.
+// guarantee the kind. The description is the session's, else the concept's
+// (user's decision 2026-10-05, as on the public session page); a blank text
+// counts as not entered.
 export function toCustomerSession(row: {
   id: string
   kind: string
@@ -37,14 +37,16 @@ export function toCustomerSession(row: {
   display_price_agorot: number | null
   concepts: {
     name: string
-    description?: string | null
+    description: string | null
   } | null
 }): CustomerSession {
   const { concepts, ...rest } = row
+  const text = (value: string | null | undefined) =>
+    value && value.trim() ? value : null
   return {
     ...rest,
-    description: rest.description ?? concepts?.description ?? null,
     kind: rest.kind === "couple" ? "couple" : "regular",
+    description: text(rest.description) ?? text(concepts?.description),
     concept_name: concepts?.name ?? "",
   }
 }

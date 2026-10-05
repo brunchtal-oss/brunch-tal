@@ -269,12 +269,38 @@
   summary: ‏`approve_payment_core` זורק `INTRO_NOT_ELIGIBLE` גם במצב `park` (אחרת האינדקס הייחודי היה זורק 23505). כשנבנה המסלול המקוון: לבדוק את המקרה הזה ולהחליט מה רואה הלקוחה ששילמה.
   evidence: ביקורת 3.11 (verification). אין עדיין קורא ל-`park`.
 
-- source_spec: `_bmad-output/implementation-artifacts/spec-3-11-pinned-product-approval-and-placement.md`
-  target: 5.16
-  summary: עמוד המפגש הציבורי צריך להציג את תיאור המפגש (אחרת של הקונספט) במקום השורה הקבועה "מגיעות/מגיעים עם התינוקות", כמו `/me/sessions/[id]` ב-3.11 (החלטת המשתמשת 2026-10-05, memlog של ה-UX: בכל עמוד שמציג מפגש).
-  evidence: בדיקת הטלפון של 3.11. ‏5.16 רץ במקביל, ולכן העמוד הציבורי לא שונה כאן.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-11-pinned-product-approval-and-placement.md`
   target: סיפור קטן אחרי 3.11
   summary: טקסט ברירת מחדל לפרטי בראנץ׳ שטל יכולה לערוך (למשל טקסט כללי כשאין תיאור למפגש ולקונספט, ועריכת תיאור הקונספט). החלטת המשתמשת 2026-10-05: בהמשך, כסיפור נפרד.
   evidence: בדיקת הטלפון של 3.11.
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-16-public-session-pages.md`
+  target: עם `event_products`
+  summary: מחיר ברירת מחדל ממחיר המוצר בעמוד המפגש הציבורי. ב-5.16 מוצג רק `display_price_agorot`, ובלעדיו אין שורת מחיר.
+  evidence: החלטת המשתמשת 2026-10-05 (spec 5.16, Intent).
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-16-public-session-pages.md`
+  target: 5.15
+  summary: ל-anon יש הרשאת קריאה לכל הטבלה `events` (`grant select on table`), כולל העמודה `capacity_adults`. העמודים הציבוריים לא בוחרים אותה (`PUBLIC_SESSION_COLUMNS`), אבל ההרשאה עצמה עדיין פתוחה. לצמצם את ההרשאה לעמודות הציבוריות לפני הסרת הנעילה.
+  evidence: ‏RLS ‏`events_anon_select` והרשאות העמודות של anon; ‏`lib/sessions/public.ts`.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-16-public-session-pages.md`
+  target: אחרי ההגשה
+  summary: עריכת תיאור הקונספט (`concepts.description`) באדמין. אין היום מסך קונספטים, והתיאורים של חמשת הקונספטים נכתבו ישירות במסד הפיתוח.
+  evidence: ‏spec 5.16, Design Notes.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-16-public-session-pages.md`
+  target: 5.19
+  summary: ‏`npm run build` בלי `.env*` נכשל ב-prerender של `/contact` ("Supabase public client is not configured"), כי קוראי התוכן במטמון (5.2) יוצרים את הלקוח הציבורי בזמן הבנייה. ה-CI לא מריץ build, וב-Vercel יש משתנים, ולכן זה לא חוסם פריסה. צריך להחליט: לקרוא בלי לזרוק כשאין הגדרה, או לוותר על ה-AC הזה.
+  evidence: ‏build ב-worktree של 5.16 אחרי הסרה זמנית של `.env.local` (2026-10-05). העמודים של 5.16 דינמיים ולא נכשלו.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-16-public-session-pages.md`
+  target: 5.4
+  summary: בכרטיסי "הבראנצ׳ים הקרובים" בבית, תמונת המפגש (או הקונספט) בצד שמאל של המלבן (inline-end ב-RTL), במקום הצילום ביחס 5:2 למעלה. ב-`/sessions` ובראש עמוד המפגש בלי שינוי.
+  evidence: החלטת המשתמשת 2026-10-05, בבדיקה בטלפון של 5.16 (memlog של ה-UX).
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-16-public-session-pages.md`
+  target: 5.3
+  summary: ההירו כבר לא מציג כפתור (החלטת המשתמשת 2026-10-05), אבל `cta_label` עדיין שדה חובה בסכמת `hero` (`lib/content/schema.ts`) ובעורך (`app/admin/(shell)/content/home/page.tsx`). להסיר את השדה מהעורך ולהפוך אותו לאופציונלי בסכמה, בלי לפסול תוכן שכבר פורסם.
+  evidence: ‏`HomeHero` לא קורא את `hero.cta_label` מאז 5.16.
+

@@ -2,7 +2,6 @@ import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it } from "vitest"
 
 import { shellCopy } from "@/lib/copy/shell"
-import { hasPublicSessions } from "@/lib/nav"
 
 import { HomeHero } from "./home-hero"
 
@@ -41,10 +40,9 @@ describe("HomeHero", () => {
     expect(html.match(/<p/g)).toHaveLength(1)
   })
 
-  it("has no link to /sessions while the page is not in the public navigation", () => {
-    expect(hasPublicSessions()).toBe(false)
+  it("has no button (user's decision 2026-10-05: the upcoming sessions link to all)", () => {
     const html = renderToStaticMarkup(<HomeHero hero={HERO} />)
-    expect(html).not.toContain('href="/sessions"')
+    expect(html).not.toContain("<a")
     expect(html).not.toContain("hero-cta")
   })
 })

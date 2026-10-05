@@ -1,3 +1,4 @@
+import { Suspense } from "react"
 import { MessageCircleIcon } from "lucide-react"
 
 import { HomeHero } from "@/components/public/home-hero"
@@ -5,6 +6,7 @@ import {
   TestimonialsSection,
   TextBlockSection,
 } from "@/components/public/sections"
+import { UpcomingSessions } from "@/components/public/upcoming-sessions"
 import {
   getBusinessDetails,
   guestWhatsappHref,
@@ -14,14 +16,16 @@ import { shellCopy } from "@/lib/copy/shell"
 
 const copy = shellCopy.public
 
-// The home page (stories 5.1, 5.2): the hero, the short intro (home ›
-// intro), about (about › main; it has no page of its own, user decision
-// 2026-10-04), the testimonials (gallery › testimonials) and contact (home ›
-// contact: a heading with the WhatsApp button, shown only with a usable
-// number; the business details are on /contact). The sessions area joins after the intro in 3.2. Everything is
-// published content read from the cache (content:home, content:about,
+// The home page (stories 5.1, 5.2, 5.16): the hero, the short intro (home ›
+// intro), the upcoming sessions (up to 3, story 5.16), about (about › main;
+// it has no page of its own, user decision 2026-10-04), the testimonials
+// (gallery › testimonials) and contact (home › contact: a heading with the
+// WhatsApp button, shown only with a usable number; the business details
+// are on /contact). Everything but the sessions is published content read from the cache (content:home, content:about,
 // content:gallery, content:global) through the anon client, so a draft
 // never reaches it; a section without valid published content is not shown.
+// The sessions are dynamic (AD-2), inside <Suspense>, so the rest stays
+// cached; the area is not shown without sessions or when the read fails.
 // Title: the root default.
 export default async function HomePage() {
   const [home, about, gallery, details] = await Promise.all([
@@ -44,6 +48,9 @@ export default async function HomePage() {
         name={details?.business_name ?? shellCopy.wordmark}
       />
       {intro && <TextBlockSection content={intro} />}
+      <Suspense fallback={null}>
+        <UpcomingSessions />
+      </Suspense>
       {aboutMain && <TextBlockSection content={aboutMain} />}
       {testimonials && (
         <TestimonialsSection
