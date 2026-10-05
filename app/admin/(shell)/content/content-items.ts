@@ -26,7 +26,10 @@ export const EDITABLE_PAGES = {
     { slug: "how-it-works", key: "steps", kind: "steps" },
     { slug: "how-it-works", key: "faq", kind: "faq" },
   ],
-  gallery: [{ slug: "gallery", key: "testimonials", kind: "testimonials" }],
+  gallery: [
+    { slug: "gallery", key: "photos", kind: "gallery" },
+    { slug: "gallery", key: "testimonials", kind: "testimonials" },
+  ],
   contact: [
     { slug: "contact", key: "intro", kind: "text_block" },
     { slug: "contact", key: "business_details", kind: "business_details" },

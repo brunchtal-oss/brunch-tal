@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import {
+  createMediaAction,
   discardContentDraftAction,
   publishContentAction,
   saveContentDraftAction,
@@ -9,6 +10,13 @@ import type { ContentPage, ContentSection } from "./content-items"
 
 const callRpc = vi.fn()
 const updateTag = vi.fn()
+const publishMedia = vi.fn()
+const deletePublicMedia = vi.fn()
+
+vi.mock("@/lib/server/privileged/media", () => ({
+  publishMedia: (...args: unknown[]) => publishMedia(...args),
+  deletePublicMedia: (...args: unknown[]) => deletePublicMedia(...args),
+}))
 
 vi.mock("@/lib/rpc", () => ({
   callRpc: (...args: unknown[]) => callRpc(...args),
@@ -53,6 +61,10 @@ function answer(read: ContentPage, write?: unknown) {
 beforeEach(() => {
   callRpc.mockReset()
   updateTag.mockReset()
+  publishMedia.mockReset()
+  publishMedia.mockResolvedValue({ ok: true, data: undefined })
+  deletePublicMedia.mockReset()
+  deletePublicMedia.mockResolvedValue(true)
 })
 
 describe("saveContentDraftAction", () => {
@@ -160,9 +172,10 @@ describe("saveContentDraftAction", () => {
       {
         p_slug: "gallery",
         p_key: "testimonials",
+        // An item saved without a kind is a text testimonial (story 5.4).
         p_content: {
           hidden: true,
-          items: [{ name: "a", text: "b", hidden: true }],
+          items: [{ kind: "text", name: "a", text: "b", hidden: true }],
         },
       }
     )
@@ -391,6 +404,98 @@ describe("publishContentAction", () => {
     ["a key that is not a uuid", { slug: "home", idempotencyKey: "x" }],
   ])("refuses %s without calling an RPC", async (_label, input) => {
     await expect(publishContentAction(input)).resolves.toEqual({
+      ok: false,
+      code: "INVALID_INPUT",
+    })
+    expect(callRpc).not.toHaveBeenCalled()
+  })
+})
+
+const A = "3f8b1c2a-1d4e-4a8b-9c0d-2e3f4a5b6c7d"
+const B = "4f8b1c2a-1d4e-4a8b-9c0d-2e3f4a5b6c7d"
+const GALLERY = {
+  items: [
+    { image: { media_id: A, alt: "a", focus_x: 20, focus_y: 30 } },
+    { image: { media_id: B, focus_x: 50, focus_y: 50 }, hidden: true },
+  ],
+}
+
+// Story 5.4: the images of the pending drafts are published first (AD-21),
+// then the page; the hidden files are deleted after the RPC.
+describe("publishContentAction with images", () => {
+  it("publishes the visible images, then the page, then deletes hidden files", async () => {
+    answer(
+      page("gallery", [
+        section({ key: "photos", kind: "gallery", draft_content: GALLERY }),
+      ]),
+      {
+        ok: true,
+        data: { published_version: 1, changed: 1, hidden_paths: [B + ".jpg"] },
+      }
+    )
+    await expect(
+      publishContentAction({ slug: "gallery", idempotencyKey: KEY })
+    ).resolves.toEqual({ ok: true, data: { publishedVersion: 1, changed: 1 } })
+    // Only the visible image, with its alt and focus.
+    expect(publishMedia).toHaveBeenCalledTimes(1)
+    expect(publishMedia).toHaveBeenCalledWith(
+      { session: true },
+      { media_id: A, alt: "a", focus_x: 20, focus_y: 30 }
+    )
+    expect(deletePublicMedia).toHaveBeenCalledWith({ session: true }, [
+      B + ".jpg",
+    ])
+    expect(updateTag).toHaveBeenCalledWith("content:gallery")
+  })
+
+  it("skips an upload that did not finish", async () => {
+    publishMedia.mockResolvedValue({ ok: false, code: "MEDIA_NOT_UPLOADED" })
+    answer(
+      page("gallery", [
+        section({ key: "photos", kind: "gallery", draft_content: GALLERY }),
+      ]),
+      { ok: true, data: { published_version: 1, changed: 1, hidden_paths: [] } }
+    )
+    await expect(
+      publishContentAction({ slug: "gallery", idempotencyKey: KEY })
+    ).resolves.toMatchObject({ ok: true })
+  })
+
+  it("stops before the page when an image did not publish", async () => {
+    publishMedia.mockResolvedValue({ ok: false, code: "MEDIA_NOT_COPIED" })
+    answer(
+      page("gallery", [
+        section({ key: "photos", kind: "gallery", draft_content: GALLERY }),
+      ])
+    )
+    await expect(
+      publishContentAction({ slug: "gallery", idempotencyKey: KEY })
+    ).resolves.toEqual({ ok: false, code: "MEDIA_NOT_COPIED" })
+    expect(callRpc).not.toHaveBeenCalledWith(
+      expect.anything(),
+      "admin_publish_content",
+      expect.anything()
+    )
+    expect(updateTag).not.toHaveBeenCalled()
+  })
+})
+
+describe("createMediaAction", () => {
+  it("creates the row with the screen's key", async () => {
+    callRpc.mockResolvedValue({ ok: true, data: { media_id: A } })
+    await expect(createMediaAction({ idempotencyKey: KEY })).resolves.toEqual({
+      ok: true,
+      data: { mediaId: A },
+    })
+    expect(callRpc).toHaveBeenCalledWith(
+      { session: true },
+      "admin_create_media",
+      { p_idempotency_key: KEY }
+    )
+  })
+
+  it("refuses a key that is not a uuid", async () => {
+    await expect(createMediaAction({ idempotencyKey: "x" })).resolves.toEqual({
       ok: false,
       code: "INVALID_INPUT",
     })

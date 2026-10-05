@@ -1,12 +1,16 @@
 import { useId } from "react"
+import Image from "next/image"
 import { ChevronDownIcon } from "lucide-react"
 
+import type { ImageMap, ResolvedImage } from "@/lib/content/pages"
 import type {
   FaqContent,
+  GalleryContent,
   StepsContent,
   TestimonialsContent,
   TextBlockContent,
 } from "@/lib/content/schema"
+import { objectPosition } from "@/lib/media/photo"
 import { cn } from "@/lib/utils"
 
 // The sections of the public pages (story 5.2), one per content kind. All
@@ -73,14 +77,33 @@ export function SectionHeading({
 // WhatsApp button on home › contact) follow.
 export function TextBlockSection({
   content,
+  image = null,
   children,
 }: {
   content: TextBlockContent
+  // The block's photo (story 5.4, about › main): above the heading, 4:5 at
+  // its focus point, lazy.
+  image?: ResolvedImage | null
   children?: React.ReactNode
 }) {
   const id = useId()
   return (
     <PublicSection titleId={id}>
+      {image && (
+        <div className="relative mx-auto mb-8 aspect-[4/5] w-full max-w-[420px] overflow-hidden rounded-lg bg-muted">
+          <Image
+            src={image.src}
+            alt={image.alt}
+            fill
+            sizes="(min-width: 480px) 420px, 100vw"
+            unoptimized={image.unoptimized}
+            className="object-cover"
+            style={{
+              objectPosition: objectPosition(image.focusX, image.focusY),
+            }}
+          />
+        </div>
+      )}
       <SectionHeading id={id} eyebrow={content.eyebrow} title={content.title} />
       {content.body && (
         <p className="mx-auto mt-5 max-w-[60ch] text-center text-[17px] leading-[1.65] text-pretty whitespace-pre-line">
@@ -166,32 +189,121 @@ export function FaqSection({
   )
 }
 
-// testimonials: text testimonials, each the text with the display name
-// under it, marked by a short olive line at inline-start.
+// testimonials: each the text with the display name under it, marked by a
+// short olive line at inline-start. An image testimonial (story 5.4, e.g. a
+// screenshot) is shown whole (never cropped), lazily, with its alt (a short
+// transcription) and its display name when there is one. The items arrive
+// resolved (an image that is not published is already left out).
 export function TestimonialsSection({
   content,
   label,
+  images = {},
 }: {
   content: TestimonialsContent
   label: string
+  images?: ImageMap
 }) {
   const id = useId()
   return (
     <PublicSection titleId={content.title ? id : undefined} label={label}>
       {content.title && <SectionHeading id={id} title={content.title} />}
       <ul className={cn("flex flex-col gap-8", content.title && "mt-8")}>
-        {content.items.map((item, index) => (
-          <li key={index}>
-            <figure className="border-s-2 border-brand-accent ps-4">
-              <blockquote className="text-[17px] leading-[1.65] text-pretty whitespace-pre-line">
-                {item.text}
-              </blockquote>
-              <figcaption className="mt-2 text-[15px] text-muted-foreground">
-                {item.name}
-              </figcaption>
-            </figure>
-          </li>
-        ))}
+        {content.items.map((item, index) => {
+          if (item.kind === "image") {
+            const image = images[item.image.media_id]
+            if (!image) return null
+            return (
+              <li key={index}>
+                <figure className="border-s-2 border-brand-accent ps-4">
+                  <Image
+                    src={image.src}
+                    alt={image.alt}
+                    width={720}
+                    height={960}
+                    sizes="(min-width: 640px) 360px, 80vw"
+                    unoptimized={image.unoptimized}
+                    className="h-auto w-full max-w-[360px] rounded-lg border border-border"
+                  />
+                  {item.name && (
+                    <figcaption className="mt-2 text-[15px] text-muted-foreground">
+                      {item.name}
+                    </figcaption>
+                  )}
+                </figure>
+              </li>
+            )
+          }
+          return (
+            <li key={index}>
+              <figure className="border-s-2 border-brand-accent ps-4">
+                <blockquote className="text-[17px] leading-[1.65] text-pretty whitespace-pre-line">
+                  {item.text}
+                </blockquote>
+                <figcaption className="mt-2 text-[15px] text-muted-foreground">
+                  {item.name}
+                </figcaption>
+              </figure>
+            </li>
+          )
+        })}
+      </ul>
+    </PublicSection>
+  )
+}
+
+// gallery › photos (story 5.4): two columns of photos at 4:5, each at its
+// focus point, with its caption under it; lazy (next/image loads a photo
+// only near the viewport), sized for the column.
+export function GallerySection({
+  content,
+  label,
+  images,
+}: {
+  content: GalleryContent
+  label: string
+  images: ImageMap
+}) {
+  const id = useId()
+  return (
+    <PublicSection titleId={content.title ? id : undefined} label={label}>
+      {content.title && <SectionHeading id={id} title={content.title} />}
+      <ul
+        className={cn(
+          "grid grid-cols-2 gap-x-3 gap-y-5",
+          content.title && "mt-8"
+        )}
+      >
+        {content.items.map((item, index) => {
+          const image = images[item.image.media_id]
+          if (!image) return null
+          return (
+            <li key={index}>
+              <figure>
+                <div className="relative aspect-[4/5] overflow-hidden rounded-lg bg-muted">
+                  <Image
+                    src={image.src}
+                    alt={image.alt}
+                    fill
+                    sizes="(min-width: 720px) 336px, 50vw"
+                    unoptimized={image.unoptimized}
+                    className="object-cover"
+                    style={{
+                      objectPosition: objectPosition(
+                        image.focusX,
+                        image.focusY
+                      ),
+                    }}
+                  />
+                </div>
+                {item.caption && (
+                  <figcaption className="mt-2 text-[15px] leading-snug text-pretty text-muted-foreground">
+                    {item.caption}
+                  </figcaption>
+                )}
+              </figure>
+            </li>
+          )
+        })}
       </ul>
     </PublicSection>
   )

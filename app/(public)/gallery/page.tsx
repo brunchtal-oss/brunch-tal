@@ -5,23 +5,24 @@ import {
   getBusinessDetails,
   guestWhatsappHref,
 } from "@/lib/content/business-details"
-import { getPublishedSections } from "@/lib/content/pages"
+import { getPublishedPage } from "@/lib/content/pages"
 import { shellCopy } from "@/lib/copy/shell"
 
 export const metadata: Metadata = { title: shellCopy.nav.gallery }
 
-// /gallery (stories 5.2, 5.3): the text testimonials (GalleryView, shared
-// with the admin preview), published content from the cache
-// (content:gallery); hidden testimonials are left out. The photos arrive in
-// 5.4.
+// /gallery (stories 5.2, 5.3, 5.4): the photos and the testimonials
+// (GalleryView, shared with the admin preview), published content and
+// published images from the cache (content:gallery); hidden items are left
+// out.
 export default async function GalleryPage() {
-  const [sections, details] = await Promise.all([
-    getPublishedSections("gallery"),
+  const [page, details] = await Promise.all([
+    getPublishedPage("gallery"),
     getBusinessDetails(),
   ])
   return (
     <GalleryView
-      sections={sections}
+      sections={page.sections}
+      images={page.images}
       whatsappHref={guestWhatsappHref(details)}
     />
   )

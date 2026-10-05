@@ -42,17 +42,23 @@ function fakeClient(result: { data: unknown; error: unknown }) {
 
 describe("PUBLIC_SESSION_COLUMNS", () => {
   it("selects only the public columns, never capacity or kind", () => {
-    const top = PUBLIC_SESSION_COLUMNS.replace(/\([^)]*\)/g, "")
-      .split(",")
-      .map((column) => column.trim())
+    // Nested joins (the images) are dropped from the inside out.
+    let flat = PUBLIC_SESSION_COLUMNS
+    while (/\([^()]*\)/.test(flat)) flat = flat.replace(/\([^()]*\)/g, "")
+    const top = flat.split(",").map((column) => column.trim())
     expect(top).toEqual([
       "id",
       "starts_at",
       "description",
       "display_price_agorot",
+      "image:media_assets!events_image_id_fkey",
       "concepts",
     ])
-    expect(PUBLIC_SESSION_COLUMNS).toContain("concepts(name, description)")
+    expect(PUBLIC_SESSION_COLUMNS).toContain("concepts(name, description,")
+    // The images: only the display columns.
+    expect(PUBLIC_SESSION_COLUMNS).toContain(
+      "(public_path, alt_text, focus_x, focus_y)"
+    )
     expect(PUBLIC_SESSION_COLUMNS).not.toMatch(
       /capacity|kind|status|bookings|availability/
     )
@@ -67,7 +73,28 @@ describe("toPublicSession", () => {
       description: "session text",
       display_price_agorot: 13800,
       concept_name: "יווני",
+      photo: null,
     })
+  })
+
+  it("shows the session's photo, else the concept's (story 5.4)", () => {
+    const media = (path: string) => ({
+      public_path: path,
+      alt_text: null,
+      focus_x: 30,
+      focus_y: 60,
+    })
+    const own = toPublicSession({ ...ROW, image: media("own.jpg") })
+    expect(own.photo).toMatchObject({ photoAlt: "", focusX: 30, focusY: 60 })
+    expect(own.photo?.photoUrl).toMatch(
+      /\/storage\/v1\/object\/public\/media-public\/own\.jpg$/
+    )
+    const concept = toPublicSession({
+      ...ROW,
+      image: null,
+      concepts: { ...ROW.concepts, default_image: media("concept.jpg") },
+    })
+    expect(concept.photo?.photoUrl).toMatch(/concept\.jpg$/)
   })
 
   it("falls back to the concept's description", () => {

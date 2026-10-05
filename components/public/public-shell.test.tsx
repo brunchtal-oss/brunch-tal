@@ -179,7 +179,7 @@ describe("sections", () => {
     const html = renderToStaticMarkup(
       <TestimonialsSection
         label="t"
-        content={{ items: [{ name: "n1", text: "t1" }] }}
+        content={{ items: [{ kind: "text", name: "n1", text: "t1" }] }}
       />
     )
     expect(html).toMatch(/<blockquote[^>]*>t1<\/blockquote>/)

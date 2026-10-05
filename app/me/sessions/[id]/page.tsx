@@ -60,7 +60,9 @@ async function SessionContent({ params }: { params: Promise<{ id: string }> }) {
     .maybeSingle()
   if (error) throw new Error("session read failed")
   if (!data) notFound()
-  const session = toCustomerSession(data)
+  const session = toCustomerSession(
+    data as unknown as Parameters<typeof toCustomerSession>[0]
+  )
 
   const [previewResult, availability, contactHref] = await Promise.all([
     callRpc(supabase, "preview_book_session", { p_event_id: id }),
@@ -79,6 +81,7 @@ async function SessionContent({ params }: { params: Promise<{ id: string }> }) {
     <>
       <ConceptHeader
         conceptName={session.concept_name}
+        photo={session.photo}
         startsAt={session.starts_at}
       >
         {status && <StatusChip tone={status.tone}>{status.text}</StatusChip>}

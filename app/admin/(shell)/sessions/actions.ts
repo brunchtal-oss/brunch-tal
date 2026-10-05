@@ -2,6 +2,7 @@
 
 import type { ActionResult } from "@/lib/errors"
 import { callRpc } from "@/lib/rpc"
+import { deletePublicMedia, publishMedia } from "@/lib/server/privileged/media"
 import { createClient } from "@/lib/supabase/server"
 import type { Json } from "@/lib/supabase/database.types"
 
@@ -106,6 +107,73 @@ export async function duplicateEventAction(input: {
   if (!result.ok) return result
   const created = result.data as { event_id: string }
   return { ok: true, data: { eventId: created.event_id } }
+}
+
+// A new image row for a session's image (story 5.4); the browser then
+// uploads the file to media-drafts/<mediaId>.
+export async function createSessionMediaAction(input: {
+  idempotencyKey: string
+}): Promise<ActionResult<{ mediaId: string }>> {
+  if (!UUID.test(input.idempotencyKey)) {
+    return { ok: false, code: "INVALID_INPUT" }
+  }
+  const result = await callRpc(await createClient(), "admin_create_media", {
+    p_idempotency_key: input.idempotencyKey,
+  })
+  if (!result.ok) return result
+  const created = result.data as { media_id: string }
+  return { ok: true, data: { mediaId: created.media_id } }
+}
+
+function isFocus(value: unknown): value is number {
+  return (
+    Number.isInteger(value) &&
+    (value as number) >= 0 &&
+    (value as number) <= 100
+  )
+}
+
+// A session's image (story 5.4): saving publishes the image (AD-21: begin,
+// copy, finish) and then sets it with admin_set_event_image; null removes
+// it. An image the session no longer uses (and nothing else does) is hidden
+// by the RPC, and its public file is deleted here, after it.
+export async function setSessionImageAction(input: {
+  eventId: string
+  image: {
+    media_id: string
+    alt: string
+    focus_x: number
+    focus_y: number
+  } | null
+}): Promise<ActionResult> {
+  const image = input.image
+  if (
+    !UUID.test(input.eventId) ||
+    (image !== null &&
+      (typeof image !== "object" ||
+        !UUID.test(image.media_id) ||
+        typeof image.alt !== "string" ||
+        image.alt.length > 300 ||
+        !isFocus(image.focus_x) ||
+        !isFocus(image.focus_y)))
+  ) {
+    return { ok: false, code: "INVALID_INPUT" }
+  }
+
+  const client = await createClient()
+  if (image) {
+    const published = await publishMedia(client, image)
+    if (!published.ok) return published
+  }
+  const result = await callRpc(client, "admin_set_event_image", {
+    p_event_id: input.eventId,
+    // null removes the image (the generated type has no null for uuid).
+    p_media_id: image ? image.media_id : (null as unknown as string),
+  })
+  if (!result.ok) return result
+  const saved = result.data as { hidden_paths?: string[] }
+  await deletePublicMedia(client, saved.hidden_paths ?? [])
+  return { ok: true, data: undefined }
 }
 
 // Manual booking (story 3.4): Tal books a customer for a session, also after

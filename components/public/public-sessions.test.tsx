@@ -30,8 +30,9 @@ function session(n: number, extra: Partial<PublicSession> = {}) {
     description: null,
     display_price_agorot: null,
     concept_name: `concept-${n}`,
+    photo: null,
     ...extra,
-  } satisfies PublicSession
+  } as PublicSession
 }
 
 // Words a guest must never see on the public session screens.
@@ -101,8 +102,9 @@ describe("UpcomingSessionsSection", () => {
     expect(html.match(/<article/g)).toHaveLength(3)
     // The cards' titles are under the section heading (the only h2).
     expect(html.match(/<h3[ >]/g)).toHaveLength(3)
-    // A lower, more rectangular photo on the home page (5:2).
-    expect(html.match(/aspect-\[5\/2\]/g)).toHaveLength(3)
+    // Story 5.4: a low horizontal card with a square photo at inline-end.
+    expect(html.match(/aspect-square/g)).toHaveLength(3)
+    expect(html.match(/flex-row/g)).toHaveLength(3)
     expect(html.match(/<h2[ >]/g)).toHaveLength(1)
     expect(html).toMatch(new RegExp(`href="/sessions"[^>]*>${copy.all}<`))
     expect(html.indexOf(copy.upcoming)).toBeLessThan(html.indexOf(copy.all))
