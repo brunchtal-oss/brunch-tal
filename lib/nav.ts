@@ -6,7 +6,7 @@ import { shellCopy } from "@/lib/copy/shell"
 // its item when it adds the screen. The icon is a key so the list stays plain
 // data that a Server Component can pass to the client tab bar.
 export type NavIcon =
-  "home" | "sessions" | "payments" | "purchases" | "profile" | "more"
+  "home" | "sessions" | "work" | "payments" | "purchases" | "profile" | "more"
 
 export type NavItem = {
   href: string
@@ -15,6 +15,10 @@ export type NavItem = {
   // Screens reached from this item (the rows of "more"): the item is current
   // on them too.
   covers?: readonly string[]
+  // Deeper screens under another item's path that belong to this one, as
+  // a regular expression source (plain data for the client tab bar): the
+  // item is current on them and the other one is not.
+  claims?: string
 }
 
 // The rows of the admin's "more" screen (app/admin/(shell)/more/page.tsx).
@@ -141,6 +145,15 @@ export const adminNav: readonly NavItem[] = [
     label: shellCopy.nav.sessions,
     icon: "sessions",
   },
+  // The work sheets of the next three sessions (story 4.9, CAP-38).
+  // A session's work sheet is a work screen too (user decision 2026-10-07,
+  // phone check): "עבודה" is current there, not "מפגשים".
+  {
+    href: "/admin/work",
+    label: shellCopy.nav.work,
+    icon: "work",
+    claims: "^/admin/sessions/[^/]+/work(/|$)",
+  },
   // The payments list; "add payment" and its steps are below it.
   {
     href: "/admin/payments",
@@ -165,6 +178,10 @@ export function isCurrent(
   const under = (href: string) =>
     pathname === href || pathname.startsWith(`${href}/`)
   if (pathname === item.href) return true
+  const claimed = (other: NavItem) =>
+    other.claims !== undefined && new RegExp(other.claims).test(pathname)
+  if (claimed(item)) return true
+  if (items.some((other) => other !== item && claimed(other))) return false
   if (item.covers?.some(under)) return true
   // Another item covers this path (a row of "more").
   if (items.some((other) => other !== item && other.covers?.some(under))) {

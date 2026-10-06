@@ -1,5 +1,6 @@
 import {
   CalendarIcon,
+  ClipboardListIcon,
   CreditCardIcon,
   EllipsisIcon,
   HouseIcon,
@@ -12,6 +13,7 @@ import type { NavIcon as NavIconKey } from "@/lib/nav"
 const ICONS = {
   home: HouseIcon,
   sessions: CalendarIcon,
+  work: ClipboardListIcon,
   payments: CreditCardIcon,
   purchases: ReceiptTextIcon,
   profile: UserRoundIcon,

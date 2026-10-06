@@ -10,6 +10,7 @@ import {
   formatMonthYear,
   formatNotificationTime,
   formatSessionDateTime,
+  formatShortDay,
   formatTime,
   formatWeekday,
   isPlainDate,
@@ -151,6 +152,14 @@ describe("lib/time", () => {
       expect(formatDayMonth("2026-10-01")).toBe("01.10")
       expect(formatWeekday("2026-09-27")).toBe("יום ראשון")
     })
+  })
+
+  it("formats a short day: the weekday letter and DD.MM (story 4.9)", () => {
+    expect(formatShortDay("2026-10-07")).toBe("ד׳ 07.10")
+    expect(formatShortDay("2026-10-04")).toBe("א׳ 04.10")
+    expect(formatShortDay("2026-10-10")).toBe("ש׳ 10.10")
+    // An instant late in the evening UTC is already the next local day.
+    expect(formatShortDay("2026-10-06T22:30:00Z")).toBe("ד׳ 07.10")
   })
 
   it("accepts explicit offsets", () => {

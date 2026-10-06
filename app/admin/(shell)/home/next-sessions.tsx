@@ -17,8 +17,7 @@ const copy = adminCopy.home
 // The next session and the ones after it (story 4.1; user decision
 // 2026-10-06). The next one: its date, title, the summary-card from
 // admin_get_event_details (babies and allergies counted exactly as on the
-// session page) and "לפרטי המפגש" (after the phone check: the morning view
-// is replaced by the work sheet in 4.9). Then up to three
+// session page), "לפרטי המפגש" and "לדף העבודה" (story 4.9). Then up to three
 // rows "בראנץ׳ {concept} · {יום DD.MM} · {occupied}/{capacity}", each to its
 // session, and "לכל המפגשים". Occupied places come from the server.
 export async function NextSessions() {
@@ -60,6 +59,16 @@ export async function NextSessions() {
             })}
           >
             {copy.sessionDetails}
+          </Link>
+          <Link
+            href={`/admin/sessions/${details.id}/work`}
+            className={buttonVariants({
+              variant: "outline",
+              size: "lg",
+              className: "h-12 w-full border-foreground text-base",
+            })}
+          >
+            {copy.workSheet}
           </Link>
           {later.length === 0 && (
             <div>

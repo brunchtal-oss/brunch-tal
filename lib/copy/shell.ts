@@ -20,6 +20,8 @@ export const shellCopy = {
     footerLabel: "קישורים",
     home: "בית",
     sessions: "מפגשים",
+    // The admin's work tab (story 4.9): the next sessions' work sheets.
+    work: "עבודה",
     payments: "תשלומים",
     purchases: "היסטוריית רכישות",
     // The customer's sessions tab (user decision 2026-10-06); the admin's

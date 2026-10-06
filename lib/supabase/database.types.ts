@@ -811,6 +811,7 @@ export type Database = {
       }
       notification_templates: {
         Row: {
+          allowed_vars: string[]
           body: string | null
           body_mode: string
           push: boolean
@@ -822,6 +823,7 @@ export type Database = {
           version: number
         }
         Insert: {
+          allowed_vars?: string[]
           body?: string | null
           body_mode: string
           push: boolean
@@ -833,6 +835,7 @@ export type Database = {
           version?: number
         }
         Update: {
+          allowed_vars?: string[]
           body?: string | null
           body_mode?: string
           push?: boolean
@@ -1097,6 +1100,114 @@ export type Database = {
         }
         Relationships: []
       }
+      work_dishes: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          sheet_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          sheet_id: string
+          sort_order: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          sheet_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_dishes_sheet_id_fkey"
+            columns: ["sheet_id"]
+            isOneToOne: false
+            referencedRelation: "work_sheets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_sheets: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          prep_days: number[]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          prep_days: number[]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          prep_days?: number[]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_sheets_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_tasks: {
+        Row: {
+          body: string
+          created_at: string
+          day_offset: number
+          dish_id: string
+          done: boolean
+          id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          day_offset: number
+          dish_id: string
+          done?: boolean
+          id?: string
+          sort_order: number
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          day_offset?: number
+          dish_id?: string
+          done?: boolean
+          id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_tasks_dish_id_fkey"
+            columns: ["dish_id"]
+            isOneToOne: false
+            referencedRelation: "work_dishes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       entitlement_balances: {
@@ -1135,6 +1246,27 @@ export type Database = {
       }
     }
     Functions: {
+      admin_add_prep_day: {
+        Args: {
+          p_day_offset: number
+          p_event_id: string
+          p_idempotency_key: string
+        }
+        Returns: Json
+      }
+      admin_add_work_dish: {
+        Args: { p_event_id: string; p_idempotency_key: string; p_name: string }
+        Returns: Json
+      }
+      admin_add_work_task: {
+        Args: {
+          p_body: string
+          p_day_offset: number
+          p_dish_id: string
+          p_idempotency_key: string
+        }
+        Returns: Json
+      }
       admin_approve_payment: {
         Args: {
           p_amount_agorot: number
@@ -1188,6 +1320,14 @@ export type Database = {
         Args: { p_idempotency_key: string; p_product: Json }
         Returns: Json
       }
+      admin_delete_work_dish: {
+        Args: { p_dish_id: string; p_idempotency_key: string }
+        Returns: Json
+      }
+      admin_delete_work_task: {
+        Args: { p_idempotency_key: string; p_task_id: string }
+        Returns: Json
+      }
       admin_duplicate_event: {
         Args: {
           p_date: string
@@ -1206,6 +1346,7 @@ export type Database = {
       admin_get_content_page: { Args: { p_slug: string }; Returns: Json }
       admin_get_event_details: { Args: { p_event_id: string }; Returns: Json }
       admin_get_home: { Args: never; Returns: Json }
+      admin_get_work_sheet: { Args: { p_event_id: string }; Returns: Json }
       admin_issue_link: {
         Args: {
           p_idempotency_key: string
@@ -1223,6 +1364,14 @@ export type Database = {
       }
       admin_publish_event: {
         Args: { p_event_id: string; p_idempotency_key: string }
+        Returns: Json
+      }
+      admin_remove_prep_day: {
+        Args: {
+          p_day_offset: number
+          p_event_id: string
+          p_idempotency_key: string
+        }
         Returns: Json
       }
       admin_revoke_link: {
@@ -1248,8 +1397,32 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_set_work_dish_order: { Args: { p_ids: string[] }; Returns: Json }
+      admin_set_work_task_done: {
+        Args: { p_done: boolean; p_task_id: string }
+        Returns: Json
+      }
+      admin_set_work_task_order: { Args: { p_ids: string[] }; Returns: Json }
+      admin_update_business_settings: {
+        Args: {
+          p_changes: Json
+          p_expected_version: number
+          p_idempotency_key: string
+        }
+        Returns: Json
+      }
       admin_update_event: {
         Args: { p_changes: Json; p_event_id: string; p_idempotency_key: string }
+        Returns: Json
+      }
+      admin_update_notification_template: {
+        Args: {
+          p_body: string
+          p_expected_version: number
+          p_idempotency_key: string
+          p_title: string
+          p_type: string
+        }
         Returns: Json
       }
       admin_update_product: {
@@ -1257,6 +1430,19 @@ export type Database = {
           p_changes: Json
           p_idempotency_key: string
           p_product_id: string
+        }
+        Returns: Json
+      }
+      admin_update_work_dish: {
+        Args: { p_dish_id: string; p_idempotency_key: string; p_name: string }
+        Returns: Json
+      }
+      admin_update_work_task: {
+        Args: {
+          p_body: string
+          p_day_offset: number
+          p_idempotency_key: string
+          p_task_id: string
         }
         Returns: Json
       }
@@ -1280,10 +1466,7 @@ export type Database = {
         Args: { p_idempotency_key: string; p_token: string }
         Returns: Json
       }
-      get_event_availability: {
-        Args: { p_event_ids: string[] }
-        Returns: Json
-      }
+      get_event_availability: { Args: { p_event_ids: string[] }; Returns: Json }
       get_my_bookings: { Args: never; Returns: Json }
       get_my_entitlements: { Args: never; Returns: Json }
       get_my_session_role: { Args: never; Returns: string }

@@ -503,9 +503,8 @@ export const adminCopy = {
     attendees: "מי מגיעה",
     manualBooking: "רישום ידני",
     edit: "עריכה",
-    // The session page's link to the work view (user decision 2026-10-06,
-    // story 3.12 phone check). It still opens /day until 4.9 points it at
-    // the work sheet.
+    // The session page's link to its work sheet, /admin/sessions/[id]/work
+    // (user decision 2026-10-06, story 3.12 phone check; story 4.9).
     morningView: "ללשונית העבודה",
     toDetails: "לפרטי המפגש",
     bookForDate: "לרישום לתאריך",
@@ -647,6 +646,8 @@ export const adminCopy = {
   home: {
     nextSession: "המפגש הבא",
     sessionDetails: "לפרטי המפגש",
+    // Next to "לפרטי המפגש" (story 4.9).
+    workSheet: "לדף העבודה",
     upcoming: "מפגשים קרובים",
     // "בראנץ׳ {concept} · {יום DD.MM} · {occupied}/{capacity}"
     upcomingRow: (
@@ -752,5 +753,74 @@ export const adminCopy = {
     // "{month} {year} · עד היום"
     totalsPeriod: (monthYear: string) => `${monthYear} · עד היום`,
     totalsApproved: (n: number) => `תשלומים שאושרו (${n})`,
+  },
+  // The work tab and a session's work sheet (story 4.9, CAP-38; wording
+  // from EXPERIENCE › דף עבודה and the mockup).
+  work: {
+    // /admin/work: the next three published sessions.
+    tabTitle: "עבודה",
+    tabIntro: "דפי העבודה של הבראנצ׳ים הקרובים",
+    noSessions: "אין בראנצ׳ים קרובים",
+    toSessions: "למפגשים",
+    // The work sheet's <title>.
+    title: "דף עבודה",
+    dishes: "מנות",
+    addDish: "+ מנה",
+    addDay: "+ יום הכנה",
+    empty: "עוד אין מנות לבראנץ׳ הזה",
+    // The prep days, relative to the session day.
+    days: "ימי הכנה",
+    dayLabel: (offset: number) =>
+      offset === 0
+        ? "יום המפגש"
+        : offset === -1
+          ? "יום לפני"
+          : `${-offset} ימים לפני`,
+    // "ד׳ 21.10 · יום לפני"
+    dayHeading: (date: string, label: string) => `${date} · ${label}`,
+    removeDay: "הסרת היום",
+    removeDayNamed: (day: string) => `הסרת ${day}`,
+    removeDayTitle: (day: string) => `להסיר את ${day}?`,
+    removeDayTasks: (n: number) =>
+      n === 1
+        ? "משימה אחת של היום הזה תימחק מכל המנות"
+        : `${n} משימות של היום הזה יימחקו מכל המנות`,
+    dayRemoved: (day: string) => `${day} הוסר`,
+    pickDay: "איזה יום להוסיף?",
+    dayAdded: (day: string) => `${day} נוסף`,
+    // The dish form and the dish's sheet.
+    dishName: "שם המנה",
+    add: "הוספה",
+    save: "שמירה",
+    cancel: "ביטול",
+    close: "סגירה",
+    delete: "מחיקה",
+    edit: "עריכה",
+    editDish: (name: string) => `עריכת ${name}`,
+    moveUp: "הזזה למעלה",
+    moveDown: "הזזה למטה",
+    moved: (name: string, position: number, total: number) =>
+      `${name} עכשיו במקום ${position} מתוך ${total}`,
+    deleteDish: "מחיקת המנה",
+    deleteDishConfirm: (n: number) =>
+      n === 0
+        ? "למחוק את המנה?"
+        : n === 1
+          ? "למחוק את המנה ואת המשימה שלה?"
+          : `למחוק את המנה ואת ${n} המשימות שלה?`,
+    // Tasks.
+    addTask: "+ משימה",
+    addTaskFor: (day: string) => `הוספת משימה ל${day}`,
+    taskBody: "משימה",
+    taskDay: "יום",
+    editTask: (body: string) => `עריכת ${body}`,
+    taskSheet: "עריכת משימה",
+    deleteTask: "מחיקת המשימה",
+    // Announced after the save (EXPERIENCE › check-item).
+    markedDone: (body: string) => `${body}: סומן כבוצע`,
+    markedNotDone: (body: string) => `${body}: הסימון בוטל`,
+    // The desktop table.
+    tableCaption: "מנות ומשימות",
+    dishColumn: "מנה",
   },
 } as const

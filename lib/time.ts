@@ -81,6 +81,12 @@ export function formatWeekday(value: DateInput): string {
   return parts(value, "he-IL", { weekday: "long" }).weekday
 }
 
+/** "ב׳ 12.10": the weekday letter and DD.MM (the work sheet's days). */
+export function formatShortDay(value: DateInput): string {
+  const { weekday } = parts(value, "he-IL", { weekday: "narrow" })
+  return `${weekday} ${formatDayMonth(value)}`
+}
+
 /** "יום שני 12.10 · 10:00" */
 export function formatSessionDateTime(value: DateInput): string {
   return `${formatWeekday(value)} ${formatDayMonth(value)} · ${formatTime(value)}`
