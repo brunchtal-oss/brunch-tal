@@ -5,6 +5,7 @@ import { signOutAction } from "@/lib/auth/sign-out"
 import { shellCopy } from "@/lib/copy/shell"
 import { cn } from "@/lib/utils"
 
+import { PushEndpointField } from "./push-endpoint-field"
 import { Wordmark } from "./wordmark"
 
 // The top-bar of /me and /admin (story 5.7; DESIGN › top-bar, user
@@ -54,6 +55,7 @@ export function AppTopBar({
           )}
           {bell}
           <form action={signOutAction}>
+            <PushEndpointField />
             <button
               type="submit"
               aria-label={shellCopy.signOut}

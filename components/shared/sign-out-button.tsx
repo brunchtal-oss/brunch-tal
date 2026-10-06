@@ -4,8 +4,12 @@ import { Button } from "@/components/ui/button"
 import { signOutAction } from "@/lib/auth/sign-out"
 import { shellCopy } from "@/lib/copy/shell"
 
+import { PushEndpointField } from "./push-endpoint-field"
+
 // button-secondary: transparent, 1px ink border, 44px. `next`: where the
-// login after signing out goes (passes safeNext in signOutAction).
+// login after signing out goes (passes safeNext in signOutAction). The
+// device's push endpoint goes along, so its subscription is removed
+// (story 5.8).
 export function SignOutButton({
   className,
   next,
@@ -16,6 +20,7 @@ export function SignOutButton({
   return (
     <form action={signOutAction} className={className}>
       {next && <input type="hidden" name="next" value={next} />}
+      <PushEndpointField />
       <Button
         type="submit"
         variant="outline"

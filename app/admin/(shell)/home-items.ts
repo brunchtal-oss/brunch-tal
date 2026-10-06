@@ -30,6 +30,8 @@ export type AttentionRow = {
   event_id?: string
   concept_name?: string
   starts_at?: string
+  // push_failed: failed jobs of the last 7 days.
+  count?: number
 }
 
 export type AttentionItem = TaskRowProps & { key: string }
@@ -177,6 +179,16 @@ export function toAttentionItem(row: AttentionRow): AttentionItem {
         ...base,
         href: "/admin/content/accessibility",
         title: c.title(),
+        detail: c.detail,
+        chip: { tone: "warning", label: c.chip },
+      }
+    }
+    case "push_failed": {
+      const c = copy.items.push_failed
+      return {
+        ...base,
+        href: "/admin/notifications",
+        title: c.title(row.count ?? 1),
         detail: c.detail,
         chip: { tone: "warning", label: c.chip },
       }

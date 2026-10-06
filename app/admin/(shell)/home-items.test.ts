@@ -85,6 +85,13 @@ const ROWS: Record<AttentionKind, AttentionRow> = {
     customer_label: null,
     since: SINCE,
   },
+  push_failed: {
+    kind: "push_failed",
+    id: "push_failed",
+    customer_label: null,
+    since: SINCE,
+    count: 3,
+  },
 }
 
 describe("toAttentionItem", () => {
@@ -150,6 +157,14 @@ describe("toAttentionItem", () => {
         title: "הצהרת הנגישות עוד לא פורסמה",
         detail: "זה עמוד חובה באתר. צריך למלא את שדות החובה ולפרסם",
         chip: "לא פורסם",
+        tone: "warning",
+      },
+      push_failed: {
+        href: "/admin/notifications",
+        title: "3 התראות פוש לא נשלחו השבוע",
+        detail:
+          "ההתראות עצמן נשמרו במרכז ההתראות. אם זה חוזר, צריך לבדוק את הגדרות הפוש של האתר",
+        chip: "לא נשלח",
         tone: "warning",
       },
     }
@@ -286,5 +301,13 @@ describe("adminCopy.home", () => {
     for (const text of texts) {
       expect(text).not.toMatch(/רווח|הכנס/)
     }
+  })
+})
+
+describe("push_failed", () => {
+  it("one failure reads in the singular", () => {
+    expect(toAttentionItem({ ...ROWS.push_failed, count: 1 }).title).toBe(
+      "התראת פוש אחת לא נשלחה השבוע"
+    )
   })
 })
