@@ -109,7 +109,7 @@ describe("navigation", () => {
       isCurrent(adminNav, payments, "/admin/payments/new/existing/x")
     ).toBe(true)
     expect(isCurrent(adminNav, home, "/admin/payments/new")).toBe(false)
-    expect(isCurrent(adminNav, home, "/admin/settings")).toBe(true)
+    expect(isCurrent(adminNav, home, "/admin/audit")).toBe(true)
     expect(isCurrent(adminNav, sessions, "/admin/sessions")).toBe(true)
     expect(isCurrent(adminNav, sessions, "/admin/sessions/new")).toBe(true)
     expect(isCurrent(adminNav, home, "/admin/sessions/new")).toBe(false)
@@ -119,6 +119,12 @@ describe("navigation", () => {
     expect(isCurrent(adminNav, home, "/admin/links")).toBe(false)
     expect(isCurrent(adminNav, more, "/admin/content/home/preview")).toBe(true)
     expect(isCurrent(adminNav, home, "/admin/content")).toBe(false)
+    // Settings (story 4.7), the last row of "more", and its templates.
+    expect(adminMoreNav.at(-1)?.href).toBe("/admin/settings")
+    expect(
+      isCurrent(adminNav, more, "/admin/settings/templates/reminder")
+    ).toBe(true)
+    expect(isCurrent(adminNav, home, "/admin/settings")).toBe(false)
   })
 
   it("shows the accessibility statement always, privacy and terms once published (story 5.5)", () => {

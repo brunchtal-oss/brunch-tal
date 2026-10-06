@@ -765,4 +765,176 @@ export const adminCopy = {
     totalsPeriod: (monthYear: string) => `${monthYear} · עד היום`,
     totalsApproved: (n: number) => `תשלומים שאושרו (${n})`,
   },
+  // /admin/settings and /admin/settings/templates (story 4.7; EXPERIENCE ›
+  // admin states › settings, template). Every change is a value-change-row.
+  settings: {
+    title: "הגדרות",
+    groups: {
+      business: "פרטי העסק",
+      registration: "הרשמה וביטול",
+      newSession: "מפגש חדש",
+      newProduct: "מוצר חדש",
+      creditReminder: "זיכוי ותזכורת",
+      alerts: "התראות וספים",
+      workSheet: "דף עבודה",
+      templates: "תבניות התראות",
+    },
+    // The links of the first and last groups.
+    businessLink: "לעריכת פרטי העסק",
+    businessNote: "אותם פרטים כמו בתוכן האתר › יצירת קשר",
+    templatesLink: "לנוסח ההתראות",
+    templatesNote: "הכותרת והטקסט של כל התראה",
+    fields: {
+      close: "סגירת הרשמה",
+      closeDays: "ימים לפני המפגש",
+      closeTime: "שעה",
+      cancelWindow: "חלון ביטול עצמי (שעות לפני המפגש)",
+      sessionHours: "שעות מפגש חדש",
+      sessionStart: "שעת התחלה",
+      sessionEnd: "שעת סיום",
+      capacityRegular: "מכסה למפגש רגיל",
+      capacityCouple: "מכסה למפגש זוגי",
+      validity: "תוקף למוצר חדש (ימים)",
+      creditOptions: "מספר חלופות לזיכוי",
+      reminder: "תזכורת לפני מפגש (שעות)",
+      adminExpiring: '"עומדת לפוג" אצלך (ימים לפני התפוגה)',
+      customerExpiring: '"עומדת לפוג" אצל הלקוחה (ימים לפני התפוגה)',
+      lastPlaces: '"מקומות אחרונים" (מקומות פנויים או פחות)',
+      inactivity: "לקוחה לא פעילה אחרי (חודשים)",
+      duplicateWindow: "זיהוי תשלום כפול (ימים לפני ואחרי)",
+      prepDays: "ימי הכנה בדף העבודה",
+    },
+    // The short names in "{field}: {old} ← {new}".
+    labels: {
+      close: "סגירת הרשמה",
+      cancelWindow: "חלון ביטול עצמי",
+      sessionHours: "שעות מפגש חדש",
+      capacityRegular: "מכסה למפגש רגיל",
+      capacityCouple: "מכסה למפגש זוגי",
+      validity: "תוקף למוצר חדש",
+      creditOptions: "חלופות לזיכוי",
+      reminder: "תזכורת לפני מפגש",
+      adminExpiring: '"עומדת לפוג" אצלך',
+      customerExpiring: '"עומדת לפוג" אצל הלקוחה',
+      lastPlaces: '"מקומות אחרונים"',
+      inactivity: "לקוחה לא פעילה",
+      duplicateWindow: "זיהוי תשלום כפול",
+      prepDays: "ימי הכנה",
+    },
+    // Readable values ("יום לפני ב-20:00", "48 שעות").
+    show: {
+      close: (daysBefore: number, time: string) =>
+        daysBefore === 0
+          ? `ביום המפגש ב-${time}`
+          : daysBefore === 1
+            ? `יום לפני ב-${time}`
+            : daysBefore === 2
+              ? `יומיים לפני ב-${time}`
+              : `${daysBefore} ימים לפני ב-${time}`,
+      hours: (n: number) => (n === 1 ? "שעה אחת" : `${n} שעות`),
+      hoursBefore: (n: number) =>
+        n === 1 ? "שעה לפני המפגש" : `${n} שעות לפני המפגש`,
+      days: (n: number) => (n === 1 ? "יום אחד" : `${n} ימים`),
+      months: (n: number) => (n === 1 ? "חודש אחד" : `${n} חודשים`),
+      adults: (n: number) => `${n} מבוגרים`,
+      options: (n: number) => (n === 1 ? "חלופה אחת" : `${n} חלופות`),
+      places: (n: number) => `${n} מקומות פנויים או פחות`,
+      sessionHours: (start: string, end: string) => `${start}–${end}`,
+      // A prep day relative to the session (0 = the session's day).
+      prepDay: (offset: number) =>
+        offset === 0
+          ? "יום המפגש"
+          : offset === -1
+            ? "יום לפני"
+            : offset === -2
+              ? "יומיים לפני"
+              : `${-offset} ימים לפני`,
+      prepDays: (labels: readonly string[]) => labels.join(" · "),
+    },
+    scope: {
+      new: "חל רק על מה שייווצר מעכשיו",
+      bookings: "חל רק על הרשמות חדשות",
+      credits: "חל רק על זיכויים חדשים",
+    },
+    // Next to the cancel window (source §7: a visible policy change).
+    cancelPolicy:
+      "שינוי מדיניות שמוצג ללקוחות. הרשמות קיימות שומרות את החלון שהיה בעת ההרשמה. כדאי לעדכן גם את נוסח התנאים",
+    termsLink: "לעריכת תנאי השימוש",
+    // Under a number out of the allowed range.
+    range: (min: number, max: number) => `צריך מספר שלם בין ${min} ל-${max}`,
+    timeInvalid: "צריך שעה בפורמט 20:00",
+    closeTimeEarly: "שעת הסגירה צריכה להיות בין 03:00 ל-23:59",
+    endBeforeStart: "שעת הסיום צריכה להיות אחרי שעת ההתחלה",
+    prepDaysEmpty: "צריך לבחור לפחות יום הכנה אחד",
+    // /admin/settings/templates
+    templates: {
+      title: "תבניות התראות",
+      back: "להגדרות",
+      backToList: "לכל התבניות",
+      recipient: { customer: "ללקוחה", admin: "לטל" },
+      push: "גם כהתראה בטלפון",
+      types: {
+        purchase_new_card: "כרטיסייה חדשה",
+        purchase_repeat: "רכישה נוספת",
+        booking_confirmed: "ההרשמה אושרה",
+        reminder: "תזכורת לפני מפגש",
+        waitlist_spot: "התפנה מקום",
+        booking_cancelled: "ביטול הרשמה מכרטיסייה",
+        booking_cancelled_pinned: "ביטול הרשמה של כניסה בודדת, היכרות או זוגית",
+        event_changed: "שינוי במפגש",
+        event_cancelled: "ביטול מפגש",
+        entitlement_changed: "עדכון בכרטיסייה",
+        card_expiring: "כרטיסייה עומדת לפוג",
+        broadcast: "הודעה כללית",
+        admin_card_expiring: "כרטיסייה של לקוחה עומדת לפוג",
+        marketing_reminder: "תזכורת שיווק",
+      } as Record<string, string>,
+      // The {fields}: the chip's name and the preview's sample value.
+      fieldNames: {
+        date: "תאריך",
+        time: "שעה",
+        concept: "קונספט",
+        product: "מוצר",
+        expires_on: "בתוקף עד",
+        card_tip: "המלצה לכרטיסייה",
+        new_date: "תאריך חדש",
+        new_time: "שעה חדשה",
+        units: "כניסות",
+        customer: "שם הלקוחה",
+      } as Record<string, string>,
+      samples: {
+        date: "12.11",
+        time: "10:30",
+        concept: "אמהות",
+        product: "כרטיסייה 4 מפגשים",
+        expires_on: "31.12",
+        card_tip: ". מומלץ להירשם מראש למפגשים",
+        new_date: "19.11",
+        new_time: "11:00",
+        units: "3",
+        customer: "נועה לוי",
+      } as Record<string, string>,
+      fields: {
+        title: "כותרת",
+        body: "טקסט ההתראה",
+      },
+      fieldsLegend: "שדות שאפשר להוסיף",
+      fieldsHint:
+        "לחיצה מוסיפה את השדה במקום הסמן. בהתראה הוא מתחלף בערך האמיתי",
+      noFields: "להתראה הזו אין שדות. הנוסח נשלח כמו שהוא",
+      overrideNote: "טקסט ההתראה נכתב בכל שליחה, ולכן כאן נערכת רק הכותרת",
+      // purchase_new_card: admin_approve_payment adds its body as the tip
+      // ({card_tip}) of the repeat-purchase notification of a card.
+      cardTipNote:
+        "הגוף של ההתראה הזו מופיע גם כהמלצה בהתראת רכישה חוזרת של כרטיסייה",
+      preview: "תצוגה מקדימה",
+      previewNote: "עם ערכים לדוגמה",
+      previewTime: "עכשיו",
+      scope: "חל על התראות חדשות בלבד",
+      unknownField: (field: string) =>
+        `השדה {${field}} לא קיים בהתראה הזו. אפשר להוסיף רק שדות מהרשימה`,
+      unbalanced: "יש סוגריים מסולסלים שלא נסגרו. כל שדה נכתב כך: {שם}",
+      tooLong: (max: number) => `אפשר עד ${max} תווים`,
+    },
+  },
 } as const
