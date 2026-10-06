@@ -35,14 +35,15 @@ export const publicNav: readonly { href: string; label: string }[] = [
   { href: "/contact", label: shellCopy.nav.contact },
 ]
 
-// The legal pages linked from the public footer (user decision 2026-10-04),
-// each by its content page slug: a link is shown only once its page is
-// published. The pages and their routes arrive in 5.5.
-export const publicLegalNav: readonly {
-  slug: string
+export type LegalNavItem = {
+  slug: "terms" | "privacy" | "accessibility"
   href: string
   label: string
-}[] = [
+}
+
+// The legal pages (story 5.5; footer order, user decision 2026-10-04), each
+// by its content page slug.
+export const publicLegalNav: readonly LegalNavItem[] = [
   { slug: "terms", href: "/terms", label: shellCopy.public.footer.terms },
   { slug: "privacy", href: "/privacy", label: shellCopy.public.footer.privacy },
   {
@@ -51,6 +52,25 @@ export const publicLegalNav: readonly {
     label: shellCopy.public.footer.accessibility,
   },
 ]
+
+// The legal links that are shown (story 5.5), given the published slugs
+// (getPublishedPageSlugs): the accessibility statement always (a legal
+// requirement; before its first publish the page shows the contact details),
+// privacy and terms only once published. only: the slugs a place links to
+// (e.g. privacy and accessibility on the login page), in the footer's order.
+export function visibleLegalNav(
+  publishedSlugs: readonly string[],
+  only?: readonly LegalNavItem["slug"][]
+): LegalNavItem[] {
+  return publicLegalNav.filter(
+    (item) =>
+      (!only || only.includes(item.slug)) &&
+      (item.slug === "accessibility" || publishedSlugs.includes(item.slug))
+  )
+}
+
+// The accessibility statement's link (menu-sheet, "more").
+export const ACCESSIBILITY_HREF = "/accessibility"
 
 // The public item that is current on a path: its own path, or below it
 // (/sessions/[id] under /sessions); home only on "/".

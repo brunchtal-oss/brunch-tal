@@ -4,14 +4,15 @@ import { ChevronLeftIcon } from "lucide-react"
 
 import { PageHeading } from "@/components/shared/page-heading"
 import { shellCopy } from "@/lib/copy/shell"
-import { adminMoreNav } from "@/lib/nav"
+import { ACCESSIBILITY_HREF, adminMoreNav } from "@/lib/nav"
 
 export const metadata: Metadata = {
   title: shellCopy.admin.moreTitle,
 }
 
 // "עוד" gathers the admin screens that are not in the tab bar, one row each
-// (lib/nav.ts › adminMoreNav); sign-out is in the top-bar. The site is RTL
+// (lib/nav.ts › adminMoreNav), then the accessibility statement; sign-out is
+// in the top-bar. The site is RTL
 // only, so the chevron points to the inline end.
 
 export default function AdminMorePage() {
@@ -35,6 +36,13 @@ export default function AdminMorePage() {
           </li>
         ))}
       </ul>
+      {/* After the list: the public accessibility statement (story 5.5). */}
+      <Link
+        href={ACCESSIBILITY_HREF}
+        className="inline-flex min-h-11 items-center self-start text-[15px] underline underline-offset-[3px]"
+      >
+        {shellCopy.public.footer.accessibility}
+      </Link>
     </>
   )
 }

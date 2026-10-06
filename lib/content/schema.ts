@@ -233,6 +233,46 @@ export const footerSchema = z.object({
 
 export type FooterContent = z.infer<typeof footerSchema>
 
+// Story 5.5: the legal pages. None of them has `hidden` (an unknown key is
+// dropped when parsing), so a legal text cannot be hidden from the site.
+// Each body is plain text with a small formatting syntax
+// (components/public/legal-text.tsx).
+// privacy › body, terms › body (user decision 2026-10-06, after the phone
+// check): the whole wording in one field, pasted as is; a line starting with
+// "## " is a heading (h2 on the page).
+export const legalTextSchema = z.object({
+  body: requiredText(50000),
+})
+
+export type LegalTextContent = z.infer<typeof legalTextSchema>
+
+// An email the statement's contact can be reached at (mailto:).
+const email = z.string().trim().min(1).max(254).pipe(z.email())
+
+// accessibility › statement (regulation 35, IS 5568; user decision
+// 2026-10-06, second phone check): the whole statement in one text (the
+// legal text's format) and the contact for accessibility. Every field is
+// required, so it cannot be published without them; no hidden.
+export const accessibilityStatementSchema = z.object({
+  body: requiredText(50000),
+  contact_name: requiredText(120),
+  contact_phone: phone,
+  contact_email: email,
+})
+
+export type AccessibilityStatementContent = z.infer<
+  typeof accessibilityStatementSchema
+>
+
+// The statement's required fields, in the editor's order (the publish
+// notice lists the missing ones).
+export const ACCESSIBILITY_REQUIRED_FIELDS = [
+  "body",
+  "contact_name",
+  "contact_phone",
+  "contact_email",
+] as const
+
 // kind -> schema. A kind without a schema cannot be saved or published from
 // the editor.
 export const contentSchemas = {
@@ -245,6 +285,8 @@ export const contentSchemas = {
   testimonials: testimonialsSchema,
   gallery: gallerySchema,
   footer: footerSchema,
+  legal_text: legalTextSchema,
+  accessibility_statement: accessibilityStatementSchema,
 } as const
 
 export type ContentByKind = {

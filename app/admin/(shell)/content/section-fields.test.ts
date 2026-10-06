@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest"
 
+import { adminCopy } from "@/lib/copy/admin"
+
 import { fieldErrors, type SectionRef } from "./content-items"
 import {
   addItem,
@@ -241,5 +243,84 @@ describe("section fields", () => {
     expect(itemName(list, item("a", "Noa"), 0)).toBe("Noa")
     expect(itemName(list, item("a", " "), 1)).toBe(list.itemLabel(2))
     expect(itemName(list, item("a", "x".repeat(50)), 0)).toHaveLength(41)
+  })
+})
+
+// Story 5.5: the legal pages (one text field each, user decision
+// 2026-10-06).
+describe("legal fields", () => {
+  const LEGAL: SectionRef = {
+    slug: "privacy",
+    key: "body",
+    kind: "legal_text",
+  }
+  const STATEMENT: SectionRef = {
+    slug: "accessibility",
+    key: "statement",
+    kind: "accessibility_statement",
+  }
+
+  it("never hides a legal page", () => {
+    expect(sectionSpec(LEGAL).hideable).toBe(false)
+    expect(sectionSpec(STATEMENT).hideable).toBe(false)
+  })
+
+  it("edits a legal text as one large field with the formatting hint", () => {
+    const legalSpec = sectionSpec(LEGAL)
+    expect(legalSpec.fields).toEqual([
+      expect.objectContaining({
+        type: "text",
+        name: "body",
+        multiline: true,
+        large: true,
+        maxLength: 50000,
+        hint: adminCopy.content.legal.hint,
+      }),
+    ])
+    const state = fromContent(legalSpec, { hidden: true, body: "## a\n\nb" })
+    expect(toContent(legalSpec, state)).toEqual({ body: "## a\n\nb" })
+    expect(fieldErrors(LEGAL, { body: "" })).toEqual({
+      body: { kind: "required" },
+    })
+  })
+
+  it("edits the statement as one large text, then the three contact fields", () => {
+    const statementSpec = sectionSpec(STATEMENT)
+    expect(statementSpec.fields.map((field) => field.name)).toEqual([
+      "body",
+      "contact_name",
+      "contact_phone",
+      "contact_email",
+    ])
+    expect(statementSpec.fields[0]).toMatchObject({
+      type: "text",
+      multiline: true,
+      large: true,
+      maxLength: 50000,
+      hint: adminCopy.content.legal.hint,
+    })
+    const content = {
+      body: "## a\n\n1",
+      contact_name: "n",
+      contact_phone: "054-4256456",
+      contact_email: "a@example.com",
+    }
+    const state = fromContent(statementSpec, content)
+    expect(toContent(statementSpec, state)).toEqual(content)
+    expect(fieldErrors(STATEMENT, toContent(statementSpec, state))).toBeNull()
+  })
+
+  it("names the missing required fields of the statement", () => {
+    const base = {
+      body: "b",
+      contact_name: "n",
+      contact_phone: "054-4256456",
+    }
+    expect(fieldErrors(STATEMENT, { ...base, contact_email: "" })).toEqual({
+      contact_email: { kind: "required" },
+    })
+    expect(fieldErrors(STATEMENT, { ...base, contact_email: "nope" })).toEqual({
+      contact_email: { kind: "email" },
+    })
   })
 })

@@ -110,6 +110,27 @@ export const shellCopy = {
       navigation: "פתיחה באפליקציית ניווט",
       opensOutside: "(נפתח בחלון חדש)",
     },
+    // The legal pages (story 5.5). The text itself is published content;
+    // only these headings and states are fixed.
+    legal: {
+      // "DD.MM.YYYY", from the page's last publish.
+      updated: (date: string) => `עודכן לאחרונה ${date}`,
+      // The links at the bottom of the login page and the profile.
+      linksLabel: "מדיניות ונגישות",
+      // The accessibility statement: after its text, the fixed heading of
+      // the contact for accessibility and its labels.
+      accessibility: {
+        contact: "פרטי קשר לנגישות",
+        contactName: "שם",
+        contactPhone: "טלפון",
+        contactEmail: "מייל",
+        // Before the first publish (EXPERIENCE › State Patterns): the first
+        // sentence alone when no contact detail is published.
+        soon: "הצהרת הנגישות המלאה תעלה בקרוב.",
+        soonContact: "לכל שאלה או בקשה בנושא נגישות:",
+        whatsapp: "בוואטסאפ",
+      },
+    },
   },
   customer: {
     homeTitle: "בית",

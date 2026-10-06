@@ -361,3 +361,69 @@ describe("image fields", () => {
     expect(html).toContain(imageCopy.choose)
   })
 })
+
+describe("legal pages in the editor (story 5.5)", () => {
+  const EMPTY: EditorState = { text: {}, items: [], hidden: false }
+
+  it("blocks publishing the statement and lists the missing fields", () => {
+    const html = editor({
+      slug: "accessibility",
+      sectionKey: "statement",
+      kind: "accessibility_statement",
+      initial: EMPTY,
+      statementBlock: true,
+    })
+    expect(html).toContain(copy.statement.blocked)
+    expect(html).toContain('href="#field-contact_email"')
+    expect(html).toContain('aria-describedby="publish-blocked"')
+    expect(html).toMatch(
+      /aria-disabled="true"[^>]*aria-describedby="publish-blocked"/
+    )
+    expect(html).not.toContain(copy.hideSection)
+    expect(html).toContain('href="#field-body"')
+    expect(html).toMatch(/<textarea[^>]*id="field-body"[^>]*rows="18"/)
+  })
+
+  it("does not block a published statement", () => {
+    const html = editor({
+      slug: "accessibility",
+      sectionKey: "statement",
+      kind: "accessibility_statement",
+      initial: EMPTY,
+    })
+    expect(html).not.toContain(copy.statement.blocked)
+  })
+
+  it("edits a legal text in one large field, without hiding", () => {
+    const html = editor({
+      slug: "privacy",
+      sectionKey: "body",
+      kind: "legal_text",
+      initial: { text: { body: "## h\n\nb" }, items: [], hidden: false },
+    })
+    expect(html).toMatch(/<textarea[^>]*id="field-body"[^>]*rows="18"/)
+    // The hint (its quotes are escaped in the markup).
+    expect(html).toContain(copy.legal.hint.split(":")[0])
+    expect(html).not.toContain(copy.hideSection)
+  })
+
+  it("the preview bar shows publish as disabled with the missing fields", () => {
+    const html = renderToStaticMarkup(
+      <PreviewBar
+        backHref="/admin/content/accessibility"
+        pending={[]}
+        blocked={[
+          {
+            label: "מייל לנגישות",
+            href: "/admin/content/accessibility/statement#field-contact_email",
+          },
+        ]}
+      />
+    )
+    expect(html).toContain(copy.statement.blocked)
+    expect(html).toContain(
+      'href="/admin/content/accessibility/statement#field-contact_email"'
+    )
+    expect(html).toMatch(/aria-disabled="true"/)
+  })
+})

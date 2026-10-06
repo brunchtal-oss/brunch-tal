@@ -9,6 +9,7 @@ import { toSessionRole, type SessionRole } from "@/lib/auth/destination"
 import type { ConflictReason } from "@/lib/auth/join-link-state"
 import { getWhatsappHref } from "@/lib/content/business-details"
 import { getPhotoConsentContent } from "@/lib/content/join-form"
+import { getPublishedPageSlugs } from "@/lib/content/pages"
 import { joinCopy } from "@/lib/copy/join"
 import { errorMessage } from "@/lib/errors"
 import { callRpc } from "@/lib/rpc"
@@ -157,7 +158,10 @@ async function JoinFormContent({
   productName: string | null
   amountAgorot: number | null
 }) {
-  const photoConsent = await getPhotoConsentContent()
+  const [photoConsent, legalSlugs] = await Promise.all([
+    getPhotoConsentContent(),
+    getPublishedPageSlugs(["privacy"]),
+  ])
   // The photo question is required (CAP-40); without its published wording
   // the form cannot be answered.
   if (!photoConsent) {
@@ -185,6 +189,7 @@ async function JoinFormContent({
       amountAgorot={amountAgorot}
       photoConsent={photoConsent}
       today={today}
+      privacyHref={legalSlugs.includes("privacy") ? "/privacy" : null}
     />
   )
 }

@@ -405,6 +405,98 @@ describe("admin_get_attention_items", () => {
     })
   })
 
+  it("the accessibility statement never published is accessibility_unpublished; its first publish removes it (5.5)", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      // From the migration's state: the page and its block never published
+      // (the shared dev database may hold a published statement).
+      await db.query(
+        `update public.content_pages
+         set published_content = null, published_at = null, published_version = 0
+         where slug = 'accessibility'`
+      )
+      await db.query(
+        `update public.content_sections
+         set draft_content = null, published_content = null, published_at = null
+         where page_slug = 'accessibility'`
+      )
+      const { rows } = await db.query(
+        "select created_at from public.content_pages where slug = 'accessibility'"
+      )
+
+      const found = (await items(db, f)).filter(
+        (i) => i.kind === "accessibility_unpublished"
+      )
+      expect(found).toEqual([
+        {
+          kind: "accessibility_unpublished",
+          id: "accessibility",
+          customer_label: null,
+          since: expect.any(String),
+        },
+      ])
+      expect(new Date(found[0].since as string).getTime()).toBe(
+        new Date(rows[0].created_at).getTime()
+      )
+
+      await asAdmin(db, f, async () => {
+        await db.query(
+          "select public.admin_set_content_draft('accessibility', 'statement', $1::jsonb)",
+          [
+            JSON.stringify({
+              body: testName("statement"),
+              contact_name: "n",
+              contact_phone: "054-4256456",
+              contact_email: "a11y@example.test",
+            }),
+          ]
+        )
+        await db.query(
+          "select public.admin_publish_content('accessibility', $1)",
+          [randomUUID()]
+        )
+      })
+      expect(
+        (await items(db, f)).filter(
+          (i) => i.kind === "accessibility_unpublished"
+        )
+      ).toEqual([])
+    })
+  })
+
+  it("a publish that changes nothing keeps accessibility_unpublished (5.5)", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      await db.query(
+        `update public.content_pages
+         set published_content = null, published_at = null, published_version = 0
+         where slug = 'accessibility'`
+      )
+      await db.query(
+        `update public.content_sections
+         set draft_content = null, published_content = null, published_at = null
+         where page_slug = 'accessibility'`
+      )
+      const published = await asAdmin(
+        db,
+        f,
+        async () =>
+          (
+            await db.query(
+              "select public.admin_publish_content('accessibility', $1) as r",
+              [randomUUID()]
+            )
+          ).rows[0].r
+      )
+      expect(published).toMatchObject({ changed: 0 })
+      expect(
+        (await items(db, f)).filter(
+          (i) => i.kind === "accessibility_unpublished"
+        )
+      ).toEqual([expect.objectContaining({ id: "accessibility" })])
+    })
+  })
+
   it("is ordered by since, newest first", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)

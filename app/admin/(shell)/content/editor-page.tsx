@@ -81,6 +81,10 @@ export async function EditorContent({
         draftInvalid={draftInvalid}
         backHref={`/admin/content/${pageId}`}
         backLabel={copy.backToPage(copy.pages[pageId])}
+        statementBlock={
+          section.kind === "accessibility_statement" &&
+          !section.published_content
+        }
       />
     </>
   )
