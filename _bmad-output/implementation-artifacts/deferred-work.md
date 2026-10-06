@@ -363,6 +363,16 @@
   summary: `get_my_entitlements` לא מחזיר את מצב התשלום (`payments.status`). כשיתווסף ביטול תשלום (`voided`), להחליט איך הזכות והסכום מוצגים ללקוחה, ולהוסיף לכך שדה ובדיקה.
   evidence: ה-RPC מחזיר `amount_agorot` ו-`paid_on` מכל תשלום, בלי הבדל. אין היום פעולה שמבטלת תשלום (unverified, medium אם יתממש).
 
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-10-customer-profile-babies-and-photo-consent.md`
+  target: (בלי יעד)
+  summary: אין גבול תחתון לתאריך לידה של תינוק, לא בטופס ההצטרפות, לא בפרופיל ולא ב-`private.babies_guard`. טעות הקלדה כמו 1026-07-05 נשמרת, ומוצגת אצל טל כגיל של "1000 שנים". הגבול הוא ערך עסקי (גיל מקסימלי או שנה), ולכן החלטה של המשתמשת.
+  evidence: ביקורת 2.10 (blind). אותו מצב קיים ב-`join_complete` מ-2.2.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-10-customer-profile-babies-and-photo-consent.md`
+  target: הסרת פרטים (`admin_anonymize_customer`) או כל RPC שנועל פרופיל ואז משנה תינוקות קיימים
+  summary: ‏`private.babies_guard` נועל את שורת התינוק ואחריה את הפרופיל (ב-update וב-delete), בעוד ש-`join_complete` ו-`set_photo_consent` נועלים קודם את הפרופיל. RPC עתידי שינעל פרופיל ואז ימחק או יעדכן תינוקות קיימים עלול להיתקע (deadlock) מול מחיקה של הלקוחה. RPC כזה צריך לנעול את התינוקות לפני הפרופיל, או שה-guard ישתנה.
+  evidence: ביקורת 2.10 (blind). היום אין פונקציה כזו (unverified, medium אם תיווצר).
+
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-self-cancel-and-admin-cancel.md`
   summary: ‏`supabase/tests/admin-booking.test.ts` יוצר מפגש בעוד 3 ימים עם כרטיסייה מ-`seedMoney` שתקפה רק בשני ובחמישי, ולכן 4 בדיקות נכשלות ב-`NO_MATCHING_ENTITLEMENT` ברוב ימי השבוע.
   evidence: נמצא בהרצה של 3.6 ב-2026-10-06 (שלישי, המפגש ביום שישי). ‏`support/money.ts:37` ‏`'{1,4}'`. הבדיקה מ-3.4; צריך לבחור את היום הבא שהוא שני או חמישי, או זכות בלי הגבלת ימים.

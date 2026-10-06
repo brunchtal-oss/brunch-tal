@@ -79,6 +79,10 @@ export const ERROR_MESSAGES = {
   MEDIA_NOT_PUBLISHED: "התמונה עוד לא פורסמה. אפשר לנסות לשמור שוב",
   // Tal books a customer after the session's end (story 3.4).
   EVENT_ENDED: "המפגש כבר הסתיים",
+  // The customer deletes her own last baby (story 2.10, user decision
+  // 2026-10-06). INVALID_INPUT of a baby write carries detail.field
+  // birth_date (after the local today) or babies (more than 10).
+  LAST_BABY: "צריך להשאיר לפחות תינוק אחד בפרופיל",
   // Cancelling a booking (story 3.6). Not hers, missing or no longer
   // confirmed (never telling which); past the self-cancel boundary (no
   // deadline and no "Tal" in the wording, user decision 2026-10-05); a

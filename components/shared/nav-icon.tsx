@@ -4,6 +4,7 @@ import {
   EllipsisIcon,
   HouseIcon,
   ReceiptTextIcon,
+  UserRoundIcon,
 } from "lucide-react"
 
 import type { NavIcon as NavIconKey } from "@/lib/nav"
@@ -13,6 +14,7 @@ const ICONS = {
   sessions: CalendarIcon,
   payments: CreditCardIcon,
   purchases: ReceiptTextIcon,
+  profile: UserRoundIcon,
   more: EllipsisIcon,
 } satisfies Record<NavIconKey, unknown>
 

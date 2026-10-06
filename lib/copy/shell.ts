@@ -22,6 +22,10 @@ export const shellCopy = {
     // The customer's sessions tab (user decision 2026-10-06); the admin's
     // stays "מפגשים".
     customerSessions: "לו״ז בראנצ׳ים",
+    // The customer's last tab (story 2.10, user decision 2026-10-06); the
+    // page's h1 is profileTitle.
+    profile: "פרופיל",
+    profileTitle: "הפרופיל שלי",
     more: "עוד",
     // The public pages (menu-sheet); also each page's h1 and <title>.
     publicSessions: "בראנצ׳ים",

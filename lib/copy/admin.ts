@@ -490,15 +490,9 @@ export const adminCopy = {
     pendingJoin: "לקוחה חדשה · ממתינה להצטרפות",
     detailsRemoved: "פרטי הלקוחה הוסרו",
     companion: (note: string) => `מלווה: ${note}`,
-    // A baby's age on the session's day, computed for display only.
+    // A baby's age on the session's day, computed for display only; the
+    // age's wording is lib/copy/baby-age.ts (shared with the profile).
     babyLine: (name: string, age: string) => (age ? `${name} · ${age}` : name),
-    babyAge: {
-      newborn: "פחות משבוע",
-      weeks: (n: number) =>
-        n === 1 ? "שבוע" : n === 2 ? "שבועיים" : `${n} שבועות`,
-      months: (n: number) =>
-        n === 1 ? "חודש" : n === 2 ? "חודשיים" : `${n} חודשים`,
-    },
     // "({n}/{n})" when every place is taken; a couple session with one place
     // left is full too.
     full: (occupied: number, capacity: number) =>

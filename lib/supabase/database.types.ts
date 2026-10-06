@@ -168,7 +168,7 @@ export type Database = {
         Insert: {
           birth_date: string
           created_at?: string
-          customer_id: string
+          customer_id?: string
           id?: string
           name: string
         }
@@ -1333,6 +1333,7 @@ export type Database = {
         Args: { p_idempotency_key: string; p_token: string }
         Returns: Json
       }
+      set_photo_consent: { Args: { p_consent: boolean }; Returns: Json }
       token_view: { Args: { p_token: string }; Returns: Json }
     }
     Enums: {
