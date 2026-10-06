@@ -121,6 +121,8 @@ context:
 - ‏`.env.example` לא עודכן (סוכן משנה לא כותב ל-`.env*`): להוסיף `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, ‏`VAPID_PRIVATE_KEY`, ‏`VAPID_SUBJECT`, ‏`CRON_SECRET` עם הסבר, בלי ערכים.
 - **סשן ראשי, 2026-10-06:** המשתמשת החילה את המיגרציה ב-SQL Editor (‏cron job 162); נרשמה ב-`schema_migrations`; ‏`get_advisors` נקי (רק INFO של RLS בלי policy, ‏0029 ו-leaked password); ‏`database.types.ts` נוצר מחדש (כולל אובייקטים של 4.7 ו-4.9 שכבר במסד). ‏`push.test.ts` (כולל שני עובדים ושורת `cron.job`) עובר; ‏`grants.test.ts` שונה רק ב-18 שורות של 4.7/4.9; ‏`admin-home.test.ts` עובר (בדיקה אחת חרגה מ-5 שניות בריצה המשותפת ועברה לבד). ‏`npm test`, ‏lint, ‏typecheck, ‏format ו-build עוברים.
 
+- **בדיקה בטלפון אחרי המיזוג (2026-10-06), מול production עם Vault מלא:** ‏Android כלקוחה וכאדמין: פוש מה-cron (‏`invoke_push_worker` ← ‏200) הגיע תוך פחות מדקה כשהאפליקציה סגורה, בשם האפליקציה המותקנת (אחרי התקנה מחדש מ-`brunch-at-tals.vercel.app`; התקנה ישנה מכתובת preview הציגה את ההתראה כשל Chrome), ולחיצה פתחה את מרכז ההתראות. התנתקות מחקה את מנוי הלקוחה והמכשיר נרשם לאדמין לבד; מנוי שבוטל בטלפון (410) נמחק; ‏16 המשימות הישנות נסגרו `skipped`. במצב המכווץ Android חותך כותרת ארוכה (נוסח התבנית, 4.7). ‏Chrome במחשב הפיתוח לא מציג אף הודעה מאז 2025-07 (תקלה מקומית). אייפון: לא נבדק (deferred-work).
+
 ## Spec Change Log
 
 ## Review Triage Log
