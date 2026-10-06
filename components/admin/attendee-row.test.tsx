@@ -39,7 +39,7 @@ describe("AttendeeRow", () => {
     expect(html).toContain("Dana")
     expect(html).toContain(copy.couple)
     expect(html).toContain("050-123-4567")
-    expect(html).toContain(copy.babyLine("Ori", copy.babyAge.months(3)))
+    expect(html).toContain(copy.babyLine("Ori", "3 חודשים"))
     expect(html).toContain("gluten free")
     expect(html).toContain(copy.companion("vegan"))
     expect(html).not.toContain("<button")
@@ -71,6 +71,20 @@ describe("AttendeeRow", () => {
     const html = row({ name: null, phone: null })
     expect(html).toContain(copy.detailsRemoved)
     expect(html).not.toContain(copy.pendingJoin)
+  })
+
+  it("story 3.6: the optional action slot at the row's end; none without it", () => {
+    const withAction = renderToStaticMarkup(
+      <ul>
+        <AttendeeRow
+          attendee={BASE}
+          onDay="2026-10-12"
+          action={<button type="button">cancel-slot</button>}
+        />
+      </ul>
+    )
+    expect(withAction).toContain("cancel-slot")
+    expect(row({})).not.toContain("<button")
   })
 })
 

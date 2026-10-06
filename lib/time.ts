@@ -129,3 +129,56 @@ export function formatWeekdayIndex(index: number): string {
   }
   return formatWeekday(`2026-01-${String(4 + index).padStart(2, "0")}`)
 }
+
+/** "05.07.2026": a plain SQL date (a birth date) with its year. */
+export function formatFullDate(value: DateInput): string {
+  const [year, month, day] = formatLocalDate(value).split("-")
+  return `${day}.${month}.${year}`
+}
+
+/** The Jerusalem calendar day now ("YYYY-MM-DD"), for display only. */
+export function localToday(): string {
+  return formatLocalDate(new Date())
+}
+
+// A baby's age: newborn (under a week), whole weeks, or years and months.
+export type BabyAge =
+  { newborn: true } | { weeks: number } | { years: number; months: number }
+
+/**
+ * A baby's age on a local day, for display only (AD-8): from two plain
+ * local dates ("YYYY-MM-DD"), never stored. Under a week: newborn; under a
+ * whole calendar month: whole weeks; then whole calendar months as years and
+ * months (31.01 to 28.02 is not a month yet). null for a birth after the day
+ * or a bad date. The wording is babyAgeText (lib/copy/baby-age.ts).
+ */
+export function babyAge(birthDate: string, onDay: string): BabyAge | null {
+  const birth = parsePlainDate(birthDate)
+  const day = parsePlainDate(onDay)
+  if (!birth || !day || birth.utc > day.utc) return null
+  let months = (day.year - birth.year) * 12 + (day.month - birth.month)
+  if (day.day < birth.day) months -= 1
+  if (months >= 1) {
+    return { years: Math.floor(months / 12), months: months % 12 }
+  }
+  const days = Math.round((day.utc - birth.utc) / 86_400_000)
+  if (days < 7) return { newborn: true }
+  return { weeks: Math.floor(days / 7) }
+}
+
+/** A real calendar day "YYYY-MM-DD" (not 2026-02-30). Shape only. */
+export function isPlainDate(value: string): boolean {
+  return parsePlainDate(value) !== null
+}
+
+function parsePlainDate(date: string) {
+  if (!PLAIN_DATE.test(date)) return null
+  const [year, month, day] = date.split("-").map(Number)
+  const utc = Date.UTC(year, month - 1, day)
+  // Rejects 2026-02-30, 2026-13-01 and the like.
+  const parsed = new Date(utc)
+  if (parsed.getUTCMonth() !== month - 1 || parsed.getUTCDate() !== day) {
+    return null
+  }
+  return { year, month, day, utc }
+}

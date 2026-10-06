@@ -124,4 +124,79 @@ export const customerCopy = {
   savedNone: "לא הצלחנו לשמור את התאריכים שבחרת",
   entryKept: (dayMonth: string) =>
     `הכניסה של ${dayMonth} לא נוצלה ונשארה ביתרה שלך`,
+  // The profile (story 2.10; the tab and the h1 are shellCopy.nav.profile).
+  // An empty field shows nothing; never "טל" in the customer's wording.
+  profile: {
+    detailsTitle: "הפרטים שלי",
+    fullName: "שם מלא",
+    dietaryNotes: "אלרגיות והעדפות תזונתיות",
+    phone: "טלפון",
+    email: "מייל",
+    babiesTitle: "התינוקות שלי",
+    babyName: "שם התינוק/ת",
+    birthDate: "תאריך לידה",
+    // "{name} · {age}"; only the name when there is no age.
+    babyLine: (name: string, age: string) => (age ? `${name} · ${age}` : name),
+    bornOn: (date: string) => `נולד/ה ב-${date}`,
+    addBaby: "+ תינוק נוסף",
+    // A row button's visible word, then sr-only text naming what it acts on
+    // (its accessible name starts with the visible word, WCAG 2.5.3).
+    edit: "עריכה",
+    detailsSuffix: " – הפרטים שלי",
+    babySuffix: (name: string) => ` – ${name}`,
+    deleteBaby: "מחיקה",
+    // The delete confirmation's group name.
+    deleteBabyOf: (name: string) => `מחיקת ${name}`,
+    confirmDelete: (name: string) => `למחוק את ${name} מהפרופיל?`,
+    confirmDeleteYes: "כן, למחוק",
+    deleting: "מוחקת…",
+    save: "שמירה",
+    saving: "שומרת…",
+    cancel: "ביטול",
+    photoTitle: "אישור תמונות",
+    saved: "הפרטים נשמרו",
+    birthDateFuture: "תאריך הלידה לא יכול להיות בעתיד",
+    linksLabel: "עוד באזור האישי",
+    installGuide: "התקנת האפליקציה",
+  },
+  // A returned pinned entry that waits for the next sessions to be
+  // published, in place of its validity (story 3.6, user decision
+  // 2026-10-06).
+  awaitingSessions: "ממתינה למפגשים הבאים",
+  // Home: an entry that returned to her after a cancelled pinned booking.
+  returnedTitle: "כניסה שחזרה אלייך",
+  // Cancelling a booking (story 3.6). No self-cancel deadline and no "Tal"
+  // anywhere (user decision 2026-10-05); the contact phrase is
+  // contactPhrase.
+  cancel: {
+    button: "ביטול ההרשמה",
+    returns: "מה יחזור",
+    returnsCard: (product: string) => `כניסה אחת ל${product}`,
+    returnsReturned: "הכניסה תחזור אלייך, באותו תוקף",
+    // n: the number of next sessions (business_settings).
+    returnsPinned: (n: number) =>
+      n <= 1
+        ? "כניסה למפגש המתאים הבא"
+        : n === 2
+          ? "כניסה לאחד משני המפגשים המתאימים הבאים"
+          : `כניסה לאחד מ-${n} המפגשים המתאימים הבאים`,
+    confirm: "כן, לבטל",
+    // Past the self-cancel boundary: shown with the contact phrase.
+    closed: "כבר אי אפשר לבטל את ההרשמה הזו בעצמך",
+    // The result (inline-notice, success).
+    doneCard: "ההרשמה בוטלה. הכניסה חזרה ליתרה שלך",
+    donePinned: (until: string) =>
+      `ההרשמה בוטלה. הכניסה חזרה אלייך, ואפשר להירשם איתה עד ${until}`,
+    doneAwaiting:
+      "ההרשמה בוטלה. הכניסה חזרה אלייך, ואפשר יהיה להירשם איתה לאחד המפגשים הבאים כשיתפרסמו",
+  },
+  // /me/bookings (story 3.6), opened from home.
+  bookingsTitle: "ההרשמות שלי",
+  allMyBookings: "לכל ההרשמות שלי",
+  upcomingBookings: "הרשמות קרובות",
+  pastBookings: "הרשמות קודמות",
+  bookingsEmpty: "עוד אין לך הרשמות",
+  toSchedule: "ללו״ז הבראנצ׳ים",
+  bookingCancelled: "בוטלה",
+  bookingHeld: "התקיימה",
 } as const

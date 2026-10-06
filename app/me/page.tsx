@@ -5,6 +5,7 @@ import { ChevronLeftIcon } from "lucide-react"
 
 import { BalanceCard } from "@/components/customer/balance-card"
 import { PageHeading } from "@/components/shared/page-heading"
+import { ResultNoticeHost } from "@/components/shared/result-notice"
 import { SessionCard } from "@/components/shared/session-card"
 import { SignOutButton } from "@/components/shared/sign-out-button"
 import { StatusChip } from "@/components/shared/status-chip"
@@ -12,6 +13,7 @@ import { buttonVariants } from "@/components/ui/button"
 import { getWhatsappHref } from "@/lib/content/business-details"
 import { customerCopy } from "@/lib/copy/customer"
 import { shellCopy } from "@/lib/copy/shell"
+import { callRpc } from "@/lib/rpc"
 import { createClient } from "@/lib/supabase/server"
 import {
   formatAccessibleDateTime,
@@ -19,8 +21,15 @@ import {
   formatWeekday,
 } from "@/lib/time"
 
+import { CancelBooking } from "./bookings/cancel-booking"
+import { parseMyBookings } from "./bookings/cancel-result"
 import { loadMyEntitlements } from "./load-entitlements"
-import { isEmptyHome, isHomeCard, type SessionRow } from "./purchase-items"
+import {
+  isEmptyHome,
+  isHomeCard,
+  isHomeReturned,
+  type SessionRow,
+} from "./purchase-items"
 
 export const metadata: Metadata = {
   title: shellCopy.customer.homeTitle,
@@ -66,45 +75,45 @@ async function Greeting() {
 // that ended leaves home; a pinned purchase shows only as its session.
 // With neither a session ahead nor an active card: the empty-state. The
 // card's values come from get_my_entitlements; RLS limits the other reads
-// to her own rows.
+// to her own rows. Story 3.6: the sessions come from get_my_bookings, the
+// next one has its cancel (or the contact phrase) under the card, then
+// "לכל ההרשמות שלי"; an entry that returned after a cancelled pinned
+// booking has its own section.
 async function Home() {
   const supabase = await createClient()
-  const [entitlements, bookingsResult] = await Promise.all([
+  const [entitlements, bookingsResult, contactHref] = await Promise.all([
     loadMyEntitlements(supabase),
-    supabase.from("bookings").select("event_id").eq("status", "confirmed"),
+    callRpc(supabase, "get_my_bookings"),
+    getWhatsappHref(),
   ])
-  if (bookingsResult.error) throw new Error("bookings failed")
+  if (!bookingsResult.ok) throw new Error("get_my_bookings failed")
 
-  // Display only (which bookings are still ahead), not a business decision
-  // (AD-8): the server filters and orders by starts_at.
-  const now = new Date().toISOString()
-  const bookedIds = [...new Set(bookingsResult.data.map((b) => b.event_id))]
-  const upcomingResult = bookedIds.length
-    ? await supabase
-        .from("events")
-        .select("id, starts_at, concepts(name)")
-        .in("id", bookedIds)
-        .eq("status", "published")
-        .gt("starts_at", now)
-        .order("starts_at")
-        .order("id")
-    : { data: [], error: null }
-  if (upcomingResult.error) throw new Error("upcoming sessions failed")
-  const upcoming: SessionRow[] = upcomingResult.data.map((e) => ({
-    id: e.id,
-    starts_at: e.starts_at,
-    concept_name: e.concepts?.name ?? "",
+  // Her confirmed bookings whose session has not started, by starts_at
+  // (get_my_bookings decides; story 3.6).
+  const myBookings = parseMyBookings(bookingsResult.data)
+  const upcoming: SessionRow[] = myBookings.upcoming.map((b) => ({
+    id: b.eventId,
+    starts_at: b.startsAt,
+    concept_name: b.conceptName,
   }))
+  const nextBooking = myBookings.upcoming[0]
   const cards = entitlements.filter(isHomeCard)
+  const returned = entitlements.filter(isHomeReturned)
 
-  if (isEmptyHome(upcoming.length, cards.length)) {
-    return <EmptyHome contactHref={await getWhatsappHref()} />
+  // One host around both states, so a cancel's result stays after the
+  // page is read again, also when home becomes empty (story 3.6).
+  if (isEmptyHome(upcoming.length, cards.length, returned.length)) {
+    return (
+      <ResultNoticeHost>
+        <EmptyHome contactHref={contactHref} />
+      </ResultNoticeHost>
+    )
   }
 
   const [next, ...later] = upcoming
   return (
-    <div className="flex flex-col gap-10">
-      {next && (
+    <ResultNoticeHost className="flex flex-col gap-10">
+      {next && nextBooking && (
         <HomeSection id="next" title={customerCopy.upcomingTitle}>
           <SessionCard
             href={`/me/sessions/${next.id}`}
@@ -116,6 +125,17 @@ async function Home() {
             status={
               <StatusChip tone="success">{customerCopy.booked}</StatusChip>
             }
+          />
+          {/* Outside the card's link (EXPERIENCE › session-card). */}
+          <CancelBooking
+            bookingId={nextBooking.bookingId}
+            title={customerCopy.sessionTitle(nextBooking.conceptName)}
+            startsAt={nextBooking.startsAt}
+            funding={nextBooking.funding}
+            productName={nextBooking.productName}
+            optionsCount={myBookings.optionsCount}
+            canSelfCancel={nextBooking.canSelfCancel}
+            contactHref={contactHref}
           />
         </HomeSection>
       )}
@@ -151,6 +171,37 @@ async function Home() {
         </HomeSection>
       )}
 
+      {upcoming.length > 0 && (
+        <Link
+          href="/me/bookings"
+          className="-mt-6 inline-flex min-h-11 items-center gap-1 self-start text-base font-semibold underline underline-offset-[3px]"
+        >
+          {customerCopy.allMyBookings}
+        </Link>
+      )}
+
+      {returned.length > 0 && (
+        <HomeSection id="returned" title={customerCopy.returnedTitle}>
+          <ul className="flex flex-col gap-3">
+            {returned.map((entry) => (
+              <li key={entry.id}>
+                <BalanceCard
+                  href={`/me/purchases/${entry.id}`}
+                  productName={entry.productName}
+                  used={entry.used}
+                  reserved={entry.reserved}
+                  total={entry.originalUnits}
+                  expiresOn={entry.expiresOn}
+                  daysLeft={entry.daysLeft}
+                  isExpiring={entry.isExpiring}
+                  awaiting={entry.awaitingSessions}
+                />
+              </li>
+            ))}
+          </ul>
+        </HomeSection>
+      )}
+
       {cards.length > 0 && (
         <HomeSection id="card" title={customerCopy.cardTitle}>
           <ul className="flex flex-col gap-3">
@@ -173,7 +224,7 @@ async function Home() {
       )}
 
       {/* Story 5.7: the unread notifications go here, after the card. */}
-    </div>
+    </ResultNoticeHost>
   )
 }
 

@@ -8,6 +8,8 @@ export const SENSITIVE_ACTIONS = {
   // Approving a payment whose amount differs from the catalog price (2.5),
   // and changing a product's catalog price (2.6).
   price_change: "האם לאשר שינוי מחיר?",
+  // Cancelling a customer's booking (3.6), also inside the window.
+  booking_cancel: "האם לבטל את ההרשמה?",
 } as const
 
 export type SensitiveAction = keyof typeof SENSITIVE_ACTIONS

@@ -4,6 +4,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 
 import { InlineNotice } from "@/components/shared/inline-notice"
+import { ResultNoticeHost } from "@/components/shared/result-notice"
 import { buttonVariants } from "@/components/ui/button"
 import { adminCopy } from "@/lib/copy/admin"
 import { shellCopy } from "@/lib/copy/shell"
@@ -126,7 +127,11 @@ async function SessionDetailsContent({
         </div>
       </div>
 
-      <AttendeeList details={details} />
+      {/* Story 3.6: Tal cancels a booking until the session ends; the
+          result stays above the list after the row leaves it. */}
+      <ResultNoticeHost className="flex flex-col gap-8">
+        <AttendeeList details={details} cancellable={!readOnly} />
+      </ResultNoticeHost>
     </>
   )
 }

@@ -56,6 +56,7 @@ async function Purchases() {
             paidOn={e.paidOn}
             expiresOn={e.expiresOn}
             status={pastStatus(e)}
+            awaiting={e.awaitingSessions}
             expiredNote={
               e.expiredBeforeBound ? (
                 <ExpiredCardNote

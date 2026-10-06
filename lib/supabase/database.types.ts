@@ -168,7 +168,7 @@ export type Database = {
         Insert: {
           birth_date: string
           created_at?: string
-          customer_id: string
+          customer_id?: string
           id?: string
           name: string
         }
@@ -1170,6 +1170,15 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_cancel_booking: {
+        Args: {
+          p_booking_id: string
+          p_confirmed: boolean
+          p_idempotency_key: string
+          p_reason?: string
+        }
+        Returns: Json
+      }
       admin_create_event: {
         Args: { p_event: Json; p_idempotency_key: string }
         Returns: Json
@@ -1259,6 +1268,14 @@ export type Database = {
         Args: { p_idempotency_key: string; p_items: string[] }
         Returns: Json
       }
+      cancel_booking: {
+        Args: {
+          p_booking_id: string
+          p_choice?: string
+          p_idempotency_key: string
+        }
+        Returns: Json
+      }
       claim_join: {
         Args: { p_idempotency_key: string; p_token: string }
         Returns: Json
@@ -1267,6 +1284,7 @@ export type Database = {
         Args: { p_event_ids: string[] }
         Returns: Json
       }
+      get_my_bookings: { Args: never; Returns: Json }
       get_my_entitlements: { Args: never; Returns: Json }
       get_my_session_role: { Args: never; Returns: string }
       issue_reset_token: { Args: { p_user_id: string }; Returns: Json }
@@ -1299,6 +1317,10 @@ export type Database = {
         Args: { p_customer_id: string; p_event_id: string }
         Returns: Json
       }
+      preview_admin_cancel_booking: {
+        Args: { p_booking_id: string }
+        Returns: Json
+      }
       preview_admin_set_product_price: {
         Args: { p_price_agorot: number; p_product_id: string }
         Returns: Json
@@ -1313,6 +1335,7 @@ export type Database = {
         Args: { p_idempotency_key: string; p_token: string }
         Returns: Json
       }
+      set_photo_consent: { Args: { p_consent: boolean }; Returns: Json }
       token_view: { Args: { p_token: string }; Returns: Json }
     }
     Enums: {
