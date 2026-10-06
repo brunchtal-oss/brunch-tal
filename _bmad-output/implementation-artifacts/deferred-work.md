@@ -412,6 +412,7 @@
   target: 4.9
   summary: הכפתור בעמוד המפגש באדמין נקרא עכשיו "ללשונית העבודה" (`adminCopy.sessions.morningView`), אבל עדיין פותח את `/admin/sessions/[id]/day`. ‏4.9 מפנה אותו לדף העבודה של המפגש, ו-`/day` מפנה לשם.
   evidence: החלטת המשתמשת בבדיקת הטלפון של 3.12 (2026-10-06), נרשמה ב-memlog של ה-UX. התכנון של 4.9 ב-`demo-scope-2026-10-04.md`.
+  status: נסגר ב-4.9 (2026-10-06). הכפתור פותח את `/admin/sessions/[id]/work`, ו-`/day` מפנה לשם.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-7-in-app-notification-centers.md`
   target: אחרי ההגשה
@@ -427,6 +428,16 @@
   target: 5.14
   summary: אין בדיקה שעמוד העורך ועמוד התצוגה המקדימה מעבירים את חסימת הפרסום של הצהרת הנגישות (`editor-page.tsx`, ‏`statementBlocked` ב-preview). החלקים הטהורים והרכיבים עצמם נבדקים.
   evidence: ביקורת 5.5 (2026-10-06). רכיבי שרת שדורשים RSC harness; פעולת הפרסום כבר בודקת את הסכמה בשרת.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-4-9-work-tab-dishes-tasks-prep-days.md`
+  target: 4.13
+  summary: אין בדיקה אוטומטית ל-redirect של `/admin/sessions/[id]/day` אל `/work`, לקישור "ללשונית העבודה" בעמוד המפגש וללשונית `/admin/work` (עד שלושה בראנצ׳ים, קישור לכל דף).
+  evidence: ביקורת 4.9 (2026-10-06, ‏verification-gap). מסכים דקים בלי לוגיקה משלהם; הבדיקה בטלפון מכסה אותם.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-4-9-work-tab-dishes-tasks-prep-days.md`
+  target: 3.17
+  summary: `work_sheets.event_id` הוא `on delete cascade`, ולכן מחיקת מפגש מוחקת את דף העבודה, המנות והמשימות בלי שורת יומן. ‏3.17 (מחיקת מפגש בלי הרשמות) רושם ביומן גם את נתוני דף העבודה שנמחקים, או לפחות את מספרם.
+  evidence: ביקורת 4.9 (2026-10-06, ‏blind-hunter). ה-cascade נבחר ב-spec של 4.9 כדי ש-3.17 יוכל למחוק מפגש.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-4-7-business-settings-and-templates.md`
   summary: כל סיפור שמוסיף קורא ל-`enqueue_notification` (5.17 reminder, 5.6 waitlist_spot, 3.8 event_cancelled/event_changed, 3.13 entitlement_changed, 5.10 card_expiring/admin_card_expiring) מעביר את כל `allowed_vars` של הסוג, ומוסיף בדיקת מסד שעורכת את התבנית לכל השדות המותרים ומריצה את הזרימה האמיתית.

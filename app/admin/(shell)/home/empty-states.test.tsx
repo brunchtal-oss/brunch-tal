@@ -122,6 +122,12 @@ describe("home sections with data", () => {
     )
     expect(html).not.toContain("/day")
     expect(html).not.toContain(adminCopy.sessions.morningView)
+    // "לדף העבודה" opens the next session's work sheet (story 4.9).
+    expect(html).toMatch(
+      new RegExp(
+        `href="/admin/sessions/${ids[0]}/work"[^>]*>${copy.workSheet}</a>`
+      )
+    )
     const rows = html.match(/<li[^>]*>/g) ?? []
     // The summary-card's four figures are list items too.
     const later = [...html.matchAll(/href="\/admin\/sessions\/([^"/]+)"/g)]

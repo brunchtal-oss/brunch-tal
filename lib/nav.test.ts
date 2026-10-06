@@ -97,8 +97,25 @@ describe("navigation", () => {
     for (const item of adminNav) expect(item.href).toMatch(/^\/admin(\/|$)/)
   })
 
+  it("puts the work tab after the sessions and marks it current (story 4.9)", () => {
+    const [home, sessions, work] = adminNav
+    expect(work).toMatchObject({ href: "/admin/work", icon: "work" })
+    expect(isCurrent(adminNav, work, "/admin/work")).toBe(true)
+    expect(isCurrent(adminNav, home, "/admin/work")).toBe(false)
+    expect(isCurrent(adminNav, sessions, "/admin/work")).toBe(false)
+    expect(isCurrent(adminNav, work, "/admin/workshop")).toBe(false)
+    // A session's work sheet is a work screen (user decision 2026-10-07).
+    expect(isCurrent(adminNav, work, "/admin/sessions/1/work")).toBe(true)
+    expect(isCurrent(adminNav, sessions, "/admin/sessions/1/work")).toBe(false)
+    expect(isCurrent(adminNav, home, "/admin/sessions/1/work")).toBe(false)
+    // The session's other screens stay under the sessions.
+    expect(isCurrent(adminNav, sessions, "/admin/sessions/1")).toBe(true)
+    expect(isCurrent(adminNav, sessions, "/admin/sessions/1/edit")).toBe(true)
+    expect(isCurrent(adminNav, work, "/admin/sessions/1/workshop")).toBe(false)
+  })
+
   it("marks the longest matching item as current", () => {
-    const [home, sessions, payments, more] = adminNav
+    const [home, sessions, , payments, more] = adminNav
     expect(isCurrent(adminNav, home, "/admin")).toBe(true)
     expect(isCurrent(adminNav, more, "/admin")).toBe(false)
     expect(isCurrent(adminNav, more, "/admin/more")).toBe(true)

@@ -115,7 +115,7 @@ async function SessionDetailsContent({
             </Link>
           )}
           <Link
-            href={`/admin/sessions/${id}/day`}
+            href={`/admin/sessions/${id}/work`}
             className={buttonVariants({
               variant: "outline",
               size: "lg",
