@@ -138,6 +138,10 @@ export const adminCopy = {
       contact: "יצירת קשר",
       "join-form": "טופס ההצטרפות",
       site: "פוטר",
+      // Story 5.5: the legal pages.
+      privacy: "מדיניות פרטיות",
+      terms: "תנאי שימוש",
+      accessibility: "הצהרת נגישות",
     },
     // The sections, by "slug/key".
     sections: {
@@ -153,6 +157,9 @@ export const adminCopy = {
       "contact/business_details": "פרטי העסק",
       "join-form/photo_consent": "בקשת אישור התמונות",
       "site/footer": "קישורים",
+      "privacy/body": "נוסח המדיניות",
+      "terms/body": "נוסח התנאים",
+      "accessibility/statement": "נוסח ההצהרה",
     } as Record<string, string>,
     // The row of "site" that leads to the business details (the footer's
     // phone and address come from there).
@@ -190,6 +197,7 @@ export const adminCopy = {
       tooLong: (max: number) => `עד ${max} תווים`,
       phone: "מספר טלפון לא תקין",
       url: "קישור לא תקין. צריך להתחיל ב-https://",
+      email: "כתובת מייל לא תקינה",
       invalid: "הערך לא תקין",
     },
     // A saved draft that does not pass the schema (edited elsewhere).
@@ -249,6 +257,25 @@ export const adminCopy = {
       labelHint: "למשל: אינסטגרם",
       url: "כתובת",
       urlHint: "מתחילה ב-https://. הקישור ייפתח בחלון חדש",
+    },
+    // A section of a legal text (story 5.5): privacy, terms and the
+    // statement's extra sections.
+    legal: {
+      body: "הנוסח המלא",
+      // The formatting of components/public/legal-text.tsx (user decision
+      // 2026-10-06: one field, pasted whole).
+      hint: 'אפשר להדביק את כל הנוסח, בלי הכותרת הראשית ובלי תאריך העדכון: הם מוצגים אוטומטית. שורה ריקה מתחילה פסקה חדשה. שורה שמתחילה ב-"## " היא כותרת. שורה שמתחילה ב-"- " היא פריט ברשימה. **מודגש**. קישור: [טקסט](https://...), טלפון: [054-0000000](tel:+972540000000), מייל: [טקסט](mailto:...)',
+    },
+    // accessibility › statement (story 5.5). The fixed headings of the page
+    // are in shellCopy.public.legal.accessibility.
+    statement: {
+      body: "נוסח ההצהרה המלא",
+      contactName: "שם איש או אשת הקשר לנגישות",
+      contactPhone: "טלפון לנגישות",
+      contactEmail: "מייל לנגישות",
+      // Before the first publish, while a required field is missing
+      // (EXPERIENCE › admin states: publish aria-disabled + the list).
+      blocked: "אי אפשר לפרסם את ההצהרה לפני שממלאים את שדות החובה:",
     },
     photoConsent: {
       question: "השאלה",
@@ -699,6 +726,12 @@ export const adminCopy = {
         title: () => "תמונה לא פורסמה עד הסוף",
         detail: "הפרסום נעצר באמצע. כדי לסיים, פרסמי שוב את העמוד בתוכן האתר",
         chip: "תקוע",
+      },
+      // Until the first publish of the statement (story 5.5).
+      accessibility_unpublished: {
+        title: () => "הצהרת הנגישות עוד לא פורסמה",
+        detail: "זה עמוד חובה באתר. צריך למלא את שדות החובה ולפרסם",
+        chip: "לא פורסם",
       },
     },
     expiring: "כרטיסיות שעומדות לפוג",

@@ -399,3 +399,13 @@
   target: אחרי ההגשה
   summary: לקוחה מחוברת ב-`/sessions` (הרשימה הציבורית) רואה `status-chip` על מפגש שהיא רשומה אליו, כמו ב-`/me/sessions`. צריך לקרוא את ההרשמות שלה ברכיב דינמי בתוך `Suspense`, בלי לשבור את המטמון של הרשימה.
   evidence: ‏spec 5.16 (Always) השאיר את ה-chips ל-5.7, ו-5.7 הוציא אותם (Never). היום הרשימה הציבורית זהה לאורחת וללקוחה.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-5-privacy-and-accessibility.md`
+  target: 6.9
+  summary: ‏`join_complete` שומר את `published_version` של המדיניות ברגע השליחה, לא את הגרסה שהלקוחה ראתה. טופס שנפתח לפני פרסום (או לפני פרסום חוזר) ונשלח אחריו נשמר עם הגרסה החדשה. לבחון אם להעביר את הגרסה שהוצגה ולהשוות, או לרשום את ההחלטה.
+  evidence: ביקורת 5.5 (2026-10-06). ההתנהגות קיימת מ-2.2, ו-5.5 לא שינה את `join_complete` לפי הכוונה.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-5-privacy-and-accessibility.md`
+  target: 5.14
+  summary: אין בדיקה שעמוד העורך ועמוד התצוגה המקדימה מעבירים את חסימת הפרסום של הצהרת הנגישות (`editor-page.tsx`, ‏`statementBlocked` ב-preview). החלקים הטהורים והרכיבים עצמם נבדקים.
+  evidence: ביקורת 5.5 (2026-10-06). רכיבי שרת שדורשים RSC harness; פעולת הפרסום כבר בודקת את הסכמה בשרת.

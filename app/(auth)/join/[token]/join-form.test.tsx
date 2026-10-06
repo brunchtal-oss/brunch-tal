@@ -21,6 +21,7 @@ function render(
   extra: {
     conflictReason?: "two_accounts" | "not_activated" | null
     contactHref?: string | null
+    privacyHref?: string | null
   } = {}
 ) {
   return renderToStaticMarkup(
@@ -34,6 +35,7 @@ function render(
       amountAgorot={47200}
       photoConsent={PHOTO}
       today="2026-10-01"
+      privacyHref={extra.privacyHref}
     />
   )
 }
@@ -123,5 +125,26 @@ describe("JoinForm conflict reason", () => {
     const html = render("conflict", { conflictReason: "not_activated" })
     expect(html).toContain(joinCopy.conflicts.not_activated)
     expect(html).not.toContain("wa.me")
+  })
+})
+
+describe("JoinForm privacy link (story 5.5)", () => {
+  // The privacy checkbox's label.
+  function label(html: string): string {
+    return /<label for="privacy"[^>]*>([\s\S]*?)<\/label>/.exec(html)?.[1] ?? ""
+  }
+
+  it("links the policy in a new tab once it is published", () => {
+    const text = label(render("active", { privacyHref: "/privacy" }))
+    expect(text).toContain('href="/privacy"')
+    expect(text).toContain('target="_blank"')
+    expect(text).toContain('rel="noopener noreferrer"')
+    expect(text).toContain(joinCopy.privacyConsentLink)
+  })
+
+  it("keeps the plain wording without a published policy", () => {
+    const text = label(render("active", { privacyHref: null }))
+    expect(text).not.toContain("<a")
+    expect(text).toContain(joinCopy.privacyConsent)
   })
 })

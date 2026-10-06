@@ -11,6 +11,7 @@ import {
   hasPendingDraft,
   isEditableSlug,
   isEditorPageId,
+  missingStatementFields,
   pageStatus,
   publishTags,
   sameContent,
@@ -19,6 +20,8 @@ import {
   sectionStatus,
   sectionSummary,
   slugsOf,
+  statementPublishBlock,
+  type ContentPage,
   type ContentSection,
   type SectionRef,
 } from "./content-items"
@@ -48,10 +51,13 @@ describe("content items", () => {
       "contact",
       "join-form",
       "site",
+      "privacy",
+      "terms",
+      "accessibility",
     ]) {
       expect(isEditableSlug(slug)).toBe(true)
     }
-    expect(isEditableSlug("privacy")).toBe(false)
+    expect(isEditableSlug("join")).toBe(false)
     expect(isEditableSlug("toString")).toBe(false)
   })
 
@@ -63,6 +69,9 @@ describe("content items", () => {
       "contact",
       "join-form",
       "site",
+      "privacy",
+      "terms",
+      "accessibility",
     ])
     expect(EDITABLE_PAGES.home.map((ref) => `${ref.slug}/${ref.key}`)).toEqual([
       "home/hero",
@@ -282,5 +291,58 @@ describe("content items", () => {
       expect(fieldErrorMessage(error)).toBeTruthy()
     }
     expect(fieldErrorMessage({ kind: "tooLong", max: 40 })).toContain("40")
+  })
+})
+
+describe("statementPublishBlock (story 5.5)", () => {
+  const FULL = {
+    body: "b",
+    contact_name: "n",
+    contact_phone: "054-4256456",
+    contact_email: "a@example.com",
+  }
+  const page = (
+    draft: Record<string, unknown> | null,
+    published: Record<string, unknown> | null = null
+  ): ContentPage => ({
+    slug: "accessibility",
+    published_version: published ? 1 : 0,
+    published_at: published ? "2026-10-06T10:00:00Z" : null,
+    sections: [
+      {
+        id: "s",
+        key: "statement",
+        kind: "accessibility_statement",
+        sort_order: 1,
+        hidden: false,
+        draft_content: draft,
+        published_content: published,
+        published_at: published ? "2026-10-06T10:00:00Z" : null,
+        updated_at: "2026-10-06T10:00:00Z",
+      },
+    ],
+  })
+
+  it("blocks with every required field while there is no draft", () => {
+    expect(statementPublishBlock(page(null))).toEqual([
+      "body",
+      "contact_name",
+      "contact_phone",
+      "contact_email",
+    ])
+  })
+
+  it("lists only the missing fields of a partial draft", () => {
+    expect(statementPublishBlock(page({ ...FULL, contact_email: "" }))).toEqual(
+      ["contact_email"]
+    )
+    expect(missingStatementFields({ ...FULL, contact_phone: "x" })).toEqual([
+      "contact_phone",
+    ])
+  })
+
+  it("does not block a valid draft or a published statement", () => {
+    expect(statementPublishBlock(page(FULL))).toEqual([])
+    expect(statementPublishBlock(page({}, FULL))).toEqual([])
   })
 })

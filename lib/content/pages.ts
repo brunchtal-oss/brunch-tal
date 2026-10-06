@@ -159,6 +159,27 @@ export async function getPublishedPageSlugs(
   return (data ?? []).map((row) => row.slug)
 }
 
+// When a public page was last published (content_pages.published_at; it
+// moves only on a publish that changed something), cached and tagged
+// content:<slug>; null while it was never published or on a read error
+// (logged). Shown as "last updated" on the legal pages (story 5.5).
+export async function getPublishedAt(slug: string): Promise<string | null> {
+  "use cache"
+  cacheTag(`content:${slug}`)
+  cacheLife("minutes")
+
+  const { data, error } = await createPublicClient()
+    .from("content_pages")
+    .select("published_at")
+    .eq("slug", slug)
+    .maybeSingle()
+  if (error) {
+    console.error("content.read_failed", { page: slug })
+    return null
+  }
+  return data?.published_at ?? null
+}
+
 // The section under key when it is of the expected kind, else null.
 export function sectionContent<K extends keyof ContentByKind>(
   sections: PublishedSections,

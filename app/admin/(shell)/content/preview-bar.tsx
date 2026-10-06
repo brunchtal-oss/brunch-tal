@@ -4,6 +4,7 @@ import { useState, useTransition } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 
+import { InlineNotice } from "@/components/shared/inline-notice"
 import { buttonVariants, Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { adminCopy } from "@/lib/copy/admin"
@@ -24,8 +25,13 @@ const copy = adminCopy.content
 export function PreviewBar({
   backHref,
   pending,
+  blocked = [],
 }: {
   backHref: string
+  // The accessibility statement before its first publish (story 5.5): the
+  // missing required fields, each linking to its field in the editor;
+  // "publish" is aria-disabled while there is one.
+  blocked?: readonly { label: string; href: string }[]
   // The slugs with a pending draft and their publish keys.
   pending: readonly { slug: string; publishKey: string }[]
 }) {
@@ -82,7 +88,8 @@ export function PreviewBar({
   }
 
   const hasPending = pending.length > 0
-  const showPublish = left.length > 0
+  const isBlocked = blocked.length > 0
+  const showPublish = left.length > 0 || isBlocked
 
   return (
     <div className="sticky top-0 z-20 -mx-6 bg-primary px-6 py-3 text-primary-foreground">
@@ -90,6 +97,27 @@ export function PreviewBar({
         <p aria-live="polite" className="text-[15px] font-semibold">
           {line ?? (hasPending ? copy.previewBar : copy.previewNoChanges)}
         </p>
+        {isBlocked && (
+          <InlineNotice
+            tone="warning"
+            actions={
+              <ul className="flex flex-wrap justify-center gap-x-4">
+                {blocked.map((field) => (
+                  <li key={field.href}>
+                    <Link
+                      href={field.href}
+                      className="inline-flex min-h-11 items-center underline underline-offset-4"
+                    >
+                      {field.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            }
+          >
+            <span id="preview-publish-blocked">{copy.statement.blocked}</span>
+          </InlineNotice>
+        )}
         <div className="flex flex-wrap gap-3">
           <Link
             href={backHref}
@@ -103,10 +131,13 @@ export function PreviewBar({
           {showPublish && (
             <Button
               type="button"
-              onClick={publish}
+              onClick={isBlocked ? undefined : publish}
               aria-busy={busy || undefined}
-              aria-disabled={busy || undefined}
-              className="h-11 rounded-[4px] bg-background px-5 text-[15px] font-semibold text-foreground hover:bg-background/90"
+              aria-disabled={busy || isBlocked || undefined}
+              aria-describedby={
+                isBlocked ? "preview-publish-blocked" : undefined
+              }
+              className="h-11 rounded-[4px] bg-background px-5 text-[15px] font-semibold text-foreground hover:bg-background/90 aria-disabled:opacity-60"
             >
               {busy && <Spinner aria-hidden />}
               {copy.publish}

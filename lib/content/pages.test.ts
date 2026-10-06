@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import {
+  getPublishedAt,
   getPublishedPage,
   getPublishedPageSlugs,
   getPublishedSections,
@@ -9,6 +10,7 @@ import {
 } from "./pages"
 
 const order = vi.fn()
+const maybeSingle = vi.fn()
 const eq = vi.fn()
 const inList = vi.fn()
 const select = vi.fn()
@@ -31,7 +33,8 @@ beforeEach(() => {
   cacheTag.mockReset()
   inList.mockReset()
   select.mockReturnValue({ eq, in: inList })
-  eq.mockReturnValue({ order })
+  maybeSingle.mockReset()
+  eq.mockReturnValue({ order, maybeSingle })
 })
 
 const STEPS = { items: [{ title: "s", body: "b" }] }
@@ -219,5 +222,31 @@ describe("getPublishedPage", () => {
     expect(page.images).toEqual({})
     // Without a resolved image the gallery is not a section.
     expect(page.sections.photos).toBeUndefined()
+  })
+})
+
+describe("getPublishedAt (story 5.5)", () => {
+  it("returns the page's published_at, tagged content:<slug>", async () => {
+    maybeSingle.mockResolvedValue({
+      data: { published_at: "2026-10-06T10:00:00+00:00" },
+      error: null,
+    })
+    expect(await getPublishedAt("privacy")).toBe("2026-10-06T10:00:00+00:00")
+    expect(select).toHaveBeenCalledWith("published_at")
+    expect(eq).toHaveBeenCalledWith("slug", "privacy")
+    expect(cacheTag).toHaveBeenCalledWith("content:privacy")
+  })
+
+  it("is null without a row (never published: RLS hides it)", async () => {
+    maybeSingle.mockResolvedValue({ data: null, error: null })
+    expect(await getPublishedAt("terms")).toBeNull()
+  })
+
+  it("is null on a read error", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => {})
+    maybeSingle.mockResolvedValue({ data: null, error: { message: "x" } })
+    expect(await getPublishedAt("accessibility")).toBeNull()
+    expect(log).toHaveBeenCalled()
+    log.mockRestore()
   })
 })

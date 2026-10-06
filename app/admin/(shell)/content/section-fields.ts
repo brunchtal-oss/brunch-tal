@@ -21,8 +21,10 @@ export type TextField = {
   label: string
   hint?: string
   multiline?: boolean
+  // A tall textarea for a whole document (story 5.5).
+  large?: boolean
   maxLength?: number
-  inputType?: "text" | "tel" | "url"
+  inputType?: "text" | "tel" | "url" | "email"
   // Numbers and links read left to right inside the RTL form.
   ltr?: boolean
   showWhen?: ShowWhen
@@ -95,6 +97,36 @@ const PORTRAIT_ASPECTS: readonly ImageAspect[] = [{ ratio: 4 / 5 }]
 const listTitle = text("title", copy.listTitle, { maxLength: 120 })
 
 const business = copy.business
+
+const legal = copy.legal
+const statement = copy.statement
+
+// A legal text's one field: the whole wording, pasted (story 5.5).
+const legalBody = (label: string): TextField =>
+  text("body", label, {
+    hint: legal.hint,
+    multiline: true,
+    large: true,
+    maxLength: 50000,
+  })
+
+// The accessibility statement's fields (story 5.5, second phone check):
+// the whole statement as one text, then the contact for accessibility, all
+// required (lib/content/schema.ts › accessibilityStatementSchema).
+const STATEMENT_FIELDS: readonly TextField[] = [
+  legalBody(statement.body),
+  text("contact_name", statement.contactName, { maxLength: 120 }),
+  text("contact_phone", statement.contactPhone, {
+    inputType: "tel",
+    maxLength: 30,
+    ltr: true,
+  }),
+  text("contact_email", statement.contactEmail, {
+    inputType: "email",
+    maxLength: 254,
+    ltr: true,
+  }),
+]
 
 // The business details' fields (lib/content/schema.ts ›
 // businessDetailsSchema). The payment instructions stay in the schema and
@@ -310,6 +342,15 @@ export function sectionSpec(ref: SectionRef): SectionSpec {
       }
     case "business_details":
       return { hideable: false, fields: BUSINESS_FIELDS }
+    // Story 5.5: the legal pages are never hidden. A legal text is one field
+    // the whole wording is pasted into (user decision 2026-10-06).
+    case "legal_text":
+      return {
+        hideable: false,
+        fields: [legalBody(legal.body)],
+      }
+    case "accessibility_statement":
+      return { hideable: false, fields: STATEMENT_FIELDS }
     default:
       return { hideable: false, fields: [] }
   }
