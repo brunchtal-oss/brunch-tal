@@ -76,4 +76,55 @@ describe("signOutAction", () => {
       url: "/admin/login",
     })
   })
+
+  it("removes this device's push subscription before signing out", async () => {
+    const order: string[] = []
+    rpc.mockImplementation(async (name: string) => {
+      order.push(name)
+      return {
+        data: name === "get_my_session_role" ? "customer" : { removed: 1 },
+        error: null,
+      }
+    })
+    signOut.mockImplementationOnce(async () => {
+      order.push("signOut")
+      return { error: null }
+    })
+    const data = new FormData()
+    data.set("push_endpoint", "https://push.example.test/abc")
+    await expect(signOutAction(data)).rejects.toMatchObject({ url: "/login" })
+    expect(rpc).toHaveBeenCalledWith("unregister_push_subscription", {
+      p_endpoint: "https://push.example.test/abc",
+    })
+    expect(order).toEqual([
+      "get_my_session_role",
+      "unregister_push_subscription",
+      "signOut",
+    ])
+  })
+
+  it("still signs out when removing the subscription fails", async () => {
+    rpc.mockImplementation(async (name: string) =>
+      name === "get_my_session_role"
+        ? { data: "admin", error: null }
+        : Promise.reject(new Error("fetch failed"))
+    )
+    const data = new FormData()
+    data.set("push_endpoint", "https://push.example.test/abc")
+    await expect(signOutAction(data)).rejects.toMatchObject({
+      url: "/admin/login",
+    })
+    expect(signOut).toHaveBeenCalledTimes(1)
+  })
+
+  it.each(["", "http://push.example.test/abc", "not a url"])(
+    "skips an empty or invalid endpoint %j",
+    async (endpoint) => {
+      rpc.mockResolvedValue({ data: "customer", error: null })
+      const data = new FormData()
+      data.set("push_endpoint", endpoint)
+      await expect(signOutAction(data)).rejects.toMatchObject({ url: "/login" })
+      expect(rpc).toHaveBeenCalledTimes(1)
+    }
+  )
 })

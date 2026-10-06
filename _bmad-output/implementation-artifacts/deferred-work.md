@@ -438,3 +438,27 @@
   target: 3.17
   summary: `work_sheets.event_id` הוא `on delete cascade`, ולכן מחיקת מפגש מוחקת את דף העבודה, המנות והמשימות בלי שורת יומן. ‏3.17 (מחיקת מפגש בלי הרשמות) רושם ביומן גם את נתוני דף העבודה שנמחקים, או לפחות את מספרם.
   evidence: ביקורת 4.9 (2026-10-06, ‏blind-hunter). ה-cascade נבחר ב-spec של 4.9 כדי ש-3.17 יוכל למחוק מפגש.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-4-7-business-settings-and-templates.md`
+  summary: כל סיפור שמוסיף קורא ל-`enqueue_notification` (5.17 reminder, 5.6 waitlist_spot, 3.8 event_cancelled/event_changed, 3.13 entitlement_changed, 5.10 card_expiring/admin_card_expiring) מעביר את כל `allowed_vars` של הסוג, ומוסיף בדיקת מסד שעורכת את התבנית לכל השדות המותרים ומריצה את הזרימה האמיתית.
+  evidence: ביקורת 4.7, ממצא 9 (medium, לא אומת). ‏`allowed_vars` של 9 הסוגים בלי קורא נקבע מראש. קורא שמעביר פחות שדות ייכשל ב-render בתוך העסקה ויבטל אותה.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-8-push-pipeline-and-permission.md`
+  target: 4.6
+  summary: ‏`admin_anonymize_customer` (הסרת פרטים) מוחק גם את המנויים של הלקוחה ב-`push_subscriptions` (ואיתם `notification_deliveries`, ב-cascade), באותה עסקה. מחיקת המשתמשת ב-Auth כבר מוחקת אותם (`on delete cascade`).
+  evidence: ‏spec 5.8 (Always, ‏`push_subscriptions`): ההרחבה של הסרת הפרטים נשארת ל-4.6.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-8-push-pipeline-and-permission.md`
+  target: סבב העיצוב
+  summary: הגדרות ההתראות בפרופיל (שורה עם קישור לכרטיס הפוש) והצעת הפוש אחרי הרשמה ראשונה מוצלחת ("המקום שלך שמור", EXPERIENCE). ב-5.8 הכרטיס במרכזי ההתראות של `/me` ו-`/admin` הוא המקום היחיד.
+  evidence: החלטת המשתמשת 2026-10-06 באישור spec 5.8 (החלטה 2).
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-8-push-pipeline-and-permission.md`
+  target: 5.10
+  summary: צנרת פוש שלא עובדת (ערכי Vault חסרים או שגויים, ‏`CRON_SECRET` שלא תואם, ‏`app_url` שגוי) לא מופיעה ב"לטיפול": המשימות לא נלקחות, ואחרי 24 שעות נסגרות `skipped`, והענף `push_failed` סופר רק `failed`.
+  evidence: ביקורת 5.8 (blind-hunter). ‏AD-22 מונה ב"לטיפול" ערכי Vault חסרים ו-`private.job_*` שנכשל או לא הצליח בזמן; אפשר לגזור גם `queued` ותיקות או `net._http_response` עם 401/5xx.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-8-push-pipeline-and-permission.md`
+  target: לפני ההדגמה (בדיקה בלבד)
+  summary: בדיקת פוש באייפון עם האפליקציה מותקנת במסך הבית (iOS 16.4 ומעלה), כלקוחה וכאדמין: הפעלה מהכרטיס במרכז ההתראות, פוש תוך דקה כשהאפליקציה סגורה, ולחיצה שפותחת את `target_path`. אם משהו נכשל, תיקון ב-PR קצר.
+  evidence: ב-2026-10-06 נבדק רק Android (לקוחה ואדמין); לא היה אייפון זמין (החלטת המשתמשת). באייפון פוש עובד רק מהאפליקציה המותקנת.

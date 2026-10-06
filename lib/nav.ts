@@ -26,6 +26,7 @@ export const adminMoreNav: readonly { href: string; label: string }[] = [
   { href: "/admin/links", label: adminCopy.links.title },
   { href: "/admin/products", label: adminCopy.products.title },
   { href: "/admin/content", label: adminCopy.content.title },
+  { href: "/admin/settings", label: adminCopy.settings.title },
 ]
 
 // The public pages, in the menu-sheet's fixed order (story 5.2). Each

@@ -93,6 +93,13 @@ export const ERROR_MESSAGES = {
   BOOKING_NOT_CANCELLABLE: "ההרשמה הזו כבר לא פעילה. כדאי לרענן את הדף",
   SELF_CANCEL_CLOSED: "לא ניתן לבטל עצמאית כל כך קרוב למפגש. צרי קשר",
   MANUAL_HANDLING_REQUIRED: "את הביטול הזה עושים ידנית. צרי קשר ונטפל בו",
+  // Settings and notification templates (story 4.7). The row changed since
+  // the screen read it (another tab or device saved first).
+  STALE_VERSION: "הנתונים השתנו בינתיים. צריך לרענן את הדף",
+  // A template uses a field its type does not pass, or its braces do not
+  // close; detail.field is title | body.
+  TEMPLATE_INVALID:
+    "בנוסח יש שדה שלא קיים בהתראה הזו או סוגריים שלא נסגרו. אפשר להוסיף שדות רק מהרשימה",
   // Raised by the adapter (never by SQL).
   INVALID_CREDENTIALS: "המייל או הסיסמה לא תואמים",
   // Correct password, but no active customer profile and not an admin.

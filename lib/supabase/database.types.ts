@@ -762,6 +762,39 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_deliveries: {
+        Row: {
+          delivered_at: string
+          job_id: string
+          subscription_id: string
+        }
+        Insert: {
+          delivered_at?: string
+          job_id: string
+          subscription_id: string
+        }
+        Update: {
+          delivered_at?: string
+          job_id?: string
+          subscription_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_deliveries_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "notification_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_deliveries_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "push_subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_jobs: {
         Row: {
           attempt_count: number
@@ -1097,6 +1130,39 @@ export type Database = {
           photo_consent_text_version?: number | null
           privacy_consent_at?: string | null
           privacy_policy_version?: number | null
+        }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          last_seen_at: string
+          p256dh: string
+          platform: string
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          last_seen_at?: string
+          p256dh: string
+          platform: string
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          last_seen_at?: string
+          p256dh?: string
+          platform?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -1466,6 +1532,16 @@ export type Database = {
         Args: { p_idempotency_key: string; p_token: string }
         Returns: Json
       }
+      claim_push_jobs: { Args: { p_limit: number }; Returns: Json }
+      finish_push_job: {
+        Args: {
+          p_delivered: string[]
+          p_error: string
+          p_gone: string[]
+          p_job_id: string
+        }
+        Returns: Json
+      }
       get_event_availability: { Args: { p_event_ids: string[] }; Returns: Json }
       get_my_bookings: { Args: never; Returns: Json }
       get_my_entitlements: { Args: never; Returns: Json }
@@ -1512,6 +1588,10 @@ export type Database = {
       }
       preview_book_session: { Args: { p_event_id: string }; Returns: Json }
       preview_book_sessions: { Args: { p_items: string[] }; Returns: Json }
+      register_push_subscription: {
+        Args: { p_endpoint: string; p_keys: Json; p_platform: string }
+        Returns: Json
+      }
       reset_begin: {
         Args: { p_idempotency_key: string; p_token: string }
         Returns: Json
@@ -1522,6 +1602,10 @@ export type Database = {
       }
       set_photo_consent: { Args: { p_consent: boolean }; Returns: Json }
       token_view: { Args: { p_token: string }; Returns: Json }
+      unregister_push_subscription: {
+        Args: { p_endpoint: string }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never

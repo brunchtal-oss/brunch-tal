@@ -813,7 +813,7 @@ describe("notifications row level security", () => {
     })
   })
 
-  it("a customer cannot write notifications or read jobs and templates", async () => {
+  it("a customer cannot write notifications or templates, or read jobs and templates", async () => {
     await inRollback(async (db) => {
       const { f, ids } = await seedAll(db)
       await asAuthenticated(db, f.a)
@@ -831,7 +831,6 @@ describe("notifications row level security", () => {
         ],
         ["delete from public.notifications where id = $1", [ids.a]],
         ["select * from public.notification_jobs limit 1", []],
-        ["select * from public.notification_templates limit 1", []],
         [
           "insert into public.notification_jobs (notification_id) values ($1)",
           [ids.a],
@@ -841,6 +840,11 @@ describe("notifications row level security", () => {
       for (const [text, params] of statements) {
         expect((await queryError(db, text, params))?.code, text).toBe("42501")
       }
+      // The admin reads the templates since 4.7 (select grant + admin-only
+      // policy): a customer gets no rows.
+      expect(
+        (await db.query("select type from public.notification_templates")).rows
+      ).toEqual([])
       for (const fn of [
         "select private.enqueue_notification($1, 'purchase_new_card', 'x', null, '/me')",
         "select private.enqueue_admin_notification('marketing_reminder', 'x', null, '/admin', $1::text)",
