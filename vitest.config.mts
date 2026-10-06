@@ -25,7 +25,14 @@ export default defineConfig({
         test: {
           name: "unit",
           include: ["**/*.test.ts", "**/*.test.tsx"],
-          exclude: [...configDefaults.exclude, ".next/**", DB_DIR],
+          // .claude/** holds the git worktrees of other stories: their tests
+          // resolve "@/" and React from this folder and fail here.
+          exclude: [
+            ...configDefaults.exclude,
+            ".next/**",
+            ".claude/**",
+            DB_DIR,
+          ],
         },
       },
       {
