@@ -93,6 +93,15 @@ export function formatAccessibleDateTime(value: DateInput): string {
   return `${formatWeekday(value)}, ${day} ב${month}, ${formatTime(value)}`
 }
 
+/** "אוקטובר 2026" (the month and year of a date, e.g. a period start) */
+export function formatMonthYear(value: DateInput): string {
+  const { month, year } = parts(value, "he-IL", {
+    month: "long",
+    year: "numeric",
+  })
+  return `${month} ${year}`
+}
+
 /**
  * "YYYY-MM-DD": the Jerusalem calendar day of an instant, for
  * `<time datetime>`. A plain SQL date is returned as is, never shifted.

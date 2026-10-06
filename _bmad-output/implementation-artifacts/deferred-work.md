@@ -255,6 +255,7 @@
   target: 4.1
   summary: פריט "שולם בלי מקום" ב"לטיפול": רכישה מוצמדת ש-`private.place_pinned_booking` השאיר ב-`park` (תשלום וזכות עם `pinned_event_id`, בלי הרשמה). ב-3.11 ה-`park` נבנה ונבדק רק בקריאה ישירה לליבה (`online`).
   evidence: אין עדיין `admin_get_attention_items`; ‏`supabase/tests/pinned-approval.test.ts` (park).
+  status: נסגר ב-4.1 (2026-10-06). פריט `paid_without_place` ב-`admin_get_attention_items`, מוביל לעמוד המפגש; נבדק ב-`supabase/tests/admin-home.test.ts`.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-11-pinned-product-approval-and-placement.md`
   target: 3.4
@@ -270,6 +271,7 @@
   target: 3.6
   summary: הרשמה מוצמדת עם `customer_id` ריק שההצטרפות שלה הסתיימה ב-`BIND_CONFLICT` ממשיכה לתפוס מקום במפגש. טל רואה רק קישור ב-conflict. צריך דרך לשחרר אותה (`admin_cancel_booking`) ולהציג אותה לטל ("לטיפול" של 4.1).
   evidence: ביקורת 3.11 (blind, edge). אין עדיין ביטול באדמין.
+  status: חלק התצוגה נסגר ב-4.1 (2026-10-06): פריט `pinned_seat_held` ב"לטיפול" (עד סוף המפגש), מוביל לעמוד המפגש. השחרור עצמו (`admin_cancel_booking`) נשאר ל-3.6.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-11-pinned-product-approval-and-placement.md`
   target: סבב הסליקה
@@ -323,6 +325,7 @@
   target: 4.1
   summary: תמונה שתקועה ב-`copying` יותר מ-15 דקות מופיעה ב"לטיפול" (`admin_get_attention_items()`, ‏AD-21), עם פעולה לפרסם שוב.
   evidence: ‏5.4 בנה את המצב ואת ה-retry (פרסום חוזר ממשיך מהמצב השמור), אבל "לטיפול" עוד לא קיים. זו ההרחבה הראשונה מתוך ארבע (5.4, ‏5.5, ‏5.8, ‏5.10).
+  status: נסגר ב-4.1 (2026-10-06). פריט `media_stuck` (‏`copying` 15 דקות ומעלה), מוביל ל-`/admin/content`; הפעולה היא פרסום חוזר של העמוד.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-4-media-upload-and-publish.md`
   target: מסך הקונספטים
@@ -358,3 +361,18 @@
   target: (הסיפור שיבנה ביטול תשלום)
   summary: `get_my_entitlements` לא מחזיר את מצב התשלום (`payments.status`). כשיתווסף ביטול תשלום (`voided`), להחליט איך הזכות והסכום מוצגים ללקוחה, ולהוסיף לכך שדה ובדיקה.
   evidence: ה-RPC מחזיר `amount_agorot` ו-`paid_on` מכל תשלום, בלי הבדל. אין היום פעולה שמבטלת תשלום (unverified, medium אם יתממש).
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-4-1-admin-home-and-attention-items.md`
+  target: 4.3
+  summary: שורות "כרטיסיות שעומדות לפוג" בבית האדמין מקשרות למסך הכרטיסיות הפתוחות, מסונן לכרטיסיות שעומדות לפוג (EXPERIENCE › בית).
+  evidence: ב-4.1 השורה בלי קישור, כי המסך עוד לא קיים (spec 4.1, Always).
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-4-1-admin-home-and-attention-items.md`
+  target: 3.7
+  summary: בסכום של בית האדמין להוסיף את שורת "החזרים שבוצעו ({n})" ולחשב את `net_agorot` פחות ההחזרים ב-`admin_get_home`, ולהוסיף את חלק "בקשות החזר פתוחות" ואת פריט בקשת ההחזר ב-`admin_get_attention_items`.
+  evidence: ב-4.1 אין טבלת החזרים, ולכן `net_agorot = approved_agorot` ואין שורת החזרים (spec 4.1, Always ו-Never).
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-4-1-admin-home-and-attention-items.md`
+  target: 4.2
+  summary: בבית האדמין, השם של הלקוחה בשורת "כרטיסיות שעומדות לפוג" (ובפריט "לטיפול" של לקוחה שכבר יש לה חשבון) מקשר לכרטיס הלקוחה שלה. ‏`admin_get_home` צריך להחזיר גם `customer_id` (היום רק `entitlement_id`). אם 4.3 מוסיף לשורה קישור לכרטיסיות הפתוחות, להחליט יחד איך השורה נשארת יעד אחד.
+  evidence: בקשת המשתמשת בבדיקה בטלפון של 4.1 (2026-10-06). כרטיס הלקוחה עוד לא קיים (4.2, סבב 6).

@@ -4,6 +4,7 @@ import {
   formatAccessibleDateTime,
   formatDayMonth,
   formatLocalDate,
+  formatMonthYear,
   formatSessionDateTime,
   formatTime,
   formatWeekday,
@@ -18,6 +19,12 @@ describe("lib/time", () => {
     expect(formatDayMonth(SESSION)).toBe("12.10")
     expect(formatTime(SESSION)).toBe("10:00")
     expect(formatSessionDateTime(SESSION)).toBe("יום שני 12.10 · 10:00")
+  })
+
+  it("formats the month and year of a plain date and an instant", () => {
+    expect(formatMonthYear("2026-10-01")).toBe("אוקטובר 2026")
+    // 30.09 23:30 in Jerusalem is still September.
+    expect(formatMonthYear("2026-09-30T20:30:00Z")).toBe("ספטמבר 2026")
   })
 
   it("formats the screen-reader text", () => {

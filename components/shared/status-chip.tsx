@@ -8,6 +8,8 @@ const TONES = {
   warning: { chip: "bg-warning-tint text-warning", dot: "bg-warning-dot" },
   pending: { chip: "bg-pending-tint text-pending", dot: "bg-pending-dot" },
   expired: { chip: "bg-expired-tint text-expired", dot: "bg-expired-dot" },
+  // A conflict that stops a join ("לטיפול", DESIGN › status-chip error).
+  error: { chip: "bg-error-tint text-error", dot: "bg-error-dot" },
 } as const
 
 export type StatusTone = keyof typeof TONES

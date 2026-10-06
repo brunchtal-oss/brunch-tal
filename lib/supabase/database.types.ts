@@ -1193,8 +1193,10 @@ export type Database = {
         Args: { p_media_id: string }
         Returns: Json
       }
+      admin_get_attention_items: { Args: never; Returns: Json }
       admin_get_content_page: { Args: { p_slug: string }; Returns: Json }
       admin_get_event_details: { Args: { p_event_id: string }; Returns: Json }
+      admin_get_home: { Args: never; Returns: Json }
       admin_issue_link: {
         Args: {
           p_idempotency_key: string
