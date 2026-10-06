@@ -13,8 +13,10 @@ import {
 } from "./sections"
 import { SiteFooter } from "./site-footer"
 import { TopBar } from "./top-bar"
+import { ViewerWhatsappBar } from "./viewer-shell"
 import { WhatsappBar, WhatsappFlowLink } from "./whatsapp-bar"
 
+vi.mock("@/lib/auth/viewer-role", () => ({ getViewerRole: vi.fn() }))
 vi.mock("next/navigation", () => ({
   usePathname: () => "/gallery",
 }))
@@ -45,6 +47,39 @@ describe("TopBar", () => {
 
   it("has no physical direction classes", () => {
     expect(html).not.toMatch(/\b(ml|mr|pl|pr|left|right)-/)
+  })
+
+  // Story 5.7: the account link follows the viewer's role.
+  it.each([
+    [null, "/login", copy.customerLogin],
+    ["none", "/login", copy.customerLogin],
+    ["customer", "/me", copy.customerArea],
+    ["admin", "/admin", copy.adminArea],
+  ] as const)("role %j links to %s", (role, href, label) => {
+    const bar = renderToStaticMarkup(<TopBar name="biz-name" role={role} />)
+    expect(bar).toMatch(new RegExp(`href="${href}"[^>]*>${label}</a>`))
+    for (const other of [
+      copy.customerLogin,
+      copy.customerArea,
+      copy.adminArea,
+    ]) {
+      if (other !== label) expect(bar).not.toContain(other)
+    }
+  })
+})
+
+describe("ViewerWhatsappBar", () => {
+  it.each([
+    [null, true],
+    ["none", true],
+    ["admin", true],
+    ["customer", false],
+  ] as const)("role %j shows the bar: %s", (role, shown) => {
+    const html = renderToStaticMarkup(
+      <ViewerWhatsappBar href={WA} role={role} />
+    )
+    expect(html.includes("data-whatsapp-bar")).toBe(shown)
+    expect(html.includes(`href="${WA}"`)).toBe(shown)
   })
 })
 

@@ -12,6 +12,8 @@ const copy = shellCopy.public
 // bar is not shown (display: none, so it leaves the tab order and the
 // accessibility tree) and WhatsappFlowLink shows the same link in the flow,
 // before the footer. Without a usable number (href null) neither is shown.
+// A signed-in customer sees neither (story 5.7, components/public/
+// viewer-shell.tsx); the footer keeps room only while the bar is in the page.
 export function WhatsappBar({ href }: { href: string | null }) {
   if (!href) return null
   return (

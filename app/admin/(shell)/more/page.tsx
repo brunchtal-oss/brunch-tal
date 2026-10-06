@@ -3,7 +3,6 @@ import Link from "next/link"
 import { ChevronLeftIcon } from "lucide-react"
 
 import { PageHeading } from "@/components/shared/page-heading"
-import { SignOutButton } from "@/components/shared/sign-out-button"
 import { shellCopy } from "@/lib/copy/shell"
 import { ACCESSIBILITY_HREF, adminMoreNav } from "@/lib/nav"
 
@@ -12,7 +11,8 @@ export const metadata: Metadata = {
 }
 
 // "עוד" gathers the admin screens that are not in the tab bar, one row each
-// (lib/nav.ts › adminMoreNav), the accessibility statement, then sign-out. The site is RTL
+// (lib/nav.ts › adminMoreNav), then the accessibility statement; sign-out is
+// in the top-bar. The site is RTL
 // only, so the chevron points to the inline end.
 
 export default function AdminMorePage() {
@@ -43,7 +43,6 @@ export default function AdminMorePage() {
       >
         {shellCopy.public.footer.accessibility}
       </Link>
-      <SignOutButton className="max-w-xs" />
     </>
   )
 }

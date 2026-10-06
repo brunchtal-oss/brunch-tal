@@ -7,6 +7,8 @@
 //   screen reader:    "יום שני, 12 באוקטובר, 10:00"
 //   <time datetime>:  "2026-10-12"
 
+import { shellCopy } from "./copy/shell"
+
 export const TIME_ZONE = "Asia/Jerusalem"
 
 export type DateInput = Date | string
@@ -181,4 +183,23 @@ function parsePlainDate(date: string) {
     return null
   }
   return { year, month, day, utc }
+}
+
+/**
+ * A notification's time (story 5.7), by the Jerusalem calendar day:
+ * "<today>, HH:MM", "<yesterday>, HH:MM", or "DD.MM" for anything older
+ * (or later than now, e.g. a clock skew). The words come from shellCopy.
+ * `now` is a parameter for tests.
+ */
+export function formatNotificationTime(
+  value: DateInput,
+  now: DateInput = new Date()
+): string {
+  const day = formatLocalDate(value)
+  const today = parsePlainDate(formatLocalDate(now))!
+  const yesterday = new Date(today.utc - 86_400_000).toISOString().slice(0, 10)
+  const words = shellCopy.notifications.time
+  if (day === formatLocalDate(now)) return words.today(formatTime(value))
+  if (day === yesterday) return words.yesterday(formatTime(value))
+  return formatDayMonth(value)
 }

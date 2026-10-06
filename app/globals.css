@@ -249,6 +249,21 @@ html:has([data-whatsapp-bar]) {
     scroll-padding-bottom: 0;
   }
 }
+/*
+ * Room for the fixed whatsapp-bar (48px + 16px from the edge + safe area,
+ * plus air) inside the footer's band, so its text ends above the bar and the
+ * band reaches the bottom of the screen. Only while the bar is shown (story
+ * 5.7: not for a signed-in customer), and none when the bar is in the flow
+ * (short window).
+ */
+body:has([data-whatsapp-bar]) [data-site-footer] {
+  padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+}
+@media (max-height: 479.98px) {
+  body:has([data-whatsapp-bar]) [data-site-footer] {
+    padding-bottom: 0;
+  }
+}
 /* On the olive top-bar the ring is on-primary, so it shows on the bar. */
 [data-top-bar] :focus-visible {
   outline-color: var(--primary-foreground);

@@ -8,6 +8,7 @@ import {
   formatFullDate,
   formatLocalDate,
   formatMonthYear,
+  formatNotificationTime,
   formatSessionDateTime,
   formatTime,
   formatWeekday,
@@ -172,4 +173,38 @@ describe("lib/time", () => {
       expect(() => formatTime(value)).toThrow(RangeError)
     }
   )
+})
+
+// Story 5.7: a notification's time by the Jerusalem calendar day.
+describe("formatNotificationTime", () => {
+  const now = "2026-10-06T09:00:00Z" // 12:00 in Jerusalem
+
+  it("says today, yesterday, or the date", () => {
+    expect(formatNotificationTime("2026-10-06T05:15:00Z", now)).toBe(
+      "היום, 08:15"
+    )
+    expect(formatNotificationTime("2026-10-05T20:59:00Z", now)).toBe(
+      "אתמול, 23:59"
+    )
+    // 21:00Z on the 5th is already the 6th in Jerusalem.
+    expect(formatNotificationTime("2026-10-05T21:00:00Z", now)).toBe(
+      "היום, 00:00"
+    )
+    expect(formatNotificationTime("2026-10-04T20:59:00Z", now)).toBe("04.10")
+    expect(formatNotificationTime("2026-10-07T08:00:00Z", now)).toBe("07.10")
+  })
+
+  it("keeps the calendar days on the 25-hour day when summer time ends", () => {
+    // 2026-10-25: clocks go back at 02:00; 23:30 local is 21:30Z.
+    const lateOnLongDay = "2026-10-25T21:30:00Z"
+    expect(formatNotificationTime("2026-10-24T21:30:00Z", lateOnLongDay)).toBe(
+      "היום, 00:30"
+    )
+    expect(formatNotificationTime("2026-10-24T19:00:00Z", lateOnLongDay)).toBe(
+      "אתמול, 22:00"
+    )
+    expect(formatNotificationTime("2026-10-23T19:00:00Z", lateOnLongDay)).toBe(
+      "23.10"
+    )
+  })
 })

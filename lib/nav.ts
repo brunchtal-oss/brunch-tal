@@ -88,6 +88,23 @@ export function currentPublicHref(
   return match?.href ?? null
 }
 
+// The account link of the public top-bar and menu-sheet (story 5.7, from
+// deferred-work): a signed-in customer goes to her area, an admin to the
+// panel, anyone else (a guest, the fallback while the role streams in) to the
+// login. `role` is get_my_session_role()'s value, or null for a guest.
+export function publicAccountLink(role: string | null): {
+  href: string
+  label: string
+} {
+  if (role === "customer") {
+    return { href: "/me", label: shellCopy.public.customerArea }
+  }
+  if (role === "admin") {
+    return { href: "/admin", label: shellCopy.public.adminArea }
+  }
+  return { href: "/login", label: shellCopy.public.customerLogin }
+}
+
 // The public sessions list (story 5.16), linked from the home page's
 // upcoming sessions. The hero has no button since 5.16 (user's decision
 // 2026-10-05).

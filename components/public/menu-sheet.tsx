@@ -14,7 +14,12 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 import { shellCopy } from "@/lib/copy/shell"
-import { ACCESSIBILITY_HREF, currentPublicHref, publicNav } from "@/lib/nav"
+import {
+  ACCESSIBILITY_HREF,
+  currentPublicHref,
+  publicAccountLink,
+  publicNav,
+} from "@/lib/nav"
 import { cn } from "@/lib/utils"
 
 const copy = shellCopy.public
@@ -25,7 +30,15 @@ const copy = shellCopy.public
 // "תפריט": focus starts on the first page, is trapped, and Esc, the X, the
 // scrim or choosing a page close it. Focus returns to the menu button, except
 // after choosing a page: RouteFocus then moves it to the new page's h1.
-export function MenuSheet({ name }: { name: string }) {
+export function MenuSheet({
+  name,
+  role = null,
+}: {
+  name: string
+  // The viewer's role (story 5.7): the account link at the bottom follows it.
+  role?: string | null
+}) {
+  const account = publicAccountLink(role)
   const [open, setOpen] = useState(false)
   const firstLink = useRef<HTMLAnchorElement>(null)
   const navigating = useRef(false)
@@ -79,7 +92,7 @@ export function MenuSheet({ name }: { name: string }) {
         />
         <div className="mt-auto px-6 pt-6">
           <Link
-            href="/login"
+            href={account.href}
             onClick={() => {
               navigating.current = true
               setOpen(false)
@@ -89,7 +102,7 @@ export function MenuSheet({ name }: { name: string }) {
               "h-12 w-full rounded-[4px] px-[22px] text-base font-semibold"
             )}
           >
-            {copy.customerLogin}
+            {account.label}
           </Link>
           {/* The accessibility statement, always linked (story 5.5). */}
           <AccessibilityLink

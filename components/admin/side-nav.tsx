@@ -9,22 +9,21 @@ import { cn } from "@/lib/utils"
 
 // Admin navigation from lg (DESIGN.md › side-nav): 240px, card background,
 // border at inline-end; the current item on muted with an olive bar at
-// inline-start. `footer` holds the sign-out form.
+// inline-start. Sticky right under the 64px top-bar, which holds sign-out
+// (story 5.7).
 export function SideNav({
   items,
   label,
-  footer,
 }: {
   items: readonly NavItem[]
   label: string
-  footer: React.ReactNode
 }) {
   const pathname = usePathname()
 
   return (
     <nav
       aria-label={label}
-      className="sticky top-0 hidden h-svh w-60 shrink-0 flex-col justify-between gap-6 border-e border-border bg-card px-3 py-6 lg:flex"
+      className="sticky top-16 hidden h-[calc(100svh-4rem)] w-60 shrink-0 flex-col gap-6 overflow-y-auto border-e border-border bg-card px-3 py-6 lg:flex"
     >
       <ul className="flex flex-col gap-1">
         {items.map((item) => {
@@ -54,7 +53,6 @@ export function SideNav({
           )
         })}
       </ul>
-      {footer}
     </nav>
   )
 }
