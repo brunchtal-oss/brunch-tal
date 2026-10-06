@@ -476,7 +476,10 @@ export const adminCopy = {
     attendees: "מי מגיעה",
     manualBooking: "רישום ידני",
     edit: "עריכה",
-    morningView: "למבט בוקר המפגש",
+    // The session page's link to the work view (user decision 2026-10-06,
+    // story 3.12 phone check). It still opens /day until 4.9 points it at
+    // the work sheet.
+    morningView: "ללשונית העבודה",
     toDetails: "לפרטי המפגש",
     bookForDate: "לרישום לתאריך",
     summary: {

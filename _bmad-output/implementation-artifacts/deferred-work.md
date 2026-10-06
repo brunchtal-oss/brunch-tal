@@ -408,6 +408,11 @@
   summary: ‏`private.job_complete_events` מדלגת על הקצאה מזיכוי (`booking_allocations.credit_id`). כשזיכויים נבנים, סיום מפגש צריך לסמן את הזיכוי שמימן את ההרשמה כמנוצל (`used`), עם בדיקה.
   evidence: ביקורת 3.12 (blind). היום אין זיכויים, ולכן אין הקצאה כזו.
 
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-12-session-completion-job.md`
+  target: 4.9
+  summary: הכפתור בעמוד המפגש באדמין נקרא עכשיו "ללשונית העבודה" (`adminCopy.sessions.morningView`), אבל עדיין פותח את `/admin/sessions/[id]/day`. ‏4.9 מפנה אותו לדף העבודה של המפגש, ו-`/day` מפנה לשם.
+  evidence: החלטת המשתמשת בבדיקת הטלפון של 3.12 (2026-10-06), נרשמה ב-memlog של ה-UX. התכנון של 4.9 ב-`demo-scope-2026-10-04.md`.
+
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-7-in-app-notification-centers.md`
   target: אחרי ההגשה
   summary: לקוחה מחוברת ב-`/sessions` (הרשימה הציבורית) רואה `status-chip` על מפגש שהיא רשומה אליו, כמו ב-`/me/sessions`. צריך לקרוא את ההרשמות שלה ברכיב דינמי בתוך `Suspense`, בלי לשבור את המטמון של הרשימה.
