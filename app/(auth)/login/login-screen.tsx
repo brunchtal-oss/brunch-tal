@@ -3,6 +3,7 @@ import Link from "next/link"
 import { redirect } from "next/navigation"
 
 import { InlineNotice } from "@/components/shared/inline-notice"
+import { LegalLinks } from "@/components/shared/legal-links"
 import { PageHeading } from "@/components/shared/page-heading"
 import { SignOutButton } from "@/components/shared/sign-out-button"
 import { buttonVariants } from "@/components/ui/button"
@@ -28,7 +29,8 @@ type SearchParams = Promise<Record<string, string | string[] | undefined>>
 // has a session is sent on when her role belongs to this page (/login:
 // customer or admin; /admin/login: admin). Otherwise (no active profile, or a
 // customer on /admin/login) a notice above the form offers sign-out, so the
-// guard of /me or /admin never loops back here.
+// guard of /me or /admin never loops back here. Under the form, the links to
+// the privacy policy and the accessibility statement (story 5.5).
 export function LoginScreen({
   area,
   searchParams,
@@ -41,6 +43,10 @@ export function LoginScreen({
       <PageHeading>{loginTitle(area)}</PageHeading>
       <Suspense fallback={<LoginForm next={null} />}>
         <LoginBody area={area} searchParams={searchParams} />
+      </Suspense>
+      {/* Under the form: privacy and accessibility (story 5.5). */}
+      <Suspense fallback={null}>
+        <LegalLinks only={["privacy", "accessibility"]} />
       </Suspense>
     </>
   )

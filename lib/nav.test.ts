@@ -11,7 +11,9 @@ import {
   customerNav,
   hasPublicSessions,
   isCurrent,
+  publicLegalNav,
   publicNav,
+  visibleLegalNav,
 } from "./nav"
 
 const APP = fileURLToPath(new URL("../app/", import.meta.url))
@@ -39,9 +41,13 @@ describe("navigation", () => {
   const existing = routes()
 
   it.each(
-    [...customerNav, ...adminNav, ...adminMoreNav, ...publicNav].map((item) => [
-      item.href,
-    ])
+    [
+      ...customerNav,
+      ...adminNav,
+      ...adminMoreNav,
+      ...publicNav,
+      ...publicLegalNav,
+    ].map((item) => [item.href])
   )("%s has a page.tsx", (href) => {
     expect(existing.has(href)).toBe(true)
   })
@@ -112,5 +118,20 @@ describe("navigation", () => {
     expect(isCurrent(adminNav, home, "/admin/links")).toBe(false)
     expect(isCurrent(adminNav, more, "/admin/content/home/preview")).toBe(true)
     expect(isCurrent(adminNav, home, "/admin/content")).toBe(false)
+  })
+
+  it("shows the accessibility statement always, privacy and terms once published (story 5.5)", () => {
+    const hrefs = (items: { href: string }[]) => items.map((i) => i.href)
+    expect(hrefs(visibleLegalNav([]))).toEqual(["/accessibility"])
+    expect(hrefs(visibleLegalNav(["privacy"]))).toEqual([
+      "/privacy",
+      "/accessibility",
+    ])
+    expect(
+      hrefs(visibleLegalNav(["privacy", "terms", "accessibility"]))
+    ).toEqual(["/terms", "/privacy", "/accessibility"])
+    expect(
+      hrefs(visibleLegalNav(["privacy", "terms"], ["privacy", "accessibility"]))
+    ).toEqual(["/privacy", "/accessibility"])
   })
 })

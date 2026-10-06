@@ -27,6 +27,7 @@ import {
 import {
   fieldErrorMessage,
   fieldErrors,
+  missingStatementFields,
   sameContent,
   type ContentObject,
   type EditableSlug,
@@ -87,7 +88,12 @@ export function ContentEditor({
   backHref = "/admin/content",
   backLabel = copy.backToList,
   previewUrls = {},
+  statementBlock = false,
 }: {
+  // The accessibility statement before its first publish (story 5.5):
+  // "publish" is aria-disabled, with the list of the missing required
+  // fields above it, while the form lacks one.
+  statementBlock?: boolean
   // Signed URLs of the saved images' draft files, by media id (story 5.4).
   previewUrls?: Record<string, string>
   slug: EditableSlug
@@ -367,6 +373,20 @@ export function ContentEditor({
     setFocusTarget(next ? `item-${next.id}` : "list-heading")
   }
 
+  // The statement's missing required fields, live from the form (story
+  // 5.5), with their labels; publishing waits for them.
+  const missing = statementBlock
+    ? missingStatementFields(content).map((name) => ({
+        name,
+        label:
+          spec.fields.find(
+            (field): field is TextField =>
+              field.type === "text" && field.name === name
+          )?.label ?? name,
+      }))
+    : []
+  const blocked = missing.length > 0
+
   return (
     <form
       ref={formRef}
@@ -474,15 +494,42 @@ export function ContentEditor({
         </div>
       )}
 
+      {blocked && (
+        <InlineNotice
+          tone="warning"
+          actions={
+            <ul className="flex flex-wrap justify-center gap-x-4">
+              {missing.map((field) => (
+                <li key={field.name}>
+                  <a
+                    href={`#${fieldId(field.name)}`}
+                    onClick={(event) => {
+                      event.preventDefault()
+                      document.getElementById(fieldId(field.name))?.focus()
+                    }}
+                    className="inline-flex min-h-11 items-center underline underline-offset-4"
+                  >
+                    {field.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          }
+        >
+          <span id="publish-blocked">{copy.statement.blocked}</span>
+        </InlineNotice>
+      )}
+
       <div className="flex flex-col gap-3 sm:flex-row-reverse sm:justify-end">
-        {canPublish && (
+        {(canPublish || blocked) && (
           <Button
             type="button"
             size="lg"
-            onClick={publish}
-            className={`${BUTTON} rounded-[4px]`}
+            onClick={blocked ? undefined : publish}
+            className={`${BUTTON} rounded-[4px] aria-disabled:opacity-50`}
             aria-busy={busyWith === "publish" || undefined}
-            aria-disabled={busy || undefined}
+            aria-disabled={busy || blocked || undefined}
+            aria-describedby={blocked ? "publish-blocked" : undefined}
           >
             {busyWith === "publish" && <Spinner aria-hidden />}
             {copy.publish}
@@ -603,7 +650,11 @@ function TextInput({
     <Field data-invalid={error ? true : undefined}>
       <FieldLabel htmlFor={id}>{field.label}</FieldLabel>
       {field.multiline ? (
-        <Textarea {...common} rows={4} className="min-h-28 text-base" />
+        <Textarea
+          {...common}
+          rows={field.large ? 18 : 4}
+          className={cn("text-base", field.large ? "min-h-96" : "min-h-28")}
+        />
       ) : (
         <Input
           {...common}

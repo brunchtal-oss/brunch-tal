@@ -8,7 +8,7 @@ import { getPhotoConsentContent } from "@/lib/content/join-form"
 import { getPublishedPageSlugs } from "@/lib/content/pages"
 import { customerCopy } from "@/lib/copy/customer"
 import { shellCopy } from "@/lib/copy/shell"
-import { publicLegalNav } from "@/lib/nav"
+import { publicLegalNav, visibleLegalNav } from "@/lib/nav"
 import { formatLocalPhone } from "@/lib/phone"
 import { createClient } from "@/lib/supabase/server"
 import { localToday } from "@/lib/time"
@@ -24,10 +24,9 @@ export const metadata: Metadata = {
 
 const copy = customerCopy.profile
 
-// The legal pages linked at the bottom of the profile, once published.
-const PROFILE_LEGAL = publicLegalNav.filter(
-  (item) => item.slug === "privacy" || item.slug === "accessibility"
-)
+// The legal pages linked at the bottom of the profile (story 5.5): the
+// accessibility statement always, privacy once published.
+const PROFILE_LEGAL = ["privacy", "accessibility"] as const
 
 // The customer's profile (story 2.10, CAP-8, CAP-40): her details (name and
 // dietary notes to edit, phone and email to read), her babies, the photo
@@ -67,7 +66,7 @@ async function Profile() {
         .order("birth_date")
         .order("created_at"),
       getPhotoConsentContent(),
-      getPublishedPageSlugs(PROFILE_LEGAL.map((item) => item.slug)),
+      getPublishedPageSlugs(publicLegalNav.map((item) => item.slug)),
     ])
   if (profileResult.error || babiesResult.error || !profileResult.data) {
     throw new Error("profile read failed")
@@ -101,7 +100,7 @@ async function Profile() {
         <ul className="flex flex-col divide-y divide-border border-y border-border">
           {[
             { href: "/install", label: copy.installGuide },
-            ...PROFILE_LEGAL.filter((item) => legalSlugs.includes(item.slug)),
+            ...visibleLegalNav(legalSlugs, PROFILE_LEGAL),
           ].map((item) => (
             <li key={item.href}>
               <Link

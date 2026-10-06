@@ -68,6 +68,7 @@ export function JoinForm({
   amountAgorot,
   photoConsent,
   today,
+  privacyHref = null,
 }: {
   token: string
   idempotencyKey: string
@@ -80,6 +81,8 @@ export function JoinForm({
   amountAgorot: number | null
   photoConsent: PhotoConsentContent
   today: string
+  // The published privacy policy (story 5.5); null: the label is text.
+  privacyHref?: string | null
 }) {
   const [state, formAction, pending] = useActionState<JoinFormState, FormData>(
     submitJoinAction,
@@ -445,7 +448,23 @@ export function JoinForm({
             className="mt-0.5 size-5 shrink-0 accent-primary"
           />
           <label htmlFor="privacy" className="text-base">
-            {joinCopy.privacyConsent} {authCopy.required}
+            {privacyHref ? (
+              <>
+                {joinCopy.privacyConsentLead}
+                <a
+                  href={privacyHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold underline underline-offset-4"
+                >
+                  {joinCopy.privacyConsentLink}
+                  <span className="sr-only"> {joinCopy.opensOutside}</span>
+                </a>
+              </>
+            ) : (
+              joinCopy.privacyConsent
+            )}{" "}
+            {authCopy.required}
           </label>
         </div>
         {privacy.error && (

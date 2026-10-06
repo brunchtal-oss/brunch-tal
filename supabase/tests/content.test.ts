@@ -33,6 +33,13 @@ describe("content", () => {
     ["authenticated", (db: Db) => asAuthenticated(db, randomUUID())],
   ])("%s sees published pages only", async (_role, act) => {
     await inRollback(async (db) => {
+      // Privacy is editable since 5.5: from the migration's state (not
+      // published), whatever the shared dev database holds.
+      await db.query(
+        `update public.content_pages
+         set published_content = null, published_at = null
+         where slug = 'privacy'`
+      )
       await act(db)
       const { rows: privacy } = await db.query(
         `${PAGES} where slug = 'privacy'`
@@ -112,6 +119,12 @@ describe("content", () => {
   it("hides a published section of an unpublished page", async () => {
     await inRollback(async (db) => {
       const key = testName("under_privacy").toLowerCase()
+      // Privacy is editable since 5.5: back to not published.
+      await db.query(
+        `update public.content_pages
+         set published_content = null, published_at = null
+         where slug = 'privacy'`
+      )
       await db.query(
         `insert into public.content_sections
            (page_slug, key, kind, published_content, published_at)

@@ -396,7 +396,7 @@ describe("publishContentAction", () => {
   })
 
   it.each([
-    ["an unknown page", { slug: "privacy", idempotencyKey: KEY }],
+    ["an unknown page", { slug: "join", idempotencyKey: KEY }],
     [
       "an editor page that is not a slug",
       { slug: "toString", idempotencyKey: KEY },

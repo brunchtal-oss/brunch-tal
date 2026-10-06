@@ -1,6 +1,9 @@
 import type { z } from "zod"
 
-import { schemaForSection } from "@/lib/content/schema"
+import {
+  ACCESSIBILITY_REQUIRED_FIELDS,
+  schemaForSection,
+} from "@/lib/content/schema"
 import { adminCopy } from "@/lib/copy/admin"
 
 // The content editor's view of admin_get_content_page (stories 5.1, 5.3) and
@@ -38,6 +41,16 @@ export const EDITABLE_PAGES = {
     { slug: "join-form", key: "photo_consent", kind: "photo_consent" },
   ],
   site: [{ slug: "site", key: "footer", kind: "footer" }],
+  // Story 5.5: the legal pages, one block each.
+  privacy: [{ slug: "privacy", key: "body", kind: "legal_text" }],
+  terms: [{ slug: "terms", key: "body", kind: "legal_text" }],
+  accessibility: [
+    {
+      slug: "accessibility",
+      key: "statement",
+      kind: "accessibility_statement",
+    },
+  ],
 } as const satisfies Record<string, readonly SectionRef[]>
 
 export type EditorPageId = keyof typeof EDITABLE_PAGES
@@ -57,6 +70,9 @@ export const EDITABLE_SLUGS = [
   "contact",
   "join-form",
   "site",
+  "privacy",
+  "terms",
+  "accessibility",
 ] as const
 
 export type EditableSlug = (typeof EDITABLE_SLUGS)[number]
@@ -224,6 +240,7 @@ export type FieldError =
   | { kind: "tooLong"; max: number }
   | { kind: "phone" }
   | { kind: "url" }
+  | { kind: "email" }
   | { kind: "invalid" }
 
 // The first error of each field, from the section's schema
@@ -261,7 +278,11 @@ function toFieldError(issue: z.core.$ZodIssue): FieldError {
     case "invalid_type":
       return { kind: "required" }
     case "invalid_format":
-      return issue.format === "url" ? { kind: "url" } : { kind: "invalid" }
+      return issue.format === "url"
+        ? { kind: "url" }
+        : issue.format === "email"
+          ? { kind: "email" }
+          : { kind: "invalid" }
     case "custom":
       return { kind: "phone" }
     default:
@@ -283,4 +304,28 @@ export function sectionSummary(content: ContentObject): string {
     }
   }
   return ""
+}
+
+// The accessibility statement's block (story 5.5).
+export const STATEMENT_REF: SectionRef = {
+  slug: "accessibility",
+  key: "statement",
+  kind: "accessibility_statement",
+}
+
+// The required fields of the statement that this content lacks (or that are
+// not valid), in the editor's order.
+export function missingStatementFields(content: unknown): string[] {
+  const errors = fieldErrors(STATEMENT_REF, content ?? {}) ?? {}
+  return ACCESSIBILITY_REQUIRED_FIELDS.filter((name) => name in errors)
+}
+
+// Publishing the statement is blocked (EXPERIENCE › admin states) while it
+// was never published and its saved draft lacks a required field: those
+// fields, else [] (not blocked; another invalid field is refused by the
+// publish action like any draft).
+export function statementPublishBlock(page: ContentPage): string[] {
+  const section = sectionOf(page, STATEMENT_REF.key)
+  if (!section || section.published_content) return []
+  return missingStatementFields(section.draft_content)
 }

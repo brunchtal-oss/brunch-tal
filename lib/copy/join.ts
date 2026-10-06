@@ -25,6 +25,11 @@ export const joinCopy = {
   password: "סיסמה",
   confirmPassword: "אישור סיסמה",
   privacyConsent: "קראתי ואני מסכימה למדיניות הפרטיות",
+  // Once the policy is published (story 5.5), "מדיניות הפרטיות" in the
+  // label is a link to it (a new tab).
+  privacyConsentLead: "קראתי ואני מסכימה ל",
+  privacyConsentLink: "מדיניות הפרטיות",
+  opensOutside: "(נפתח בחלון חדש)",
   submit: "יצירת החשבון",
   used: "הקישור הזה כבר שימש ליצירת חשבון",
   // Joined, but the sign-in right after it failed.

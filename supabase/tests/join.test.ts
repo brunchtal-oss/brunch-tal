@@ -225,13 +225,18 @@ describe("join", () => {
       )
       expect(profiles).toHaveLength(1)
       const p = profiles[0]
+      // The privacy policy is editable since 5.5, so the shared dev database
+      // may hold a published version.
+      const { rows: privacy } = await db.query(
+        "select published_version from public.content_pages where slug = 'privacy'"
+      )
       expect(p).toMatchObject({
         full_name: testName("joiner"),
         phone_e164: e164(phone),
         dietary_notes: null,
         photo_consent: false,
         photo_consent_text_version: 0,
-        privacy_policy_version: 0,
+        privacy_policy_version: privacy[0].published_version,
         anonymized_at: null,
       })
       expect(p.activated_at).not.toBeNull()
@@ -759,6 +764,48 @@ describe("join", () => {
         [a.paymentId]
       )
       expect(rows[0].customer_id).toBe(a.f.customerA)
+    })
+  })
+
+  it("stores the privacy policy version published at join time, after a second publish (5.5)", async () => {
+    await inRollback(async (db) => {
+      const a = await approveCard(db)
+      // From the migration's state: privacy never published, version 0.
+      await db.query(
+        `update public.content_pages
+         set published_content = null, published_at = null, published_version = 0
+         where slug = 'privacy'`
+      )
+      await db.query(
+        `update public.content_sections
+         set draft_content = null, published_content = null, published_at = null
+         where page_slug = 'privacy'`
+      )
+      const publish = async (body: string) => {
+        await asAuthenticated(db, a.f.admin)
+        await db.query(
+          "select public.admin_set_content_draft('privacy', 'body', $1::jsonb)",
+          // privacy › body is legal_text since the phone check: {body}.
+          [JSON.stringify({ body: `## ${testName("h")}\n\n${body}` })]
+        )
+        const { rows } = await db.query(
+          "select public.admin_publish_content('privacy', $1) as r",
+          [randomUUID()]
+        )
+        await db.query("reset role")
+        return rows[0].r.published_version as number
+      }
+      expect(await publish("first")).toBe(1)
+      expect(await publish("second")).toBe(2)
+      // Publishing the same text again does not raise the version.
+      expect(await publish("second")).toBe(2)
+
+      const { userId } = await join(db, a)
+      const { rows } = await db.query(
+        "select privacy_policy_version from public.profiles where id = $1",
+        [userId]
+      )
+      expect(rows[0].privacy_policy_version).toBe(2)
     })
   })
 })

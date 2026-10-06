@@ -12,7 +12,7 @@ import {
   sectionContent,
 } from "@/lib/content/pages"
 import { shellCopy } from "@/lib/copy/shell"
-import { publicLegalNav } from "@/lib/nav"
+import { publicLegalNav, visibleLegalNav } from "@/lib/nav"
 import { cn } from "@/lib/utils"
 
 // Public shell (AD-2, story 5.2): the sticky top-bar with the menu-sheet,
@@ -20,8 +20,9 @@ import { cn } from "@/lib/utils"
 // a 480px window height) and the footer. The business name, the WhatsApp
 // link and the footer's contact lines come from the published business
 // details (content:global), read from the cache with the anon client;
-// without them the WORDMARK and no bar. The footer links to a legal page
-// once it is published, and shows the visible links of site › footer
+// without them the WORDMARK and no bar. The footer links to the
+// accessibility statement always and to privacy and terms once published
+// (visibleLegalNav, story 5.5), and shows the visible links of site › footer
 // (content:site, content:global; story 5.3).
 export default async function PublicLayout({
   children,
@@ -48,7 +49,7 @@ export default async function PublicLayout({
       <WhatsappFlowLink href={whatsappHref} />
       <SiteFooter
         details={details}
-        legal={publicLegalNav.filter((item) => legalSlugs.includes(item.slug))}
+        legal={visibleLegalNav(legalSlugs)}
         links={footerLinks}
         className={cn(
           // Room for the fixed whatsapp-bar (48px + 16px from the edge +

@@ -14,7 +14,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 import { shellCopy } from "@/lib/copy/shell"
-import { currentPublicHref, publicNav } from "@/lib/nav"
+import { ACCESSIBILITY_HREF, currentPublicHref, publicNav } from "@/lib/nav"
 import { cn } from "@/lib/utils"
 
 const copy = shellCopy.public
@@ -91,9 +91,35 @@ export function MenuSheet({ name }: { name: string }) {
           >
             {copy.customerLogin}
           </Link>
+          {/* The accessibility statement, always linked (story 5.5). */}
+          <AccessibilityLink
+            onChoose={(samePage) => {
+              navigating.current = !samePage
+              setOpen(false)
+            }}
+          />
         </div>
       </SheetContent>
     </Sheet>
+  )
+}
+
+// The accessibility statement's link under the login button. Rendered only
+// while the sheet is open, like MenuLinks (the pathname is read there).
+function AccessibilityLink({
+  onChoose,
+}: {
+  onChoose: (samePage: boolean) => void
+}) {
+  const pathname = usePathname()
+  return (
+    <Link
+      href={ACCESSIBILITY_HREF}
+      onClick={() => onChoose(pathname === ACCESSIBILITY_HREF)}
+      className="mt-3 flex min-h-11 items-center justify-center text-[15px] underline underline-offset-[3px]"
+    >
+      {copy.footer.accessibility}
+    </Link>
   )
 }
 

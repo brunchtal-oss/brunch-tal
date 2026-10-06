@@ -4,6 +4,10 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
 import {
+  AccessibilityView,
+  LegalTextView,
+} from "@/components/public/legal-views"
+import {
   ContactView,
   GalleryView,
   HomeView,
@@ -27,11 +31,12 @@ import {
   type PublishedSections,
 } from "@/lib/content/pages"
 import { visibleImages } from "@/lib/content/visible"
+import { whatsappHref as plainWhatsappHref } from "@/lib/content/whatsapp"
 import { adminCopy } from "@/lib/copy/admin"
 import { joinCopy } from "@/lib/copy/join"
 import { shellCopy } from "@/lib/copy/shell"
 import { draftImageMap } from "@/lib/media/drafts"
-import { publicLegalNav } from "@/lib/nav"
+import { publicLegalNav, visibleLegalNav } from "@/lib/nav"
 import { createClient } from "@/lib/supabase/server"
 
 import {
@@ -39,11 +44,14 @@ import {
   isEditorPageId,
   sectionRefOf,
   slugsOf,
+  STATEMENT_REF,
+  statementPublishBlock,
   type ContentPage,
   type EditorPageId,
 } from "../../content-items"
 import { loadContentPages } from "../../load-page"
 import { PreviewBar } from "../../preview-bar"
+import { fieldId, sectionSpec, type TextField } from "../../section-fields"
 
 export const metadata: Metadata = {
   title: adminCopy.content.previewTitle,
@@ -126,12 +134,34 @@ async function Preview({
 
   return (
     <div className="flex min-h-[70svh] flex-col">
-      <PreviewBar backHref={back} pending={pending} />
+      <PreviewBar
+        backHref={back}
+        pending={pending}
+        blocked={
+          id === "accessibility" ? statementBlocked(pages.accessibility) : []
+        }
+      />
       <div className="-mx-6 flex flex-1 flex-col border-b border-border pb-12">
         <PageView id={id} pages={pages} />
       </div>
     </div>
   )
+}
+
+// The statement's missing required fields before its first publish (story
+// 5.5), each linking to its field in the section's editor.
+function statementBlocked(
+  page: ContentPage
+): { label: string; href: string }[] {
+  const fields = sectionSpec(STATEMENT_REF).fields
+  return statementPublishBlock(page).map((name) => ({
+    label:
+      fields.find(
+        (field): field is TextField =>
+          field.type === "text" && field.name === name
+      )?.label ?? name,
+    href: `/admin/content/accessibility/${STATEMENT_REF.key}#${fieldId(name)}`,
+  }))
 }
 
 async function PageView({
@@ -209,6 +239,33 @@ async function PageView({
         </div>
       )
     }
+    // Story 5.5: the legal pages. "Last updated" is the current publish.
+    case "privacy":
+    case "terms":
+      return (
+        <LegalTextView
+          title={shellCopy.public.footer[id]}
+          content={sectionContent(
+            previewSections(pages[id]),
+            "body",
+            "legal_text"
+          )}
+          publishedAt={pages[id].published_at}
+          whatsappHref={plainWhatsappHref(details?.whatsapp_phone)}
+        />
+      )
+    case "accessibility":
+      return (
+        <AccessibilityView
+          content={sectionContent(
+            previewSections(pages.accessibility),
+            "statement",
+            "accessibility_statement"
+          )}
+          publishedAt={pages.accessibility.published_at}
+          details={details}
+        />
+      )
     case "site": {
       const legalSlugs = await getPublishedPageSlugs(
         publicLegalNav.map((item) => item.slug)
@@ -217,9 +274,7 @@ async function PageView({
         <div className="flex flex-1 flex-col justify-end">
           <SiteFooter
             details={details}
-            legal={publicLegalNav.filter((item) =>
-              legalSlugs.includes(item.slug)
-            )}
+            legal={visibleLegalNav(legalSlugs)}
             links={
               sectionContent(previewSections(pages.site), "footer", "footer")
                 ?.items ?? []

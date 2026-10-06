@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  ACCESSIBILITY_REQUIRED_FIELDS,
+  accessibilityStatementSchema,
   businessDetailsSchema,
   faqSchema,
   footerSchema,
   heroSchema,
+  legalTextSchema,
   photoConsentSchema,
   schemaForKind,
   schemaForSection,
@@ -260,4 +263,79 @@ describe("schemaForKind", () => {
       expect(schemaForKind(kind)).toBeNull()
     }
   )
+})
+
+// Story 5.5: the legal pages (one text field, user decision 2026-10-06).
+describe("legalTextSchema", () => {
+  it("needs the body, up to 50000 characters", () => {
+    expect(legalTextSchema.safeParse({ body: "## a\n\nb" }).success).toBe(true)
+    expect(legalTextSchema.safeParse({ body: " " }).success).toBe(false)
+    expect(legalTextSchema.safeParse({}).success).toBe(false)
+    expect(legalTextSchema.safeParse({ body: "x".repeat(50001) }).success).toBe(
+      false
+    )
+  })
+
+  it("drops a hidden flag, so a legal text cannot be hidden", () => {
+    expect(legalTextSchema.parse({ hidden: true, body: "b" })).toEqual({
+      body: "b",
+    })
+  })
+
+  it("is the schema of the kind; legal_sections is gone", () => {
+    expect(schemaForKind("legal_text")).toBe(legalTextSchema)
+    expect(schemaForKind("legal_sections")).toBeNull()
+  })
+})
+
+describe("accessibilityStatementSchema", () => {
+  const statement = {
+    body: "## h\n\ntext",
+    contact_name: "n",
+    contact_phone: "054-4256456",
+    contact_email: "a@example.com",
+  }
+
+  it("parses the required fields alone", () => {
+    expect(accessibilityStatementSchema.safeParse(statement).success).toBe(true)
+  })
+
+  it.each(ACCESSIBILITY_REQUIRED_FIELDS)("refuses without %s", (field) => {
+    expect(
+      accessibilityStatementSchema.safeParse({ ...statement, [field]: "" })
+        .success
+    ).toBe(false)
+  })
+
+  it("refuses an invalid email and phone", () => {
+    expect(
+      accessibilityStatementSchema.safeParse({
+        ...statement,
+        contact_email: "not-an-email",
+      }).success
+    ).toBe(false)
+    expect(
+      accessibilityStatementSchema.safeParse({
+        ...statement,
+        contact_phone: "abc",
+      }).success
+    ).toBe(false)
+  })
+
+  it("keeps only the four fields (old fields and hidden are dropped)", () => {
+    const parsed = accessibilityStatementSchema.parse({
+      ...statement,
+      hidden: true,
+      intro: "i",
+      conformance_level: "AA",
+      contact_note: "note",
+    })
+    expect(parsed).toEqual(statement)
+    expect(
+      accessibilityStatementSchema.safeParse({
+        ...statement,
+        body: "x".repeat(50001),
+      }).success
+    ).toBe(false)
+  })
 })

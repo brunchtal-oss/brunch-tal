@@ -79,6 +79,12 @@ const ROWS: Record<AttentionKind, AttentionRow> = {
     customer_label: null,
     since: SINCE,
   },
+  accessibility_unpublished: {
+    kind: "accessibility_unpublished",
+    id: "accessibility",
+    customer_label: null,
+    since: SINCE,
+  },
 }
 
 describe("toAttentionItem", () => {
@@ -137,6 +143,13 @@ describe("toAttentionItem", () => {
         title: "תמונה לא פורסמה עד הסוף",
         detail: "הפרסום נעצר באמצע. כדי לסיים, פרסמי שוב את העמוד בתוכן האתר",
         chip: "תקוע",
+        tone: "warning",
+      },
+      accessibility_unpublished: {
+        href: "/admin/content/accessibility",
+        title: "הצהרת הנגישות עוד לא פורסמה",
+        detail: "זה עמוד חובה באתר. צריך למלא את שדות החובה ולפרסם",
+        chip: "לא פורסם",
         tone: "warning",
       },
     }

@@ -171,6 +171,16 @@ export function toAttentionItem(row: AttentionRow): AttentionItem {
         chip: { tone: "warning", label: c.chip },
       }
     }
+    case "accessibility_unpublished": {
+      const c = copy.items.accessibility_unpublished
+      return {
+        ...base,
+        href: "/admin/content/accessibility",
+        title: c.title(),
+        detail: c.detail,
+        chip: { tone: "warning", label: c.chip },
+      }
+    }
   }
 }
 
