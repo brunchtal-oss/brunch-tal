@@ -736,6 +736,18 @@ export const adminCopy = {
         detail: "זה עמוד חובה באתר. צריך למלא את שדות החובה ולפרסם",
         chip: "לא פורסם",
       },
+      // Push notifications that failed in the last 7 days (story 5.8): one
+      // item for all of them; the notifications themselves are in the
+      // centers.
+      push_failed: {
+        title: (count: number) =>
+          count === 1
+            ? "התראת פוש אחת לא נשלחה השבוע"
+            : `${count} התראות פוש לא נשלחו השבוע`,
+        detail:
+          "ההתראות עצמן נשמרו במרכז ההתראות. אם זה חוזר, צריך לבדוק את הגדרות הפוש של האתר",
+        chip: "לא נשלח",
+      },
     },
     expiring: "כרטיסיות שעומדות לפוג",
     // "{n} כניסות שלא נרשמה אליהן · בתוקף עד DD.MM" (free entries: not

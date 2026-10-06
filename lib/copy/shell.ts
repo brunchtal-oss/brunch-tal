@@ -54,6 +54,29 @@ export const shellCopy = {
       today: (time: string) => `היום, ${time}`,
       yesterday: (time: string) => `אתמול, ${time}`,
     },
+    // The push card above the list (story 5.8). The customer's sentence is
+    // EXPERIENCE › push explanation; the button wording is the spec's
+    // (user decision 2026-10-06). Never names Tal.
+    push: {
+      label: "התראות במכשיר",
+      askCustomer: "רוצה שנזכיר לך לפני הבראנץ׳? נשלח רק דברים שחשובים לך",
+      askAdmin: "התראה לטלפון כשמשהו מחכה לטיפול, גם כשהאפליקציה סגורה",
+      enable: "כן, להפעיל התראות",
+      later: "לא עכשיו",
+      on: "התראות פועלות במכשיר הזה",
+      turnOff: "לכבות",
+      off: "התראות כבויות",
+      turnOn: "להפעיל",
+      deniedHelp:
+        "ההתראות חסומות בדפדפן. כדי להפעיל אותן, צריך לאפשר התראות לאתר בהגדרות המכשיר",
+      unsupported:
+        "המכשיר או הדפדפן הזה לא תומכים בהתראות. כל ההתראות מחכות לך כאן",
+      iosInstall:
+        "באייפון התראות מגיעות רק אחרי הוספת האתר למסך הבית. עד אז כל ההתראות מחכות לך כאן",
+      iosInstallLink: "איך מוסיפים למסך הבית",
+      error: "לא הצלחנו להפעיל התראות במכשיר הזה. אפשר לנסות שוב",
+      retry: "לנסות שוב",
+    },
   },
   public: {
     customerLogin: "כניסה לאזור האישי",

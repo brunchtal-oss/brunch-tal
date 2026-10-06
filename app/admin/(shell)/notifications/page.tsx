@@ -3,10 +3,11 @@ import type { Metadata } from "next"
 
 import { NotificationList } from "@/components/shared/notification-list"
 import { PageHeading } from "@/components/shared/page-heading"
+import { PushCard } from "@/components/shared/push-card"
 import { shellCopy } from "@/lib/copy/shell"
 import { loadNotifications } from "@/lib/notifications/load"
 
-import { markRead, markUnread } from "./actions"
+import { markRead, markUnread, registerPush, unregisterPush } from "./actions"
 
 export const metadata: Metadata = {
   title: shellCopy.notifications.title,
@@ -19,7 +20,12 @@ export default function AdminNotificationsPage() {
   return (
     <>
       <PageHeading>{shellCopy.notifications.title}</PageHeading>
-      {/* Story 5.8: the push explanation card goes here, above the list. */}
+      {/* Story 5.8: push on this device, above the list. */}
+      <PushCard
+        surface="admin"
+        register={registerPush}
+        unregister={unregisterPush}
+      />
       <Suspense
         fallback={<p className="text-muted-foreground">{shellCopy.loading}</p>}
       >

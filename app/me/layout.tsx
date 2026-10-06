@@ -2,13 +2,14 @@ import { Suspense } from "react"
 
 import { AppTopBar } from "@/components/shared/app-top-bar"
 import { BottomTabBar } from "@/components/shared/bottom-tab-bar"
+import { PushSync } from "@/components/shared/push-sync"
 import { RoleGate } from "@/components/shared/role-gate"
 import { ShellBell } from "@/components/shared/shell-bell"
 import { SkipLink } from "@/components/shared/skip-link"
 import { shellCopy } from "@/lib/copy/shell"
 import { customerNav } from "@/lib/nav"
 
-import { getUnreadCount } from "./notifications/actions"
+import { getUnreadCount, registerPush } from "./notifications/actions"
 
 // Allowed only here and in /admin/(shell) (AD-16): the route reads the
 // session on every request, so it blocks instead of instant navigation.
@@ -36,7 +37,10 @@ export default function MeLayout({ children }: { children: React.ReactNode }) {
             <p className="text-muted-foreground">{shellCopy.loading}</p>
           }
         >
-          <RoleGate role="customer">{children}</RoleGate>
+          <RoleGate role="customer">
+            <PushSync register={registerPush} />
+            {children}
+          </RoleGate>
         </Suspense>
       </main>
       <BottomTabBar items={customerNav} label={shellCopy.nav.customerLabel} />

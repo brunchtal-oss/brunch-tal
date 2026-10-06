@@ -427,3 +427,18 @@
   target: 5.14
   summary: אין בדיקה שעמוד העורך ועמוד התצוגה המקדימה מעבירים את חסימת הפרסום של הצהרת הנגישות (`editor-page.tsx`, ‏`statementBlocked` ב-preview). החלקים הטהורים והרכיבים עצמם נבדקים.
   evidence: ביקורת 5.5 (2026-10-06). רכיבי שרת שדורשים RSC harness; פעולת הפרסום כבר בודקת את הסכמה בשרת.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-8-push-pipeline-and-permission.md`
+  target: 4.6
+  summary: ‏`admin_anonymize_customer` (הסרת פרטים) מוחק גם את המנויים של הלקוחה ב-`push_subscriptions` (ואיתם `notification_deliveries`, ב-cascade), באותה עסקה. מחיקת המשתמשת ב-Auth כבר מוחקת אותם (`on delete cascade`).
+  evidence: ‏spec 5.8 (Always, ‏`push_subscriptions`): ההרחבה של הסרת הפרטים נשארת ל-4.6.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-8-push-pipeline-and-permission.md`
+  target: סבב העיצוב
+  summary: הגדרות ההתראות בפרופיל (שורה עם קישור לכרטיס הפוש) והצעת הפוש אחרי הרשמה ראשונה מוצלחת ("המקום שלך שמור", EXPERIENCE). ב-5.8 הכרטיס במרכזי ההתראות של `/me` ו-`/admin` הוא המקום היחיד.
+  evidence: החלטת המשתמשת 2026-10-06 באישור spec 5.8 (החלטה 2).
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-8-push-pipeline-and-permission.md`
+  target: 5.10
+  summary: צנרת פוש שלא עובדת (ערכי Vault חסרים או שגויים, ‏`CRON_SECRET` שלא תואם, ‏`app_url` שגוי) לא מופיעה ב"לטיפול": המשימות לא נלקחות, ואחרי 24 שעות נסגרות `skipped`, והענף `push_failed` סופר רק `failed`.
+  evidence: ביקורת 5.8 (blind-hunter). ‏AD-22 מונה ב"לטיפול" ערכי Vault חסרים ו-`private.job_*` שנכשל או לא הצליח בזמן; אפשר לגזור גם `queued` ותיקות או `net._http_response` עם 401/5xx.
