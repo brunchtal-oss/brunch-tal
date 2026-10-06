@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
 import { ConceptHeader } from "@/components/shared/concept-header"
+import { ResultNoticeHost } from "@/components/shared/result-notice"
 import { StatusChip } from "@/components/shared/status-chip"
 import { getWhatsappHref } from "@/lib/content/business-details"
 import { customerCopy } from "@/lib/copy/customer"
@@ -96,7 +97,7 @@ async function SessionContent({ params }: { params: Promise<{ id: string }> }) {
           {session.description}
         </p>
       )}
-      <div className="pb-8">
+      <ResultNoticeHost className="pb-8">
         <BookingPanel
           eventId={session.id}
           title={customerCopy.sessionTitle(session.concept_name)}
@@ -104,7 +105,7 @@ async function SessionContent({ params }: { params: Promise<{ id: string }> }) {
           preview={preview}
           contactHref={contactHref}
         />
-      </div>
+      </ResultNoticeHost>
     </>
   )
 }

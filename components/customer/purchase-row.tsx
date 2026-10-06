@@ -22,6 +22,7 @@ export function PurchaseRow({
   expiresOn,
   status,
   expiredNote = null,
+  awaiting = false,
 }: {
   href: string
   productName: string
@@ -30,6 +31,8 @@ export function PurchaseRow({
   expiresOn: string
   status: string | null
   expiredNote?: React.ReactNode
+  // A returned entry that waits for the next sessions (story 3.6).
+  awaiting?: boolean
 }) {
   return (
     <div className="relative flex flex-col gap-1 py-4 pe-8">
@@ -51,6 +54,8 @@ export function PurchaseRow({
           <div className="relative z-10">{expiredNote}</div>
         ) : status ? (
           <span>{status}</span>
+        ) : awaiting ? (
+          <span>{customerCopy.awaitingSessions}</span>
         ) : (
           <span>
             {customerCopy.validUntil}{" "}

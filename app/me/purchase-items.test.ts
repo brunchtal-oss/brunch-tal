@@ -7,6 +7,7 @@ import {
   entitlementName,
   isEmptyHome,
   isHomeCard,
+  isHomeReturned,
   isOpen,
   parseMyEntitlements,
   pastStatus,
@@ -63,6 +64,8 @@ describe("parseMyEntitlements", () => {
         validityDays: 49,
         pinnedEventId: null,
         paymentId: "pay-1",
+        returned: false,
+        awaitingSessions: false,
       },
     ])
   })
@@ -168,6 +171,42 @@ describe("isEmptyHome", () => {
     expect(isEmptyHome(0, 0)).toBe(true)
     expect(isEmptyHome(1, 0)).toBe(false)
     expect(isEmptyHome(0, 1)).toBe(false)
+    expect(isEmptyHome(0, 0, 1)).toBe(false)
+  })
+})
+
+describe("isHomeReturned (story 3.6)", () => {
+  const returned = {
+    kind: "single",
+    original_units: 1,
+    available: 1,
+    returned: true,
+  }
+  it.each([
+    ["a returned single with its entry", returned, true],
+    ["a waiting one", { ...returned, awaiting_sessions: true }, true],
+    [
+      "booked again (no free entry)",
+      { ...returned, available: 0, reserved: 1 },
+      false,
+    ],
+    [
+      "a pinned single not cancelled",
+      { kind: "single", pinned_event_id: "ev-1", available: 0, reserved: 1 },
+      false,
+    ],
+    ["a card", { returned: true }, false],
+  ] as const)("%s", (_label, change, expected) => {
+    expect(isHomeReturned(entitlement(change))).toBe(expected)
+  })
+
+  it("parses returned and awaiting_sessions", () => {
+    expect(entitlement({ ...returned, awaiting_sessions: true })).toMatchObject(
+      {
+        returned: true,
+        awaitingSessions: true,
+      }
+    )
   })
 })
 

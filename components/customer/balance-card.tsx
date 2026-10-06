@@ -27,6 +27,7 @@ export function BalanceCard({
   expiresOn,
   daysLeft,
   isExpiring = false,
+  awaiting = false,
 }: {
   href: string
   productName: string
@@ -36,6 +37,9 @@ export function BalanceCard({
   expiresOn: string
   daysLeft?: number
   isExpiring?: boolean
+  // A returned entry that waits for the next sessions (story 3.6): the
+  // words in place of the validity.
+  awaiting?: boolean
 }) {
   return (
     <div className="relative flex flex-col gap-3 rounded-lg bg-muted px-4 py-4 pe-10">
@@ -54,16 +58,20 @@ export function BalanceCard({
           <bdi>{customerCopy.bookedOf(reserved, total)}</bdi>
         </p>
         <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[15px] text-muted-foreground">
-          <span>
-            {customerCopy.validUntil}{" "}
-            <time dateTime={formatLocalDate(expiresOn)}>
-              <bdi>{formatDayMonth(expiresOn)}</bdi>
-            </time>
-            {isExpiring && daysLeft !== undefined && (
-              <> · {customerCopy.daysLeft(daysLeft)}</>
-            )}
-          </span>
-          {isExpiring && (
+          {awaiting ? (
+            <span>{customerCopy.awaitingSessions}</span>
+          ) : (
+            <span>
+              {customerCopy.validUntil}{" "}
+              <time dateTime={formatLocalDate(expiresOn)}>
+                <bdi>{formatDayMonth(expiresOn)}</bdi>
+              </time>
+              {isExpiring && daysLeft !== undefined && (
+                <> · {customerCopy.daysLeft(daysLeft)}</>
+              )}
+            </span>
+          )}
+          {isExpiring && !awaiting && (
             <StatusChip tone="warning">{customerCopy.expiring}</StatusChip>
           )}
         </p>

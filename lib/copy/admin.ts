@@ -514,6 +514,36 @@ export const adminCopy = {
       EVENT_FULL: "המפגש מלא. כדי לרשום אותה צריך קודם להעלות את המכסה",
       EVENT_NOT_BOOKABLE: "המפגש לא פורסם, ולכן אי אפשר לרשום אליו",
     } as Record<string, string>,
+    // Cancelling a booking from "מי מגיעה" (story 3.6); the dialog's title
+    // is in lib/admin/sensitive-actions.ts (booking_cancel).
+    cancel: {
+      button: "ביטול",
+      buttonLabel: (name: string) => `ביטול ההרשמה של ${name}`,
+      description: "ההרשמה תבוטל והמקום יתפנה. הלקוחה תקבל הודעה באזור האישי.",
+      // A place held for a new customer (no customer yet): no notification.
+      descriptionNoCustomer: "ההרשמה תבוטל והמקום יתפנה.",
+      customer: "לקוחה",
+      session: "מפגש",
+      returns: "מה יחזור",
+      returnsCard: (product: string) => `כניסה אחת ל${product}`,
+      returnsPinned: (n: number, until: string) =>
+        `כניסה לאחד מ-${n} המפגשים המתאימים הבאים, עד ${until}`,
+      returnsAwaiting: (n: number) =>
+        `כניסה לאחד מ-${n} המפגשים המתאימים הבאים (ממתינה לפרסום מפגשים)`,
+      withinWindow: "ההרשמה בתוך חלון הביטול, והלקוחה לא יכולה לבטל אותה בעצמה",
+      reason: "סיבה (לא חובה)",
+      checkbox: (name: string) =>
+        `אני מאשרת את ביטול ההרשמה של ${name}, ושהביטול יירשם ביומן הפעולות`,
+      confirm: "ביטול ההרשמה",
+      done: (name: string) => `ההרשמה של ${name} בוטלה והמקום התפנה`,
+    },
+    // A refusal of the cancellation, worded for Tal; any other code keeps
+    // errorMessage.
+    cancelRefusal: {
+      MANUAL_HANDLING_REQUIRED:
+        "ההרשמה מומנה משני סוגי כניסה, ולכן את הביטול שלה עושים ידנית",
+      BOOKING_NOT_CANCELLABLE: "ההרשמה כבר לא פעילה. כדאי לרענן את הדף",
+    } as Record<string, string>,
   },
   // value-change-row (story 2.6; EXPERIENCE › Component Patterns).
   valueChange: {

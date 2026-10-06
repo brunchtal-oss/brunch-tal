@@ -29,13 +29,33 @@ describe("parsePreview", () => {
         ok: false,
         code: "REGISTRATION_CLOSED",
         booked: true,
+        booking_id: "b1",
+        funding: "pinned",
+        product_name: "Single",
+        options_count: 2,
         cancel_deadline: "2026-10-10T07:00:00+00:00",
         can_self_cancel: false,
       })
     ).toEqual({
       kind: "booked",
+      bookingId: "b1",
+      funding: "pinned",
+      productName: "Single",
+      optionsCount: 2,
       cancelDeadline: "2026-10-10T07:00:00+00:00",
       canSelfCancel: false,
+    })
+  })
+
+  it("story 3.6: a booked state without funding details falls back to a card", () => {
+    expect(parsePreview({ booked: true, can_self_cancel: true })).toEqual({
+      kind: "booked",
+      bookingId: null,
+      funding: "card",
+      productName: "",
+      optionsCount: 1,
+      cancelDeadline: null,
+      canSelfCancel: true,
     })
   })
 

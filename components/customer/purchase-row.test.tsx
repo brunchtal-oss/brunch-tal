@@ -46,4 +46,13 @@ describe("PurchaseRow", () => {
     expect(html).toContain(formatAgorot(47200))
     expect(html).not.toContain(customerCopy.validUntil)
   })
+
+  it("story 3.6: a waiting returned entry shows the words, never the provisional date", () => {
+    const html = renderToStaticMarkup(
+      <PurchaseRow {...base} expiresOn="2036-10-14" awaiting />
+    )
+    expect(html).toContain(customerCopy.awaitingSessions)
+    expect(html).not.toContain(customerCopy.validUntil)
+    expect(html).not.toContain("14.10")
+  })
 })
