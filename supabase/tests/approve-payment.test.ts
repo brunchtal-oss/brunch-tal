@@ -111,7 +111,7 @@ describe("admin_approve_payment", () => {
         vf: f.today,
         eo: expiresOn,
         pinned_event_id: null,
-        allowed_weekdays: [1, 4],
+        allowed_weekdays: null,
         eligible_event_kind: "regular",
         status: "active",
       })

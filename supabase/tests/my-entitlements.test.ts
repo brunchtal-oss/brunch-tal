@@ -381,4 +381,58 @@ describe("get_my_entitlements", () => {
       expect(usedRow).toMatchObject(await fromMovements(db, card.entitlement))
     })
   })
+
+  it("story 3.12: after the completion job the reserved entry is used, and a card used to the last entry is used up", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const card = await grant(db, f, f.customerA)
+      // Any weekday; three entries already went (one left for the booking).
+      await db.query(
+        "update public.entitlements set allowed_weekdays = null where id = $1",
+        [card.entitlement]
+      )
+      await db.query(
+        `insert into public.entitlement_movements (entitlement_id, action, units)
+         values ($1, 'adjust', -3)`,
+        [card.entitlement]
+      )
+      const event = await insertEvent(db, f, 7)
+      await asAuthenticated(db, f.customerA)
+      const { rows: booked } = await db.query(
+        "select public.book_session($1, $2) as r",
+        [event, randomUUID()]
+      )
+      expect(booked[0].r).toHaveProperty("booking_id")
+      await db.query("reset role")
+
+      let [row] = await mine(db, f.customerA)
+      expect(row).toMatchObject({
+        available: 0,
+        reserved: 1,
+        used: 0,
+        is_used_up: false,
+      })
+
+      // The session ended; the job (as the owner, like pg_cron) completes it.
+      await db.query(
+        `update public.events
+         set registration_closes_at = now() - interval '4 hours',
+             starts_at = now() - interval '3 hours',
+             ends_at = now() - interval '1 hour'
+         where id = $1`,
+        [event]
+      )
+      await db.query("select private.job_complete_events()")
+
+      ;[row] = await mine(db, f.customerA)
+      expect(row).toMatchObject({
+        available: 0,
+        reserved: 0,
+        used: 1,
+        is_expired: false,
+        is_used_up: true,
+      })
+      expect(row).toMatchObject(await fromMovements(db, card.entitlement))
+    })
+  })
 })

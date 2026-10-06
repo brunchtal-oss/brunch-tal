@@ -59,6 +59,22 @@ describe("parsePreview", () => {
     })
   })
 
+  it("story 3.12: her booking of a completed session is the completed state", () => {
+    expect(
+      parsePreview({
+        ok: false,
+        code: "EVENT_COMPLETED",
+        booked: true,
+        booking_id: "b1",
+        can_self_cancel: false,
+      })
+    ).toEqual({ kind: "completed" })
+    // A completed session without her booking stays blocked.
+    expect(
+      parsePreview({ ok: false, code: "EVENT_NOT_BOOKABLE", booked: false })
+    ).toEqual({ kind: "blocked", code: "EVENT_NOT_BOOKABLE" })
+  })
+
   it("a known code is kept; anything else is a server error", () => {
     expect(parsePreview({ ok: false, code: "EVENT_FULL" })).toEqual({
       kind: "blocked",

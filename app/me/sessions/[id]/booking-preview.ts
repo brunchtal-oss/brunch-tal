@@ -25,6 +25,9 @@ export type BookingPreview =
       cancelDeadline: string | null
       canSelfCancel: boolean
     }
+  // A completed session she took part in (story 3.12): no cancel and no
+  // contact.
+  | { kind: "completed" }
   | { kind: "blocked"; code: ErrorCode }
 
 function text(value: unknown): string | null {
@@ -36,6 +39,10 @@ export function parsePreview(data: unknown): BookingPreview {
     typeof data === "object" && data !== null && !Array.isArray(data)
       ? (data as Record<string, unknown>)
       : {}
+
+  if (row.booked === true && row.code === "EVENT_COMPLETED") {
+    return { kind: "completed" }
+  }
 
   if (row.booked === true) {
     return {

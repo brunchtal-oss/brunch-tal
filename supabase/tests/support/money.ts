@@ -34,7 +34,7 @@ export async function insertProduct(
     `insert into public.products (
        name, type, price_agorot, units, validity_mode, validity_days,
        allowed_weekdays, eligible_event_kind, party_size, active)
-     values ($1, $2, $3, $4, $5, $6, '{1,4}', 'regular', 1, $7)
+     values ($1, $2, $3, $4, $5, $6, null, 'regular', 1, $7)
      returning id`,
     [
       testName(values.label),
