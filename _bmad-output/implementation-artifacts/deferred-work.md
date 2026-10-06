@@ -227,6 +227,7 @@
   target: 3.8
   summary: ‏`preview_book_session` מחזיר `EVENT_NOT_BOOKABLE` עם `booked: false` למפגש שאינו `published`, לפני שהוא מחפש את ההרשמה שלה. במפגש שבוטל (3.8) או הסתיים (3.12) עמוד המפגש לא יציג את ההרשמה שלה. צריך לחפש את ההרשמה לפני בדיקת הסטטוס.
   evidence: ביקורת 3.2 (blind, edge). לא בודק עכשיו: עד 3.8 ו-3.12 אין מפגש מבוטל או שהסתיים.
+  status: נסגר למפגש שהסתיים ב-3.12 (2026-10-06): ‏`preview_book_session` מחפש את ההרשמה שלה (`confirmed` או `completed`) לפני בדיקת הסטטוס, ובמפגש `completed` עם הרשמה שלה מחזיר `booked: true` עם `EVENT_COMPLETED`, והעמוד מציג "המפגש הסתיים" ו"השתתפת במפגש". נשאר ל-3.8 למפגש שבוטל (היום עדיין `EVENT_NOT_BOOKABLE` עם `booked: false`).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-2-self-booking-tracer-with-a-card.md`
   target: 3.6
@@ -355,6 +356,7 @@
   target: 3.12
   summary: אחרי סיום מפגש (תנועת `use`), לבדוק שהכניסה עוברת מ"משוריינות" ל"נוצלו" בבית ובפירוט, שכרטיסייה שנוצלה כולה עוברת ל"קודמות", ושהמסך זהה למסך הכרטיסיות הפתוחות של טל.
   evidence: ‏`is_used_up` ו-`used` נבדקו ב-`supabase/tests/my-entitlements.test.ts` בלי סיום מפגש אמיתי, כי 3.12 עוד לא נבנה.
+  status: נסגר ב-3.12 (2026-10-06): ב-`supabase/tests/my-entitlements.test.ts` ‏`private.job_complete_events` מעבירה את הכניסה מ-`reserved` ל-`used` דרך `get_my_entitlements`, וכרטיסייה שנוצלה כולה מקבלת `is_used_up` (הבית והפירוט נגזרים מהמספרים האלה). ההשוואה למסך הכרטיסיות הפתוחות של טל נשארת ל-4.3.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-4-12-personal-area-home-and-entitlements.md`
   target: (בלי יעד)
@@ -379,6 +381,7 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-self-cancel-and-admin-cancel.md`
   summary: ‏`supabase/tests/admin-booking.test.ts` יוצר מפגש בעוד 3 ימים עם כרטיסייה מ-`seedMoney` שתקפה רק בשני ובחמישי, ולכן 4 בדיקות נכשלות ב-`NO_MATCHING_ENTITLEMENT` ברוב ימי השבוע.
   evidence: נמצא בהרצה של 3.6 ב-2026-10-06 (שלישי, המפגש ביום שישי). ‏`support/money.ts:37` ‏`'{1,4}'`. הבדיקה מ-3.4; צריך לבחור את היום הבא שהוא שני או חמישי, או זכות בלי הגבלת ימים.
+  status: נסגר ב-3.12 (2026-10-06, החלטת המשתמשת: אין הגבלת ימים במוצר אלא אם טל בוחרת). ‏`seedMoney` יוצרת כרטיסייה בלי הגבלת ימים (`allowed_weekdays` ריק), ‏`approve-payment.test.ts` מצפה ל-`null`, ובדיקת יום ראשון ב-`self-booking.test.ts` מגבילה את הזכות במפורש לשני וחמישי.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-4-1-admin-home-and-attention-items.md`
   target: 4.3
@@ -394,6 +397,21 @@
   target: 4.2
   summary: בבית האדמין, השם של הלקוחה בשורת "כרטיסיות שעומדות לפוג" (ובפריט "לטיפול" של לקוחה שכבר יש לה חשבון) מקשר לכרטיס הלקוחה שלה. ‏`admin_get_home` צריך להחזיר גם `customer_id` (היום רק `entitlement_id`). אם 4.3 מוסיף לשורה קישור לכרטיסיות הפתוחות, להחליט יחד איך השורה נשארת יעד אחד.
   evidence: בקשת המשתמשת בבדיקה בטלפון של 4.1 (2026-10-06). כרטיס הלקוחה עוד לא קיים (4.2, סבב 6).
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-12-session-completion-job.md`
+  target: (בלי יעד)
+  summary: בדיקת הכפילות ב-`bind_purchase` ("כבר יש לה הרשמה במפגש הזה") והאינדקס `bookings_confirmed_customer_event_uidx` מסתכלים רק על `confirmed`. אחרי ש-`job_complete_events` מסיים מפגש, הרשמה מוצמדת בלי לקוחה משויכת ללקוחה שכבר הייתה לה הרשמה באותו מפגש, בלי `BIND_CONFLICT`, ויש לה שתי הרשמות ושני ניצולים. התיקון: לספור גם `completed` בבדיקה (`private.is_real_booking`), עם בדיקה.
+  evidence: ביקורת 3.12 (edge, intent). נדיר: טל אישרה בטעות "לקוחה חדשה" למי שיש לה חשבון, למפגש שהיא כבר רשומה אליו, והקישור נפתח אחרי סוף המפגש. החלטת המשתמשת 2026-10-06: לא לתקן ב-3.12.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-12-session-completion-job.md`
+  target: 3.7
+  summary: ‏`private.job_complete_events` מדלגת על הקצאה מזיכוי (`booking_allocations.credit_id`). כשזיכויים נבנים, סיום מפגש צריך לסמן את הזיכוי שמימן את ההרשמה כמנוצל (`used`), עם בדיקה.
+  evidence: ביקורת 3.12 (blind). היום אין זיכויים, ולכן אין הקצאה כזו.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-12-session-completion-job.md`
+  target: 4.9
+  summary: הכפתור בעמוד המפגש באדמין נקרא עכשיו "ללשונית העבודה" (`adminCopy.sessions.morningView`), אבל עדיין פותח את `/admin/sessions/[id]/day`. ‏4.9 מפנה אותו לדף העבודה של המפגש, ו-`/day` מפנה לשם.
+  evidence: החלטת המשתמשת בבדיקת הטלפון של 3.12 (2026-10-06), נרשמה ב-memlog של ה-UX. התכנון של 4.9 ב-`demo-scope-2026-10-04.md`.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-7-in-app-notification-centers.md`
   target: אחרי ההגשה

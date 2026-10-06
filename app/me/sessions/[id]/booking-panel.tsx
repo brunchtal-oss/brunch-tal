@@ -34,8 +34,10 @@ const LINK = "font-semibold underline underline-offset-[3px]"
 // The action area of a session page (story 3.2, CAP-13). Bookable: "להרשמה"
 // opens the booking bottom-sheet (what is used, what remains, the validity,
 // the last self-cancel time, one confirm button). Already booked: a success
-// notice and the cancel (story 3.6). Blocked: the reason in an inline-notice, the button replaced by
-// the action that can help. After a booking: the climax, and focus on it.
+// notice and the cancel (story 3.6). A completed session she took part in:
+// "the session ended" and "you took part", nothing to press (story 3.12).
+// Blocked: the reason in an inline-notice, the button replaced by the
+// action that can help. After a booking: the climax, and focus on it.
 // No optimistic result: the button stays busy until the server answers.
 export function BookingPanel({
   eventId,
@@ -106,6 +108,18 @@ export function BookingPanel({
           />
         )}
       </div>
+    )
+  }
+
+  if (preview.kind === "completed") {
+    // Story 3.12: the session ended and she took part. A record, not a
+    // blocked action: no cancel, no contact, no button.
+    return (
+      <InlineNotice tone="success">
+        {errorMessage("EVENT_COMPLETED")}
+        <br />
+        {copy.attended}
+      </InlineNotice>
     )
   }
 

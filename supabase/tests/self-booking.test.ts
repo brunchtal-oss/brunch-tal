@@ -350,6 +350,12 @@ describe("refusals keep no place and take no entry", () => {
   it("a Sunday, a couple session, or no entitlement -> NO_MATCHING_ENTITLEMENT", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)
+      // Products are unrestricted by default (user decision 2026-10-04); a
+      // restriction applies only when Tal chooses one, as here (Mon, Thu).
+      await db.query(
+        "update public.entitlements set allowed_weekdays = '{1,4}' where id = $1",
+        [f.entitlement]
+      )
       const sunday = await insertEvent(db, f, { day: await localDay(db, 0, 2) })
       const couple = await insertEvent(db, f, {
         day: await localDay(db, 1, 2),

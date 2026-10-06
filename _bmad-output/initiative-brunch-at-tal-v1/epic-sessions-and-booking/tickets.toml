@@ -149,13 +149,13 @@ references = ["cancellation-rules.md, זיכוי למפגשים חלופיים",
 id = 12
 type = "story"
 title = "Session completion job — סיום מפגש וניצול"
-description = "CAP-9, CAP-10: הפעלת pg_cron ו-private.job_complete_events שמעבירה מפגש שהסתיים ל-completed, הרשמות ל-completed ומוסיפה תנועות use, כך שאי-הגעה בלי ביטול נחשבת השתתפות."
+description = "CAP-9, CAP-10: הפעלת pg_cron ו-private.job_complete_events שמעבירה מפגש שהסתיים ל-completed, הרשמות ל-completed ומוסיפה תנועות use, כך שאי-הגעה בלי ביטול נחשבת השתתפות. גם הרשמה מוצמדת בלי לקוחה מסתיימת, ו-bind_purchase משייך אותה אחר כך. private.occupied_places סוכמת הרשמות אמיתיות (confirmed או completed). עמוד מפגש שהסתיים מציג ללקוחה שנרשמה \"המפגש הסתיים\" ו\"השתתפת במפגש\" (preview_book_session עם EVENT_COMPLETED; החלטות המשתמשת 2026-10-06)."
 verify = "בדיקות: אחרי סיום מפגש הכניסה נוצלה והיתרה תואמת את יומן התנועות; לקוחה שלא הגיעה ולא ביטלה לא זכאית עוד להיכרות; הרצה כפולה של המשימה לא מוסיפה תנועה."
 covers = ["CAP-9", "CAP-10"]
 after = [6]
 hitl = false
 risk = "medium"
-unknown = "האם pg_cron מונע השהיה של פרויקט Supabase חינמי (spine Deferred); נבדק שוב ב-5.10."
+unknown = "האם pg_cron מונע השהיה של פרויקט Supabase חינמי (spine Deferred). תשובה ב-3.12 (2026-10-06): לא. לפי התיעוד של Supabase (Project Pausing), פרויקט Free מושהה כשאין מספיק פעילות משתמשים במסד במשך 7 ימים, ורק Pro מונע את זה בוודאות. משימה פנימית של pg_cron אינה בקשה של משתמש, ולכן אי אפשר להסתמך עליה. ההחלטה נשארת ל-5.10 ולפני ההשקה."
 references = ["ARCHITECTURE-SPINE.md#ad-11", "ARCHITECTURE-SPINE.md#ad-14"]
 
 [[entry]]

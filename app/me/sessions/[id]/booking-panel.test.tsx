@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it, vi } from "vitest"
 
 import { customerCopy } from "@/lib/copy/customer"
+import { ERROR_MESSAGES } from "@/lib/errors"
 
 import { BookingPanel } from "./booking-panel"
 import type { BookingPreview } from "./booking-preview"
@@ -57,6 +58,18 @@ describe("BookingPanel (story 3.6)", () => {
     expect(html).not.toContain(CONTACT)
     expect(html).not.toContain("10.10")
     expect(html).not.toMatch(/(^|[\s>"(])טל($|[\s.,)<])/)
+  })
+
+  it("story 3.12: completed: the session ended and she took part, no buttons, no cancel and no contact", () => {
+    const html = render({ kind: "completed" })
+    expect(html).toContain(ERROR_MESSAGES.EVENT_COMPLETED)
+    expect(html).toContain(customerCopy.attended)
+    expect(html).not.toContain("<button")
+    expect(html).not.toContain(customerCopy.cancel.button)
+    expect(html).not.toContain(customerCopy.registered)
+    expect(html).not.toContain(customerCopy.contactPhrase)
+    expect(html).not.toContain(CONTACT)
+    expect(html).not.toContain(customerCopy.book)
   })
 
   it("bookable: the booking button, no cancel", () => {

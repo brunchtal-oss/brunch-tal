@@ -78,6 +78,8 @@ export const customerCopy = {
   // is shown (user decision 2026-10-05, the cancel button comes in 3.6).
   book: "להרשמה",
   registered: "את רשומה למפגש הזה.",
+  // A completed session with her booking (story 3.12), after EVENT_COMPLETED.
+  attended: "השתתפת במפגש",
   allSessions: "לכל המפגשים",
   // The booking sheet.
   close: "סגירה",
