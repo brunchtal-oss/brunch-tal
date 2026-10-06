@@ -108,6 +108,8 @@ const EXPECTED_GRANTS = [
   "function public.issue_reset_token(p_user_id uuid) service_role EXECUTE",
   "function public.join_begin(p_token text, p_email text, p_phone text, p_idempotency_key uuid) service_role EXECUTE",
   "function public.join_complete(p_token text, p_profile jsonb, p_idempotency_key uuid) service_role EXECUTE",
+  "function public.mark_notifications_read(p_ids uuid[]) authenticated EXECUTE",
+  "function public.mark_notifications_unread(p_ids uuid[]) authenticated EXECUTE",
   "function public.preview_admin_approve_payment(p_customer_id uuid, p_payer_label text, p_product_id uuid, p_event_id uuid, p_amount_agorot integer, p_paid_on date, p_payment_method_id uuid) authenticated EXECUTE",
   "function public.preview_admin_book_customer(p_customer_id uuid, p_event_id uuid) authenticated EXECUTE",
   "function public.preview_admin_cancel_booking(p_booking_id uuid) authenticated EXECUTE",

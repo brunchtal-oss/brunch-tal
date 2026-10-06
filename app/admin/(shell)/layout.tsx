@@ -1,20 +1,23 @@
 import { Suspense } from "react"
 
 import { SideNav } from "@/components/admin/side-nav"
+import { AppTopBar } from "@/components/shared/app-top-bar"
 import { BottomTabBar } from "@/components/shared/bottom-tab-bar"
 import { RoleGate } from "@/components/shared/role-gate"
-import { SignOutButton } from "@/components/shared/sign-out-button"
+import { ShellBell } from "@/components/shared/shell-bell"
 import { SkipLink } from "@/components/shared/skip-link"
-import { Wordmark } from "@/components/shared/wordmark"
 import { shellCopy } from "@/lib/copy/shell"
 import { adminNav } from "@/lib/nav"
+
+import { getUnreadCount } from "./notifications/actions"
 
 // Allowed only here and in /me (AD-16).
 export const instant = false
 
-// Admin shell (AD-2): wordmark row, main, bottom-tab-bar until lg and a 240px
-// side-nav (with sign-out) from lg. The bell-button and /admin/notifications
-// come in 5.7. The role check runs inside <Suspense> (AD-16).
+// Admin shell (AD-2): the sticky olive top-bar across the whole width (name,
+// bell, sign-out; story 5.7), then main with the bottom-tab-bar until lg, or
+// the 240px side-nav right under the bar from lg. The role check runs
+// inside <Suspense> (AD-16).
 export default function AdminShellLayout({
   children,
 }: {
@@ -23,22 +26,18 @@ export default function AdminShellLayout({
   return (
     <>
       <SkipLink />
-      <div className="flex min-h-svh">
-        <SideNav
-          items={adminNav}
-          label={shellCopy.nav.adminLabel}
-          footer={<SignOutButton />}
-        />
+      <AppTopBar
+        home="/admin"
+        wide
+        bell={<ShellBell surface="admin" refresh={getUnreadCount} />}
+      />
+      <div className="flex min-h-[calc(100svh-4rem)]">
+        <SideNav items={adminNav} label={shellCopy.nav.adminLabel} />
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="bg-background">
-            <div className="mx-auto flex max-w-[720px] items-center px-6 py-3">
-              <Wordmark href="/admin" />
-            </div>
-          </header>
           <main
             id="main"
             tabIndex={-1}
-            className="mx-auto flex w-full max-w-[720px] flex-col gap-8 px-6 pt-2 pb-8"
+            className="mx-auto flex w-full max-w-[720px] flex-col gap-8 px-6 pt-6 pb-8"
           >
             <Suspense
               fallback={
