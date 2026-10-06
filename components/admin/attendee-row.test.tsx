@@ -72,6 +72,20 @@ describe("AttendeeRow", () => {
     expect(html).toContain(copy.detailsRemoved)
     expect(html).not.toContain(copy.pendingJoin)
   })
+
+  it("story 3.6: the optional action slot at the row's end; none without it", () => {
+    const withAction = renderToStaticMarkup(
+      <ul>
+        <AttendeeRow
+          attendee={BASE}
+          onDay="2026-10-12"
+          action={<button type="button">cancel-slot</button>}
+        />
+      </ul>
+    )
+    expect(withAction).toContain("cancel-slot")
+    expect(row({})).not.toContain("<button")
+  })
 })
 
 describe("SummaryCard", () => {

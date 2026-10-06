@@ -25,6 +25,7 @@ import {
 } from "@/lib/time"
 import { cn } from "@/lib/utils"
 
+import { CancelBooking } from "../../bookings/cancel-booking"
 import { bookSessionAction } from "../actions"
 import { blockedAction, type BookingPreview } from "./booking-preview"
 
@@ -33,7 +34,7 @@ const LINK = "font-semibold underline underline-offset-[3px]"
 // The action area of a session page (story 3.2, CAP-13). Bookable: "להרשמה"
 // opens the booking bottom-sheet (what is used, what remains, the validity,
 // the last self-cancel time, one confirm button). Already booked: a success
-// notice. Blocked: the reason in an inline-notice, the button replaced by
+// notice and the cancel (story 3.6). Blocked: the reason in an inline-notice, the button replaced by
 // the action that can help. After a booking: the climax, and focus on it.
 // No optimistic result: the button stays busy until the server answers.
 export function BookingPanel({
@@ -81,7 +82,28 @@ export function BookingPanel({
   }
 
   if (preview.kind === "booked") {
-    return <InlineNotice tone="success">{copy.registered}</InlineNotice>
+    // Story 3.6: her booking, then the cancel (or the contact phrase past
+    // the self-cancel boundary).
+    return (
+      <div className="flex flex-col items-start gap-4">
+        <InlineNotice tone="success" className="w-full">
+          {copy.registered}
+        </InlineNotice>
+        {preview.bookingId && (
+          <CancelBooking
+            bookingId={preview.bookingId}
+            title={title}
+            startsAt={startsAt}
+            funding={preview.funding}
+            productName={preview.productName}
+            optionsCount={preview.optionsCount}
+            canSelfCancel={preview.canSelfCancel}
+            contactHref={contactHref}
+            className={preview.canSelfCancel ? undefined : "w-full"}
+          />
+        )}
+      </div>
+    )
   }
 
   if (preview.kind === "blocked") {

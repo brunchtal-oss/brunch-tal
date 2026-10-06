@@ -124,6 +124,8 @@ async function EntitlementContent({
           </span>
           {past ? (
             <span>{past}</span>
+          ) : entitlement.awaitingSessions ? (
+            <span>{customerCopy.awaitingSessions}</span>
           ) : (
             <span>
               {customerCopy.validUntil}{" "}

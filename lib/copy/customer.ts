@@ -124,4 +124,44 @@ export const customerCopy = {
   savedNone: "לא הצלחנו לשמור את התאריכים שבחרת",
   entryKept: (dayMonth: string) =>
     `הכניסה של ${dayMonth} לא נוצלה ונשארה ביתרה שלך`,
+  // A returned pinned entry that waits for the next sessions to be
+  // published, in place of its validity (story 3.6, user decision
+  // 2026-10-06).
+  awaitingSessions: "ממתינה למפגשים הבאים",
+  // Home: an entry that returned to her after a cancelled pinned booking.
+  returnedTitle: "כניסה שחזרה אלייך",
+  // Cancelling a booking (story 3.6). No self-cancel deadline and no "Tal"
+  // anywhere (user decision 2026-10-05); the contact phrase is
+  // contactPhrase.
+  cancel: {
+    button: "ביטול ההרשמה",
+    returns: "מה יחזור",
+    returnsCard: (product: string) => `כניסה אחת ל${product}`,
+    returnsReturned: "הכניסה תחזור אלייך, באותו תוקף",
+    // n: the number of next sessions (business_settings).
+    returnsPinned: (n: number) =>
+      n <= 1
+        ? "כניסה למפגש המתאים הבא"
+        : n === 2
+          ? "כניסה לאחד משני המפגשים המתאימים הבאים"
+          : `כניסה לאחד מ-${n} המפגשים המתאימים הבאים`,
+    confirm: "כן, לבטל",
+    // Past the self-cancel boundary: shown with the contact phrase.
+    closed: "כבר אי אפשר לבטל את ההרשמה הזו בעצמך",
+    // The result (inline-notice, success).
+    doneCard: "ההרשמה בוטלה. הכניסה חזרה ליתרה שלך",
+    donePinned: (until: string) =>
+      `ההרשמה בוטלה. הכניסה חזרה אלייך, ואפשר להירשם איתה עד ${until}`,
+    doneAwaiting:
+      "ההרשמה בוטלה. הכניסה חזרה אלייך, ואפשר יהיה להירשם איתה לאחד המפגשים הבאים כשיתפרסמו",
+  },
+  // /me/bookings (story 3.6), opened from home.
+  bookingsTitle: "ההרשמות שלי",
+  allMyBookings: "לכל ההרשמות שלי",
+  upcomingBookings: "הרשמות קרובות",
+  pastBookings: "הרשמות קודמות",
+  bookingsEmpty: "עוד אין לך הרשמות",
+  toSchedule: "ללו״ז הבראנצ׳ים",
+  bookingCancelled: "בוטלה",
+  bookingHeld: "התקיימה",
 } as const
