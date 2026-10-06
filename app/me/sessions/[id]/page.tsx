@@ -73,6 +73,12 @@ async function SessionContent({ params }: { params: Promise<{ id: string }> }) {
   const preview: BookingPreview = previewResult.ok
     ? parsePreview(previewResult.data)
     : { kind: "blocked", code: previewResult.code }
+  // Past the self-cancel boundary the notice names the booking's own
+  // cancel window (policy_snapshot; RLS: her own booking).
+  const cancelWindowHours =
+    preview.kind === "booked" && preview.bookingId && !preview.canSelfCancel
+      ? await cancelWindowOf(supabase, preview.bookingId)
+      : null
   const status = sessionStatus({
     booked: preview.kind === "booked",
     availability: availability.get(id),
@@ -103,9 +109,29 @@ async function SessionContent({ params }: { params: Promise<{ id: string }> }) {
           title={customerCopy.sessionTitle(session.concept_name)}
           startsAt={session.starts_at}
           preview={preview}
+          cancelWindowHours={cancelWindowHours}
           contactHref={contactHref}
         />
       </ResultNoticeHost>
     </>
   )
+}
+
+async function cancelWindowOf(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  bookingId: string
+): Promise<number | null> {
+  const { data } = await supabase
+    .from("bookings")
+    .select("policy_snapshot")
+    .eq("id", bookingId)
+    .maybeSingle()
+  const snapshot = data?.policy_snapshot
+  const hours =
+    snapshot && typeof snapshot === "object" && !Array.isArray(snapshot)
+      ? (snapshot as Record<string, unknown>).cancel_window_hours
+      : undefined
+  return typeof hours === "number" && Number.isInteger(hours) && hours > 0
+    ? hours
+    : null
 }

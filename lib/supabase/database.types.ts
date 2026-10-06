@@ -1301,6 +1301,8 @@ export type Database = {
         Args: { p_idempotency_key: string; p_profile: Json; p_token: string }
         Returns: Json
       }
+      mark_notifications_read: { Args: { p_ids?: string[] }; Returns: Json }
+      mark_notifications_unread: { Args: { p_ids: string[] }; Returns: Json }
       preview_admin_approve_payment: {
         Args: {
           p_amount_agorot: number

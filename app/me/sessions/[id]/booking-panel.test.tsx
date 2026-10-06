@@ -12,13 +12,17 @@ vi.mock("../../bookings/actions", () => ({ cancelBookingAction: vi.fn() }))
 
 const CONTACT = "https://wa.me/972500000000"
 
-function render(preview: BookingPreview) {
+function render(
+  preview: BookingPreview,
+  cancelWindowHours: number | null = 48
+) {
   return renderToStaticMarkup(
     <BookingPanel
       eventId="11111111-1111-4111-8111-111111111111"
       title="בראנץ׳ אמהות"
       startsAt="2026-10-12T07:00:00+00:00"
       preview={preview}
+      cancelWindowHours={cancelWindowHours}
       contactHref={CONTACT}
     />
   )
@@ -38,17 +42,19 @@ describe("BookingPanel (story 3.6)", () => {
     const html = render({ ...BOOKED, canSelfCancel: true })
     expect(html).toContain(customerCopy.registered)
     expect(html).toContain(customerCopy.cancel.button)
-    expect(html).not.toContain(customerCopy.cancel.closed)
+    expect(html).not.toContain(customerCopy.cancel.closed(48))
     expect(html).not.toContain(CONTACT)
   })
 
-  it("booked, past the boundary: the contact phrase, no cancel button and no deadline", () => {
+  it("booked, past the boundary: the same cancel button, and no notice or contact until it is tapped", () => {
+    // User decision 2026-10-06: no call to action in view unless she asked
+    // to cancel; the tap shows "לא ניתן לבטל עצמאית פחות מ-48 שעות לפני
+    // המפגש." with "צרי קשר" (checked on the phone).
     const html = render({ ...BOOKED, canSelfCancel: false })
     expect(html).toContain(customerCopy.registered)
-    expect(html).toContain(customerCopy.cancel.closed)
-    expect(html).toContain(`href="${CONTACT}"`)
-    expect(html).toContain(customerCopy.contactPhrase)
-    expect(html).not.toContain(customerCopy.cancel.button)
+    expect(html).toContain(customerCopy.cancel.button)
+    expect(html).not.toContain(customerCopy.cancel.closed(48))
+    expect(html).not.toContain(CONTACT)
     expect(html).not.toContain("10.10")
     expect(html).not.toMatch(/(^|[\s>"(])טל($|[\s.,)<])/)
   })

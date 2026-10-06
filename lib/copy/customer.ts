@@ -181,8 +181,13 @@ export const customerCopy = {
           ? "כניסה לאחד משני המפגשים המתאימים הבאים"
           : `כניסה לאחד מ-${n} המפגשים המתאימים הבאים`,
     confirm: "כן, לבטל",
-    // Past the self-cancel boundary: shown with the contact phrase.
-    closed: "כבר אי אפשר לבטל את ההרשמה הזו בעצמך",
+    // Past the self-cancel boundary, on the session page only, followed by
+    // the contact phrase (user decision 2026-10-06). hours: the booking's
+    // own cancel window (policy_snapshot), null when it cannot be read.
+    closed: (hours: number | null) =>
+      hours === null
+        ? "לא ניתן לבטל עצמאית כל כך קרוב למפגש."
+        : `לא ניתן לבטל עצמאית פחות מ-${hours} שעות לפני המפגש.`,
     // The result (inline-notice, success).
     doneCard: "ההרשמה בוטלה. הכניסה חזרה ליתרה שלך",
     donePinned: (until: string) =>

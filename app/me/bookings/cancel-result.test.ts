@@ -36,7 +36,12 @@ describe("cancelDoneMessage", () => {
   })
 
   it("never names Tal or a deadline", () => {
-    for (const text of [copy.doneCard, copy.doneAwaiting, copy.closed]) {
+    for (const text of [
+      copy.doneCard,
+      copy.doneAwaiting,
+      copy.closed(48),
+      copy.closed(null),
+    ]) {
       expect(text).not.toMatch(/(^|[\s"(])טל($|[\s.,)])/)
     }
   })

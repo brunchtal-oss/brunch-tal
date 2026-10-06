@@ -1,4 +1,5 @@
-// System microcopy of the three shells (navigation, skip link, sign-out).
+// System microcopy of the three shells (navigation, skip link, sign-out,
+// the app top-bar and the notification centers).
 // The wordmark is one constant, the same name as the <title> template. The
 // public shell shows the published business name instead when there is one
 // (story 5.2).
@@ -11,6 +12,8 @@ export const shellCopy = {
   skipToMain: "דילוג לתוכן הראשי",
   loading: "טוען…",
   signOut: "התנתקות",
+  // The admin top-bar's link to the public site (user decision 2026-10-06).
+  toSite: "מעבר לאתר",
   nav: {
     customerLabel: "ניווט באזור האישי",
     adminLabel: "ניווט בפאנל הניהול",
@@ -33,8 +36,30 @@ export const shellCopy = {
     gallery: "גלריה והמלצות",
     contact: "יצירת קשר",
   },
+  // The app top-bar of /me and /admin and the notification centers
+  // (story 5.7).
+  notifications: {
+    title: "התראות",
+    bell: "התראות",
+    bellUnread: (count: string) => `התראות, ${count} שלא נקראו`,
+    // The count on the bell: over 99 is "99+".
+    overflow: "99+",
+    unread: "לא נקראה",
+    markRead: "סימון כנקראה",
+    markUnread: "סימון כלא נקראה",
+    markAllRead: "סימון הכול כנקרא",
+    empty: "אין התראות כרגע",
+    listLabel: "רשימת ההתראות",
+    time: {
+      today: (time: string) => `היום, ${time}`,
+      yesterday: (time: string) => `אתמול, ${time}`,
+    },
+  },
   public: {
     customerLogin: "כניסה לאזור האישי",
+    // The top-bar and menu link of a signed-in visitor (story 5.7).
+    customerArea: "האזור שלי",
+    adminArea: "לפאנל הניהול",
     adminLogin: "כניסת מנהלת",
     // top-bar and menu-sheet (EXPERIENCE › top-bar, menu-sheet).
     menu: "תפריט",

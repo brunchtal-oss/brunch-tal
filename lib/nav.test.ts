@@ -1,4 +1,4 @@
-import { readdirSync } from "node:fs"
+import { readdirSync, readFileSync } from "node:fs"
 import { fileURLToPath } from "node:url"
 import { join, relative, sep } from "node:path"
 
@@ -11,6 +11,7 @@ import {
   customerNav,
   hasPublicSessions,
   isCurrent,
+  publicAccountLink,
   publicNav,
 } from "./nav"
 
@@ -112,5 +113,59 @@ describe("navigation", () => {
     expect(isCurrent(adminNav, home, "/admin/links")).toBe(false)
     expect(isCurrent(adminNav, more, "/admin/content/home/preview")).toBe(true)
     expect(isCurrent(adminNav, home, "/admin/content")).toBe(false)
+  })
+})
+
+// Story 5.7: notifications open from the bell, and sign-out lives only in
+// the top-bar (plus the login and join screens' own notices).
+describe("the app shells after 5.7", () => {
+  const ROOT = fileURLToPath(new URL("../", import.meta.url))
+
+  function sources(dir: string): string[] {
+    const found: string[] = []
+    for (const entry of readdirSync(join(ROOT, dir), { withFileTypes: true })) {
+      const path = join(dir, entry.name)
+      if (entry.isDirectory()) found.push(...sources(path))
+      else if (/\.tsx?$/.test(entry.name) && !/\.test\.tsx?$/.test(entry.name))
+        found.push(path.split(sep).join("/"))
+    }
+    return found
+  }
+
+  it("has no notifications tab", () => {
+    expect(customerNav.map((item) => item.href)).not.toContain(
+      "/me/notifications"
+    )
+    expect(adminNav.map((item) => item.href)).not.toContain(
+      "/admin/notifications"
+    )
+  })
+
+  it("signs out only from the top-bar, /login and /join", () => {
+    const allowed = [
+      /^components\/shared\/sign-out-button\.tsx$/,
+      /^components\/shared\/app-top-bar\.tsx$/,
+      /^app\/\(auth\)\/login\//,
+      /^app\/\(auth\)\/join\//,
+    ]
+    const users = [...sources("app"), ...sources("components")].filter((path) =>
+      /\b(SignOutButton|signOutAction)\b/.test(
+        readFileSync(join(ROOT, path), "utf8")
+      )
+    )
+    expect(users.length).toBeGreaterThan(0)
+    for (const path of users) {
+      expect(
+        allowed.some((pattern) => pattern.test(path)),
+        path
+      ).toBe(true)
+    }
+  })
+
+  it("links the public account by role", () => {
+    expect(publicAccountLink(null).href).toBe("/login")
+    expect(publicAccountLink("none").href).toBe("/login")
+    expect(publicAccountLink("customer").href).toBe("/me")
+    expect(publicAccountLink("admin").href).toBe("/admin")
   })
 })
