@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import { adminCopy } from "@/lib/copy/admin"
 
-import { toLinkItem, type LinkRow } from "./link-items"
+import { filterByPayment, toLinkItem, type LinkRow } from "./link-items"
 
 const copy = adminCopy.links
 
@@ -124,5 +124,40 @@ describe("toLinkItem", () => {
     expect(
       toLinkItem(row({ status: "revoked", detail: "conflict" })).detail
     ).toBeNull()
+  })
+})
+
+describe("filterByPayment", () => {
+  const A = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+  const B = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
+  const rows = [
+    row({ token_id: "a1", payment_id: A, status: "revoked" }),
+    row({ token_id: "b1", payment_id: B }),
+    row({ token_id: "a2", payment_id: A }),
+  ]
+  const ids = (r: LinkRow[]) => r.map((x) => x.token_id)
+
+  it("a payment with links: only its links, in order", () => {
+    const result = filterByPayment(rows, A)
+    expect(result.filtered).toBe(true)
+    expect(ids(result.rows)).toEqual(["a1", "a2"])
+    expect(ids(filterByPayment(rows, A.toUpperCase()).rows)).toEqual([
+      "a1",
+      "a2",
+    ])
+  })
+
+  it("no parameter, an invalid id, several values or a payment with no links: the full list", () => {
+    for (const payment of [
+      undefined,
+      "",
+      "not-a-uuid",
+      [A, B],
+      "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+    ]) {
+      const result = filterByPayment(rows, payment)
+      expect(result.filtered, String(payment)).toBe(false)
+      expect(ids(result.rows)).toEqual(["a1", "b1", "a2"])
+    }
   })
 })

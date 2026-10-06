@@ -123,3 +123,22 @@ export function toLinkItem(row: LinkRow): LinkItem {
     canReplace: row.can_replace,
   }
 }
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+// /admin/links?payment=<id> (story 4.1): a "לטיפול" item opens only the
+// links of its purchase. An invalid id, or a payment with no links, shows
+// the full list (filtered: false).
+export function filterByPayment(
+  rows: LinkRow[],
+  payment: string | string[] | undefined
+): { rows: LinkRow[]; filtered: boolean } {
+  const id = typeof payment === "string" ? payment : undefined
+  if (!id || !UUID.test(id)) return { rows, filtered: false }
+  const own = rows.filter(
+    (row) => row.payment_id.toLowerCase() === id.toLowerCase()
+  )
+  return own.length > 0
+    ? { rows: own, filtered: true }
+    : { rows, filtered: false }
+}

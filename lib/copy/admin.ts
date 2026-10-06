@@ -561,6 +561,8 @@ export const adminCopy = {
   // /admin/links (story 2.4, wording approved by the user on 2026-10-03).
   links: {
     title: "קישורי הצטרפות",
+    // Above the links of one purchase (/admin/links?payment=, story 4.1).
+    allLinks: "לכל קישורי ההצטרפות",
     empty: "אין עדיין קישורי הצטרפות",
     rowTitle: {
       pending: "הקישור מחכה למימוש",
@@ -609,5 +611,110 @@ export const adminCopy = {
     // "Send on WhatsApp" on a row: a replacement sent at once (user decision
     // 2026-10-03); no link is shown afterwards.
     sent: "נוצר קישור חדש. הקישור הקודם בוטל",
+  },
+  // /admin (story 4.1, CAP-24). The sum is "approved payments minus
+  // refunds"; never "profit" or "income" (source §7).
+  home: {
+    nextSession: "המפגש הבא",
+    sessionDetails: "לפרטי המפגש",
+    upcoming: "מפגשים קרובים",
+    // "בראנץ׳ {concept} · {יום DD.MM} · {occupied}/{capacity}"
+    upcomingRow: (
+      concept: string,
+      day: string,
+      occupied: number,
+      capacity: number
+    ) => `בראנץ׳ ${concept} · ${day} · ${occupied}/${capacity}`,
+    allSessions: "לכל המפגשים",
+    noSessions: "אין מפגשים קרובים",
+    toSessions: "למפגשים",
+    attention: "לטיפול",
+    attentionCount: (n: number) =>
+      n === 1 ? "דבר אחד מחכה לך" : `${n} דברים מחכים לך`,
+    attentionEmpty: "אין כרגע דברים לטיפול",
+    // Under the three newest items on the home, to /admin/attention.
+    attentionAll: (n: number) => `לכל הדברים לטיפול (${n})`,
+    // The customer: full_name, else the payer label Tal gave, else this.
+    newCustomer: "לקוחה חדשה",
+    since: (dayMonth: string) => `מאז ${dayMonth}`,
+    // The title says what happened, the detail what to do (user decision
+    // 2026-10-06, after the phone check). Chips unchanged.
+    items: {
+      link_conflict: {
+        chip: "התנגשות",
+        // By conflict_reason; an unknown reason reads as bind_conflict.
+        reasons: {
+          two_accounts: {
+            title: (name: string) => `ההצטרפות של ${name} נעצרה`,
+            detail:
+              "המייל והטלפון שייכים לשתי לקוחות שונות. צריך לברר איתה ולהפיק קישור חדש",
+          },
+          not_activated: {
+            title: (name: string) => `ההצטרפות של ${name} נעצרה`,
+            detail:
+              "המייל שייך לחשבון שעוד לא הופעל. צריך לברר איתה ולהפיק קישור חדש",
+          },
+          phone_taken: {
+            title: (name: string) => `ההצטרפות של ${name} נעצרה`,
+            detail:
+              "הטלפון כבר רשום אצל לקוחה אחרת. צריך לברר איתה ולהפיק קישור חדש",
+          },
+          too_many_attempts: {
+            title: (name: string) => `ההצטרפות של ${name} ננעלה`,
+            detail:
+              "3 ניסיונות עם פרטים שלא מתאימים. צריך לברר איתה ולהפיק קישור חדש",
+          },
+          bind_conflict: {
+            title: (name: string) => `הרכישה של ${name} לא נוספה לחשבון שלה`,
+            detail:
+              "כבר רשומה לאותו מפגש או כבר השתתפה בהיכרות. צריך להחליט מה לעשות ברכישה",
+          },
+        },
+      },
+      link_stuck: {
+        title: (name: string) => `${name} לא סיימה להצטרף`,
+        detail: "התחילה ולא סיימה. פתיחה חוזרת של אותו קישור תמשיך מאותה נקודה",
+        chip: "תקוע",
+      },
+      purchase_without_link: {
+        title: (name: string) => `ל${name} אין קישור הצטרפות בתוקף`,
+        // The purchase's details are on the links card it opens.
+        detail:
+          "הקישור פג או בוטל לפני שהצטרפה. אפשר להפיק קישור חדש בלי תשלום נוסף",
+        chip: "פג תוקף",
+      },
+      paid_without_place: {
+        title: (name: string) => `${name} שילמה ואין לה מקום`,
+        detail: (concept: string, dayMonth: string) =>
+          `שילמה לבראנץ׳ ${concept} ${dayMonth} והמפגש היה מלא. צריך למצוא מקום או להחליט על החזר`,
+        chip: "צריך מקום",
+      },
+      pinned_seat_held: {
+        title: (name: string) => `מקום שמור למי שלא הצטרפה (${name})`,
+        detail: (concept: string, dayMonth: string) =>
+          `הרכישה לא נוספה לחשבון, והמקום בבראנץ׳ ${concept} ${dayMonth} תפוס. אפשר לשחרר בעמוד המפגש`,
+        chip: "תופס מקום",
+      },
+      media_stuck: {
+        title: () => "תמונה לא פורסמה עד הסוף",
+        detail: "הפרסום נעצר באמצע. כדי לסיים, פרסמי שוב את העמוד בתוכן האתר",
+        chip: "תקוע",
+      },
+    },
+    expiring: "כרטיסיות שעומדות לפוג",
+    // "{n} כניסות שלא נרשמה אליהן · בתוקף עד DD.MM" (free entries: not
+    // used and not booked; user decision 2026-10-06). The two parts are
+    // separate so "בתוקף עד DD.MM" never breaks apart.
+    expiringEntries: (available: number) =>
+      available === 1
+        ? "כניסה אחת שלא נרשמה אליה"
+        : `${available} כניסות שלא נרשמה אליהן`,
+    expiringUntil: (until: string) => `בתוקף עד ${until}`,
+    expiringChip: "עומדת לפוג",
+    expiringEmpty: "אין כרטיסיות שעומדות לפוג",
+    totalsTitle: "תשלומים שאושרו פחות החזרים",
+    // "{month} {year} · עד היום"
+    totalsPeriod: (monthYear: string) => `${monthYear} · עד היום`,
+    totalsApproved: (n: number) => `תשלומים שאושרו (${n})`,
   },
 } as const
