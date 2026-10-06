@@ -811,6 +811,7 @@ export type Database = {
       }
       notification_templates: {
         Row: {
+          allowed_vars: string[]
           body: string | null
           body_mode: string
           push: boolean
@@ -822,6 +823,7 @@ export type Database = {
           version: number
         }
         Insert: {
+          allowed_vars?: string[]
           body?: string | null
           body_mode: string
           push: boolean
@@ -833,6 +835,7 @@ export type Database = {
           version?: number
         }
         Update: {
+          allowed_vars?: string[]
           body?: string | null
           body_mode?: string
           push?: boolean
@@ -1248,8 +1251,26 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_update_business_settings: {
+        Args: {
+          p_changes: Json
+          p_expected_version: number
+          p_idempotency_key: string
+        }
+        Returns: Json
+      }
       admin_update_event: {
         Args: { p_changes: Json; p_event_id: string; p_idempotency_key: string }
+        Returns: Json
+      }
+      admin_update_notification_template: {
+        Args: {
+          p_body: string
+          p_expected_version: number
+          p_idempotency_key: string
+          p_title: string
+          p_type: string
+        }
         Returns: Json
       }
       admin_update_product: {
