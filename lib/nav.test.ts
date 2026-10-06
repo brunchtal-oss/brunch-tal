@@ -75,6 +75,16 @@ describe("navigation", () => {
     ).toBe("/sessions")
   })
 
+  it("ends the customer's tabs with the profile (story 2.10)", () => {
+    expect(customerNav.at(-1)).toMatchObject({
+      href: "/me/profile",
+      icon: "profile",
+    })
+    const profile = customerNav.at(-1)!
+    expect(isCurrent(customerNav, profile, "/me/profile")).toBe(true)
+    expect(isCurrent(customerNav, customerNav[0], "/me/profile")).toBe(false)
+  })
+
   it("keeps each shell inside its own area", () => {
     for (const item of customerNav) expect(item.href).toMatch(/^\/me(\/|$)/)
     for (const item of adminNav) expect(item.href).toMatch(/^\/admin(\/|$)/)

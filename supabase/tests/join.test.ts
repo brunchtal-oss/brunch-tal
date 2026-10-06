@@ -806,11 +806,12 @@ describe("join permissions", () => {
           )
         )?.code
       ).toBe("42501")
+      // customer_id is never given (story 2.10): its default is her own id.
       const { rows: mine } = await db.query(
-        "insert into public.babies (customer_id, name, birth_date) values ($1, $2, '2026-02-01') returning id",
-        [userId, testName("second")]
+        "insert into public.babies (name, birth_date) values ($1, '2026-02-01') returning customer_id",
+        [testName("second")]
       )
-      expect(mine).toHaveLength(1)
+      expect(mine).toEqual([{ customer_id: userId }])
       expect(
         (
           await queryError(db, "update public.babies set customer_id = $1", [

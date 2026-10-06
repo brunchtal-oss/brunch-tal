@@ -39,7 +39,7 @@ describe("AttendeeRow", () => {
     expect(html).toContain("Dana")
     expect(html).toContain(copy.couple)
     expect(html).toContain("050-123-4567")
-    expect(html).toContain(copy.babyLine("Ori", copy.babyAge.months(3)))
+    expect(html).toContain(copy.babyLine("Ori", "3 חודשים"))
     expect(html).toContain("gluten free")
     expect(html).toContain(copy.companion("vegan"))
     expect(html).not.toContain("<button")

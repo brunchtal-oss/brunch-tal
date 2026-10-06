@@ -15,7 +15,6 @@ import { inRollback, sql, type Db } from "./support/db"
 const EXPECTED_GRANTS = [
   "column public.babies.birth_date authenticated INSERT",
   "column public.babies.birth_date authenticated UPDATE",
-  "column public.babies.customer_id authenticated INSERT",
   "column public.babies.name authenticated INSERT",
   "column public.babies.name authenticated UPDATE",
   "column public.content_pages.published_at anon SELECT",
@@ -111,6 +110,7 @@ const EXPECTED_GRANTS = [
   "function public.preview_book_sessions(p_items uuid[]) authenticated EXECUTE",
   "function public.reset_begin(p_token text, p_idempotency_key uuid) service_role EXECUTE",
   "function public.reset_complete(p_token text, p_idempotency_key uuid) service_role EXECUTE",
+  "function public.set_photo_consent(p_consent boolean) authenticated EXECUTE",
   "function public.token_view(p_token text) service_role EXECUTE",
   "schema private authenticated USAGE",
   "table public.admin_roles service_role INSERT",

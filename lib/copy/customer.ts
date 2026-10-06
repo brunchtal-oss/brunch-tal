@@ -124,4 +124,39 @@ export const customerCopy = {
   savedNone: "לא הצלחנו לשמור את התאריכים שבחרת",
   entryKept: (dayMonth: string) =>
     `הכניסה של ${dayMonth} לא נוצלה ונשארה ביתרה שלך`,
+  // The profile (story 2.10; the tab and the h1 are shellCopy.nav.profile).
+  // An empty field shows nothing; never "טל" in the customer's wording.
+  profile: {
+    detailsTitle: "הפרטים שלי",
+    fullName: "שם מלא",
+    dietaryNotes: "אלרגיות והעדפות תזונתיות",
+    phone: "טלפון",
+    email: "מייל",
+    babiesTitle: "התינוקות שלי",
+    babyName: "שם התינוק/ת",
+    birthDate: "תאריך לידה",
+    // "{name} · {age}"; only the name when there is no age.
+    babyLine: (name: string, age: string) => (age ? `${name} · ${age}` : name),
+    bornOn: (date: string) => `נולד/ה ב-${date}`,
+    addBaby: "+ תינוק נוסף",
+    // A row button's visible word, then sr-only text naming what it acts on
+    // (its accessible name starts with the visible word, WCAG 2.5.3).
+    edit: "עריכה",
+    detailsSuffix: " – הפרטים שלי",
+    babySuffix: (name: string) => ` – ${name}`,
+    deleteBaby: "מחיקה",
+    // The delete confirmation's group name.
+    deleteBabyOf: (name: string) => `מחיקת ${name}`,
+    confirmDelete: (name: string) => `למחוק את ${name} מהפרופיל?`,
+    confirmDeleteYes: "כן, למחוק",
+    deleting: "מוחקת…",
+    save: "שמירה",
+    saving: "שומרת…",
+    cancel: "ביטול",
+    photoTitle: "אישור תמונות",
+    saved: "הפרטים נשמרו",
+    birthDateFuture: "תאריך הלידה לא יכול להיות בעתיד",
+    linksLabel: "עוד באזור האישי",
+    installGuide: "התקנת האפליקציה",
+  },
 } as const
