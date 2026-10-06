@@ -88,15 +88,16 @@
 
 ### Supabase Vault
 
-- [ ] ‏`app_url`: כתובת האתר של אותה סביבה.
+- [ ] ‏`app_url`: הכתובת הקבועה של האתר (בפרויקט הפיתוח: כתובת ה-production ב-Vercel, בלי `/` בסוף). ‏pg_cron קורא כל דקה ל-`<app_url>/api/jobs/push` כשיש התראת פוש שמחכה (סיפור 5.8).
 - [ ] ‏`cron_secret`: אותו ערך כמו `CRON_SECRET` ב-Vercel.
+- [ ] יוצרים אותם ב-SQL Editor (לא ב-migration ולא בקובץ ב-repo): `select vault.create_secret('<value>', 'app_url');` ו-`select vault.create_secret('<value>', 'cron_secret');`. בלי שניהם ה-cron רץ ולא שולח שום בקשה.
 
 ### Vercel (Settings → Environment Variables, לכל סביבה)
 
 - [ ] ‏`NEXT_PUBLIC_SUPABASE_URL`, ‏`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, ‏`SUPABASE_SECRET_KEY`.
 - [ ] ‏`SITE_LOCK_USER` ו-`SITE_LOCK_PASSWORD` (ו-`SITE_LOCKED` רק כשפותחים את האתר).
-- [ ] ‏`CRON_SECRET` (כשיהיו נתיבי `/api/jobs/`).
-- [ ] זוג מפתחות VAPID (כשתהיה שליחת פוש).
+- [ ] ‏`CRON_SECRET`: ערך אקראי ארוך (למשל `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"`), זהה ל-`cron_secret` ב-Vault. בלעדיו `/api/jobs/push` מחזיר 503.
+- [ ] זוג VAPID (`npx web-push generate-vapid-keys`), אחד לכל פרויקט Supabase: ‏`NEXT_PUBLIC_VAPID_PUBLIC_KEY` (היחיד שמגיע לדפדפן), ‏`VAPID_PRIVATE_KEY` ו-`VAPID_SUBJECT` (‏`mailto:` של העסק; ערך שגוי ← Apple מחזירה 403). ב-production וב-preview, ובמחשב ב-`.env.local`. אחרי שינוי של המפתח הציבורי פורסים מחדש (הוא נכנס לקוד בזמן ה-build).
 - [ ] אף סוד לא במשתנה `NEXT_PUBLIC_*`.
 - [ ] לא לכבות את "Automatically expose System Environment Variables", כי הנעילה מזהה שהיא רצה ב-Vercel לפי `VERCEL_ENV`.
 

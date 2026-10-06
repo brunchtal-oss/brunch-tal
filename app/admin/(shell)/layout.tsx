@@ -3,13 +3,14 @@ import { Suspense } from "react"
 import { SideNav } from "@/components/admin/side-nav"
 import { AppTopBar } from "@/components/shared/app-top-bar"
 import { BottomTabBar } from "@/components/shared/bottom-tab-bar"
+import { PushSync } from "@/components/shared/push-sync"
 import { RoleGate } from "@/components/shared/role-gate"
 import { ShellBell } from "@/components/shared/shell-bell"
 import { SkipLink } from "@/components/shared/skip-link"
 import { shellCopy } from "@/lib/copy/shell"
 import { adminNav } from "@/lib/nav"
 
-import { getUnreadCount } from "./notifications/actions"
+import { getUnreadCount, registerPush } from "./notifications/actions"
 
 // Allowed only here and in /me (AD-16).
 export const instant = false
@@ -44,7 +45,10 @@ export default function AdminShellLayout({
                 <p className="text-muted-foreground">{shellCopy.loading}</p>
               }
             >
-              <RoleGate role="admin">{children}</RoleGate>
+              <RoleGate role="admin">
+                <PushSync register={registerPush} />
+                {children}
+              </RoleGate>
             </Suspense>
           </main>
         </div>

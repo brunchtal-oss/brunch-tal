@@ -1,6 +1,7 @@
-import { createHash, createHmac, timingSafeEqual } from "node:crypto"
+import { createHmac } from "node:crypto"
 
 import { siteLockCopy } from "@/lib/copy/site-lock"
+import { sameSecret } from "@/lib/server/secret"
 
 // Site lock until launch (story 1.6, architecture AD-22). Pure decision used
 // by `proxy.ts`: every request needs HTTP Basic Auth, except the
@@ -84,13 +85,6 @@ function parseBasic(
   const colon = decoded.indexOf(":")
   if (colon < 0) return null
   return { user: decoded.slice(0, colon), password: decoded.slice(colon + 1) }
-}
-
-// Hash both sides so the comparison takes the same time whatever the lengths.
-function sameSecret(given: string, expected: string): boolean {
-  const a = createHash("sha256").update(given, "utf8").digest()
-  const b = createHash("sha256").update(expected, "utf8").digest()
-  return timingSafeEqual(a, b)
 }
 
 // Trimmed: a value pasted into the Vercel dashboard may carry a stray space
