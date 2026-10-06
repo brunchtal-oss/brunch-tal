@@ -79,6 +79,14 @@ export const ERROR_MESSAGES = {
   MEDIA_NOT_PUBLISHED: "התמונה עוד לא פורסמה. אפשר לנסות לשמור שוב",
   // Tal books a customer after the session's end (story 3.4).
   EVENT_ENDED: "המפגש כבר הסתיים",
+  // Cancelling a booking (story 3.6). Not hers, missing or no longer
+  // confirmed (never telling which); past the self-cancel boundary (no
+  // deadline and no "Tal" in the wording, user decision 2026-10-05); a
+  // booking funded from two kinds of entry.
+  BOOKING_NOT_CANCELLABLE: "ההרשמה הזו כבר לא פעילה. כדאי לרענן את הדף",
+  SELF_CANCEL_CLOSED:
+    "כבר אי אפשר לבטל את ההרשמה הזו בעצמך. צרי קשר ונבדוק יחד",
+  MANUAL_HANDLING_REQUIRED: "את הביטול הזה עושים ידנית. צרי קשר ונטפל בו",
   // Raised by the adapter (never by SQL).
   INVALID_CREDENTIALS: "המייל או הסיסמה לא תואמים",
   // Correct password, but no active customer profile and not an admin.

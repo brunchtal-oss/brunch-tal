@@ -34,6 +34,7 @@
   target: 3.6, ‏3.13/3.14
   summary: ב-2.12 יש תבנית אחת לכל סוג. ‏3.6 מחליט על נוסח לכל מקרה ב-`booking_cancelled` (זיכוי, החזר, ביטול בלי החזר), ו-3.13/3.14 ב-`entitlement_changed` (הארכה, החזרת כניסה, תיקון). אפשרות: שדה `{outcome}` שהקורא מעצב, או תבניות נוספות בטבלה.
   evidence: החלטת המשתמשת ב-2.12: תבנית אחת לסוג, ונוסח לכל מקרה נדחה לסיפורים שיוצרים את ההתראות.
+  status: החלק של 3.6 נסגר ב-3.6 (2026-10-06, החלטת המשתמשת): תבנית לכל מקרה. ‏`booking_cancelled` (כרטיסייה) בנוסח קבוע, ו-`booking_cancelled_pinned` חדשה למוצמדת, עם המשתנים `{date}` ו-`{expires_on}`. ‏3.7 מוסיף את מקרי הזיכוי וההחזר, ו-3.13/3.14 את `entitlement_changed`.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-12-notification-core.md`
   target: 5.8
@@ -230,6 +231,7 @@
   target: 3.6
   summary: בעמוד המפגש, להרשמה שעברה את מועד הביטול העצמי מוצג רק "את רשומה למפגש הזה." בלי הכוונה. בנוסף אין בדיקת רכיב ל-`BookingPanel` (מפתח idempotency לכל פתיחה, נעילת busy). ‏3.6 מוסיף את מצב "הביטול דרך טל" (בנוסח בלי "כתבי לטל") ובדיקת רכיב לגיליון ההרשמה ולגיליון הביטול.
   evidence: ביקורת 3.2 (blind, verification-gap).
+  status: נסגר ב-3.6 (2026-10-06). אחרי מועד הביטול העצמי מוצג "כבר אי אפשר לבטל את ההרשמה הזו בעצמך" עם "צרי קשר", ולפניו כפתור הביטול. בדיקת רכיב ב-`app/me/sessions/[id]/booking-panel.test.tsx` מרנדרת רק את הפאנל הסגור: רשומה בתוך החלון (כפתור הביטול), אחרי החלון ("צרי קשר", בלי מועד), ומצב שאפשר להירשם (כפתור ההרשמה). הגיליונות הפתוחים עצמם (הרשמה וביטול, מפתח לכל פתיחה, busy) עוד בלי בדיקת רכיב, כי אין testing-library.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-9-pwa-install-and-offline.md`
   target: אחרי ההגשה
@@ -270,6 +272,7 @@
   target: 3.6
   summary: הרשמה מוצמדת עם `customer_id` ריק שההצטרפות שלה הסתיימה ב-`BIND_CONFLICT` ממשיכה לתפוס מקום במפגש. טל רואה רק קישור ב-conflict. צריך דרך לשחרר אותה (`admin_cancel_booking`) ולהציג אותה לטל ("לטיפול" של 4.1).
   evidence: ביקורת 3.11 (blind, edge). אין עדיין ביטול באדמין.
+  status: השחרור נסגר ב-3.6 (2026-10-06): טל מבטלת את השורה "לקוחה חדשה · ממתינה להצטרפות" מרשימת הנרשמות (`admin_cancel_booking`), המקום משתחרר ואין התראה. ההצגה ב"לטיפול" נשארת ל-4.1.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-11-pinned-product-approval-and-placement.md`
   target: סבב הסליקה
@@ -343,6 +346,7 @@
   target: 3.6
   summary: אחרי ביטול הרשמה, לבדוק שהבית ו-`/me/purchases` (`get_my_entitlements`) זהים למסך הכרטיסיות הפתוחות של טל (4.3). באותו סיפור להוסיף לבית את הקישור "לכל ההרשמות שלי" ל-`/me/bookings`, ואת פעולות הביטול וההזזה בכרטיס "המפגש הקרוב".
   evidence: ‏4.12 נבנה לפני 3.6 ו-4.3. אין עדיין ביטול, `/me/bookings` או מסך כרטיסיות פתוחות (Never של spec 4.12).
+  status: החלק של 3.6 נסגר ב-3.6 (2026-10-06): בבית יש ביטול (או "צרי קשר") מתחת לכרטיס "המפגש הקרוב" והקישור "לכל ההרשמות שלי" ל-`/me/bookings`, והיתרה אחרי ביטול נבדקה מול `get_my_entitlements` ב-`supabase/tests/cancel-booking.test.ts`. ההזזה (3.10) וההשוואה למסך הכרטיסיות הפתוחות (4.3) נשארות לסיפורים שלהן.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-4-12-personal-area-home-and-entitlements.md`
   target: 3.12
@@ -358,3 +362,7 @@
   target: (הסיפור שיבנה ביטול תשלום)
   summary: `get_my_entitlements` לא מחזיר את מצב התשלום (`payments.status`). כשיתווסף ביטול תשלום (`voided`), להחליט איך הזכות והסכום מוצגים ללקוחה, ולהוסיף לכך שדה ובדיקה.
   evidence: ה-RPC מחזיר `amount_agorot` ו-`paid_on` מכל תשלום, בלי הבדל. אין היום פעולה שמבטלת תשלום (unverified, medium אם יתממש).
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-self-cancel-and-admin-cancel.md`
+  summary: ‏`supabase/tests/admin-booking.test.ts` יוצר מפגש בעוד 3 ימים עם כרטיסייה מ-`seedMoney` שתקפה רק בשני ובחמישי, ולכן 4 בדיקות נכשלות ב-`NO_MATCHING_ENTITLEMENT` ברוב ימי השבוע.
+  evidence: נמצא בהרצה של 3.6 ב-2026-10-06 (שלישי, המפגש ביום שישי). ‏`support/money.ts:37` ‏`'{1,4}'`. הבדיקה מ-3.4; צריך לבחור את היום הבא שהוא שני או חמישי, או זכות בלי הגבלת ימים.

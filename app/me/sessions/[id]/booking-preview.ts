@@ -1,5 +1,7 @@
 import { isErrorCode, type ErrorCode } from "@/lib/errors"
 
+import { parseFunding, type Funding } from "../../bookings/cancel-result"
+
 // preview_book_session's jsonb as the session page uses it (story 3.2).
 // Display only: the server decided every value (funding, dates, whether she
 // can still cancel by herself).
@@ -12,7 +14,17 @@ export type BookingPreview =
       expiresOn: string
       cancelDeadline: string
     }
-  | { kind: "booked"; cancelDeadline: string | null; canSelfCancel: boolean }
+  | {
+      kind: "booked"
+      // Her booking, how it was funded (what a cancel returns) and N of a
+      // returned pinned entry (story 3.6).
+      bookingId: string | null
+      funding: Funding
+      productName: string
+      optionsCount: number
+      cancelDeadline: string | null
+      canSelfCancel: boolean
+    }
   | { kind: "blocked"; code: ErrorCode }
 
 function text(value: unknown): string | null {
@@ -28,6 +40,14 @@ export function parsePreview(data: unknown): BookingPreview {
   if (row.booked === true) {
     return {
       kind: "booked",
+      bookingId: text(row.booking_id),
+      funding: parseFunding(row.funding),
+      productName: text(row.product_name) ?? "",
+      optionsCount:
+        Number.isSafeInteger(row.options_count) &&
+        (row.options_count as number) > 0
+          ? (row.options_count as number)
+          : 1,
       cancelDeadline: text(row.cancel_deadline),
       canSelfCancel: row.can_self_cancel === true,
     }

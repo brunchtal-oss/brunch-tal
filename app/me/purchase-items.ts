@@ -32,6 +32,11 @@ export type MyEntitlement = {
   validityDays: number | null
   pinnedEventId: string | null
   paymentId: string
+  // Story 3.6: a pinned entry that returned after a cancelled booking, and
+  // whether it still waits for the next sessions (then expiresOn is
+  // provisional and is never shown).
+  returned: boolean
+  awaitingSessions: boolean
 }
 
 const KINDS: readonly EntitlementKind[] = ["card", "single", "intro", "couple"]
@@ -86,6 +91,8 @@ export function parseMyEntitlements(data: unknown): MyEntitlement[] {
         validityDays: validity !== null && validity > 0 ? validity : null,
         pinnedEventId: str(r.pinned_event_id),
         paymentId,
+        returned: r.returned === true,
+        awaitingSessions: r.awaiting_sessions === true,
       },
     ]
   })
@@ -144,9 +151,28 @@ export function isHomeCard(e: MyEntitlement): boolean {
   )
 }
 
-/** No session ahead and no active card: the empty-state. */
-export function isEmptyHome(upcomingCount: number, cardCount: number): boolean {
-  return upcomingCount === 0 && cardCount === 0
+/**
+ * Story 3.6: a pinned entry that returned to her after a cancelled booking
+ * and still has a free entry (available > 0), shown on home under its own
+ * heading; once that entry is booked again it shows as the booking only.
+ */
+export function isHomeReturned(e: MyEntitlement): boolean {
+  return (
+    e.kind !== "card" &&
+    e.returned &&
+    e.pinnedEventId === null &&
+    e.available > 0 &&
+    isOpen(e)
+  )
+}
+
+/** No session ahead, no active card and no returned entry: the empty-state. */
+export function isEmptyHome(
+  upcomingCount: number,
+  cardCount: number,
+  returnedCount = 0
+): boolean {
+  return upcomingCount === 0 && cardCount === 0 && returnedCount === 0
 }
 
 /** The purchase history's order: newest purchase first (display only). */

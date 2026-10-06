@@ -191,7 +191,15 @@ const SEED = [
     false,
     "template",
     "ההרשמה ל{date} בוטלה",
-    "{outcome}",
+    "הכניסה חזרה ליתרה שלך",
+  ],
+  [
+    "booking_cancelled_pinned",
+    "customer",
+    false,
+    "template",
+    "ההרשמה ל{date} בוטלה",
+    "הכניסה חזרה אלייך, ואפשר להירשם איתה לאחד המפגשים המתאימים הבאים",
   ],
   [
     "event_changed",
@@ -246,7 +254,7 @@ const SEED = [
 }))
 
 describe("notification templates", () => {
-  it("hold the approved seed: 13 types, recipient, channel, mode and wording", async () => {
+  it("hold the approved seed: 14 types, recipient, channel, mode and wording", async () => {
     const rows = await sql(
       `select type, recipient_kind, push, body_mode, title, body, version
        from public.notification_templates
@@ -268,7 +276,7 @@ describe("notification templates", () => {
     )
   })
 
-  it("accept only the 13 types, each with its fixed recipient kind and body", async () => {
+  it("accept only the 14 types, each with its fixed recipient kind and body", async () => {
     await inRollback(async (db) => {
       const statements = [
         `insert into public.notification_templates
