@@ -95,7 +95,11 @@ export function TextBlockSection({
             src={image.src}
             alt={image.alt}
             fill
-            sizes="(min-width: 480px) 420px, 100vw"
+            // object-cover in a 4:5 frame: a landscape photo (up to 16:9) is
+            // drawn about 2.2 times the frame's width, so the file is asked
+            // for at that width; at the frame's own width it was upscaled and
+            // looked pixelated on a desktop screen (user's check 2026-10-06).
+            sizes="(min-width: 480px) 940px, 225vw"
             unoptimized={image.unoptimized}
             className="object-cover"
             style={{

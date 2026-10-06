@@ -7,7 +7,6 @@ import { BalanceCard } from "@/components/customer/balance-card"
 import { PageHeading } from "@/components/shared/page-heading"
 import { ResultNoticeHost } from "@/components/shared/result-notice"
 import { SessionCard } from "@/components/shared/session-card"
-import { SignOutButton } from "@/components/shared/sign-out-button"
 import { StatusChip } from "@/components/shared/status-chip"
 import { buttonVariants } from "@/components/ui/button"
 import { getWhatsappHref } from "@/lib/content/business-details"
@@ -21,7 +20,6 @@ import {
   formatWeekday,
 } from "@/lib/time"
 
-import { CancelBooking } from "./bookings/cancel-booking"
 import { parseMyBookings } from "./bookings/cancel-result"
 import { loadMyEntitlements } from "./load-entitlements"
 import {
@@ -35,8 +33,9 @@ export const metadata: Metadata = {
   title: shellCopy.customer.homeTitle,
 }
 
-// Rendered inside the layout's <Suspense> customer gate. Sign-out stays here
-// until 5.7 moves it to the top bar.
+// Rendered inside the layout's <Suspense> customer gate. Sign-out is in the
+// top-bar and the unread count on its bell (story 5.7): home has no
+// notifications section.
 export default function MePage() {
   return (
     <>
@@ -50,7 +49,6 @@ export default function MePage() {
       >
         <Home />
       </Suspense>
-      <SignOutButton className="mt-4 max-w-xs" />
     </>
   )
 }
@@ -75,9 +73,9 @@ async function Greeting() {
 // that ended leaves home; a pinned purchase shows only as its session.
 // With neither a session ahead nor an active card: the empty-state. The
 // card's values come from get_my_entitlements; RLS limits the other reads
-// to her own rows. Story 3.6: the sessions come from get_my_bookings, the
-// next one has its cancel (or the contact phrase) under the card, then
-// "לכל ההרשמות שלי"; an entry that returned after a cancelled pinned
+// to her own rows. Story 3.6: the sessions come from get_my_bookings, then
+// "לכל ההרשמות שלי" (the cancel is only on the session page, user decision
+// 2026-10-06); an entry that returned after a cancelled pinned
 // booking has its own section.
 async function Home() {
   const supabase = await createClient()
@@ -96,7 +94,6 @@ async function Home() {
     starts_at: b.startsAt,
     concept_name: b.conceptName,
   }))
-  const nextBooking = myBookings.upcoming[0]
   const cards = entitlements.filter(isHomeCard)
   const returned = entitlements.filter(isHomeReturned)
 
@@ -113,7 +110,7 @@ async function Home() {
   const [next, ...later] = upcoming
   return (
     <ResultNoticeHost className="flex flex-col gap-10">
-      {next && nextBooking && (
+      {next && (
         <HomeSection id="next" title={customerCopy.upcomingTitle}>
           <SessionCard
             href={`/me/sessions/${next.id}`}
@@ -125,17 +122,6 @@ async function Home() {
             status={
               <StatusChip tone="success">{customerCopy.booked}</StatusChip>
             }
-          />
-          {/* Outside the card's link (EXPERIENCE › session-card). */}
-          <CancelBooking
-            bookingId={nextBooking.bookingId}
-            title={customerCopy.sessionTitle(nextBooking.conceptName)}
-            startsAt={nextBooking.startsAt}
-            funding={nextBooking.funding}
-            productName={nextBooking.productName}
-            optionsCount={myBookings.optionsCount}
-            canSelfCancel={nextBooking.canSelfCancel}
-            contactHref={contactHref}
           />
         </HomeSection>
       )}
@@ -222,8 +208,6 @@ async function Home() {
           </ul>
         </HomeSection>
       )}
-
-      {/* Story 5.7: the unread notifications go here, after the card. */}
     </ResultNoticeHost>
   )
 }

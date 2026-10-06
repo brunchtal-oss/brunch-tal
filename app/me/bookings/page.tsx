@@ -7,14 +7,12 @@ import { ResultNoticeHost } from "@/components/shared/result-notice"
 import { SessionCard } from "@/components/shared/session-card"
 import { StatusChip } from "@/components/shared/status-chip"
 import { buttonVariants } from "@/components/ui/button"
-import { getWhatsappHref } from "@/lib/content/business-details"
 import { customerCopy } from "@/lib/copy/customer"
 import { shellCopy } from "@/lib/copy/shell"
 import { callRpc } from "@/lib/rpc"
 import { createClient } from "@/lib/supabase/server"
 import { formatDayMonth, formatWeekday } from "@/lib/time"
 
-import { CancelBooking } from "./cancel-booking"
 import { parseMyBookings, pastBookingStatus } from "./cancel-result"
 
 export const metadata: Metadata = {
@@ -23,9 +21,8 @@ export const metadata: Metadata = {
 
 // Her bookings (story 3.6), opened from "לכל ההרשמות שלי" on home (no tab
 // in the bottom bar, user decision 2026-10-06). The upcoming ones, each a
-// session-card with the cancel under it (outside the card's link), or the
-// contact phrase past the self-cancel boundary; then the past ones
-// (cancelled / took place). Empty: a link to the schedule. Every value comes
+// session-card (the cancel is only on the session page, user decision
+// 2026-10-06); then the past ones (cancelled / took place). Empty: a link to the schedule. Every value comes
 // from get_my_bookings. Rendered inside the layout's customer gate.
 export default function BookingsPage() {
   return (
@@ -44,7 +41,7 @@ async function Bookings() {
   const supabase = await createClient()
   const result = await callRpc(supabase, "get_my_bookings")
   if (!result.ok) throw new Error("get_my_bookings failed")
-  const { upcoming, past, optionsCount } = parseMyBookings(result.data)
+  const { upcoming, past } = parseMyBookings(result.data)
 
   if (upcoming.length === 0 && past.length === 0) {
     return (
@@ -62,9 +59,6 @@ async function Bookings() {
       </section>
     )
   }
-
-  // The contact phrase also follows a refusal inside the sheet.
-  const contactHref = upcoming.length > 0 ? await getWhatsappHref() : null
 
   return (
     <ResultNoticeHost className="flex flex-col gap-10 pb-8">
@@ -94,16 +88,6 @@ async function Bookings() {
                       {customerCopy.booked}
                     </StatusChip>
                   }
-                />
-                <CancelBooking
-                  bookingId={b.bookingId}
-                  title={customerCopy.sessionTitle(b.conceptName)}
-                  startsAt={b.startsAt}
-                  funding={b.funding}
-                  productName={b.productName}
-                  optionsCount={optionsCount}
-                  canSelfCancel={b.canSelfCancel}
-                  contactHref={contactHref}
                 />
               </li>
             ))}

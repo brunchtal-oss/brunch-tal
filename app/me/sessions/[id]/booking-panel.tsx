@@ -42,12 +42,15 @@ export function BookingPanel({
   title,
   startsAt,
   preview,
+  cancelWindowHours = null,
   contactHref,
 }: {
   eventId: string
   title: string
   startsAt: string
   preview: BookingPreview
+  // The booking's cancel window in hours, for the notice past it.
+  cancelWindowHours?: number | null
   contactHref: string | null
 }) {
   const router = useRouter()
@@ -98,8 +101,8 @@ export function BookingPanel({
             productName={preview.productName}
             optionsCount={preview.optionsCount}
             canSelfCancel={preview.canSelfCancel}
+            cancelWindowHours={cancelWindowHours}
             contactHref={contactHref}
-            className={preview.canSelfCancel ? undefined : "w-full"}
           />
         )}
       </div>

@@ -88,8 +88,7 @@ export const ERROR_MESSAGES = {
   // deadline and no "Tal" in the wording, user decision 2026-10-05); a
   // booking funded from two kinds of entry.
   BOOKING_NOT_CANCELLABLE: "ההרשמה הזו כבר לא פעילה. כדאי לרענן את הדף",
-  SELF_CANCEL_CLOSED:
-    "כבר אי אפשר לבטל את ההרשמה הזו בעצמך. צרי קשר ונבדוק יחד",
+  SELF_CANCEL_CLOSED: "לא ניתן לבטל עצמאית כל כך קרוב למפגש. צרי קשר",
   MANUAL_HANDLING_REQUIRED: "את הביטול הזה עושים ידנית. צרי קשר ונטפל בו",
   // Raised by the adapter (never by SQL).
   INVALID_CREDENTIALS: "המייל או הסיסמה לא תואמים",

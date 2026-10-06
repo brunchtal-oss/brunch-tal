@@ -154,6 +154,7 @@
   target: 5.7
   summary: לקוחה מחוברת רואה "האזור שלי" במקום "כניסה לאזור האישי" בסרגל העליון ובתפריט, ו-`whatsapp-bar` לא מוצג לה. צריך לקרוא את ה-session בלי לשבור את המטמון של העמודים הציבוריים (רכיב דינמי בתוך `Suspense`, לא `'use cache'` עם cookies).
   evidence: ‏EXPERIENCE › `top-bar` ו-`whatsapp-bar`. היום המעטפת הציבורית סטטית לגמרי ולא יודעת מי מחוברת.
+  status: נסגר ב-5.7 (2026-10-06). ‏`components/public/viewer-shell.tsx` קורא את `getViewerRole()` בתוך `Suspense`: לקוחה רואה "האזור שלי" ← ‏`/me` ובלי פס וואטסאפ, אדמין רואה "לפאנל הניהול" ← ‏`/admin` עם הפס. העמודים הציבוריים נשארים במטמון. ה-chips ברשימה: רשומה חדשה למטה.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-2-public-pages-static.md`
   target: 5.4
@@ -393,3 +394,8 @@
   target: 4.2
   summary: בבית האדמין, השם של הלקוחה בשורת "כרטיסיות שעומדות לפוג" (ובפריט "לטיפול" של לקוחה שכבר יש לה חשבון) מקשר לכרטיס הלקוחה שלה. ‏`admin_get_home` צריך להחזיר גם `customer_id` (היום רק `entitlement_id`). אם 4.3 מוסיף לשורה קישור לכרטיסיות הפתוחות, להחליט יחד איך השורה נשארת יעד אחד.
   evidence: בקשת המשתמשת בבדיקה בטלפון של 4.1 (2026-10-06). כרטיס הלקוחה עוד לא קיים (4.2, סבב 6).
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-7-in-app-notification-centers.md`
+  target: אחרי ההגשה
+  summary: לקוחה מחוברת ב-`/sessions` (הרשימה הציבורית) רואה `status-chip` על מפגש שהיא רשומה אליו, כמו ב-`/me/sessions`. צריך לקרוא את ההרשמות שלה ברכיב דינמי בתוך `Suspense`, בלי לשבור את המטמון של הרשימה.
+  evidence: ‏spec 5.16 (Always) השאיר את ה-chips ל-5.7, ו-5.7 הוציא אותם (Never). היום הרשימה הציבורית זהה לאורחת וללקוחה.

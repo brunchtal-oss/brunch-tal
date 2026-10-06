@@ -1,6 +1,8 @@
+import { Suspense } from "react"
+
 import { SiteFooter } from "@/components/public/site-footer"
 import { TopBar } from "@/components/public/top-bar"
-import { WhatsappBar, WhatsappFlowLink } from "@/components/public/whatsapp-bar"
+import { ViewerTopBar, ViewerWhatsapp } from "@/components/public/viewer-shell"
 import { SkipLink } from "@/components/shared/skip-link"
 import {
   getBusinessDetails,
@@ -13,7 +15,6 @@ import {
 } from "@/lib/content/pages"
 import { shellCopy } from "@/lib/copy/shell"
 import { publicLegalNav } from "@/lib/nav"
-import { cn } from "@/lib/utils"
 
 // Public shell (AD-2, story 5.2): the sticky top-bar with the menu-sheet,
 // <main>, the whatsapp-bar (<aside>, fixed to the bottom; in the flow below
@@ -23,6 +24,11 @@ import { cn } from "@/lib/utils"
 // without them the WORDMARK and no bar. The footer links to a legal page
 // once it is published, and shows the visible links of site › footer
 // (content:site, content:global; story 5.3).
+// Story 5.7: the account link and the whatsapp-bar follow the viewer's role,
+// read in their own <Suspense> (never cached): the link's fallback is the
+// guest's, the bar's fallback is empty and the bar comes for anyone but a
+// signed-in customer. The footer keeps room for the bar only while it is
+// shown (app/globals.css › [data-site-footer]).
 export default async function PublicLayout({
   children,
 }: {
@@ -40,24 +46,19 @@ export default async function PublicLayout({
   return (
     <div className="flex min-h-svh flex-col">
       <SkipLink />
-      <TopBar name={name} />
+      <Suspense fallback={<TopBar name={name} />}>
+        <ViewerTopBar name={name} />
+      </Suspense>
       <main id="main" tabIndex={-1} className="flex flex-1 flex-col">
         {children}
       </main>
-      <WhatsappBar href={whatsappHref} />
-      <WhatsappFlowLink href={whatsappHref} />
+      <Suspense fallback={null}>
+        <ViewerWhatsapp href={whatsappHref} />
+      </Suspense>
       <SiteFooter
         details={details}
         legal={publicLegalNav.filter((item) => legalSlugs.includes(item.slug))}
         links={footerLinks}
-        className={cn(
-          // Room for the fixed whatsapp-bar (48px + 16px from the edge +
-          // safe area, plus air) inside the footer's band, so its text ends
-          // above the bar and the band reaches the bottom of the screen;
-          // none when the bar is in the flow (short window).
-          whatsappHref &&
-            "pb-[calc(4.5rem+env(safe-area-inset-bottom))] short:pb-0"
-        )}
       />
     </div>
   )

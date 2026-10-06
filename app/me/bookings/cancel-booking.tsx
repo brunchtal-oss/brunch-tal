@@ -36,15 +36,20 @@ export type CancelBookingProps = {
   optionsCount: number
   // From the server (private.can_self_cancel); never computed here.
   canSelfCancel: boolean
+  // The booking's cancel window in hours (policy_snapshot), for the notice
+  // past it; null when it cannot be read.
+  cancelWindowHours: number | null
   contactHref: string | null
   className?: string
 }
 
-// The cancel action of one booking (story 3.6), on the session page, in
-// /me/bookings and under "my next session" on home. Inside the self-cancel
-// window: "ביטול ההרשמה" opens a bottom-sheet that says what returns and
-// where, with one confirm ("כן, לבטל"). Past it: an inline-notice with the
-// contact phrase (no deadline and no "Tal", user decision 2026-10-05). The
+// The cancel action of one booking (story 3.6), only on the session page
+// (user decision 2026-10-06: not on home and not in /me/bookings). Inside
+// the self-cancel window: "ביטול ההרשמה" opens a bottom-sheet that says
+// what returns and where, with one confirm ("כן, לבטל"). Past it the same
+// button is shown, and only a tap on it shows the inline-notice "לא ניתן
+// לבטל עצמאית פחות מ-{n} שעות לפני המפגש." with the contact phrase (no
+// "Tal"): no call to action in view unless she asked to cancel. The
 // result is an inline-notice (through the page's ResultNoticeHost when
 // there is one, since this row leaves the list); no optimistic result, the
 // button is busy until the server answers, and a new idempotency key on
@@ -57,6 +62,7 @@ export function CancelBooking({
   productName,
   optionsCount,
   canSelfCancel,
+  cancelWindowHours,
   contactHref,
   className,
 }: CancelBookingProps) {
@@ -67,35 +73,15 @@ export function CancelBooking({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<ErrorCode | null>(null)
   const [done, setDone] = useState<string | null>(null)
+  // Past the self-cancel window the same button only shows why it cannot
+  // cancel, and the contact phrase (user decision 2026-10-06).
+  const [closedShown, setClosedShown] = useState(false)
   const titleRef = useRef<HTMLHeadingElement>(null)
 
   if (done) {
     return (
       <InlineNotice tone="success" className={className}>
         {done}
-      </InlineNotice>
-    )
-  }
-
-  if (!canSelfCancel) {
-    return (
-      <InlineNotice
-        tone="info"
-        className={className}
-        actions={
-          contactHref ? (
-            <a
-              href={contactHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={cn(LINK, "py-2.5")}
-            >
-              {customerCopy.contactPhrase}
-            </a>
-          ) : undefined
-        }
-      >
-        {copy.closed}
       </InlineNotice>
     )
   }
@@ -132,97 +118,123 @@ export function CancelBooking({
     error === "SELF_CANCEL_CLOSED" || error === "MANUAL_HANDLING_REQUIRED"
 
   return (
-    <Sheet
-      open={open}
-      onOpenChange={(next) => {
-        // The sheet stays open while the cancel is on its way.
-        if (!busy) setOpen(next)
-      }}
-    >
-      <Button
-        type="button"
-        variant="outline"
-        size="lg"
-        onClick={() => {
-          setKey(newIdempotencyKey())
-          setError(null)
-          setOpen(true)
+    <>
+      <Sheet
+        open={open}
+        onOpenChange={(next) => {
+          // The sheet stays open while the cancel is on its way.
+          if (!busy) setOpen(next)
         }}
-        className={cn(
-          "h-12 w-full max-w-xs rounded-[4px] border-foreground text-base",
-          className
-        )}
       >
-        {copy.button}
-      </Button>
-      <SheetContent
-        side="bottom"
-        showCloseButton={false}
-        data-cancel-sheet=""
-        aria-modal="true"
-        initialFocus={titleRef}
-        className="mx-auto max-h-[90vh] w-full max-w-[720px] gap-0 overflow-y-auto rounded-t-xl border-0 bg-card px-6 pt-2 pb-[calc(1.5rem+env(safe-area-inset-bottom))] text-base shadow-none"
-      >
-        <span
-          aria-hidden
-          className="mx-auto mb-2 h-1 w-9 shrink-0 rounded-full bg-border"
-        />
-        <div className="flex items-center justify-between gap-2">
-          <SheetTitle
-            ref={titleRef}
-            tabIndex={-1}
-            className="font-heading text-[22px] leading-[1.25] font-light"
-          >
-            {copy.button} · <bdi>{title}</bdi>
-          </SheetTitle>
-          <SheetClose
-            aria-label={customerCopy.close}
-            className="-me-2.5 inline-flex size-11 shrink-0 items-center justify-center rounded-[4px] text-foreground hover:bg-muted"
-          >
-            <XIcon aria-hidden strokeWidth={1.5} className="size-6" />
-          </SheetClose>
-        </div>
-        <p className="mt-1 font-semibold">
-          <time dateTime={startsAt}>{formatSessionDateTime(startsAt)}</time>
-        </p>
-        <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 rounded-lg bg-muted px-4 py-3 text-[15px]">
-          <dt className="text-muted-foreground">{copy.returns}</dt>
-          <dd className="font-semibold">
-            <bdi>{returnsText(funding, productName, optionsCount)}</bdi>
-          </dd>
-        </dl>
-        {error && (
-          <InlineNotice
-            tone="error"
-            className="mt-4"
-            actions={
-              contact && contactHref ? (
-                <a
-                  href={contactHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={cn(LINK, "py-2.5")}
-                >
-                  {customerCopy.contactPhrase}
-                </a>
-              ) : undefined
-            }
-          >
-            {errorMessage(error)}
-          </InlineNotice>
-        )}
         <Button
           type="button"
+          variant="outline"
           size="lg"
-          onClick={confirm}
-          aria-busy={busy || undefined}
-          aria-disabled={busy || undefined}
-          className="mt-5 h-12 w-full rounded-[4px] text-base font-semibold"
+          onClick={() => {
+            if (!canSelfCancel) {
+              setClosedShown(true)
+              return
+            }
+            setKey(newIdempotencyKey())
+            setError(null)
+            setOpen(true)
+          }}
+          className={cn(
+            "h-12 w-full max-w-xs rounded-[4px] border-foreground text-base",
+            className
+          )}
         >
-          {busy && <Spinner aria-hidden />}
-          {copy.confirm}
+          {copy.button}
         </Button>
-      </SheetContent>
-    </Sheet>
+        <SheetContent
+          side="bottom"
+          showCloseButton={false}
+          data-cancel-sheet=""
+          aria-modal="true"
+          initialFocus={titleRef}
+          className="mx-auto max-h-[90vh] w-full max-w-[720px] gap-0 overflow-y-auto rounded-t-xl border-0 bg-card px-6 pt-2 pb-[calc(1.5rem+env(safe-area-inset-bottom))] text-base shadow-none"
+        >
+          <span
+            aria-hidden
+            className="mx-auto mb-2 h-1 w-9 shrink-0 rounded-full bg-border"
+          />
+          <div className="flex items-center justify-between gap-2">
+            <SheetTitle
+              ref={titleRef}
+              tabIndex={-1}
+              className="font-heading text-[22px] leading-[1.25] font-light"
+            >
+              {copy.button} · <bdi>{title}</bdi>
+            </SheetTitle>
+            <SheetClose
+              aria-label={customerCopy.close}
+              className="-me-2.5 inline-flex size-11 shrink-0 items-center justify-center rounded-[4px] text-foreground hover:bg-muted"
+            >
+              <XIcon aria-hidden strokeWidth={1.5} className="size-6" />
+            </SheetClose>
+          </div>
+          <p className="mt-1 font-semibold">
+            <time dateTime={startsAt}>{formatSessionDateTime(startsAt)}</time>
+          </p>
+          <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 rounded-lg bg-muted px-4 py-3 text-[15px]">
+            <dt className="text-muted-foreground">{copy.returns}</dt>
+            <dd className="font-semibold">
+              <bdi>{returnsText(funding, productName, optionsCount)}</bdi>
+            </dd>
+          </dl>
+          {error && (
+            <InlineNotice
+              tone="error"
+              className="mt-4"
+              actions={
+                contact && contactHref ? (
+                  <a
+                    href={contactHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={cn(LINK, "py-2.5")}
+                  >
+                    {customerCopy.contactPhrase}
+                  </a>
+                ) : undefined
+              }
+            >
+              {errorMessage(error)}
+            </InlineNotice>
+          )}
+          <Button
+            type="button"
+            size="lg"
+            onClick={confirm}
+            aria-busy={busy || undefined}
+            aria-disabled={busy || undefined}
+            className="mt-5 h-12 w-full rounded-[4px] text-base font-semibold"
+          >
+            {busy && <Spinner aria-hidden />}
+            {copy.confirm}
+          </Button>
+        </SheetContent>
+      </Sheet>
+      {closedShown && (
+        <InlineNotice
+          tone="info"
+          className="w-full"
+          actions={
+            contactHref ? (
+              <a
+                href={contactHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={cn(LINK, "py-2.5")}
+              >
+                {customerCopy.contactPhrase}
+              </a>
+            ) : undefined
+          }
+        >
+          {copy.closed(cancelWindowHours)}
+        </InlineNotice>
+      )}
+    </>
   )
 }
