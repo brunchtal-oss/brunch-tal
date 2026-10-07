@@ -1,3 +1,5 @@
+import Link from "next/link"
+
 import { StatusChip } from "@/components/shared/status-chip"
 import { adminCopy } from "@/lib/copy/admin"
 
@@ -9,8 +11,8 @@ const copy = adminCopy.home
 
 // Cards about to expire (story 4.1): active cards with free entries whose
 // days left are within business_settings.admin_expiring_days, by expiry, as
-// decided by admin_get_home. A row has no link until the open-cards screen
-// (4.3).
+// decided by admin_get_home. The name links to the customer's card (story
+// 4.2); the row itself is not a link.
 export async function ExpiringCards() {
   const { expiring_cards: rows } = await loadHome()
 
@@ -32,7 +34,16 @@ export async function ExpiringCards() {
                     breaks apart (phone check 2026-10-06). */}
                 <div className="flex items-start gap-2.5">
                   <p className="min-w-0 flex-1 text-base leading-[1.35] font-semibold">
-                    <bdi className="break-words">{item.title}</bdi>
+                    {item.href ? (
+                      <Link
+                        href={item.href}
+                        className="rounded-[4px] underline underline-offset-4"
+                      >
+                        <bdi className="break-words">{item.title}</bdi>
+                      </Link>
+                    ) : (
+                      <bdi className="break-words">{item.title}</bdi>
+                    )}
                   </p>
                   <StatusChip tone="warning" className="mt-0.5 shrink-0">
                     {copy.expiringChip}

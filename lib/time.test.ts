@@ -10,6 +10,7 @@ import {
   formatMonthYear,
   formatNotificationTime,
   formatSessionDateTime,
+  formatShortDate,
   formatShortDay,
   formatTime,
   formatWeekday,
@@ -62,6 +63,12 @@ describe("babyAge", () => {
 
   it("formats a birth date with its year", () => {
     expect(formatFullDate("2026-07-05")).toBe("05.07.2026")
+  })
+
+  it("formats a day with a two-digit year, by the Jerusalem day", () => {
+    expect(formatShortDate("2026-10-05")).toBe("05.10.26")
+    // 00:30 on 03.10 in Jerusalem.
+    expect(formatShortDate("2026-10-02T21:30:00Z")).toBe("03.10.26")
   })
 
   describe("localToday", () => {

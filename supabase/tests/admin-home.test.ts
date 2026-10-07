@@ -629,6 +629,8 @@ describe("admin_get_home", () => {
       expect(mine(await home(db, f))).toEqual([
         {
           entitlement_id: in21,
+          // The card's customer (story 4.2).
+          customer_id: f.customerA,
           customer_label: testName("money_a"),
           product_name: testName("card"),
           available: 4,

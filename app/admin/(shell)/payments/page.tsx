@@ -77,7 +77,16 @@ async function PaymentsContent() {
                   item.unbound && "text-muted-foreground"
                 )}
               >
-                {item.title}
+                {item.customerHref ? (
+                  <Link
+                    href={item.customerHref}
+                    className="rounded-[4px] underline underline-offset-4"
+                  >
+                    {item.title}
+                  </Link>
+                ) : (
+                  item.title
+                )}
               </p>
               <p className="text-[15px]">
                 <bdi>{item.details}</bdi>

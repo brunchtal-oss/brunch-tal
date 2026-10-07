@@ -144,6 +144,18 @@ describe("navigation", () => {
     expect(isCurrent(adminNav, home, "/admin/settings")).toBe(false)
   })
 
+  it("puts the customers first in more and keeps more current on a card (story 4.2)", () => {
+    const [home, , , , more] = adminNav
+    expect(adminNav).toHaveLength(5)
+    expect(adminMoreNav[0]).toMatchObject({
+      href: "/admin/customers",
+      icon: "customers",
+    })
+    expect(isCurrent(adminNav, more, "/admin/customers")).toBe(true)
+    expect(isCurrent(adminNav, more, "/admin/customers/1")).toBe(true)
+    expect(isCurrent(adminNav, home, "/admin/customers/1")).toBe(false)
+  })
+
   it("shows the accessibility statement always, privacy and terms once published (story 5.5)", () => {
     const hrefs = (items: { href: string }[]) => items.map((i) => i.href)
     expect(hrefs(visibleLegalNav([]))).toEqual(["/accessibility"])

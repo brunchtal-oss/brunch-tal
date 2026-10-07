@@ -29,6 +29,7 @@ describe("toPaymentItem", () => {
       paymentId: "pay-1",
       title: "Dana",
       unbound: false,
+      customerHref: "/admin/customers/c-1",
       details: copy.details("Card", "472 ₪", "Bit", "01.10", "03.10"),
       override: null,
       extra: null,
@@ -39,6 +40,7 @@ describe("toPaymentItem", () => {
     const item = toPaymentItem(row({ customer_id: null, customer_name: null }))
     expect(item.title).toBe(copy.unbound)
     expect(item.unbound).toBe(true)
+    expect(item.customerHref).toBeNull()
   })
 
   it("titles an unbound payment with its payer label, and a bound one with the name", () => {

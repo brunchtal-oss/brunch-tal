@@ -397,6 +397,7 @@
   target: 4.2
   summary: בבית האדמין, השם של הלקוחה בשורת "כרטיסיות שעומדות לפוג" (ובפריט "לטיפול" של לקוחה שכבר יש לה חשבון) מקשר לכרטיס הלקוחה שלה. ‏`admin_get_home` צריך להחזיר גם `customer_id` (היום רק `entitlement_id`). אם 4.3 מוסיף לשורה קישור לכרטיסיות הפתוחות, להחליט יחד איך השורה נשארת יעד אחד.
   evidence: בקשת המשתמשת בבדיקה בטלפון של 4.1 (2026-10-06). כרטיס הלקוחה עוד לא קיים (4.2, סבב 6).
+  status: נסגר ב-4.2 (2026-10-07). ‏`admin_get_home` מחזיר `customer_id` בכל שורה של `expiring_cards`, והשם בשורה מקשר לכרטיס (השורה עצמה לא קישור). פריטי "לטיפול" לא משתנים (החלטת המשתמשת 2026-10-07: רק "שילמה ואין לה מקום" שייך ללקוחה עם חשבון, והוא מוביל לעמוד המפגש). ההחלטה על יעד אחד לשורה כשמתווסף קישור לכרטיסיות הפתוחות נשארת ל-4.3.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-12-session-completion-job.md`
   target: (בלי יעד)
@@ -442,6 +443,7 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-4-7-business-settings-and-templates.md`
   summary: כל סיפור שמוסיף קורא ל-`enqueue_notification` (5.17 reminder, 5.6 waitlist_spot, 3.8 event_cancelled/event_changed, 3.13 entitlement_changed, 5.10 card_expiring/admin_card_expiring) מעביר את כל `allowed_vars` של הסוג, ומוסיף בדיקת מסד שעורכת את התבנית לכל השדות המותרים ומריצה את הזרימה האמיתית.
   evidence: ביקורת 4.7, ממצא 9 (medium, לא אומת). ‏`allowed_vars` של 9 הסוגים בלי קורא נקבע מראש. קורא שמעביר פחות שדות ייכשל ב-render בתוך העסקה ויבטל אותה.
+  status: ‏reminder בוצע ב-5.17 (‏`allowed_vars` = ‏`date`, ‏`time`, ‏`concept`, ובדיקת "כל השדות" ב-`session-reminders.test.ts`).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-8-push-pipeline-and-permission.md`
   target: 4.6
@@ -462,3 +464,13 @@
   target: לפני ההדגמה (בדיקה בלבד)
   summary: בדיקת פוש באייפון עם האפליקציה מותקנת במסך הבית (iOS 16.4 ומעלה), כלקוחה וכאדמין: הפעלה מהכרטיס במרכז ההתראות, פוש תוך דקה כשהאפליקציה סגורה, ולחיצה שפותחת את `target_path`. אם משהו נכשל, תיקון ב-PR קצר.
   evidence: ב-2026-10-06 נבדק רק Android (לקוחה ואדמין); לא היה אייפון זמין (החלטת המשתמשת). באייפון פוש עובד רק מהאפליקציה המותקנת.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-17-session-reminder-24h.md`
+  target: 5.18
+  summary: לקוחות בדויות של נתוני ההדגמה נוצרות בלי `push_subscriptions`. כך התזכורות שלהן (‏`job_reminders`) נשמרות רק במרכז ההתראות, ומשימת הפוש נסגרת `skipped`. אין צורך בקוד.
+  evidence: ‏spec 5.17 (Always, נתוני הדגמה): פוש נשלח רק למנוי שנרשם לאותה לקוחה.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-17-session-reminder-24h.md`
+  target: 4.6
+  summary: הסרת פרטים (`admin_anonymize_customer`) מבטלת את ההרשמות העתידיות של הלקוחה, או ש-`private.job_reminders` מדלג על פרופיל עם `anonymized_at`; אחרת לקוחה שפרטיה הוסרו תקבל תזכורת חדשה אחרי הניקוי.
+  evidence: ביקורת 5.17 (edge-case-hunter). ‏`job_reminders` בודק רק `customer_id is not null`; ‏`profiles.anonymized_at` קיים, אבל אין עדיין זרימה שקובעת אותו.

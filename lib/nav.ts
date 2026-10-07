@@ -6,7 +6,14 @@ import { shellCopy } from "@/lib/copy/shell"
 // its item when it adds the screen. The icon is a key so the list stays plain
 // data that a Server Component can pass to the client tab bar.
 export type NavIcon =
-  "home" | "sessions" | "work" | "payments" | "purchases" | "profile" | "more"
+  | "home"
+  | "sessions"
+  | "work"
+  | "payments"
+  | "purchases"
+  | "profile"
+  | "more"
+  | "customers"
 
 export type NavItem = {
   href: string
@@ -22,7 +29,18 @@ export type NavItem = {
 }
 
 // The rows of the admin's "more" screen (app/admin/(shell)/more/page.tsx).
-export const adminMoreNav: readonly { href: string; label: string }[] = [
+// The customers come first (story 4.2, user decision 2026-10-07: the tab
+// bar stays at 5 items); a customer's card keeps "more" current too.
+export const adminMoreNav: readonly {
+  href: string
+  label: string
+  icon?: NavIcon
+}[] = [
+  {
+    href: "/admin/customers",
+    label: shellCopy.nav.customers,
+    icon: "customers",
+  },
   { href: "/admin/links", label: adminCopy.links.title },
   { href: "/admin/products", label: adminCopy.products.title },
   { href: "/admin/content", label: adminCopy.content.title },

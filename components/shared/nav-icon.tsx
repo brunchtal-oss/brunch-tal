@@ -6,6 +6,7 @@ import {
   HouseIcon,
   ReceiptTextIcon,
   UserRoundIcon,
+  UsersRoundIcon,
 } from "lucide-react"
 
 import type { NavIcon as NavIconKey } from "@/lib/nav"
@@ -18,6 +19,7 @@ const ICONS = {
   purchases: ReceiptTextIcon,
   profile: UserRoundIcon,
   more: EllipsisIcon,
+  customers: UsersRoundIcon,
 } satisfies Record<NavIconKey, unknown>
 
 // Decorative: the item's label is always visible next to it.

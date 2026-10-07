@@ -72,6 +72,9 @@ const NOT_BEFORE_BIND = [
   "activation_tokens",
   // Each row records the customer it was written for at that time.
   "audit_log",
+  // Tal's internal notes on a customer's card (story 4.2): written only
+  // for a profile that exists (admin_add_customer_note locks it).
+  "customer_notes",
 ]
 
 const CUSTOMER_TABLES = `
