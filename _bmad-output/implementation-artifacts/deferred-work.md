@@ -479,3 +479,8 @@
   target: 4.6
   summary: הסרת פרטים (`admin_anonymize_customer`) מאפסת את שתי ההסכמות לתמונות, גם את `personal_photo_consent`, ‏`_at` ו-`_text_version` שנוספו ב-2.13, ולא רק את `photo_consent*`.
   evidence: ביקורת 2.13 (blind-hunter). עוד אין פונקציית הסרה. בלי זה, לקוחה שפרטיה הוסרו נשארת "אישרה תמונות אישיות".
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-design-testimonials-carousel.md`
+  target: סבב העיצוב (הגלריה)
+  summary: ב-/gallery בלי תמונות, כשכל המלצות התמונה בלי קובץ מפורסם, ‏`TestimonialsSection` מחזיר null אבל `GalleryView` לא מציג את הדף הריק, כי הוא מחליט לפי התוכן לפני סינון התמונות. התיקון ב-`components/public/page-views.tsx`.
+  evidence: ביקורת הקרוסלה (סבב 1). המצב היה קיים גם לפני השינוי (`ul` ריק). נדיר: המלצת תמונה שהקובץ שלה לא פורסם.

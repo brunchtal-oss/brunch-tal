@@ -13,6 +13,8 @@ import type {
 import { objectPosition } from "@/lib/media/photo"
 import { cn } from "@/lib/utils"
 
+import { TestimonialCarousel } from "./testimonial-carousel"
+
 // The sections of the public pages (story 5.2), one per content kind. All
 // text comes from published content and is rendered as text (React escapes
 // it; line breaks are kept with whitespace-pre-line). The rhythm is
@@ -194,10 +196,15 @@ export function FaqSection({
 }
 
 // testimonials: each the text with the display name under it, marked by a
-// short olive line at inline-start. An image testimonial (story 5.4, e.g. a
-// screenshot) is shown whole (never cropped), lazily, with its alt (a short
-// transcription) and its display name when there is one. The items arrive
-// resolved (an image that is not published is already left out).
+// short olive line at inline-start, in a carousel moved by hand only
+// (TestimonialCarousel, user decision 2026-10-07). An image testimonial
+// (story 5.4, e.g. a screenshot) is centred without the line (it has its
+// own frame), shown whole (object-contain, never cropped) at a fixed
+// height that leaves the controls above the whatsapp-bar on a phone, so
+// the row does not jump when it loads, lazily, with its alt (a short
+// transcription) and its display name when there is one. An image that is
+// not published is left out and not counted; with nothing left there is no
+// section.
 export function TestimonialsSection({
   content,
   label,
@@ -208,49 +215,50 @@ export function TestimonialsSection({
   images?: ImageMap
 }) {
   const id = useId()
+  const items: React.ReactNode[] = []
+  for (const item of content.items) {
+    if (item.hidden) continue
+    if (item.kind === "image") {
+      const image = images[item.image.media_id]
+      if (!image) continue
+      items.push(
+        <figure className="flex w-full flex-col items-center">
+          <Image
+            src={image.src}
+            alt={image.alt}
+            width={720}
+            height={960}
+            sizes="(min-width: 640px) 400px, 85vw"
+            unoptimized={image.unoptimized}
+            className="h-[min(440px,55svh)] w-auto max-w-full rounded-lg border border-border object-contain"
+          />
+          {item.name && (
+            <figcaption className="mt-2 text-center text-[15px] text-muted-foreground">
+              {item.name}
+            </figcaption>
+          )}
+        </figure>
+      )
+      continue
+    }
+    items.push(
+      <figure className="flex w-full flex-col border-s-2 border-brand-accent ps-4">
+        <blockquote className="text-[17px] leading-[1.65] text-pretty whitespace-pre-line">
+          {item.text}
+        </blockquote>
+        <figcaption className="mt-2 text-[15px] text-muted-foreground">
+          {item.name}
+        </figcaption>
+      </figure>
+    )
+  }
+  if (items.length === 0) return null
   return (
     <PublicSection titleId={content.title ? id : undefined} label={label}>
       {content.title && <SectionHeading id={id} title={content.title} />}
-      <ul className={cn("flex flex-col gap-8", content.title && "mt-8")}>
-        {content.items.map((item, index) => {
-          if (item.kind === "image") {
-            const image = images[item.image.media_id]
-            if (!image) return null
-            return (
-              <li key={index}>
-                <figure className="border-s-2 border-brand-accent ps-4">
-                  <Image
-                    src={image.src}
-                    alt={image.alt}
-                    width={720}
-                    height={960}
-                    sizes="(min-width: 640px) 360px, 80vw"
-                    unoptimized={image.unoptimized}
-                    className="h-auto w-full max-w-[360px] rounded-lg border border-border"
-                  />
-                  {item.name && (
-                    <figcaption className="mt-2 text-[15px] text-muted-foreground">
-                      {item.name}
-                    </figcaption>
-                  )}
-                </figure>
-              </li>
-            )
-          }
-          return (
-            <li key={index}>
-              <figure className="border-s-2 border-brand-accent ps-4">
-                <blockquote className="text-[17px] leading-[1.65] text-pretty whitespace-pre-line">
-                  {item.text}
-                </blockquote>
-                <figcaption className="mt-2 text-[15px] text-muted-foreground">
-                  {item.name}
-                </figcaption>
-              </figure>
-            </li>
-          )
-        })}
-      </ul>
+      <div className={cn(content.title && "mt-8")}>
+        <TestimonialCarousel items={items} label={content.title ?? label} />
+      </div>
     </PublicSection>
   )
 }
