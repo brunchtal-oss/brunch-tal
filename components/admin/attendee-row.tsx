@@ -1,3 +1,4 @@
+import { consentLines, type PhotoConsents } from "@/lib/admin/photo-consents"
 import { adminCopy } from "@/lib/copy/admin"
 
 import { babyAge } from "./baby-age"
@@ -20,10 +21,25 @@ export type Attendee = {
   phone: string | null
   dietaryNotes: string | null
   guestDetails: string | null
-  // The photo consent (CAP-40), shown only on the work sheet (story 4.10);
-  // null for a pending booking or removed details.
+  // The two photo consents (CAP-40; atmosphere and personal from story
+  // 2.13); null for a pending booking or removed details.
   photoConsent: boolean | null
+  personalPhotoConsent: boolean | null
   babies: readonly AttendeeBaby[]
+}
+
+// Both consents of an active customer; null: nothing to show.
+export function attendeeConsents(attendee: Attendee): PhotoConsents | null {
+  if (
+    attendee.photoConsent === null ||
+    attendee.personalPhotoConsent === null
+  ) {
+    return null
+  }
+  return {
+    atmosphere: attendee.photoConsent,
+    personal: attendee.personalPhotoConsent,
+  }
 }
 
 // The name a booking shows: the customer's, or "לקוחה חדשה · ממתינה
@@ -36,7 +52,8 @@ export function attendeeTitle(attendee: Attendee): string {
 
 // DESIGN.md › attendee-row (story 3.4): the name in body-strong with "×2" for
 // a couple booking, the phone, a line per baby with the age on the session's
-// day, the dietary notes as written on a warning tint, and the companion's
+// day, the two photo consents in words (story 2.13), the dietary notes as
+// written on a warning tint, and the companion's
 // note the same way with "מלווה:". An empty field shows nothing. A pending
 // booking: "לקוחה חדשה · ממתינה להצטרפות" and the payer label; removed
 // details: "פרטי הלקוחה הוסרו". onDay: the session's local date
@@ -53,6 +70,7 @@ export function AttendeeRow({
   action?: React.ReactNode
 }) {
   const title = attendeeTitle(attendee)
+  const consents = attendeeConsents(attendee)
   const muted = !attendee.pendingJoin && attendee.name === null
 
   return (
@@ -89,6 +107,12 @@ export function AttendeeRow({
             </bdi>
           </p>
         ))}
+        {consents &&
+          consentLines(consents).map((line) => (
+            <p key={line} className="text-[15px] text-muted-foreground">
+              {line}
+            </p>
+          ))}
         {attendee.dietaryNotes && (
           <p className="mt-1 rounded-md bg-warning-tint px-3 py-2 text-[15px] whitespace-pre-line text-warning">
             <bdi>{attendee.dietaryNotes}</bdi>

@@ -16,9 +16,10 @@ import { isPlainDate } from "@/lib/time"
 // and makes one write with the customer's own session: a column update of
 // profiles (full_name, dietary_notes) or babies (AD-1), where RLS keeps her
 // to her own rows and private.babies_guard checks the birth date, the count
-// and the last baby again; or set_photo_consent. Self-updates are exempt
-// from idempotency (AD-5). customer_id is never sent: the babies default
-// fills it from the session.
+// and the last baby again; or set_photo_consent and
+// set_personal_photo_consent (story 2.13). Self-updates are exempt from
+// idempotency (AD-5). customer_id is never sent: the babies default fills
+// it from the session.
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -165,6 +166,23 @@ export async function setPhotoConsent(input: {
   const result = await callRpc(await createClient(), "set_photo_consent", {
     p_consent: input.consent,
   })
+  if (!result.ok) return result
+  return done()
+}
+
+// The personal photo consent (story 2.13): the same rules as
+// setPhotoConsent, through set_personal_photo_consent.
+export async function setPersonalPhotoConsent(input: {
+  consent: boolean
+}): Promise<ActionResult> {
+  if (typeof input?.consent !== "boolean") {
+    return invalid("personal_photo_consent")
+  }
+  const result = await callRpc(
+    await createClient(),
+    "set_personal_photo_consent",
+    { p_consent: input.consent }
+  )
   if (!result.ok) return result
   return done()
 }

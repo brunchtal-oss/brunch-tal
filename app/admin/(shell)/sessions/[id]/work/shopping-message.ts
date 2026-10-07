@@ -1,7 +1,14 @@
+import {
+  consentMarks as photoConsentMarks,
+  type ConsentMark,
+} from "@/lib/admin/photo-consents"
 import { adminCopy } from "@/lib/copy/admin"
 import { formatDayMonth } from "@/lib/time"
 
-import type { Attendee } from "@/components/admin/attendee-row"
+import {
+  attendeeConsents,
+  type Attendee,
+} from "@/components/admin/attendee-row"
 
 import type { ShoppingItem } from "./work-sheet-data"
 
@@ -56,11 +63,10 @@ export function dietLines(attendee: Attendee): string[] {
   return lines
 }
 
-// The photo consent cell: "אישרה" / "לא אישרה", or null (an empty cell) for
-// a pending booking or removed details.
-export function consentText(attendee: Attendee): string | null {
-  if (attendee.photoConsent === null) return null
-  return attendee.photoConsent
-    ? copy.photoConsentShort
-    : copy.noPhotoConsentShort
+// The photo consent cell (story 2.13): a short mark per consent ("אווירה
+// ✓", "אישיות ✗"), or none (an empty cell) for a pending booking or removed
+// details.
+export function consentMarks(attendee: Attendee): ConsentMark[] {
+  const consents = attendeeConsents(attendee)
+  return consents ? photoConsentMarks(consents) : []
 }

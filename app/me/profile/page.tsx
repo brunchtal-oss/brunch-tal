@@ -15,7 +15,7 @@ import { localToday } from "@/lib/time"
 
 import { BabiesSection } from "./babies-section"
 import { DetailsSection } from "./details-section"
-import { PhotoConsentForm } from "./photo-consent-form"
+import { PhotoConsentSection } from "./photo-consent-form"
 import { ProfileToaster } from "./profile-toaster"
 
 export const metadata: Metadata = {
@@ -57,7 +57,9 @@ async function Profile() {
     await Promise.all([
       supabase
         .from("profiles")
-        .select("full_name, dietary_notes, phone_e164, photo_consent")
+        .select(
+          "full_name, dietary_notes, phone_e164, photo_consent, personal_photo_consent"
+        )
         .eq("id", userId ?? "")
         .maybeSingle(),
       supabase
@@ -91,9 +93,12 @@ async function Profile() {
         today={today}
       />
       {photoContent && (
-        <PhotoConsentForm
+        <PhotoConsentSection
           content={photoContent}
-          consent={profile.photo_consent}
+          consents={{
+            atmosphere: profile.photo_consent,
+            personal: profile.personal_photo_consent,
+          }}
         />
       )}
       <nav aria-label={copy.linksLabel}>

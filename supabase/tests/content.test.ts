@@ -7,6 +7,8 @@ import { randomUUID } from "node:crypto"
 
 import { describe, expect, it } from "vitest"
 
+import { photoConsentSchema } from "@/lib/content/schema"
+
 import {
   asAuthenticated,
   inRollback,
@@ -69,27 +71,22 @@ describe("content", () => {
     })
   })
 
-  it("seeds the approved photo consent wording, version 0", async () => {
+  // Story 2.13: the block has the two-question shape and the page was
+  // published at least once. Tal may edit and publish it in dev, so the
+  // exact seed wording is checked against the migration file instead
+  // (lib/content/photo-consent-seed.test.ts).
+  it("holds a published two-question photo consent, version 1 or later", async () => {
     const rows = await sql(
       `select s.published_content, p.published_version
        from public.content_sections s
        join public.content_pages p on p.slug = s.page_slug
        where s.page_slug = 'join-form' and s.key = 'photo_consent'`
     )
-    expect(rows).toEqual([
-      {
-        published_version: 0,
-        published_content: {
-          question: [
-            "במפגשים אני מצלמת תמונות כדי שיהיה למשתתפות הבראנץ׳ מזכרת מתוקה עם הקטנטנים.",
-            "לפעמים אשמח לשתף רגעים מהמפגשים גם באתר וברשתות החברתיות.",
-            "האם את מסכימה שאפרסם תמונות שלכם?",
-          ].join("\n"),
-          yes_label: "כן, בשמחה",
-          no_label: "מעדיפה שהתמונות שלנו ישארו פרטיות",
-        },
-      },
-    ])
+    expect(rows).toHaveLength(1)
+    expect(rows[0].published_version).toBeGreaterThanOrEqual(1)
+    expect(
+      photoConsentSchema.safeParse(rows[0].published_content).success
+    ).toBe(true)
   })
 
   it("never shows drafts, hidden or unpublished sections", async () => {

@@ -96,6 +96,22 @@ const PORTRAIT_ASPECTS: readonly ImageAspect[] = [{ ratio: 4 / 5 }]
 
 const listTitle = text("title", copy.listTitle, { maxLength: 120 })
 
+// One consent of join-form › photo_consent (story 2.13): its title,
+// question and two answers, flat fields named "<kind>_<field>".
+function consentFields(kind: "atmosphere" | "personal"): TextField[] {
+  const labels = copy.photoConsent[kind]
+  return [
+    text(`${kind}_title`, labels.title, { maxLength: 200 }),
+    text(`${kind}_question`, labels.question, {
+      hint: copy.photoConsent.linesHint,
+      multiline: true,
+      maxLength: 1000,
+    }),
+    text(`${kind}_yes`, labels.yes, { maxLength: 200 }),
+    text(`${kind}_no`, labels.no, { maxLength: 200 }),
+  ]
+}
+
 const business = copy.business
 
 const legal = copy.legal
@@ -331,13 +347,13 @@ export function sectionSpec(ref: SectionRef): SectionSpec {
       return {
         hideable: false,
         fields: [
-          text("question", copy.photoConsent.question, {
-            hint: copy.photoConsent.questionHint,
+          ...consentFields("atmosphere"),
+          ...consentFields("personal"),
+          text("note", copy.photoConsent.note, {
+            hint: copy.photoConsent.linesHint,
             multiline: true,
             maxLength: 1000,
           }),
-          text("yes_label", copy.photoConsent.yes, { maxLength: 200 }),
-          text("no_label", copy.photoConsent.no, { maxLength: 200 }),
         ],
       }
     case "business_details":

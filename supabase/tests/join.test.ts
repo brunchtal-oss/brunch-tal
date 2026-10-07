@@ -79,6 +79,7 @@ function profile(
     dietary_notes: null,
     privacy_consent: true,
     photo_consent: false,
+    personal_photo_consent: false,
     babies: [{ name: testName("baby"), birth_date: "2026-09-01" }],
     ...overrides,
   }
@@ -209,7 +210,11 @@ describe("join", () => {
     await inRollback(async (db) => {
       const a = await approveCard(db)
       const { userId, phone, done } = await join(db, a, {
-        profile: { dietary_notes: "  ", photo_consent: false },
+        profile: {
+          dietary_notes: "  ",
+          photo_consent: true,
+          personal_photo_consent: false,
+        },
       })
 
       expect(done).toEqual({
@@ -230,18 +235,25 @@ describe("join", () => {
       const { rows: privacy } = await db.query(
         "select published_version from public.content_pages where slug = 'privacy'"
       )
+      // Both photo consents carry the join-form published version.
+      const { rows: joinForm } = await db.query(
+        "select published_version from public.content_pages where slug = 'join-form'"
+      )
       expect(p).toMatchObject({
         full_name: testName("joiner"),
         phone_e164: e164(phone),
         dietary_notes: null,
-        photo_consent: false,
-        photo_consent_text_version: 0,
+        photo_consent: true,
+        photo_consent_text_version: joinForm[0].published_version,
+        personal_photo_consent: false,
+        personal_photo_consent_text_version: joinForm[0].published_version,
         privacy_policy_version: privacy[0].published_version,
         anonymized_at: null,
       })
       expect(p.activated_at).not.toBeNull()
       expect(p.privacy_consent_at).not.toBeNull()
       expect(p.photo_consent_at).not.toBeNull()
+      expect(p.personal_photo_consent_at).toEqual(p.photo_consent_at)
 
       expect(
         await count(db, "select 1 from public.babies where customer_id = $1", [
@@ -461,6 +473,25 @@ describe("join", () => {
       { photo_consent: null },
       "INVALID_INPUT",
       { field: "photo_consent" },
+    ],
+    [
+      "no personal photo answer",
+      { personal_photo_consent: null },
+      "INVALID_INPUT",
+      { field: "personal_photo_consent" },
+    ],
+    [
+      // undefined: JSON.stringify drops the key, so p_profile lacks it.
+      "a profile without the personal photo key",
+      { personal_photo_consent: undefined },
+      "INVALID_INPUT",
+      { field: "personal_photo_consent" },
+    ],
+    [
+      "a personal photo answer that is not a boolean",
+      { personal_photo_consent: "yes" },
+      "INVALID_INPUT",
+      { field: "personal_photo_consent" },
     ],
     ["no baby", { babies: [] }, "INVALID_INPUT", { field: "babies" }],
     [
@@ -820,6 +851,7 @@ describe("join permissions", () => {
       for (const column of [
         "phone_e164 = '+972541111111'",
         "photo_consent = true",
+        "personal_photo_consent = true",
       ]) {
         expect(
           (await queryError(db, `update public.profiles set ${column}`))?.code

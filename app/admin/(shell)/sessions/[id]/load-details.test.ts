@@ -30,6 +30,7 @@ const RAW = {
       dietary_notes: "gluten free",
       guest_details: "vegan",
       photo_consent: true,
+      personal_photo_consent: false,
       babies: [
         { name: "Ori", birth_date: "2026-07-01" },
         { name: "Maya", birth_date: "2026-08-01" },
@@ -73,6 +74,7 @@ describe("parseEventDetails", () => {
         dietaryNotes: "gluten free",
         guestDetails: "vegan",
         photoConsent: true,
+        personalPhotoConsent: false,
         babies: [
           { name: "Ori", birthDate: "2026-07-01" },
           { name: "Maya", birthDate: "2026-08-01" },
@@ -88,6 +90,7 @@ describe("parseEventDetails", () => {
         dietaryNotes: null,
         guestDetails: null,
         photoConsent: null,
+        personalPhotoConsent: null,
         babies: [],
       },
       {
@@ -100,6 +103,7 @@ describe("parseEventDetails", () => {
         dietaryNotes: null,
         guestDetails: null,
         photoConsent: null,
+        personalPhotoConsent: null,
         babies: [],
       },
     ])
@@ -128,6 +132,21 @@ describe("parseEventDetails", () => {
       bookings: [{ ...RAW.bookings[0], photo_consent: false }, RAW.bookings[1]],
     })
     expect(details.attendees.map((a) => a.photoConsent)).toEqual([false, null])
+  })
+
+  // Story 2.13: the personal consent, the same way.
+  it("personal_photo_consent true stays true; a missing one is null", () => {
+    const details = parseEventDetails({
+      event: EVENT,
+      bookings: [
+        { ...RAW.bookings[0], personal_photo_consent: true },
+        RAW.bookings[1],
+      ],
+    })
+    expect(details.attendees.map((a) => a.personalPhotoConsent)).toEqual([
+      true,
+      null,
+    ])
   })
 
   it("drops a blank companion's note", () => {

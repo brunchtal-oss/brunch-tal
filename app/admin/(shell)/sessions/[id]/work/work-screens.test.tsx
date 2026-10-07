@@ -81,6 +81,7 @@ const PERSON: Attendee = {
   dietaryNotes: null,
   guestDetails: null,
   photoConsent: null,
+  personalPhotoConsent: null,
   babies: [],
 }
 
@@ -92,6 +93,7 @@ const ATTENDEES: Attendee[] = [
     phone: "050-123-4567",
     dietaryNotes: "ללא גלוטן",
     photoConsent: true,
+    personalPhotoConsent: false,
     babies: [{ name: "עומר", birthDate: "2026-06-15" }],
   },
   {
@@ -101,8 +103,15 @@ const ATTENDEES: Attendee[] = [
     partySize: 2,
     guestDetails: "צמחונית",
     photoConsent: false,
+    personalPhotoConsent: true,
   },
-  { ...PERSON, bookingId: "ruth", name: "רות", photoConsent: false },
+  {
+    ...PERSON,
+    bookingId: "ruth",
+    name: "רות",
+    photoConsent: false,
+    personalPhotoConsent: false,
+  },
   { ...PERSON, bookingId: "pending", pendingJoin: true, payerLabel: "Noa" },
 ]
 
@@ -159,8 +168,27 @@ describe("the work sheet's sections (story 4.10, round 2)", () => {
       adminCopy.sessions.babyLine("עומר", babyAge("2026-06-15", "2026-10-22"))
     )
     expect(dana).toContain("text-[13px]")
-    expect(count(table, `>${copy.photoConsentShort}<`)).toBe(1)
-    expect(count(table, `>${copy.noPhotoConsentShort}<`)).toBe(2)
+    // Story 2.13: short marks, the declined ones in the warning style, each
+    // named in full words.
+    const photo = adminCopy.photoConsents
+    expect(count(table, ">אווירה ✓<")).toBe(1)
+    expect(count(table, ">אווירה ✗<")).toBe(2)
+    expect(count(table, ">אישיות ✓<")).toBe(1)
+    expect(count(table, ">אישיות ✗<")).toBe(2)
+    expect(
+      count(table, `<span class="sr-only">${photo.personal.no}</span>`)
+    ).toBe(2)
+    expect(
+      count(table, `<span class="sr-only">${photo.atmosphere.yes}</span>`)
+    ).toBe(1)
+    // The visible mark is hidden from a screen reader (not an image).
+    expect(table).toContain('aria-hidden="true" class="whitespace-nowrap')
+    expect(table).not.toContain('role="img"')
+    expect(table).toMatch(
+      /class="[^"]*font-semibold text-warning[^"]*">אווירה ✗</
+    )
+    expect(table).not.toMatch(/class="[^"]*text-warning[^"]*">אווירה ✓</)
+    expect(table).not.toContain("status-chip")
     expect(table).toContain("ללא גלוטן")
     expect(table).toContain(adminCopy.sessions.companion("צמחונית"))
     expect(table).toContain(adminCopy.sessions.pendingJoin)

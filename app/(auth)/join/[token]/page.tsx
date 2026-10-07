@@ -162,8 +162,8 @@ async function JoinFormContent({
     getPhotoConsentContent(),
     getPublishedPageSlugs(["privacy"]),
   ])
-  // The photo question is required (CAP-40); without its published wording
-  // the form cannot be answered.
+  // Both photo questions are required (CAP-40, story 2.13); without their
+  // published wording the form cannot be answered.
   if (!photoConsent) {
     return (
       <Alert>

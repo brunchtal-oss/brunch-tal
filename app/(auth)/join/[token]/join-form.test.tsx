@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it, vi } from "vitest"
 
+import { authCopy } from "@/lib/copy/auth"
 import { joinCopy } from "@/lib/copy/join"
 
 import { JoinForm } from "./join-form"
@@ -11,9 +12,15 @@ vi.mock("./actions", () => ({ submitJoinAction: vi.fn() }))
 const TOKEN = "t".repeat(43)
 const KEY = "22222222-2222-4222-8222-222222222222"
 const PHOTO = {
-  question: "line one\nline two",
-  yes_label: "yes label",
-  no_label: "no label",
+  atmosphere_title: "atmosphere title",
+  atmosphere_question: "line one\nline two",
+  atmosphere_yes: "yes label",
+  atmosphere_no: "no label",
+  personal_title: "personal title",
+  personal_question: "personal question",
+  personal_yes: "personal yes",
+  personal_no: "personal no",
+  note: "note one\nnote two",
 }
 
 function render(
@@ -64,6 +71,7 @@ describe("JoinForm", () => {
         "confirm",
         "privacyConsent",
         "photoConsent",
+        "personalPhotoConsent",
       ].sort()
     )
     // No radio or checkbox is pre-selected (a `checked` attribute).
@@ -85,6 +93,7 @@ describe("JoinForm", () => {
       ["confirm", "Test-pass-123"],
       ["privacyConsent", "on"],
       ["photoConsent", "yes"],
+      ["personalPhotoConsent", "no"],
     ]) {
       expect(names(html)).toContain(name)
       data.append(name, value)
@@ -99,6 +108,71 @@ describe("JoinForm", () => {
     const html = render(state)
     expect(html).toContain(text)
     expect(html).not.toContain('name="password"')
+  })
+})
+
+// Story 2.13: one form in two steps, the inactive one hidden (not removed).
+describe("JoinForm steps", () => {
+  // The markup of one step, from its opening tag.
+  function step(html: string, n: 1 | 2): string {
+    const start = html.lastIndexOf("<div", html.indexOf(`data-step="${n}"`))
+    const end = n === 1 ? html.indexOf('data-step="2"') : html.length
+    return html.slice(start, end)
+  }
+
+  it("opens on step 1, with step 2 in the form but hidden", () => {
+    const html = render("active")
+    const one = step(html, 1)
+    const two = step(html, 2)
+    expect(one).not.toMatch(/^<div[^>]*\shidden/)
+    expect(two).toMatch(/^<div[^>]*\shidden/)
+    expect(one).toContain(joinCopy.stepOneTitle)
+    expect(one).toContain('name="password"')
+    expect(one).toContain('name="privacyConsent"')
+    expect(one).toContain(`>${joinCopy.next}</button>`)
+    expect(one).not.toContain('name="photoConsent"')
+    expect(two).toContain(joinCopy.stepTwoTitle)
+    expect(two).toContain('name="photoConsent"')
+    expect(two).toContain('name="personalPhotoConsent"')
+    expect(two).toContain(`>${joinCopy.back}</button>`)
+    expect(two).toContain('type="submit"')
+    // The step headings take focus from the step buttons.
+    expect(html.match(/<h2[^>]*tabindex="-1"/g)).toHaveLength(2)
+  })
+
+  it("shows both questions with their titles, and the note under them", () => {
+    const two = step(render("active"), 2)
+    for (const text of [
+      "atmosphere title",
+      "personal title",
+      "personal question",
+      "personal yes",
+      "personal no",
+      "note one",
+      "note two",
+    ]) {
+      expect(two).toContain(text)
+    }
+    expect(two.indexOf("note one")).toBeGreaterThan(two.indexOf("personal no"))
+    // No "(חובה)" next to the questions.
+    expect(two).not.toContain(authCopy.required)
+  })
+
+  it("names each question in its missing-answer message", () => {
+    expect(joinCopy.errors.photoConsent).not.toBe(
+      joinCopy.errors.personalPhotoConsent
+    )
+  })
+
+  it("marks the allergies as optional, with the hint under the label", () => {
+    const html = render("active")
+    expect(joinCopy.dietaryNotes).toContain("(לא חובה)")
+    expect(html).toContain(joinCopy.dietaryNotes)
+    expect(html).toContain('id="dietary-hint"')
+    expect(html).toContain(joinCopy.dietaryHint)
+    const textarea = /<textarea[^>]*>/.exec(html)?.[0] ?? ""
+    expect(textarea).toContain('aria-describedby="dietary-hint"')
+    expect(html.indexOf("dietary-hint")).toBeLessThan(html.indexOf("<textarea"))
   })
 })
 

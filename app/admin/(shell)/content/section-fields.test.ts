@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 
+import { photoConsentSchema } from "@/lib/content/schema"
 import { adminCopy } from "@/lib/copy/admin"
 
 import { fieldErrors, type SectionRef } from "./content-items"
@@ -81,6 +82,31 @@ describe("section fields", () => {
       sectionSpec({ slug: "home", key: "x", kind }).fields.map((f) => f.name)
     expect(names("hero")).not.toContain("cta_label")
     expect(names("business_details")).not.toContain("payment_instructions")
+  })
+
+  // Story 2.13: the editor edits every field of the two-question block.
+  it("edits both photo consents and the note", () => {
+    const fields = sectionSpec({
+      slug: "join-form",
+      key: "photo_consent",
+      kind: "photo_consent",
+    }).fields
+    expect(fields.map((f) => f.name).sort()).toEqual(
+      Object.keys(photoConsentSchema.shape).sort()
+    )
+    const multiline = fields
+      .filter((f) => f.type === "text" && f.multiline)
+      .map((f) => [f.name, f.type === "text" ? f.maxLength : null])
+    expect(multiline).toEqual([
+      ["atmosphere_question", 1000],
+      ["personal_question", 1000],
+      ["note", 1000],
+    ])
+    for (const field of fields) {
+      if (field.type === "text" && !field.multiline) {
+        expect(field.maxLength).toBe(200)
+      }
+    }
   })
 
   it("round-trips content through the form", () => {

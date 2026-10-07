@@ -25,6 +25,7 @@ import {
 import { approve, seedMoney } from "./support/money"
 
 const CONSENT = "select public.set_photo_consent($1) as r"
+const PERSONAL_CONSENT = "select public.set_personal_photo_consent($1) as r"
 const TOMORROW = "((now() at time zone 'Asia/Jerusalem')::date + 1)"
 const TODAY = "((now() at time zone 'Asia/Jerusalem')::date)"
 
@@ -217,6 +218,7 @@ describe("babies guard", () => {
       for (const column of [
         "phone_e164 = '+972541111111'",
         "photo_consent = true",
+        "personal_photo_consent = true",
       ]) {
         expect(
           (await queryError(db, `update public.profiles set ${column}`))?.code
@@ -275,6 +277,7 @@ describe("babies guard", () => {
             dietary_notes: null,
             privacy_consent: true,
             photo_consent: false,
+            personal_photo_consent: false,
             babies: [
               { name: testName("twin_a"), birth_date: "2026-07-05" },
               { name: testName("twin_b"), birth_date: "2026-07-05" },
@@ -377,6 +380,111 @@ describe("set_photo_consent", () => {
       for (const userId of [admin, pending.id]) {
         await asAuthenticated(db, userId)
         expect(await queryError(db, CONSENT, [true])).toEqual({
+          code: "P0001",
+          message: "NOT_AUTHORIZED",
+        })
+        await db.query("reset role")
+      }
+    })
+  })
+})
+
+// Story 2.13: the personal photo consent, the same rules as set_photo_consent.
+describe("set_personal_photo_consent", () => {
+  it("stores the change with now(), the join-form version and an audit row", async () => {
+    await inRollback(async (db) => {
+      const c = await seedCustomer(db)
+      const { rowCount: pages } = await db.query(
+        "update public.content_pages set published_version = 3 where slug = 'join-form'"
+      )
+      expect(pages).toBe(1)
+      await asAuthenticated(db, c.id)
+      const { rows } = await db.query(PERSONAL_CONSENT, [true])
+      const { rows: now } = await db.query("select now() as now")
+      expect(rows[0].r).toEqual({
+        personal_photo_consent: true,
+        personal_photo_consent_at: expect.any(String),
+        personal_photo_consent_text_version: 3,
+      })
+      expect(new Date(rows[0].r.personal_photo_consent_at).getTime()).toBe(
+        new Date(now[0].now).getTime()
+      )
+      await db.query("reset role")
+
+      const { rows: profile } = await db.query(
+        "select photo_consent, personal_photo_consent, personal_photo_consent_text_version from public.profiles where id = $1",
+        [c.id]
+      )
+      // The atmosphere consent is not touched.
+      expect(profile).toEqual([
+        {
+          photo_consent: false,
+          personal_photo_consent: true,
+          personal_photo_consent_text_version: 3,
+        },
+      ])
+      const { rows: audit } = await db.query(
+        "select actor_id, actor_kind, action, before, after from public.audit_log where customer_id = $1 and action = 'set_personal_photo_consent'",
+        [c.id]
+      )
+      expect(audit).toHaveLength(1)
+      expect(audit[0]).toMatchObject({
+        actor_id: c.id,
+        actor_kind: "customer",
+        before: { personal_photo_consent: false },
+        after: {
+          personal_photo_consent: true,
+          personal_photo_consent_text_version: 3,
+        },
+      })
+    })
+  })
+
+  it("writes nothing for the same value", async () => {
+    await inRollback(async (db) => {
+      const c = await seedCustomer(db)
+      await db.query(
+        "update public.profiles set personal_photo_consent = true, personal_photo_consent_at = '2026-09-01T08:00:00Z', personal_photo_consent_text_version = 0 where id = $1",
+        [c.id]
+      )
+      await asAuthenticated(db, c.id)
+      const { rows } = await db.query(PERSONAL_CONSENT, [true])
+      expect(rows[0].r.personal_photo_consent).toBe(true)
+      expect(rows[0].r.personal_photo_consent_text_version).toBe(0)
+      expect(new Date(rows[0].r.personal_photo_consent_at).toISOString()).toBe(
+        "2026-09-01T08:00:00.000Z"
+      )
+      await db.query("reset role")
+      const { rows: audit } = await db.query(
+        "select 1 from public.audit_log where customer_id = $1 and action = 'set_personal_photo_consent'",
+        [c.id]
+      )
+      expect(audit).toHaveLength(0)
+    })
+  })
+
+  it("refuses a null answer (INVALID_INPUT, personal_photo_consent)", async () => {
+    await inRollback(async (db) => {
+      const c = await seedCustomer(db)
+      await asAuthenticated(db, c.id)
+      expect(await raised(db, PERSONAL_CONSENT, [null])).toEqual({
+        code: "P0001",
+        message: "INVALID_INPUT",
+        detail: { field: "personal_photo_consent" },
+      })
+    })
+  })
+
+  it("is NOT_AUTHORIZED for an admin or an account that is not activated", async () => {
+    await inRollback(async (db) => {
+      const admin = randomUUID()
+      await db.query("insert into public.admin_roles (user_id) values ($1)", [
+        admin,
+      ])
+      const pending = await seedCustomer(db, { activated: false })
+      for (const userId of [admin, pending.id]) {
+        await asAuthenticated(db, userId)
+        expect(await queryError(db, PERSONAL_CONSENT, [true])).toEqual({
           code: "P0001",
           message: "NOT_AUTHORIZED",
         })

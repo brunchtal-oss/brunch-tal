@@ -16,7 +16,7 @@ import {
 import { SiteFooter } from "@/components/public/site-footer"
 import { UpcomingSessions } from "@/components/public/upcoming-sessions"
 import { PageHeading } from "@/components/shared/page-heading"
-import { PhotoConsentFieldset } from "@/components/shared/photo-consent-fieldset"
+import { PhotoConsentQuestions } from "@/components/shared/photo-consent-fieldset"
 import {
   getBusinessDetails,
   guestWhatsappHref,
@@ -235,7 +235,7 @@ async function PageView({
       return (
         <div className="mx-auto flex w-full max-w-[480px] flex-col gap-6 px-6 pt-10">
           <PageHeading>{joinCopy.title}</PageHeading>
-          {consent && <PhotoConsentFieldset content={consent} />}
+          {consent && <PhotoConsentQuestions content={consent} />}
         </div>
       )
     }

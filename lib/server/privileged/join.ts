@@ -118,6 +118,7 @@ export type JoinInput = {
   dietaryNotes: string | null
   privacyConsent: boolean
   photoConsent: boolean | null
+  personalPhotoConsent: boolean | null
   babies: ReadonlyArray<{ name: string; birthDate: string }>
 }
 
@@ -395,6 +396,7 @@ export async function submitJoin(
       dietary_notes: input.dietaryNotes,
       privacy_consent: input.privacyConsent,
       photo_consent: input.photoConsent,
+      personal_photo_consent: input.personalPhotoConsent,
       babies: input.babies.map((baby) => ({
         name: baby.name,
         birth_date: baby.birthDate,

@@ -145,6 +145,7 @@ const EXPECTED_GRANTS = [
   "function public.register_push_subscription(p_endpoint text, p_keys jsonb, p_platform text) authenticated EXECUTE",
   "function public.reset_begin(p_token text, p_idempotency_key uuid) service_role EXECUTE",
   "function public.reset_complete(p_token text, p_idempotency_key uuid) service_role EXECUTE",
+  "function public.set_personal_photo_consent(p_consent boolean) authenticated EXECUTE",
   "function public.set_photo_consent(p_consent boolean) authenticated EXECUTE",
   "function public.token_view(p_token text) service_role EXECUTE",
   "function public.unregister_push_subscription(p_endpoint text) authenticated EXECUTE",

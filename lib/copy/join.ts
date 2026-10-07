@@ -19,7 +19,10 @@ export const joinCopy = {
   birthDate: "תאריך לידת התינוק/ת",
   addBaby: "+ תינוק נוסף",
   removeBaby: "הסרה",
-  dietaryNotes: "אלרגיות והעדפות תזונתיות",
+  // Story 2.13: only the join form marks the field and explains it (the
+  // profile field is unchanged).
+  dietaryNotes: "אלרגיות והעדפות תזונתיות (לא חובה)",
+  dietaryHint: "המידע שתמסרי יישמר וישמש להתאמת האירוח",
   dietaryPlaceholder:
     "למשל: אלרגיה לאגוזים, צמחונית, טבעונית, ללא גלוטן, לא אוהבת כוסברה",
   password: "סיסמה",
@@ -31,6 +34,12 @@ export const joinCopy = {
   privacyConsentLink: "מדיניות הפרטיות",
   opensOutside: "(נפתח בחלון חדש)",
   submit: "יצירת החשבון",
+  // The two steps of the form (story 2.13): a heading each, "הבא" from step
+  // 1, "חזרה" from step 2. The consent wording itself is content.
+  stepOneTitle: "הפרטים שלך",
+  stepTwoTitle: "אישור תמונות",
+  next: "הבא",
+  back: "חזרה",
   used: "הקישור הזה כבר שימש ליצירת חשבון",
   // Joined, but the sign-in right after it failed.
   joined: "החשבון נוצר. נשאר רק להיכנס לאזור האישי",
@@ -77,7 +86,9 @@ export const joinCopy = {
     phone: "מספר הטלפון לא נראה תקין",
     email: "כתובת המייל לא נראית תקינה",
     birthDate: "תאריך הלידה לא יכול להיות בעתיד",
-    photoConsent: "צריך לבחור אחת מהתשובות",
+    // Story 2.13: each names its question, so the summary's links differ.
+    photoConsent: "צריך לבחור תשובה בשאלה על תמונות אווירה",
+    personalPhotoConsent: "צריך לבחור תשובה בשאלה על תמונות אישיות",
   },
 } as const
 

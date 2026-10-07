@@ -2,6 +2,25 @@
 // lib/money.ts ("472 ₪"), dates by lib/time.ts.
 
 export const adminCopy = {
+  // The two photo consents (story 2.13, user decision 2026-10-07): a line
+  // each on the customer card and the session's registrant row, and a short
+  // mark each on the work sheet ("אווירה ✗ · אישיות ✓", the label in full
+  // words for a screen reader).
+  photoConsents: {
+    atmosphere: {
+      yes: "אישרה תמונות אווירה",
+      no: "לא אישרה תמונות אווירה",
+      short: "אווירה",
+    },
+    personal: {
+      yes: "אישרה תמונות אישיות",
+      no: "לא אישרה תמונות אישיות",
+      short: "אישיות",
+    },
+    yesMark: "✓",
+    noMark: "✗",
+    separator: " · ",
+  },
   payments: {
     newTitle: "הוספת תשלום",
     newCustomer: "לקוחה חדשה",
@@ -277,11 +296,22 @@ export const adminCopy = {
       // (EXPERIENCE › admin states: publish aria-disabled + the list).
       blocked: "אי אפשר לפרסם את ההצהרה לפני שממלאים את שדות החובה:",
     },
+    // Story 2.13: two consents and one note under both.
     photoConsent: {
-      question: "השאלה",
-      questionHint: "כל שורה תוצג בשורה משלה",
-      yes: "תשובת ההסכמה",
-      no: "תשובת הסירוב",
+      atmosphere: {
+        title: "כותרת: תמונות אווירה",
+        question: "השאלה על תמונות אווירה",
+        yes: "תשובת ההסכמה לתמונות אווירה",
+        no: "תשובת הסירוב לתמונות אווירה",
+      },
+      personal: {
+        title: "כותרת: תמונות אישיות",
+        question: "השאלה על תמונות אישיות",
+        yes: "תשובת ההסכמה לתמונות אישיות",
+        no: "תשובת הסירוב לתמונות אישיות",
+      },
+      note: "ההערה שמתחת לשתי השאלות",
+      linesHint: "כל שורה תוצג בשורה משלה",
     },
     // A list's items (DESIGN › content-section-row: reorder buttons, hide,
     // delete). The item is named by its first field, else "{type} {n}".
@@ -855,9 +885,8 @@ export const adminCopy = {
     attendees: (n: number) => `נרשמות, תמונות ותזונה (${n})`,
     attendeesCaption: "נרשמות, תמונות ותזונה",
     colName: "שם",
+    // Its cell: adminCopy.photoConsents marks (story 2.13).
     colConsent: "אישור תמונות",
-    photoConsentShort: "אישרה",
-    noPhotoConsentShort: "לא אישרה",
     diet: "תזונה ואלרגיות",
     shopping: "רשימת קניות",
     noShopping: "עוד אין פריטים ברשימה",
@@ -1084,11 +1113,8 @@ export const adminCopy = {
       lastActivity: "פעילות אחרונה",
       dietary: "תזונה ואלרגיות",
       none: "לא נכתב",
+      // Two lines, no date (story 2.13): adminCopy.photoConsents.
       photoConsent: "אישור תמונות",
-      consents: "מאשרת",
-      declines: "לא מאשרת",
-      // "מאשרת, מ-05.10.26"
-      consentSince: (date: string) => `מ-${date}`,
       babies: "תינוקות",
       noBabies: "לא נוספו תינוקות",
       balances: "יתרות ותוקף",

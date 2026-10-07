@@ -91,7 +91,15 @@ async function CustomerCardContent({
             <div key={row.label} className="flex flex-col gap-0.5">
               <dt className="text-[13px] text-muted-foreground">{row.label}</dt>
               <dd className="text-base break-words">
-                <bdi dir={row.ltr ? "ltr" : undefined}>{row.value}</bdi>
+                {typeof row.value === "string" ? (
+                  <bdi dir={row.ltr ? "ltr" : undefined}>{row.value}</bdi>
+                ) : (
+                  row.value.map((line) => (
+                    <span key={line} className="block">
+                      {line}
+                    </span>
+                  ))
+                )}
               </dd>
             </div>
           ))}

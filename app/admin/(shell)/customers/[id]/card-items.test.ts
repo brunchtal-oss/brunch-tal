@@ -21,6 +21,7 @@ import {
 } from "./card-items"
 
 const copy = adminCopy.customers.card
+const photo = adminCopy.photoConsents
 
 const profile = (overrides: Partial<CardProfile> = {}): CardProfile => ({
   id: "c1",
@@ -33,6 +34,8 @@ const profile = (overrides: Partial<CardProfile> = {}): CardProfile => ({
   dietary_notes: "בלי גלוטן",
   photo_consent: true,
   photo_consent_at: "2026-10-04T22:30:00Z",
+  personal_photo_consent: false,
+  personal_photo_consent_at: null,
   last_activity_on: "2026-10-05",
   ...overrides,
 })
@@ -81,9 +84,10 @@ describe("the header and details", () => {
       { label: copy.joined, value: "05.10.26" },
       { label: copy.lastActivity, value: "05.10.26" },
       { label: copy.dietary, value: "בלי גלוטן" },
+      // Story 2.13: two lines, no date.
       {
         label: copy.photoConsent,
-        value: `${copy.consents}, ${copy.consentSince("05.10.26")}`,
+        value: [photo.atmosphere.yes, photo.personal.no],
       },
     ])
   })
@@ -98,13 +102,18 @@ describe("the header and details", () => {
           dietary_notes: "  ",
           photo_consent: false,
           photo_consent_at: null,
+          personal_photo_consent: true,
+          personal_photo_consent_at: "2026-10-04T22:30:00Z",
         })
       )
     ).toEqual([
       { label: copy.joined, value: copy.notActivatedYet },
       { label: copy.lastActivity, value: adminCopy.customers.noActivity },
       { label: copy.dietary, value: copy.none },
-      { label: copy.photoConsent, value: copy.declines },
+      {
+        label: copy.photoConsent,
+        value: [photo.atmosphere.no, photo.personal.yes],
+      },
     ])
   })
 })

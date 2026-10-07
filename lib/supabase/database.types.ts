@@ -1126,6 +1126,9 @@ export type Database = {
           full_name: string
           id: string
           pending_email: string | null
+          personal_photo_consent: boolean
+          personal_photo_consent_at: string | null
+          personal_photo_consent_text_version: number | null
           phone_e164: string | null
           photo_consent: boolean
           photo_consent_at: string | null
@@ -1141,6 +1144,9 @@ export type Database = {
           full_name: string
           id: string
           pending_email?: string | null
+          personal_photo_consent?: boolean
+          personal_photo_consent_at?: string | null
+          personal_photo_consent_text_version?: number | null
           phone_e164?: string | null
           photo_consent?: boolean
           photo_consent_at?: string | null
@@ -1156,6 +1162,9 @@ export type Database = {
           full_name?: string
           id?: string
           pending_email?: string | null
+          personal_photo_consent?: boolean
+          personal_photo_consent_at?: string | null
+          personal_photo_consent_text_version?: number | null
           phone_e164?: string | null
           photo_consent?: boolean
           photo_consent_at?: string | null
@@ -1726,6 +1735,10 @@ export type Database = {
       }
       reset_complete: {
         Args: { p_idempotency_key: string; p_token: string }
+        Returns: Json
+      }
+      set_personal_photo_consent: {
+        Args: { p_consent: boolean }
         Returns: Json
       }
       set_photo_consent: { Args: { p_consent: boolean }; Returns: Json }

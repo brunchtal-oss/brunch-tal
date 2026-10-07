@@ -5,7 +5,8 @@ import { customerCopy } from "@/lib/copy/customer"
 
 import { BabiesSection } from "./babies-section"
 import { DetailsSection } from "./details-section"
-import { PhotoConsentForm } from "./photo-consent-form"
+import { setPersonalPhotoConsent, setPhotoConsent } from "./actions"
+import { CONSENT_SAVERS, PhotoConsentSection } from "./photo-consent-form"
 
 vi.mock("./actions", () => ({
   addBaby: vi.fn(),
@@ -13,6 +14,7 @@ vi.mock("./actions", () => ({
   updateBaby: vi.fn(),
   updateDetails: vi.fn(),
   setPhotoConsent: vi.fn(),
+  setPersonalPhotoConsent: vi.fn(),
 }))
 
 const copy = customerCopy.profile
@@ -85,17 +87,44 @@ describe("DetailsSection", () => {
   })
 })
 
-describe("PhotoConsentForm", () => {
-  it("checks the saved answer", () => {
-    const content = { question: "Q", yes_label: "Yes", no_label: "No" }
-    const yes = renderToStaticMarkup(
-      <PhotoConsentForm content={content} consent />
+// Story 2.13: one heading, a form per consent, the note under both.
+describe("PhotoConsentSection", () => {
+  const content = {
+    atmosphere_title: "Atmosphere",
+    atmosphere_question: "AQ",
+    atmosphere_yes: "Yes",
+    atmosphere_no: "No",
+    personal_title: "Personal",
+    personal_question: "PQ",
+    personal_yes: "Yes",
+    personal_no: "No",
+    note: "Note",
+  }
+
+  it("checks each saved answer in its own form", () => {
+    const html = renderToStaticMarkup(
+      <PhotoConsentSection
+        content={content}
+        consents={{ atmosphere: true, personal: false }}
+      />
     )
-    expect(yes).toMatch(/id="photoConsent-yes"[^>]*checked/)
-    expect(yes).not.toMatch(/id="photoConsent-no"[^>]*checked/)
-    const no = renderToStaticMarkup(
-      <PhotoConsentForm content={content} consent={false} />
-    )
-    expect(no).toMatch(/id="photoConsent-no"[^>]*checked/)
+    expect(html.match(/<h2/g)).toHaveLength(1)
+    expect(html).toContain(copy.photoTitle)
+    expect(html.match(/<form/g)).toHaveLength(2)
+    expect(html.match(/type="submit"/g)).toHaveLength(2)
+    expect(html).toMatch(/id="photoConsent-yes"[^>]*checked/)
+    expect(html).not.toMatch(/id="photoConsent-no"[^>]*checked/)
+    expect(html).toMatch(/id="personalPhotoConsent-no"[^>]*checked/)
+    expect(html).not.toMatch(/id="personalPhotoConsent-yes"[^>]*checked/)
+    expect(html.indexOf("Note")).toBeGreaterThan(html.lastIndexOf("</form>"))
+  })
+})
+
+describe("CONSENT_SAVERS", () => {
+  it("saves each answer into its own consent, from its own field", () => {
+    expect(CONSENT_SAVERS.personal.save).toBe(setPersonalPhotoConsent)
+    expect(CONSENT_SAVERS.personal.field).toBe("personalPhotoConsent")
+    expect(CONSENT_SAVERS.atmosphere.save).toBe(setPhotoConsent)
+    expect(CONSENT_SAVERS.atmosphere.field).toBe("photoConsent")
   })
 })

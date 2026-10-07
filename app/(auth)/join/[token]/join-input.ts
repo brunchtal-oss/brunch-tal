@@ -24,6 +24,7 @@ export type JoinField =
   | "confirm"
   | "privacy"
   | "photoConsent"
+  | "personalPhotoConsent"
 
 // message: a code from lib/errors.ts or a field message of lib/copy/join.ts.
 export type JoinFieldError = {
@@ -43,6 +44,7 @@ export type ValidJoinInput = {
   dietaryNotes: string | null
   privacyConsent: boolean
   photoConsent: boolean
+  personalPhotoConsent: boolean
   babies: Array<{ name: string; birthDate: string }>
 }
 
@@ -66,6 +68,7 @@ export function validateJoin(
   const password = text(formData, "password")
   const confirm = text(formData, "confirm")
   const photo = text(formData, "photoConsent")
+  const personalPhoto = text(formData, "personalPhotoConsent")
   const names = formData.getAll("babyName").map((v) => String(v).trim())
   const dates = formData.getAll("birthDate").map((v) => String(v).trim())
 
@@ -106,6 +109,12 @@ export function validateJoin(
   if (photo !== "yes" && photo !== "no") {
     errors.push({ field: "photoConsent", message: "photoConsent" })
   }
+  if (personalPhoto !== "yes" && personalPhoto !== "no") {
+    errors.push({
+      field: "personalPhotoConsent",
+      message: "personalPhotoConsent",
+    })
+  }
 
   if (errors.length > 0) return { ok: false, errors }
   return {
@@ -118,6 +127,7 @@ export function validateJoin(
       dietaryNotes: dietary || null,
       privacyConsent: true,
       photoConsent: photo === "yes",
+      personalPhotoConsent: personalPhoto === "yes",
       babies: names.map((name, index) => ({ name, birthDate: dates[index] })),
     },
   }

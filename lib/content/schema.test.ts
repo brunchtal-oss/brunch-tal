@@ -8,6 +8,7 @@ import {
   footerSchema,
   heroSchema,
   legalTextSchema,
+  photoConsentQuestion,
   photoConsentSchema,
   schemaForKind,
   schemaForSection,
@@ -28,12 +29,46 @@ describe("content schemas", () => {
     expect(businessDetailsSchema.safeParse({}).success).toBe(false)
   })
 
-  it("parses the seeded photo consent and refuses a missing answer", () => {
-    const seed = { question: "a\nb", yes_label: "yes", no_label: "no" }
+  // Story 2.13: two questions and a note.
+  const seed = {
+    atmosphere_title: "t1",
+    atmosphere_question: "a\nb",
+    atmosphere_yes: "yes",
+    atmosphere_no: "no",
+    personal_title: "t2",
+    personal_question: "c",
+    personal_yes: "yes",
+    personal_no: "no",
+    note: "n1\nn2",
+  }
+
+  it("parses the seeded photo consent", () => {
     expect(photoConsentSchema.safeParse(seed).success).toBe(true)
-    expect(
-      photoConsentSchema.safeParse({ ...seed, no_label: "" }).success
-    ).toBe(false)
+  })
+
+  it.each([
+    ["a missing answer", { ...seed, personal_no: "" }],
+    ["a missing note", { ...seed, note: undefined }],
+    ["a title over 200", { ...seed, atmosphere_title: "x".repeat(201) }],
+    ["an answer over 200", { ...seed, personal_yes: "x".repeat(201) }],
+    ["a question over 1000", { ...seed, personal_question: "x".repeat(1001) }],
+    ["a note over 1000", { ...seed, note: "x".repeat(1001) }],
+    [
+      "the old single-question shape",
+      { question: "q", yes_label: "y", no_label: "n" },
+    ],
+  ])("refuses %s in the photo consent", (_label, value) => {
+    expect(photoConsentSchema.safeParse(value).success).toBe(false)
+  })
+
+  it("splits the block into its two questions", () => {
+    expect(photoConsentQuestion(seed, "atmosphere")).toEqual({
+      title: "t1",
+      question: "a\nb",
+      yesLabel: "yes",
+      noLabel: "no",
+    })
+    expect(photoConsentQuestion(seed, "personal").title).toBe("t2")
   })
 })
 

@@ -55,6 +55,7 @@ const INPUT: JoinInput = {
   dietaryNotes: null,
   privacyConsent: true,
   photoConsent: false,
+  personalPhotoConsent: true,
   babies: [{ name: "Baby", birthDate: "2026-09-01" }],
 }
 
@@ -319,6 +320,7 @@ describe("submitJoin", () => {
         dietary_notes: null,
         privacy_consent: true,
         photo_consent: false,
+        personal_photo_consent: true,
         babies: [{ name: "Baby", birth_date: "2026-09-01" }],
       },
       p_idempotency_key: BEGIN_KEY,
