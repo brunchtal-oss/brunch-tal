@@ -244,6 +244,7 @@ describe("home rows", () => {
     expect(
       toExpiringCard({
         entitlement_id: "c1",
+        customer_id: "11111111-1111-4111-8111-111111111111",
         customer_label: "Orna",
         product_name: "כרטיסייה",
         available: 2,
@@ -253,19 +254,21 @@ describe("home rows", () => {
     ).toEqual({
       key: "c1",
       title: "Orna",
+      href: "/admin/customers/11111111-1111-4111-8111-111111111111",
       entries: "2 כניסות שלא נרשמה אליהן",
       until: "בתוקף עד 30.10",
     })
     expect(
       toExpiringCard({
         entitlement_id: "c2",
+        customer_id: null,
         customer_label: null,
         product_name: null,
         available: 1,
         expires_on: "2026-10-30",
         days_left: 20,
-      }).title
-    ).toBe(copy.newCustomer)
+      })
+    ).toMatchObject({ title: copy.newCustomer, href: null })
   })
 
   it("the totals: the month of the period and the amounts from the server", () => {

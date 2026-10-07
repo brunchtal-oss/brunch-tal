@@ -144,6 +144,12 @@ export function formatFullDate(value: DateInput): string {
   return `${day}.${month}.${year}`
 }
 
+/** "05.10.26": a day with a two-digit year (the customers list, story 4.2). */
+export function formatShortDate(value: DateInput): string {
+  const [year, month, day] = formatLocalDate(value).split("-")
+  return `${day}.${month}.${year.slice(-2)}`
+}
+
 /** The Jerusalem calendar day now ("YYYY-MM-DD"), for display only. */
 export function localToday(): string {
   return formatLocalDate(new Date())

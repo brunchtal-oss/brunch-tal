@@ -1007,4 +1007,87 @@ export const adminCopy = {
       tooLong: (max: number) => `אפשר עד ${max} תווים`,
     },
   },
+  // /admin/customers and the customer card (story 4.2, CAP-25; after the
+  // phone check, user decision 2026-10-07). Internal notes are marked as
+  // Tal's only.
+  customers: {
+    title: "לקוחות",
+    searchLabel: "חיפוש לפי שם או טלפון",
+    searchHint: "התוצאות מופיעות אחרי שתי אותיות או ספרות",
+    lastActivity: (date: string) => `פעילות אחרונה ${date}`,
+    noActivity: "אין עדיין פעילות",
+    notActivated: "לא הופעלה",
+    empty: "לא נמצאו לקוחות",
+    hasMore: (limit: number) => `מוצגות ${limit} הראשונות. אפשר לחפש`,
+    card: {
+      back: "לכל הלקוחות",
+      details: "פרטים",
+      email: "מייל",
+      joined: "הצטרפה",
+      notActivatedYet: "עוד לא הופעלה",
+      // The last participation, purchase or booking (from the server).
+      lastActivity: "פעילות אחרונה",
+      dietary: "תזונה ואלרגיות",
+      none: "לא נכתב",
+      photoConsent: "אישור תמונות",
+      consents: "מאשרת",
+      declines: "לא מאשרת",
+      // "מאשרת, מ-05.10.26"
+      consentSince: (date: string) => `מ-${date}`,
+      babies: "תינוקות",
+      noBabies: "לא נוספו תינוקות",
+      balances: "יתרות ותוקף",
+      noBalances: "אין כרטיסיות או כניסות",
+      // "נוצלו 2 · שוריינו 1 · פנויות 1"
+      balanceSummary: (used: number, booked: number, free: number) =>
+        `נוצלו ${used} · שוריינו ${booked} · פנויות ${free}`,
+      validUntil: (dayMonth: string) => `בתוקף עד ${dayMonth}`,
+      expiring: "עומדת לפוג",
+      expired: "פגה",
+      usedUp: "נוצלה",
+      // A revoked or refunded entitlement.
+      cancelled: "בוטלה",
+      // The disclosure of a card's entries, one line each.
+      entriesToggle: "פירוט הכניסות",
+      entryUsed: (day: string) => `נוצלה · ${day}`,
+      entryBooked: (day: string) => `שוריינה · ${day}`,
+      entryFree: "פנויה, יש לשריין",
+      entryUnused: "לא נוצלה",
+      // A single entitlement (second phone check, 2026-10-07): its booked
+      // session, or a reminder to book.
+      singleBooked: (concept: string, day: string) =>
+        `בראנץ׳ ${concept} · ${day}`,
+      singleToBook: (dayMonth: string) => `יש לשריין · בתוקף עד ${dayMonth}`,
+      history: "היסטוריה",
+      bookingsLink: (n: number) => `היסטוריית הרשמות (${n})`,
+      purchasesLink: (n: number) => `היסטוריית רכישות (${n})`,
+      bookingsTitle: "היסטוריית הרשמות",
+      purchasesTitle: "היסטוריית רכישות",
+      backToCard: "חזרה לכרטיס",
+      noBookings: "אין הרשמות",
+      bookingStatus: {
+        confirmed: "רשומה",
+        completed: "השתתפה",
+        cancelled: "בוטלה",
+      },
+      couple: "זוגי",
+      noPurchases: "אין רכישות",
+      // "{amount} · {method} · {DD.MM.YY}" under the product.
+      purchaseDetail: (amount: string, method: string, paidOn: string) =>
+        [amount, method, paidOn].filter(Boolean).join(" · "),
+      voided: "בוטלה",
+      notes: "הערות פנימיות",
+      notesHint: "רק לך, הלקוחה לא רואה",
+      noNotes: "אין הערות",
+      noteLabel: "הערה חדשה",
+      addNote: "הוספת הערה",
+      noteAdded: "ההערה נוספה",
+      deleteNote: "מחיקה",
+      deleteQuestion: "למחוק את ההערה?",
+      delete: "מחיקה",
+      cancel: "ביטול",
+      noteDeleted: "ההערה נמחקה",
+      noteTooLong: (max: number) => `אפשר עד ${max} תווים`,
+    },
+  },
 } as const

@@ -8,6 +8,8 @@ import {
   formatWeekday,
 } from "@/lib/time"
 
+import { customerHref } from "./customers/customer-items"
+
 // What /admin shows for the rows of admin_get_attention_items and
 // admin_get_home (pure: rows in, items out). Every state, date boundary and
 // sum is decided in SQL; this file only maps a kind to its title, detail,
@@ -48,6 +50,8 @@ export type UpcomingSessionRow = {
 
 export type ExpiringCardRow = {
   entitlement_id: string
+  // The card's customer (story 4.2); null while the purchase is not bound.
+  customer_id: string | null
   customer_label: string | null
   product_name: string | null
   available: number
@@ -221,6 +225,8 @@ export function upcomingRowText(row: UpcomingSessionRow): string {
 export type ExpiringCardItem = {
   key: string
   title: string
+  // The customer's card (story 4.2); null for a purchase not bound yet.
+  href: string | null
   entries: string
   until: string
 }
@@ -229,6 +235,7 @@ export function toExpiringCard(row: ExpiringCardRow): ExpiringCardItem {
   return {
     key: row.entitlement_id,
     title: nameOf(row.customer_label),
+    href: row.customer_id ? customerHref(row.customer_id) : null,
     entries: copy.expiringEntries(row.available),
     until: copy.expiringUntil(formatDayMonth(row.expires_on)),
   }
