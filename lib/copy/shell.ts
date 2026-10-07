@@ -114,6 +114,14 @@ export const shellCopy = {
       testimonials: "המלצות",
       gallery: "גלריה",
     },
+    // The testimonial carousel's buttons and position dots.
+    carousel: {
+      previous: "ההמלצה הקודמת",
+      next: "ההמלצה הבאה",
+      item: (n: number, m: number) => `המלצה ${n} מתוך ${m}`,
+      // Instead of the dots when there are many testimonials.
+      counter: (n: number, m: number) => `${n} מתוך ${m}`,
+    },
     // The public session pages and the home page's upcoming sessions
     // (story 5.16, user decision 2026-10-05).
     sessions: {
