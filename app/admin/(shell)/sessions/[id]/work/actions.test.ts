@@ -2,14 +2,20 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import {
   addPrepDayAction,
+  addShoppingItemsAction,
   addWorkDishAction,
   addWorkTaskAction,
+  deleteShoppingItemAction,
   deleteWorkDishAction,
   deleteWorkTaskAction,
+  movePrepDayAction,
   removePrepDayAction,
+  setShoppingItemBoughtAction,
+  setShoppingItemOrderAction,
   setWorkDishOrderAction,
   setWorkTaskDoneAction,
   setWorkTaskOrderAction,
+  updateShoppingItemAction,
   updateWorkDishAction,
   updateWorkTaskAction,
 } from "./actions"
@@ -79,6 +85,18 @@ describe("the work sheet's actions (story 4.9)", () => {
       "admin_remove_prep_day",
       { p_event_id: ID, p_day_offset: 0, p_idempotency_key: KEY }
     )
+
+    await movePrepDayAction({
+      eventId: ID,
+      from: -2,
+      to: -4,
+      idempotencyKey: KEY,
+    })
+    expect(callRpc).toHaveBeenLastCalledWith(
+      { session: true },
+      "admin_move_prep_day",
+      { p_event_id: ID, p_from: -2, p_to: -4, p_idempotency_key: KEY }
+    )
   })
 
   it("pass a refusal through", async () => {
@@ -131,6 +149,112 @@ describe("the work sheet's actions (story 4.9)", () => {
       setWorkTaskOrderAction({ ids: [ID, "nope"] }),
       addPrepDayAction({ eventId: ID, dayOffset: -10, idempotencyKey: KEY }),
       removePrepDayAction({ eventId: ID, dayOffset: 2, idempotencyKey: KEY }),
+      movePrepDayAction({ eventId: ID, from: -2, to: -7, idempotencyKey: KEY }),
+      movePrepDayAction({ eventId: ID, from: 1, to: -3, idempotencyKey: KEY }),
+      movePrepDayAction({
+        eventId: "x",
+        from: -2,
+        to: -3,
+        idempotencyKey: KEY,
+      }),
+      movePrepDayAction({ eventId: ID, from: -2, to: -3, idempotencyKey: "" }),
+    ]
+    for (const result of await Promise.all(bad)) {
+      expect(result).toEqual(INVALID)
+    }
+    expect(callRpc).not.toHaveBeenCalled()
+  })
+})
+
+describe("the shopping list's actions (story 4.10)", () => {
+  it("send each RPC its arguments", async () => {
+    await expect(
+      addShoppingItemsAction({
+        eventId: ID,
+        bodies: ["פטה כבשים", "עגבניות", "לחם"],
+        idempotencyKey: KEY,
+      })
+    ).resolves.toEqual({ ok: true, data: undefined })
+    expect(callRpc).toHaveBeenLastCalledWith(
+      { session: true },
+      "admin_add_shopping_items",
+      {
+        p_event_id: ID,
+        p_bodies: ["פטה כבשים", "עגבניות", "לחם"],
+        p_idempotency_key: KEY,
+      }
+    )
+    await updateShoppingItemAction({
+      itemId: ID,
+      body: "לימונים",
+      quantity: "",
+      idempotencyKey: KEY,
+    })
+    expect(callRpc).toHaveBeenLastCalledWith(
+      { session: true },
+      "admin_update_shopping_item",
+      {
+        p_item_id: ID,
+        p_body: "לימונים",
+        p_quantity: "",
+        p_idempotency_key: KEY,
+      }
+    )
+    await deleteShoppingItemAction({ itemId: ID, idempotencyKey: KEY })
+    expect(callRpc).toHaveBeenLastCalledWith(
+      { session: true },
+      "admin_delete_shopping_item",
+      { p_item_id: ID, p_idempotency_key: KEY }
+    )
+    await setShoppingItemBoughtAction({ itemId: ID, bought: true })
+    expect(callRpc).toHaveBeenLastCalledWith(
+      { session: true },
+      "admin_set_shopping_item_bought",
+      { p_item_id: ID, p_bought: true }
+    )
+    await setShoppingItemOrderAction({ ids: [KEY, ID] })
+    expect(callRpc).toHaveBeenLastCalledWith(
+      { session: true },
+      "admin_set_shopping_item_order",
+      { p_ids: [KEY, ID] }
+    )
+  })
+
+  it("refuse a bad shape without calling the server", async () => {
+    const items = { eventId: ID, bodies: ["a"], idempotencyKey: KEY }
+    const bad = [
+      addShoppingItemsAction({ ...items, eventId: "x" }),
+      addShoppingItemsAction({ ...items, bodies: [] }),
+      addShoppingItemsAction({ ...items, bodies: ["a", " "] }),
+      addShoppingItemsAction({ ...items, bodies: ["א".repeat(201)] }),
+      addShoppingItemsAction({
+        ...items,
+        bodies: Array.from({ length: 101 }, () => "a"),
+      }),
+      addShoppingItemsAction({
+        ...items,
+        bodies: "a" as unknown as string[],
+      }),
+      addShoppingItemsAction({ ...items, idempotencyKey: "k" }),
+      updateShoppingItemAction({
+        itemId: ID,
+        body: "a",
+        quantity: "8".repeat(51),
+        idempotencyKey: KEY,
+      }),
+      updateShoppingItemAction({
+        itemId: "1",
+        body: "a",
+        quantity: "",
+        idempotencyKey: KEY,
+      }),
+      deleteShoppingItemAction({ itemId: ID, idempotencyKey: "" }),
+      setShoppingItemBoughtAction({
+        itemId: ID,
+        bought: "yes" as unknown as boolean,
+      }),
+      setShoppingItemOrderAction({ ids: [] }),
+      setShoppingItemOrderAction({ ids: [ID, "nope"] }),
     ]
     for (const result of await Promise.all(bad)) {
       expect(result).toEqual(INVALID)

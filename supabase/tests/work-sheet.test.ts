@@ -28,12 +28,13 @@ const TASK_DONE = "select public.admin_set_work_task_done($1, $2) as r"
 const TASK_ORDER = "select public.admin_set_work_task_order($1::uuid[]) as r"
 const ADD_DAY = "select public.admin_add_prep_day($1, $2, $3) as r"
 const REMOVE_DAY = "select public.admin_remove_prep_day($1, $2, $3) as r"
+const MOVE_DAY = "select public.admin_move_prep_day($1, $2, $3, $4) as r"
 
 type Fixture = { admin: string; customer: string; concept: string }
 
 type Sheet = {
   event: { id: string; concept_name: string; status: string }
-  prep_days: { offset: number; date: string }[]
+  prep_days: { offset: number; date: string; added: boolean }[]
   addable_days: { offset: number; date: string }[]
   dishes: {
     id: string
@@ -130,8 +131,8 @@ describe("prep days from the settings", { timeout: 30_000 }, () => {
       const s = await sheet(db, f, id)
       expect(s.event.id).toBe(id)
       expect(s.prep_days).toEqual([
-        { offset: -1, date: "2026-10-21" },
-        { offset: 0, date: "2026-10-22" },
+        { offset: -1, date: "2026-10-21", added: false },
+        { offset: 0, date: "2026-10-22", added: false },
       ])
       expect(s.dishes).toEqual([])
       // "+ יום הכנה" offers -6..-2 with their dates.
@@ -152,8 +153,8 @@ describe("prep days from the settings", { timeout: 30_000 }, () => {
       const f = await seed(db)
       const id = await session(db, f, "2026-10-19")
       expect((await sheet(db, f, id)).prep_days).toEqual([
-        { offset: -1, date: "2026-10-18" },
-        { offset: 0, date: "2026-10-19" },
+        { offset: -1, date: "2026-10-18", added: false },
+        { offset: 0, date: "2026-10-19", added: false },
       ])
     })
   })
@@ -189,6 +190,7 @@ describe("adding and removing a prep day", { timeout: 30_000 }, () => {
       expect((await sheet(db, f, id)).prep_days[0]).toEqual({
         offset: -2,
         date: "2026-10-20",
+        added: true,
       })
       expect(
         (await sheet(db, f, other)).prep_days.map((d) => d.offset)
@@ -232,21 +234,206 @@ describe("adding and removing a prep day", { timeout: 30_000 }, () => {
     })
   })
 
-  it("any day can go, a default one too, but never the last one", async () => {
+  // Story 4.10, round 2 (replaces 4.9's "any day can go"): a base day stays.
+  it("only an added day can go; a base day -> INVALID_INPUT", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)
       const id = await session(db, f, "2026-10-22")
-      const left = await call(db, f, REMOVE_DAY, [id, 0, randomUUID()])
-      expect(left.prep_days).toEqual([-1])
+      expect(await fails(db, f, REMOVE_DAY, [id, 0, randomUUID()])).toBe(
+        "INVALID_INPUT"
+      )
       expect(await fails(db, f, REMOVE_DAY, [id, -1, randomUUID()])).toBe(
         "INVALID_INPUT"
       )
+      await call(db, f, ADD_DAY, [id, -2, randomUUID()])
+      const left = await call(db, f, REMOVE_DAY, [id, -2, randomUUID()])
+      expect(left).toEqual({ prep_days: [-1, 0], deleted_tasks: 0 })
       // A day that is not on the sheet changes nothing.
       const none = await call(db, f, REMOVE_DAY, [id, -3, randomUUID()])
-      expect(none).toEqual({ prep_days: [-1], deleted_tasks: 0 })
+      expect(none).toEqual({ prep_days: [-1, 0], deleted_tasks: 0 })
+    })
+  })
+
+  it("the base days are the copied defaults; a settings change does not move them", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const id = await session(db, f, "2026-10-22")
+      await call(db, f, ADD_DAY, [id, -2, randomUUID()])
+      await db.query(
+        "update public.business_settings set default_prep_days = '{-2,0}'"
+      )
+      const { rows } = await db.query(
+        "select base_days from public.work_sheets where event_id = $1",
+        [id]
+      )
+      expect(rows[0].base_days).toEqual([-1, 0])
+      expect(
+        (await sheet(db, f, id)).prep_days.map((d) => [d.offset, d.added])
+      ).toEqual([
+        [-2, true],
+        [-1, false],
+        [0, false],
+      ])
     })
   })
 })
+
+describe(
+  "moving an added prep day (story 4.10, round 2)",
+  {
+    timeout: 30_000,
+  },
+  () => {
+    it("-2 with a task -> -4: the column and the task move", async () => {
+      await inRollback(async (db) => {
+        const f = await seed(db)
+        const id = await session(db, f, "2026-10-22")
+        await call(db, f, ADD_DAY, [id, -2, randomUUID()])
+        const d = await dish(db, f, id, "שקשוקה")
+        const t = await task(db, f, d, -2, "להזמין פטה")
+        const kept = await task(db, f, d, -1, "לקצוץ")
+        const moved = await call(db, f, MOVE_DAY, [id, -2, -4, randomUUID()])
+        expect(moved).toEqual({ prep_days: [-4, -1, 0], moved_tasks: 1 })
+        const s = await sheet(db, f, id)
+        expect(s.prep_days).toEqual([
+          { offset: -4, date: "2026-10-18", added: true },
+          { offset: -1, date: "2026-10-21", added: false },
+          { offset: 0, date: "2026-10-22", added: false },
+        ])
+        expect(s.dishes[0].tasks.map((x) => [x.id, x.day_offset])).toEqual([
+          [t, -4],
+          [kept, -1],
+        ])
+        const { rows } = await db.query(
+          `select before, after from public.audit_log
+         where event_id = $1 and action = 'admin_move_prep_day'`,
+          [id]
+        )
+        expect(rows).toHaveLength(1)
+        expect(rows[0].before).toMatchObject({
+          prep_days: [-2, -1, 0],
+          moved_tasks: [{ id: t, dish_id: d, day_offset: -2 }],
+        })
+        expect(rows[0].after).toMatchObject({ prep_days: [-4, -1, 0] })
+      })
+    })
+
+    it("a taken or out-of-range target, a base day or a day not on the sheet -> INVALID_INPUT", async () => {
+      await inRollback(async (db) => {
+        const f = await seed(db)
+        const id = await session(db, f, "2026-10-22")
+        await call(db, f, ADD_DAY, [id, -2, randomUUID()])
+        const bad: [number, number][] = [
+          [-2, -1],
+          [-2, 0],
+          [-2, -7],
+          [-2, 1],
+          [-1, -3],
+          [0, -3],
+          [-5, -3],
+        ]
+        for (const [from, to] of bad) {
+          expect(
+            await fails(db, f, MOVE_DAY, [id, from, to, randomUUID()]),
+            `${from} -> ${to}`
+          ).toBe("INVALID_INPUT")
+        }
+        expect((await sheet(db, f, id)).prep_days.map((x) => x.offset)).toEqual(
+          [-2, -1, 0]
+        )
+        // The same day changes nothing and writes no audit row.
+        expect(await call(db, f, MOVE_DAY, [id, -2, -2, randomUUID()])).toEqual(
+          {
+            prep_days: [-2, -1, 0],
+            moved_tasks: 0,
+          }
+        )
+        const { rows } = await db.query(
+          "select count(*)::int as n from public.audit_log where event_id = $1 and action = 'admin_move_prep_day'",
+          [id]
+        )
+        expect(rows[0].n).toBe(0)
+      })
+    })
+
+    it("a replay returns the stored result; another input with the key is refused", async () => {
+      await inRollback(async (db) => {
+        const f = await seed(db)
+        const id = await session(db, f, "2026-10-22")
+        await call(db, f, ADD_DAY, [id, -2, randomUUID()])
+        const key = randomUUID()
+        const first = await call(db, f, MOVE_DAY, [id, -2, -3, key])
+        expect(await call(db, f, MOVE_DAY, [id, -2, -3, key])).toEqual(first)
+        expect((await sheet(db, f, id)).prep_days.map((x) => x.offset)).toEqual(
+          [-3, -1, 0]
+        )
+        expect(await fails(db, f, MOVE_DAY, [id, -3, -4, key])).toBe(
+          "IDEMPOTENCY_KEY_REUSED"
+        )
+      })
+    })
+
+    it("moves every task of the day: two of one dish in order, a done one stays done, another dish's; the moved day can then be removed", async () => {
+      await inRollback(async (db) => {
+        const f = await seed(db)
+        const id = await session(db, f, "2026-10-22")
+        await call(db, f, ADD_DAY, [id, -2, randomUUID()])
+        const a = await dish(db, f, id, "a")
+        const b = await dish(db, f, id, "b")
+        const first = await task(db, f, a, -2, "1")
+        const second = await task(db, f, a, -2, "2")
+        // A reversed order, so the move must keep sort_order, not id order.
+        await call(
+          db,
+          f,
+          "select public.admin_set_work_task_order($1::uuid[]) as r",
+          [[second, first]]
+        )
+        await call(db, f, TASK_DONE, [second, true])
+        const other = await task(db, f, b, -2, "3")
+        const kept = await task(db, f, a, -1, "stays")
+
+        const moved = await call(db, f, MOVE_DAY, [id, -2, -5, randomUUID()])
+        expect(moved).toEqual({ prep_days: [-5, -1, 0], moved_tasks: 3 })
+        const s = await sheet(db, f, id)
+        expect(
+          s.dishes[0].tasks.map((t) => [t.id, t.day_offset, t.done])
+        ).toEqual([
+          [second, -5, true],
+          [first, -5, false],
+          [kept, -1, false],
+        ])
+        expect(s.dishes[1].tasks.map((t) => [t.id, t.day_offset])).toEqual([
+          [other, -5],
+        ])
+
+        // The moved day is still an added one: it can be removed, with its
+        // three tasks.
+        expect(s.prep_days[0]).toMatchObject({ offset: -5, added: true })
+        const removed = await call(db, f, REMOVE_DAY, [id, -5, randomUUID()])
+        expect(removed).toEqual({ prep_days: [-1, 0], deleted_tasks: 3 })
+      })
+    })
+
+    it("a fresh sheet with default_prep_days '{}' gets the session day alone, as base day", async () => {
+      await inRollback(async (db) => {
+        const f = await seed(db)
+        await db.query(
+          "update public.business_settings set default_prep_days = '{}'"
+        )
+        const id = await session(db, f, "2026-10-22")
+        expect((await sheet(db, f, id)).prep_days).toEqual([
+          { offset: 0, date: "2026-10-22", added: false },
+        ])
+        const { rows } = await db.query(
+          "select prep_days, base_days from public.work_sheets where event_id = $1",
+          [id]
+        )
+        expect(rows[0]).toEqual({ prep_days: [0], base_days: [0] })
+      })
+    })
+  }
+)
 
 describe("dishes and tasks", { timeout: 30_000 }, () => {
   it("adds, renames, marks done, moves a task to another day and deletes", async () => {
@@ -459,11 +646,13 @@ describe("review fixes", { timeout: 30_000 }, () => {
       const f = await seed(db)
       const id = await session(db, f, "2026-10-22")
       const other = await session(db, f, "2026-10-29")
+      await call(db, f, ADD_DAY, [id, -2, randomUUID()])
+      await call(db, f, ADD_DAY, [other, -2, randomUUID()])
       const mine = await dish(db, f, id, "a")
       const theirs = await dish(db, f, other, "b")
-      await task(db, f, mine, -1, "1")
-      const kept = await task(db, f, theirs, -1, "2")
-      const removed = await call(db, f, REMOVE_DAY, [id, -1, randomUUID()])
+      await task(db, f, mine, -2, "1")
+      const kept = await task(db, f, theirs, -2, "2")
+      const removed = await call(db, f, REMOVE_DAY, [id, -2, randomUUID()])
       expect(removed.deleted_tasks).toBe(1)
       expect(
         (await sheet(db, f, other)).dishes[0].tasks.map((t) => t.id)
@@ -503,7 +692,7 @@ describe("review fixes", { timeout: 30_000 }, () => {
     })
   })
 
-  it("a customer gets NOT_AUTHORIZED from all 12 RPCs", async () => {
+  it("a customer gets NOT_AUTHORIZED from all 13 RPCs", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)
       const id = await session(db, f, "2026-10-22")
@@ -522,6 +711,7 @@ describe("review fixes", { timeout: 30_000 }, () => {
         [TASK_ORDER, [[t]]],
         [ADD_DAY, [id, -2, randomUUID()]],
         [REMOVE_DAY, [id, 0, randomUUID()]],
+        [MOVE_DAY, [id, -1, -3, randomUUID()]],
       ]
       await asAuthenticated(db, f.customer)
       for (const [text, params] of calls) {
@@ -558,12 +748,13 @@ describe("review fixes", { timeout: 30_000 }, () => {
       const id = await session(db, f, "2026-10-22")
       const a = await dish(db, f, id, "a")
       const b = await dish(db, f, id, "b")
-      const ta = await task(db, f, a, -1, "for a")
+      await call(db, f, ADD_DAY, [id, -2, randomUUID()])
+      const ta = await task(db, f, a, -2, "for a")
       const tb = await task(db, f, b, 0, "for b")
       await call(db, f, DISH_ORDER, [[a, b]])
       await call(db, f, TASK_ORDER, [[ta]])
       await call(db, f, UPDATE_DISH, [a, "a", randomUUID()])
-      await call(db, f, REMOVE_DAY, [id, -1, randomUUID()])
+      await call(db, f, REMOVE_DAY, [id, -2, randomUUID()])
       await call(db, f, DELETE_DISH, [b, randomUUID()])
       const { rows } = await db.query<{ action: string; before: never }>(
         `select action, before from public.audit_log
@@ -583,7 +774,7 @@ describe("review fixes", { timeout: 30_000 }, () => {
       })
       expect(rows[1].before).toMatchObject({
         deleted_tasks: [
-          { id: ta, dish_id: a, day_offset: -1, body: "for a", done: false },
+          { id: ta, dish_id: a, day_offset: -2, body: "for a", done: false },
         ],
       })
     })

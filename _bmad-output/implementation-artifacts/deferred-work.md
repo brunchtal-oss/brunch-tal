@@ -437,7 +437,7 @@
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-4-9-work-tab-dishes-tasks-prep-days.md`
   target: 3.17
-  summary: `work_sheets.event_id` הוא `on delete cascade`, ולכן מחיקת מפגש מוחקת את דף העבודה, המנות והמשימות בלי שורת יומן. ‏3.17 (מחיקת מפגש בלי הרשמות) רושם ביומן גם את נתוני דף העבודה שנמחקים, או לפחות את מספרם.
+  summary: `work_sheets.event_id` הוא `on delete cascade`, ולכן מחיקת מפגש מוחקת את דף העבודה, המנות, המשימות ופריטי הקניות (`shopping_items`, ‏4.10, גם הם `on delete cascade` מ-`work_sheets`) בלי שורת יומן. ‏3.17 (מחיקת מפגש בלי הרשמות) רושם ביומן גם את נתוני דף העבודה שנמחקים, או לפחות את מספרם.
   evidence: ביקורת 4.9 (2026-10-06, ‏blind-hunter). ה-cascade נבחר ב-spec של 4.9 כדי ש-3.17 יוכל למחוק מפגש.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-4-7-business-settings-and-templates.md`

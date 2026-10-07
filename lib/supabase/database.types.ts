@@ -1276,6 +1276,7 @@ export type Database = {
       }
       work_sheets: {
         Row: {
+          base_days: number[]
           created_at: string
           event_id: string
           id: string
@@ -1283,6 +1284,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          base_days: number[]
           created_at?: string
           event_id: string
           id?: string
@@ -1290,6 +1292,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          base_days?: number[]
           created_at?: string
           event_id?: string
           id?: string
@@ -1401,12 +1404,11 @@ export type Database = {
         }
         Returns: Json
       }
-      admin_add_shopping_item: {
+      admin_add_shopping_items: {
         Args: {
-          p_body: string
+          p_bodies: string[]
           p_event_id: string
           p_idempotency_key: string
-          p_quantity: string
         }
         Returns: Json
       }
@@ -1524,6 +1526,15 @@ export type Database = {
       admin_list_customers: { Args: { p_query: string }; Returns: Json }
       admin_list_links: { Args: never; Returns: Json }
       admin_list_payments: { Args: never; Returns: Json }
+      admin_move_prep_day: {
+        Args: {
+          p_event_id: string
+          p_from: number
+          p_idempotency_key: string
+          p_to: number
+        }
+        Returns: Json
+      }
       admin_publish_content: {
         Args: { p_idempotency_key: string; p_slug: string }
         Returns: Json

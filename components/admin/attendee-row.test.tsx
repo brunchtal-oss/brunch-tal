@@ -17,6 +17,7 @@ const BASE: Attendee = {
   phone: "050-123-4567",
   dietaryNotes: null,
   guestDetails: null,
+  photoConsent: null,
   babies: [],
 }
 

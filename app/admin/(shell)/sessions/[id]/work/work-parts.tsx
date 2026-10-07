@@ -61,7 +61,7 @@ const INPUT = "h-12 text-base"
 const PRIMARY = "h-12 rounded-[4px] text-base font-semibold"
 const MAX_TEXT = 200
 
-function ErrorNotice({ code }: { code: string | null }) {
+export function ErrorNotice({ code }: { code: string | null }) {
   if (!code) return null
   return <InlineNotice tone="error">{errorMessage(code)}</InlineNotice>
 }
@@ -215,7 +215,7 @@ function DaySelect({
 }
 
 // Up and down within a list, and what was announced.
-function MoveButtons({
+export function MoveButtons({
   canUp,
   canDown,
   pending,
@@ -257,7 +257,7 @@ function MoveButtons({
 
 // Delete in two steps inside a sheet: the button, then the question with
 // "מחיקה" and "ביטול".
-function DeleteStep({
+export function DeleteStep({
   label,
   question,
   pending,
