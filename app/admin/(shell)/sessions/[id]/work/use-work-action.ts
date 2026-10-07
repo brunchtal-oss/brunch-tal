@@ -1,9 +1,16 @@
 "use client"
 
-import { createContext, useContext, useState, useTransition } from "react"
+import {
+  createContext,
+  useContext,
+  useRef,
+  useState,
+  useTransition,
+} from "react"
 import { useRouter } from "next/navigation"
 
 import type { ActionResult } from "@/lib/errors"
+import { newIdempotencyKey } from "@/lib/idempotency"
 
 // One write of the work sheet (story 4.9): no optimistic update. The control
 // stays locked (pending) from the call until the refreshed sheet arrives;
@@ -36,6 +43,25 @@ export function useWorkAction() {
   }
 
   return { pending, error, run, clearError: () => setError(null) }
+}
+
+// An idempotency key for a one-tap action whose input can change between
+// taps (which day to add or remove): the same input keeps its key, so a
+// retry after a lost answer is replayed; another input gets a new key.
+// clear() after a success, so the next tap is a new call.
+export function useKeyFor() {
+  const ref = useRef<{ input: string; key: string } | null>(null)
+  return {
+    keyFor(input: string) {
+      if (ref.current?.input !== input) {
+        ref.current = { input, key: newIdempotencyKey() }
+      }
+      return ref.current.key
+    },
+    clear() {
+      ref.current = null
+    },
+  }
 }
 
 // The sheet's live region: what a saved change did ("סומן כבוצע", a moved

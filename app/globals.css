@@ -285,6 +285,41 @@ body:has([data-whatsapp-bar]) [data-site-footer] {
   backdrop-filter: none;
 }
 
+/*
+ * The work sheet's print (story 4.10, DESIGN › worksheet-print): the same
+ * page under @media print, A4 portrait with 12mm margins, black on white,
+ * without the shell (top-bar, side-nav, bottom-tab-bar, skip link) and
+ * without buttons. Only on a page that holds the sheet ([data-work-sheet]);
+ * what the sheet itself hides or shows in print is in its print: classes.
+ */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm;
+  }
+  body:has([data-work-sheet]) {
+    padding-bottom: 0;
+    background: #fff;
+    color: #000;
+  }
+  body:has([data-work-sheet]) [data-top-bar],
+  body:has([data-work-sheet]) nav,
+  body:has([data-work-sheet]) a[href="#main"],
+  body:has([data-work-sheet]) button:not([data-slot="checkbox"]) {
+    display: none !important;
+  }
+  body:has([data-work-sheet]) main {
+    max-width: none;
+    padding: 0;
+    gap: 1rem;
+  }
+  [data-work-sheet] * {
+    color: #000 !important;
+    background: transparent !important;
+    border-color: #000 !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

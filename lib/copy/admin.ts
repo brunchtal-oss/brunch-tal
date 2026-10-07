@@ -798,8 +798,18 @@ export const adminCopy = {
         ? "משימה אחת של היום הזה תימחק מכל המנות"
         : `${n} משימות של היום הזה יימחקו מכל המנות`,
     dayRemoved: (day: string) => `${day} הוסר`,
-    pickDay: "איזה יום להוסיף?",
     dayAdded: (day: string) => `${day} נוסף`,
+    // "+ יום הכנה" adds the day before the earliest, else the free day
+    // closest to the session (story 4.10, round 2); disabled once every day
+    // up to six days before is on the sheet.
+    addDayLimit: "כל הימים עד שישה ימים לפני המפגש כבר בדף",
+    // An added day: a tap on its weekday and date moves it to a free day.
+    moveDayNamed: (day: string) => `העברת היום ${day}`,
+    moveDayTitle: (day: string) => `העברת היום ${day}`,
+    moveDayLegend: "לאיזה יום להעביר?",
+    moveDayNote: "המשימות של היום עוברות איתו",
+    moveDay: "העברה",
+    dayMoved: (from: string, to: string) => `${from} הועבר ליום ${to}`,
     // The dish form and the dish's sheet.
     dishName: "שם המנה",
     add: "הוספה",
@@ -834,6 +844,51 @@ export const adminCopy = {
     // The desktop table.
     tableCaption: "מנות ומשימות",
     dishColumn: "מנה",
+    // Story 4.10: print, registrants, diet and shopping.
+    print: "הדפסה",
+    // The printed head: "דף עבודה · {קונספט}", then the session's line.
+    printTitle: (concept: string) => `דף עבודה · ${concept}`,
+    printMeta: (when: string, bookings: number) =>
+      `${when} · ${bookings === 1 ? "הרשמה אחת" : `${bookings} הרשמות`}`,
+    // One table on the phone, on desktop and in print (round 2): name,
+    // babies, photo consent, diet and allergies; the count is of bookings.
+    attendees: (n: number) => `נרשמות, תמונות ותזונה (${n})`,
+    attendeesCaption: "נרשמות, תמונות ותזונה",
+    colName: "שם",
+    colConsent: "אישור תמונות",
+    photoConsentShort: "אישרה",
+    noPhotoConsentShort: "לא אישרה",
+    diet: "תזונה ואלרגיות",
+    shopping: "רשימת קניות",
+    noShopping: "עוד אין פריטים ברשימה",
+    addItem: "+ פריט",
+    itemBody: "מה לקנות",
+    // "+ פריט" (round 2): one text box, an item per line.
+    addItemsTitle: "הוספת פריטים",
+    itemLines: "פריטים, כל פריט בשורה",
+    itemLinesHint: "Enter לשורה חדשה. שורות ריקות לא נספרות",
+    itemsTooMany: (max: number) => `אפשר להוסיף עד ${max} פריטים בכל פעם`,
+    itemTooLong: (max: number) => `כל שורה עד ${max} תווים`,
+    itemsAdded: (n: number) =>
+      n === 1 ? "פריט אחד נוסף" : `${n} פריטים נוספו`,
+    // "פטה כבשים · 1 ק״ג"
+    itemLine: (body: string, quantity: string | null) =>
+      quantity ? `${body} · ${quantity}` : body,
+    editItem: (body: string) => `עריכת ${body}`,
+    // The item's window: "עריכת {פריט}", and the delete question names it.
+    itemSheet: (body: string) => `עריכת ${body}`,
+    deleteItem: "מחיקת הפריט",
+    deleteItemNamed: (body: string) => `למחוק את ${body}?`,
+    itemsProblemEmpty: "צריך לכתוב לפחות פריט אחד",
+    markedBought: (body: string) => `${body}: סומן כנקנה`,
+    markedNotBought: (body: string) => `${body}: הסימון בוטל`,
+    sendWhatsapp: "שליחת הרשימה בוואטסאפ",
+    // Why the WhatsApp button cannot be used (aria-disabled + the reason).
+    whatsappEmpty: "אין פריטים לשליחה",
+    whatsappAllBought: "כל הפריטים כבר נקנו",
+    // The WhatsApp message's first line: "רשימת קניות · יווני 22.10".
+    shoppingMessageTitle: (concept: string, date: string) =>
+      `רשימת קניות · ${concept} ${date}`,
   },
   // /admin/settings and /admin/settings/templates (story 4.7; EXPERIENCE ›
   // admin states › settings, template). Every change is a value-change-row.

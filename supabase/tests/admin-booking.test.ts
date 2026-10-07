@@ -686,6 +686,8 @@ describe("the session's details", () => {
           full_name: testName("money_b"),
           phone_e164: phone,
           dietary_notes: "gluten free",
+          // Story 4.10: only for an active customer.
+          photo_consent: false,
           babies: [
             { name: "Ori", birth_date: await babyDate(90) },
             { name: "Maya", birth_date: await babyDate(30) },

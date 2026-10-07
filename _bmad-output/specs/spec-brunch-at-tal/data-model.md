@@ -46,10 +46,10 @@
 | content_sections | page_slug, key (למשל hero, intro, how_it_works, faq, footer, business_details), kind, sort_order, hidden, draft_content, published_content, published_at, updated_by. בלוק מסודר בתוך עמוד. פריטים חוזרים (שלבים, שאלות) נשמרים בתוכו כרשימה מסודרת. business_details: שם העסק, טלפון ווואטסאפ, הודעת וואטסאפ מוכנה, כתובת, הוראות הגעה, קישור ניווט, הוראות תשלום |
 | media_assets | storage_path, section_id (אופציונלי), alt_text (חובה לפרסום), mobile_crop (אזור החיתוך לטלפון), sort_order, publish_state (draft, copying, published, hidden, AD-16/AD-21), consent_confirmed כשרלוונטי |
 | testimonials | kind (text או image), author_display_name (בטקסט), text (בטקסט), media_id (בתמונה, עם alt_text חובה), sort_order, hidden, draft ופרסום |
-| work_sheets | event_id (ייחודי), prep_days (רשימה מסודרת של היסטים ביחס ליום המפגש, מתחילה מההגדרות, למשל [-1, 0]. "+ יום הכנה" מוסיף היסט, למשל -2) |
+| work_sheets | event_id (ייחודי), prep_days (רשימה מסודרת של היסטים ביחס ליום המפגש, מתחילה מההגדרות, למשל [-1, 0]. "+ יום הכנה" מוסיף את היום שלפני המוקדם, למשל -2), base_days (ימי ברירת המחדל שהועתקו ביצירה; רק יום שלא בהם ("נוסף") אפשר להסיר או להעביר ליום פנוי בטווח -6..0, עם המשימות שלו. החלטת המשתמשת 2026-10-07, סיפור 4.10) |
 | work_dishes | work_sheet_id, name, sort_order |
 | work_tasks | dish_id, day_offset, body, done, sort_order |
-| shopping_items | work_sheet_id, body, quantity (טקסט חופשי, אופציונלי), bought, sort_order |
+| shopping_items | work_sheet_id, body, quantity (טקסט חופשי, אופציונלי; מאז 2026-10-07 לא נקלט במסך, ונשמר רק אם כבר קיים), bought, sort_order. "+ פריט" מוסיף כמה פריטים בפעולה אחת (שורה לכל פריט) |
 | note_topics | name, sort_order |
 | notes | topic_id, body, pinned, done, archived_at, created_at, updated_at |
 | business_settings | ברירות מחדל עם גרסת הגדרות: default_validity_days, registration_close_rule (ימים לפני + שעה), default_capacity_adults לפי סוג מפגש (regular 12, couple 14), cancel_window_hours, credit_options_count (2), reminder_lead_hours (24), admin_expiring_days (21, במקום expiring_threshold_days), last_places_threshold (4), default_prep_days ([-1, 0]), customer_expiring_days (10), marketing_reminder_schedule (ימים ושעה: א׳ ג׳ ד׳ 09:00, ב׳ ה׳ 20:00), inactivity_months. פרטי העסק עברו ל-content_sections (business_details), כדי שיהיו להם טיוטה ופרסום |

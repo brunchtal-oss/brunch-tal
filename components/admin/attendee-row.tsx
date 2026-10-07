@@ -20,7 +20,18 @@ export type Attendee = {
   phone: string | null
   dietaryNotes: string | null
   guestDetails: string | null
+  // The photo consent (CAP-40), shown only on the work sheet (story 4.10);
+  // null for a pending booking or removed details.
+  photoConsent: boolean | null
   babies: readonly AttendeeBaby[]
+}
+
+// The name a booking shows: the customer's, or "לקוחה חדשה · ממתינה
+// להצטרפות" for a pending booking, or "פרטי הלקוחה הוסרו" for removed
+// details. Shared with the work sheet (story 4.10).
+export function attendeeTitle(attendee: Attendee): string {
+  if (attendee.pendingJoin) return copy.pendingJoin
+  return attendee.name ?? copy.detailsRemoved
 }
 
 // DESIGN.md › attendee-row (story 3.4): the name in body-strong with "×2" for
@@ -41,9 +52,7 @@ export function AttendeeRow({
   onDay: string
   action?: React.ReactNode
 }) {
-  const title = attendee.pendingJoin
-    ? copy.pendingJoin
-    : (attendee.name ?? copy.detailsRemoved)
+  const title = attendeeTitle(attendee)
   const muted = !attendee.pendingJoin && attendee.name === null
 
   return (

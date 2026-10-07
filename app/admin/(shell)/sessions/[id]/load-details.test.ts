@@ -29,6 +29,7 @@ const RAW = {
       phone_e164: "+972501234567",
       dietary_notes: "gluten free",
       guest_details: "vegan",
+      photo_consent: true,
       babies: [
         { name: "Ori", birth_date: "2026-07-01" },
         { name: "Maya", birth_date: "2026-08-01" },
@@ -71,6 +72,7 @@ describe("parseEventDetails", () => {
         phone: expect.stringContaining("050"),
         dietaryNotes: "gluten free",
         guestDetails: "vegan",
+        photoConsent: true,
         babies: [
           { name: "Ori", birthDate: "2026-07-01" },
           { name: "Maya", birthDate: "2026-08-01" },
@@ -85,6 +87,7 @@ describe("parseEventDetails", () => {
         phone: null,
         dietaryNotes: null,
         guestDetails: null,
+        photoConsent: null,
         babies: [],
       },
       {
@@ -96,6 +99,7 @@ describe("parseEventDetails", () => {
         phone: null,
         dietaryNotes: null,
         guestDetails: null,
+        photoConsent: null,
         babies: [],
       },
     ])
@@ -116,6 +120,14 @@ describe("parseEventDetails", () => {
       dietaryNotes: "nuts\nsoy",
       name: "Dana",
     })
+  })
+
+  it("photo_consent false stays false; a missing one is null", () => {
+    const details = parseEventDetails({
+      event: EVENT,
+      bookings: [{ ...RAW.bookings[0], photo_consent: false }, RAW.bookings[1]],
+    })
+    expect(details.attendees.map((a) => a.photoConsent)).toEqual([false, null])
   })
 
   it("drops a blank companion's note", () => {
