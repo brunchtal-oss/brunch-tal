@@ -371,6 +371,8 @@ components:
     error: '{colors.error} on {colors.error-tint}, dot {colors.error-dot}'
     saved: 'same as confirmed (booking result "נשמר")'
     not-saved: 'same as expired (booking result "לא נשמר") + warning inline-notice with the reason'
+    consent-yes: '"אווירה ✓" / "אישיות ✓" (work sheet, admin only) — same as confirmed; aria-label in full words'
+    consent-no: '"אווירה ✗" / "אישיות ✗" (work sheet, admin only) — same as expiring (warning); aria-label in full words'
   bottom-tab-bar:
     background: '{colors.card}'
     borderTop: '1px solid {colors.border}'
@@ -710,6 +712,7 @@ components:
 | `value-change-row` | מותאם | אדמין: מתחת לשדה שורת מקור ב-`label` ink-muted ("מההגדרות: 20:00 ביום הקודם"). אחרי שינוי: תיבה ברקע `{colors.muted}`, פינה 4px, ריפוד 12×16 — "ישן ← חדש" ב-`body-strong` (החץ קישוטי, משתקף ב-RTL), הערת היקף ב-`body-sm`, `button-secondary` "לשמור את השינוי" ו-`button-link` "חזרה לברירת המחדל". בלי צ׳קבוקס — הוא רק ב-`sensitive-confirm-dialog` |
 | `content-section-row` | מותאם | עורך התוכן, וגם רשימות מסודרות בהגדרות (אמצעי תשלום, בלי צ׳יפים של טיוטה ופרסום, רק "מוסתר" = expired): שורה ברשימה עם קו הפרדה (כמו `task-row`), שם הבלוק `body-strong`, תקציר `body-sm` ink-muted, `status-chip` (טיוטה = pending · פורסם = success · מוסתר = expired · "שינויים שלא פורסמו" = warning) ב-inline-end. כפתורי סידור "למעלה"/"למטה" 44×44 (chevron 20px ink) ו"הסתרה" מחוץ לאזור הלחיץ של השורה |
 | `image-upload-field` | מותאם | אזור בחירה: מסגרת מקווקוות 1px ink-muted על card, פינה 8px, ריפוד 24px. אחרי בחירה: תצוגה בפינות 8px + מסגרת חיתוך לטלפון 2px primary, ומחוצה לה scrim-ink/40%. מתחת: שדה "טקסט חלופי (חובה)" (`input`), צ׳קבוקס הסכמה 24px (כמו ב-`sensitive-confirm-dialog`), וכשחסר אחד מהם — `inline-notice` warning עם הסיבה. לצילום הירו אין שדה טקסט חלופי (קישוטי) |
+| `testimonial-carousel` | מותאם (CSS scroll-snap, בלי תלות חדשה) | המלצות בבית וב-/gallery (החלטת משתמשת 2026-10-07): שורה אופקית שמחליקים ביד, המלצה אחת ברוחב כמעט מלא בטלפון וההבאה מציצה בקצה כרמז. כפתורי הקודם והבא עם אייקון (יעד מגע 44px כמו שאר הכפתורים, aria-label) ונקודות מיקום (aria-current). לא זזה לבד אף פעם. RTL: הראשונה בצד ההתחלה. המלצת טקסט והמלצת תמונה באותו גובה שורה. המלצה אחת: בלי כפתורים ונקודות. `prefers-reduced-motion`: מעבר מיידי. הצבעים, הגופנים והפינות מהטוקנים הקיימים |
 
 ## Do's and Don'ts
 
