@@ -3,7 +3,7 @@ name: בראנץ׳ אצל טל
 description: Warm, quiet, type-led brunch hosting site + customer area + admin panel for new mothers. shadcn/ui (base-nova, RTL) on Next.js; this file is the brand-layer delta. Light mode only.
 status: final
 created: 2026-09-23
-updated: 2026-09-29
+updated: 2026-10-07
 sources:
   - ../../../../brunch_at_tal_charecter.md   # מקור האמת — גובר על SPEC בכל סתירה (למעט החלטות משותפות ב-memlog)
   - ../../../specs/spec-brunch-at-tal/SPEC.md
@@ -35,6 +35,7 @@ colors:
   expired-tint: '#EDE9E0'
   expired-dot: '#B0A998'
   scrim-ink: '#2E2A1F'       # used with alpha on hero/sheet scrims (same hex as ink)
+  saffron: '#E9B949'         # design round 2026-10-07: counters only (bell, "לטיפול"), ink number on it (7.6:1); never text, area or button
   # DROPPED (user's decision 2026-10-04, memlog): no concept colours anywhere; kept for history only, never used.
   # Concept "paper" colours (CAP-41) — only in concept-header and session-card band. field + its own dark ink.
   concept-mothers-field: '#CDD3BC'
@@ -141,6 +142,12 @@ typography:
     fontFamily: 'Assistant'
     fontSize: 26px
     fontWeight: '400'
+    lineHeight: '1'
+  numeral-xl:
+    # design round 2026-10-07: the one key number of a screen (the card's free entries), at most once per screen; its label beside it in body (16px)
+    fontFamily: 'Assistant'
+    fontSize: 40px
+    fontWeight: '300'
     lineHeight: '1'
   # DROPPED (user's decision 2026-10-04, memlog): the concept name uses Heebo 300 like every heading (26px on the card, display-lg in the header); kept for history only.
   # Concept name (the session title) — one face per concept, only for the concept name, >=22px.
@@ -276,12 +283,15 @@ components:
     radius: '{rounded.md}'
     padding: '{spacing.4}'
   session-row:
-    divider: '1px solid {colors.border}'
-    padding: '22px 0'
-    dateColumn: 64px
-    date: '{typography.numeral-lg}'
-    title: '{typography.body-strong}'
-    meta: '{typography.label}'
+    # design round 2026-10-07 (versions/combined.html): the one row for every list of sessions (public sessions page and the customer's "לו״ז בראנצ׳ים"); replaces the 64px date column
+    status: 'customer only: {components.status-chip} under the date'
+    divider: '1px solid {colors.border}, top on the first row and bottom on the last'
+    padding: '{spacing.3} 0'
+    photo: '84px square, {rounded.sm}, object-fit cover; no photo: {colors.muted} square'
+    gap: '{spacing.4} between photo and text'
+    eyebrow: '"בראנץ׳" {typography.label} {colors.ink-muted}'
+    title: 'concept name {typography.display-sm} {colors.ink}'
+    date: 'weekday and date only, {typography.body-sm} {colors.ink}; never the time'
   session-card:
     background: '{colors.card}'
     border: '1px solid {colors.border}'
@@ -289,7 +299,8 @@ components:
     # One uniform card for every concept (user's decision 2026-10-04, memlog)
     photo: 'top, aspect-ratio 2:1 (a low, rectangular card), full width; the session photo, else the concept photo (5.4)'
     noPhoto: '{colors.muted} surface with a decorative croissant mark (56px, stroke 1) in {colors.accent}; never an empty frame'
-    body: 'padding 12px 16px 14px; "בראנץ׳" {typography.body-sm} {colors.ink-muted}, concept name {typography.display-sm} {colors.ink}, then date {typography.body-sm} + {components.status-chip} (customer only)'
+    body: 'padding 12px 16px 14px; "בראנץ׳" {typography.body-sm} {colors.ink-muted}, concept name {typography.display-sm} {colors.ink}, then weekday and date (no time, 2026-10-07) {typography.body-sm} + {components.status-chip} (customer only)'
+    nextSession: 'customer home "המפגש הקרוב שלי" (2026-10-07): no card frame; photo full width 5:2 {rounded.md}, then "בראנץ׳", concept name, and one row of weekday-date with the "נרשמת" chip at inline-end'
   concept-header:
     # session page top, same style as session-card (user's decision 2026-10-04, memlog)
     photo: 'full-bleed inside the gutter, aspect-ratio 4:3, same noPhoto surface as session-card'
@@ -299,7 +310,7 @@ components:
     # admin top bar (CAP-35)
     size: '{spacing.touch-min} square'
     icon: 'lucide Bell 24px {colors.ink}'
-    count: '{typography.label-strong}, {colors.on-primary} on {colors.primary}, pill, min 20px, top inline-end corner'
+    count: '{typography.label-strong}, {colors.ink} on {colors.saffron} (2026-10-07; was on-primary on primary), pill, min 18px, top inline-end corner; same on the customer bell'
   segmented-switch:
     # two views of one object: פרטים | עבודה, לקוחות | כרטיסיות פתוחות
     border: '1px solid {colors.ink-muted}'
@@ -432,6 +443,14 @@ components:
     dot: '8px {colors.accent}'
     numbers: '{typography.body-strong}'
     expiring: 'validity line adds "עוד {n} ימים" + {components.status-chip} expiring; no button'
+  home-card:
+    # design round 2026-10-07: "הכרטיסייה שלי" on the customer home (look of versions/v1.html); replaces balance-card there only
+    surface: 'none: on the page background, no frame, no fill'
+    product: 'product name {typography.body-sm} {colors.ink-muted}'
+    count: '{typography.numeral-xl} free entries + label "כניסות זמינות" {typography.body} beside it (the one approved new label)'
+    bar: '4 equal parts per entry, height 6px, gap 4px, rounded: free {colors.primary}, booked {colors.accent}, used {colors.border}'
+    legend: '"נרשמת X/N" and "ניצלת X/N" {typography.body-sm}, each with a 10x6 key in its bar colour'
+    validity: '"בתוקף עד DD.MM" {typography.body-sm} {colors.ink-muted}; expiring adds "עוד {n} ימים" + status-chip expiring'
   inline-notice:
     radius: '{rounded.md}'
     padding: '12px {spacing.4}'
@@ -466,6 +485,15 @@ components:
     columns: 4
     value: '{typography.numeral-lg}'
     label: '{typography.label}, {colors.ink-muted}'
+  session-tile:
+    # design round 2026-10-07: admin home, the two nearest sessions, one under the other, then "לכל המפגשים"
+    surface: '{components.card}'
+    next: '"המפגש הבא" {typography.label} {colors.ink-muted}, session name {typography.body-strong} 18px, weekday-date {typography.body-sm}, occupancy bar 4px, then places "X/N" · babies · allergies ({typography.numeral-lg} over {typography.label}); no "נרשמות" (it repeats the places); "לפרטי המפגש" {components.button-link}'
+    second: 'session name, weekday-date with "X/N" ({typography.numeral-lg}) at inline-end, occupancy bar, "לפרטי המפגש"'
+  admin-home-actions:
+    # design round 2026-10-07: under the h1 "בית", two equal columns, gap {spacing.2}
+    primary: '"הוספת תשלום" {components.button-primary}'
+    secondary: '"מפגש חדש" {components.button-secondary}'
     highlight: 'allergies value in {colors.warning}'
   radio-card:
     background: '{colors.card}'
@@ -527,6 +555,8 @@ components:
 
 **קונספטים (CAP-41), החלטת המשתמשת 2026-10-04 (memlog):** אין לקונספט צבע או גופן משלו. כל כרטיסי המפגשים אחידים, והצילום (של המפגש, ואם אין, של הקונספט) הוא מה שמבדיל ביניהם. שם הקונספט הוא הכותרת של המפגש, ב-Heebo כמו כל כותרת. אין דוגמאות, אין איורים ואין אייקונים לקונספט. המוקאפ [mockups/concept-themes-3.html](mockups/concept-themes-3.html) והחריג הקודם ("כרטיס תפריט" צבעוני לכל קונספט) הוחלפו.
 
+**כללי אחידות (סבב העיצוב, החלטת המשתמשת 2026-10-07, memlog):** ניקיון, סדר, פרופורציות קבועות, ריווח אחיד ובלי כפילויות. בכל מסך הדבר החשוב ראשון: מה הבא, מה יש לי, רשימות, ובסוף "לכל ה...". **באתר הציבורי ובאזור האישי** התוכן יושב על הרקע בשורות ובקווים דקים, בלי מסגרת סביב סקשן. **בבית האדמין** כל חלק הוא קובייה (`card`), קובייה מתחת לקובייה, בלי קובייה בתוך קובייה. כל נתון מופיע פעם אחת במסך, וקישור לאותו יעד פעם אחת. הסבב משנה עיצוב בלבד, לא תוכן ולא נוסחים (חוץ משני חריגים מאושרים: "כניסות זמינות" בכרטיסייה, והסרת השעה, ראו Typography). דף הבית הציבורי והפוטר לא משתנים בסבב הזה. ההדגמה: `versions/combined.html` (מקומית, לא ב-git).
+
 שם העסק מוצג ככיתוב (wordmark) ב-Heebo דק — אין לוגו ואין סלוגן. ה-UI מבוסס shadcn/ui (base-nova, RTL, אייקוני lucide); הקובץ הזה מגדיר רק את ההבדלים. מצב בהיר בלבד — אין מצב כהה.
 
 ## Colors
@@ -543,6 +573,7 @@ components:
 | `border` | #E6DFCF | קווי הפרדה דקורטיביים בלבד | גבול של רכיב אינטראקטיבי (1.23:1) | — |
 | `accent` | #8A875A | גרפיקה בלבד: נקודה, קו קצר, מחוון טאב פעיל, מסגרת תווית סוג | **טקסט, או כרקע לטקסט** (ink עליו 3.88:1 — נכשל) | 3.42:1 כגרפיקה על רקע — עובר 3:1 |
 | `primary` | #4A4A2A | כפתור ראשי, טבעת פוקוס, צ׳קבוקס מסומן | קישוטים | on-primary עליו 8.46:1 |
+| `saffron` | #E9B949 | **מונים בלבד** (2026-10-07): המונה על הפעמון בשני הסרגלים והמונה של "לטיפול", מספר ב-ink | טקסט, רקע של אזור, כפתור, סימון זמינות | ink עליו 7.6:1 |
 | `on-primary` | #FAF6EE | טקסט על primary / success / error / scrim | — | — |
 
 **צבעי מצב** — טקסט בצבע המלא על רקע ה-tint שלו, עם נקודת dot לחיזוק (לעולם לא צבע לבד — תמיד גם מילה):
@@ -626,7 +657,23 @@ components:
 | תוויות, צ׳יפים, טאבים | `{typography.label}` / `{typography.label-strong}` | 13px |
 | תווית-על לסקשן | `{typography.eyebrow}` | 13px, ריווח 0.04em |
 | כפתורים | `{typography.button}` | 16px/600 |
-| תאריך בעמודת מפגש, מספרים ב-`summary-card` | `{typography.numeral-lg}` | 26px/400 |
+| מספרים ב-`summary-card` וב-`session-tile` | `{typography.numeral-lg}` | 26px/400 |
+| המספר המרכזי של המסך (כניסות זמינות בכרטיסייה) | `{typography.numeral-xl}` | 40px/300, פעם אחת במסך לכל היותר |
+
+**תפקידים קבועים (סבב העיצוב 2026-10-07):**
+
+| תפקיד | טוקן |
+|---|---|
+| כותרת מסך ("היי {שם}", "בית", "בראנצ׳ים") | `display-md` |
+| כותרת סקשן ("המפגש הקרוב שלי", "הכרטיסייה שלי") | `display-sm` |
+| שם הקונספט בשורה ובכרטיס מפגש | `display-sm` |
+| כותרת קובייה באדמין ("לטיפול") | `body-strong` |
+| טקסט, שם בשורה | `body` / `body-strong` |
+| מטא: יום ותאריך, פירוט, תוקף | `body-sm` (התאריך ב-ink, השאר ink-muted) |
+| תוויות, צ׳יפים, "בראנץ׳" מעל שם | `label` |
+
+- **Heebo** רק לשם העסק, לכותרות (מסך, סקשן) ולשם הקונספט, תמיד 300 (200 רק ב-`wordmark-display`). **Assistant** לכל השאר, בשלושה משקלים בלבד: 400 לטקסט, 600 להדגשה ולכפתורים, 300 רק ל-`numeral-xl`.
+- מקסימום שלוש רמות טקסט בסקשן (כותרת, טקסט, מטא). אין גודל או משקל מחוץ לטבלאות האלה.
 
 כללים:
 - **כל הכותרות ב-Heebo 300.** משקל 200 רק ב-`{typography.wordmark-display}` — שם העסק הגדול על רקע קרם חלק. אף פעם לא מעל צילום ולא מתחת ל-28px.
@@ -634,7 +681,7 @@ components:
 - **מינימום 13px לכל טקסט.** ברפרנס של Ziona התוויות הן 9–10px ו-12px; זה קטן מדי לנגישות ולקריאה בטלפון ביד אחת, לכן הועלה ל-13px. זו סטייה מכוונת מהרפרנס.
 - **גופני קונספט: בוטלו** (החלטת המשתמשת 2026-10-04). שם הקונספט ב-Heebo 300: `display-sm` (22px) בכרטיס, `display-lg` בראש עמוד המפגש. `{typography.concept-name-*}` נשארו לתיעוד בלבד.
 - אין אותיות רישיות/UPPERCASE (עברית); אין הטיה (italic).
-- תאריך: `יום שני 12.10 · 10:00` — שעון 24 שעות, DD.MM, מפריד נקודה אמצעית.
+- תאריך: `יום שני 12.10` (יום בשבוע ו-DD.MM). **שעת הבראנץ׳ מופיעה רק בעמוד המפגש עצמו** (של האורחת, של הלקוחה ושל טל), בפורמט `יום שני 12.10 · 10:00`, שעון 24 שעות. לא ברשימות, לא בכרטיס המפגש הקרוב, לא בקוביות האדמין ולא בשורות (החלטת המשתמשת 2026-10-07).
 - מחיר: `128 ₪` — שקלים בלבד, בלי אגורות בתצוגה; מספרי טלפון ומספרים מעורבים עטופים ב-`<bdi>` כדי לא להתהפך ב-RTL.
 
 ## Layout & Spacing
@@ -650,6 +697,24 @@ components:
 - כל ריווח אופקי בתכונות לוגיות (`ps/pe`, `ms/me`, `inset-inline`) — לא left/right.
 - אזור בטוח: סרגל תחתון, פס הוואטסאפ וגיליון תחתון מוסיפים `env(safe-area-inset-bottom)`.
 - **שמירת מקום לרכיבים צמודים לתחתית:** כל עמוד שיש בו `whatsapp-bar` או `bottom-tab-bar` מקבל `padding-bottom` ו-`scroll-padding-bottom` בגובה הרכיב + אזור בטוח, כך שתוכן, פוטר ורכיב ממוקד לעולם לא מוסתרים מתחתיו.
+
+**ריווח לפי תפקיד (סבב העיצוב 2026-10-07).** רק ערכי הסולם. אותו תפקיד, אותו ערך, בכל מסך:
+
+| איפה | ערך |
+|---|---|
+| שוליים בצדי המסך (טלפון) | 24 (`gutter-mobile`) |
+| בין סקשנים: אתר ציבורי / אזור אישי ואדמין | 48 / 32 |
+| כותרת סקשן ← התוכן שלה | 12 |
+| בין קוביות (אדמין) | 12 |
+| ריפוד בתוך קובייה | 16 |
+| שורה ברשימה: ריפוד אנכי | 12; גובה מינימלי 48, ושורה עם שתי שורות טקסט 56 |
+| תווית ← ערך (מספר ותווית מתחתיו) | 4 |
+| בין שני כפתורים צמודים | 8 (שתי עמודות שוות) |
+| תמונה ← טקסט בשורה | 16 |
+
+**פרופורציות קבועות:** תמונה בשורת מפגש 84×84; תמונת המפגש הקרוב 5:2 ברוחב מלא; כפתור 48 גובה, פינה 4; צ׳יפ 24; אייקון בסרגלים 24, chevron בשורה 20; פס תפוסה 4 ופס כניסות 6; יעד מגע 44 לפחות.
+
+**יישור:** באזור האישי ובאדמין הכול מיושר להתחלה; סכום או מספר בסוף שורה מיושר לסוף. באתר הציבורי היישור הקיים נשאר.
 
 ## Elevation & Depth
 
@@ -682,23 +747,24 @@ components:
 | `menu-sheet` | `Sheet` | התפריט הציבורי. נפתח מצד inline-end (צד הכפתור), רוחב min(320px, 85vw), רקע card, scrim 40%. בראש: wordmark + כפתור סגירה X 44×44. רשימת עמודי ה-site-map בסדר קבוע, כל פריט `body-lg` בגובה ≥48px עם קו הפרדה; העמוד הנוכחי מסומן בפס 2px accent ב-inline-start ובמשקל 600. בתחתית: "כניסה לאזור האישי" כ-`button-primary` ברוחב מלא, ומתחתיו מדיניות פרטיות והצהרת נגישות כ-`button-link` |
 | `hero` | מותאם | צילום שולחן מלמעלה, full-bleed, `min-height` 560px בטלפון (גדל עם התוכן). scrim: פס עליון ink/72% מאחורי הסרגל; באמצע שקוף; מתחילת בלוק הטקסט ועד התחתית ≥ink/72% ובקצה 85%. **כלל:** בשום נקודה מאחורי טקסט השקיפות לא יורדת מ-0.72 (on-primary ≥5.35:1 גם מעל פיקסל לבן). בתחתית: wordmark `{typography.display-xl}` (משקל 300), כותרת `{typography.display-sm}`, שורת תיאור `{typography.body}`, `button-hero`. בלי צילום מאושר — וזו ברירת המחדל עד שצילום נבדק מול הכלל — fallback טיפוגרפי של כיוון 1 (רקע קרם, שם העסק ב-`{typography.wordmark-display}` ממורכז, `button-primary`) |
 | `card` | `Card` | `{colors.card}`, מסגרת `{colors.border}`, פינה 8px, ריפוד 16px, בלי צל |
-| `session-row` | מותאם | רשימה עם קווי הפרדה דקים (כיוון 1). עמודת תאריך 64px: `{typography.numeral-lg}` + יום ב-`label`. תוכן: שם הקונספט ("בראנץ׳ {קונספט}") `body-strong`, מטא (שעה) `label` ב-ink-muted — תווית הסוג לא מוצגת ללקוחה (CAP-41, החלטת משתמשת 2026-09-26), שורה של `status-chip` + רמז חזותי "לפרטים" עם chevron (טקסט `label` עם קו תחתון, לא כפתור נפרד — השורה כולה היא יעד אחד). מפגש מלא: שם ב-ink-muted. וריאנט **בחירה** (כרטיסייה): צ׳קבוקס 24px בצד inline-start, בלי רמז "לפרטים"; שורה נבחרת ברקע `{colors.muted}` **וגם** צ׳קבוקס מסומן (הרקע לבדו 1.09:1 — לא מספיק); שורה לא זכאית: טקסט ink-muted + סיבה ב-`label` |
-| `session-card` | `Card` | כרטיס אחיד לכל הקונספטים (החלטת המשתמשת 2026-10-04, memlog): צילום רחב למעלה ביחס 2:1, כרטיס נמוך ומלבני (תמונת המפגש, ואם אין, תמונת הקונספט; 5.4). מתחתיו "בראנץ׳" ב-`body-sm` ink-muted, שם הקונספט ב-`display-sm` בדיו הרגיל, ואז מועד ב-`body-sm` ו-`status-chip` (רק ללקוחה מחוברת). **בלי צילום:** משטח muted עם סימן קרואסון קישוטי בצבע accent, אף פעם לא מסגרת ריקה. בלי צבע או גופן לקונספט. אין תווית סוג ואין "לשני מבוגרים" |
+| `session-row` | מותאם | **מ-2026-10-07 (סבב העיצוב, גובר על עמודת התאריך שבהמשך השורה):** השורה היחידה לכל רשימת מפגשים: עמוד הבראנצ׳ים הציבורי ו"לו״ז בראנצ׳ים" באזור האישי (בדף הבית רק כשייפתח לשינוי). באזור האישי `status-chip` (יש מקום / מקומות אחרונים / מלא) מתחת לתאריך. תמונה 84×84 בפינה 4 (בלי תמונה: ריבוע muted), ריווח 16, ואז "בראנץ׳" ב-`label` ink-muted, שם הקונספט ב-`display-sm`, יום ותאריך ב-`body-sm` ink, בלי שעה. קו דק בין השורות, השורה כולה קישור אחד. **הנוסח הקודם, לווריאנט הבחירה בלבד:** רשימה עם קווי הפרדה דקים (כיוון 1). עמודת תאריך 64px: `{typography.numeral-lg}` + יום ב-`label`. תוכן: שם הקונספט ("בראנץ׳ {קונספט}") `body-strong`, בלי שורת שעה (2026-10-07) — תווית הסוג לא מוצגת ללקוחה (CAP-41, החלטת משתמשת 2026-09-26), שורה של `status-chip` + רמז חזותי "לפרטים" עם chevron (טקסט `label` עם קו תחתון, לא כפתור נפרד — השורה כולה היא יעד אחד). מפגש מלא: שם ב-ink-muted. וריאנט **בחירה** (כרטיסייה): צ׳קבוקס 24px בצד inline-start, בלי רמז "לפרטים"; שורה נבחרת ברקע `{colors.muted}` **וגם** צ׳קבוקס מסומן (הרקע לבדו 1.09:1 — לא מספיק); שורה לא זכאית: טקסט ink-muted + סיבה ב-`label` |
+| `session-card` | `Card` | כרטיס אחיד לכל הקונספטים (החלטת המשתמשת 2026-10-04, memlog): צילום רחב למעלה ביחס 2:1, כרטיס נמוך ומלבני (תמונת המפגש, ואם אין, תמונת הקונספט; 5.4). מתחתיו "בראנץ׳" ב-`body-sm` ink-muted, שם הקונספט ב-`display-sm` בדיו הרגיל, ואז יום ותאריך ב-`body-sm` (בלי שעה, 2026-10-07) ו-`status-chip` (רק ללקוחה מחוברת). **"המפגש הקרוב שלי" בבית האזור האישי:** בלי מסגרת, צילום 5:2 ברוחב מלא, ואז "בראנץ׳", שם הקונספט ושורה של יום ותאריך עם צ׳יפ "נרשמת" ב-inline-end. **בלי צילום:** משטח muted עם סימן קרואסון קישוטי בצבע accent, אף פעם לא מסגרת ריקה. בלי צבע או גופן לקונספט. אין תווית סוג ואין "לשני מבוגרים" |
 | `concept-header` | מותאם | ראש עמוד המפגש, באותו סגנון כמו `session-card` (החלטת המשתמשת 2026-10-04): צילום 4:3 ברוחב מלא, ומתחתיו "בראנץ׳" + שם הקונספט ב-`display-lg` + מועד, בדיו הרגיל. בלי צילום: אותו משטח muted כמו בכרטיס |
 | `chip` | `Badge` | בסיס: `{colors.muted}`, 13px, pill. לא אינטראקטיבי; צ׳יפ סינון אינטראקטיבי מקבל אזור מגע 44px |
 | `chip-type` | `Badge` outline | **אדמין בלבד** (רשימות מפגשים ועריכה): מסגרת `{colors.accent}` (גרפיקה, 3.42:1), טקסט ink, פינה 4px. לא מוצג לאורחת או ללקוחה |
 | `status-chip` | `Badge` | pill, tint + טקסט + dot 7px, `label-strong`. **יש מקום** success · **מקומות אחרונים** warning · **מלא** expired (עמום, לא אדום) — שלושתם רק ללקוחה מחוברת, בלי מספר (באדמין התפוסה מוצגת כמספר בטקסט `label` ליד השם, "9/12", ולא כצ׳יפ) · **מאושר** success · **ממתין** / **ממתין למימוש** (קישור הצטרפות) pending · **עומדת לפוג** (`expiring`) warning · **פג תוקף** expired · **בוטל** expired · **שגיאה** error. תוצאה לכל תאריך בהרשמה מרובה: **נשמר** = success, **לא נשמר** = expired, והסיבה ב-`inline-notice` warning מתחת. תמיד מילה, לעולם לא נקודה לבד; הנקודה `aria-hidden` |
-| `bottom-tab-bar` | מותאם | 5 פריטים, רקע card, קו עליון border, `min-height` 64px + safe-area. פריט: אייקון 24px מעל תווית `label`; תווית ארוכה ("ההרשמות שלי") רשאית לשבור לשתי שורות ב-320px. פעיל: ink + 600 + פס 2px `{colors.accent}` ברוחב 24px מעל האייקון; לא פעיל: ink-muted. מונה התראות: מספר ב-`label-strong`, `{colors.on-primary}` על `{colors.primary}` (8.46:1) |
+| `bottom-tab-bar` | מותאם | 5 פריטים, רקע card, קו עליון border, `min-height` 64px + safe-area. פריט: אייקון 24px מעל תווית `label`; תווית ארוכה ("ההרשמות שלי") רשאית לשבור לשתי שורות ב-320px. פעיל: ink + 600 + פס 2px `{colors.accent}` ברוחב 24px מעל האייקון; לא פעיל: ink-muted. מונה התראות: מספר ב-`label-strong`, ink על `{colors.saffron}` (7.6:1; מ-2026-10-07) |
 | `side-nav` | `Sidebar` | אדמין ≥`lg`: רוחב 240px, רקע card, פריט פעיל ברקע muted עם פס accent בצד inline-start |
 | `bottom-sheet` | `Drawer` (vaul) / `Sheet side=bottom` | רקע card, פינות עליונות 12px, grabber 36×4 (קישוטי), ריפוד 24px, scrim 40%. שורת כותרת: כותרת הגיליון ב-inline-start, **כפתור סגירה גלוי** (lucide `X`, 44×44) ב-inline-end. כפתור ראשי ברוחב מלא בתחתית, באזור האגודל. גובה מרבי 90vh עם גלילה פנימית |
 | `sensitive-confirm-dialog` | `AlertDialog` | card, פינה 8px, כותרת `display-sm` בצורת שאלה ("האם לאשר החזר?"), תיבת השפעה ברקע muted (מה ישתנה, למי), צ׳קבוקס 24px עם תווית מלאה, כפתור אישור (primary או destructive לפי הפעולה) + `button-secondary` "ביטול". בטלפון — רוחב מלא פחות 16px |
 | `input` | `Input` | רקע card, מסגרת 1px `{colors.ink-muted}` (5.8:1), פינה 4px, גובה 48px, 16px. תווית מעל ב-`body-sm` 600; שדה חובה מסומן בתווית במילה "(חובה)" ולא בכוכבית בלבד. פוקוס: `{components.focus-ring}` מחוץ למסגרת (המסגרת נשארת). שגיאה: מסגרת error + הודעה ב-`body-sm` error עם אייקון (קישוטי) מתחת. נעול (מוצר וסכום בטופס הצטרפות): רקע muted, אייקון מנעול, טקסט ink (קריא — לא אפור). שדה סיסמה: כפתור "הצגת סיסמה" (אייקון עין, 44×44) ב-inline-end של השדה |
 | `focus-ring` | `ring` של shadcn | ראו Colors › פוקוס: פס 2px on-primary + טבעת 2px primary, ב-`:focus-visible` בלבד, לכל רכיב אינטראקטיבי בשלושת המשטחים |
 | `notification-item` | מותאם | שורה ברשימה עם קו הפרדה. לא נקראה: נקודה 8px accent (קישוטית) + כותרת `body-strong` + המילה "לא נקראה" לקורא מסך; נקראה: כותרת `body`. זמן יחסי ב-`label` ink-muted. השורה כולה היא קישור אחד (≥44px) |
-| `balance-card` | מותאם | רקע `{colors.muted}`, פינה 8px, נקודה accent. שורה: סוג · **מספרים ב-`body-strong`** · "בתוקף עד DD.MM" ב-ink-muted. שורה משנית: משוריינות / תפוגה. עומדת לפוג: שורת התוקף מוסיפה "עוד {n} ימים" + `status-chip` expiring, בלי כפתור; פגה: expired; זיכוי: שתי החלופות כשורות קטנות. נקודת ה-accent קישוטית |
+| `balance-card` | מותאם | רקע `{colors.muted}`, פינה 8px, נקודה accent. שורה: סוג · **מספרים ב-`body-strong`** · "בתוקף עד DD.MM" ב-ink-muted. שורה משנית: משוריינות / תפוגה. עומדת לפוג: שורת התוקף מוסיפה "עוד {n} ימים" + `status-chip` expiring, בלי כפתור; פגה: expired; זיכוי: שתי החלופות כשורות קטנות. נקודת ה-accent קישוטית. **בבית האזור האישי מוחלף ב-`home-card`** (2026-10-07) |
+| `home-card` | מותאם | "הכרטיסייה שלי" בבית האזור האישי (2026-10-07, המראה של גרסה 1): בלי מסגרת ובלי רקע. שם המוצר `body-sm` ink-muted; מספר הכניסות הפנויות ב-`numeral-xl` ולידו "כניסות זמינות" ב-`body` (הנוסח החדש היחיד שאושר); פס של חלק לכל כניסה, גובה 6, רווח 4 (פנויה primary, משוריינת accent, נוצלה border); מקרא "נרשמת X/N" ו-"ניצלת X/N" ב-`body-sm` עם מפתח צבע; "בתוקף עד DD.MM" ב-ink-muted (עומדת לפוג: + "עוד {n} ימים" ו-`status-chip` expiring) |
 | `inline-notice` | `Alert` | tint + טקסט בצבע המצב, אייקון lucide (קישוטי), פינה 8px. מבנה קבוע: סיבה (שורה אחת) + פעולה (`button-link` או `button-secondary`). ממורכז, בשורות מאוזנות, כך שאף פעם לא נשארת מילה בודדת בשורה האחרונה; האייקון בתחילת השורה הראשונה, והפעולות ממורכזות (החלטת המשתמשת 2026-10-04). כך גם ה-Alert במסכי ההתחברות. בכל האפליקציה טקסט רץ נשבר ב-`text-wrap: pretty` וכותרות ב-`balance` |
 | `attendee-row` | מותאם | אדמין: שם `body-strong` (+ "×2" לזוגי), שורת תינוק/ת וגיל `body-sm`. שדה "אלרגיות והעדפות תזונתיות" הוא טקסט אחד שהלקוחה כתבה — מוצג כמו שהוא ב-`body-sm`, בתוך רקע tint של warning כדי שיבלוט לטל; הגבלת המלווה בזוגי מוצגת באותו אופן עם "מלווה:". **שדה ריק — לא מוצג כלום** (בלי "טרם נמסר"). בדף העבודה גם אישור התמונות כ-`status-chip`. המערכת לא מפרקת את הטקסט לצ׳יפים |
-| `bell-button` | `Button` ghost | סרגל עליון של האדמין, ב-inline-end: פעמון lucide 24px באזור 44×44, מונה לא-נקראו כ-pill `primary`. פותח את מרכז ההתראות של טל |
+| `bell-button` | `Button` ghost | סרגל עליון של האדמין, ב-inline-end: פעמון lucide 24px באזור 44×44, מונה לא-נקראו כ-pill `saffron` עם מספר ב-ink (2026-10-07, גם בפעמון של הלקוחה). פותח את מרכז ההתראות של טל |
 | `segmented-switch` | `ToggleGroup` / קישורים | שתי תצוגות של אותו דבר ("פרטים \| עבודה" במפגש, "לקוחות \| כרטיסיות פתוחות"): מסגרת 1px ink-muted, פינה 4px, כל חצי 44px לפחות; הנבחר ב-primary עם טקסט on-primary |
 | `check-item` | `Checkbox` + תווית | משימה, פריט קניות, פתק: תיבה 24px; מסומן — התיבה ב-primary **והטקסט ב-ink-muted עם קו מחיקה**, גם בהדפסה |
 | `dish-card` | `Card` | דף העבודה בטלפון: מנה אחת לכרטיס, שם `body-strong`, ובתוכו קבוצה לכל יום הכנה (כותרת `label-strong` ink-muted עם התאריך) ורשימת `check-item` |
@@ -706,7 +772,9 @@ components:
 | `open-card-row` | `Card` | כרטיסייה פתוחה: שם הלקוחה + `status-chip` expiring כשרלוונטי; מטא: נרכשה · בתוקף עד (כולל הארכה); שורה לכל כניסה — תאריך המפגש או "כניסה {n}" + `status-chip` (נוצלה expired · משוריינת success · פנויה pending) |
 | `reminder-strip` | `Alert` | תזכורת השיווק הנוכחית בראש בית האדמין: רקע muted, טקסט `body-sm`, "סגירה" כ-`button-link`. נעלם עד התזכורת הבאה |
 | `task-row` | מותאם | שורת "לטיפול" בבית האדמין, באותו מראה של `notification-item`: קו הפרדה, ריפוד 16px, כותרת `body-strong` ("סוג · שם הלקוחה"), פירוט `body-sm`, זמן/מטא ב-`label` ink-muted, `status-chip` ב-inline-end ו-chevron קישוטי. השורה כולה היא יעד אחד. ראו [key-admin-home](mockups/key-admin-home.html) |
-| `summary-card` | `Card` | מספרי המפגש הבא ומבט בוקר המפגש: card עם מסגרת border, פינה 8px, ארבע עמודות (מקומות · הרשמות/נרשמות · תינוקות · אלרגיות). מספר ב-`numeral-lg`, תווית ב-`label` ink-muted; מספר האלרגיות ב-`{colors.warning}` (5.54:1 על card) |
+| `summary-card` | `Card` | מספרי המפגש הבא ומבט בוקר המפגש: card עם מסגרת border, פינה 8px, ארבע עמודות (מקומות · הרשמות/נרשמות · תינוקות · אלרגיות). מספר ב-`numeral-lg`, תווית ב-`label` ink-muted; מספר האלרגיות ב-`{colors.warning}` (5.54:1 על card). בבית האדמין מוחלף ב-`session-tile` |
+| `session-tile` | `Card` | בית האדמין (2026-10-07): שני המפגשים הקרובים, אחד מתחת לשני, ואחריהם "לכל המפגשים". **הבא:** "המפגש הבא" ב-`label`, שם המפגש, יום ותאריך, פס תפוסה 4, ומתחת שלושה ערכים: מקומות ("X/N") · תינוקות · אלרגיות (`numeral-lg` מעל `label`, ריווח 22 ביניהם). **בלי "נרשמות"**, שחוזר על המקומות. "לפרטי המפגש" כ-`button-link`. **השני:** שם, יום ותאריך ו-"X/N" ב-inline-end, פס תפוסה, "לפרטי המפגש" |
+| `admin-home-actions` | `Button` | ראש בית האדמין, מתחת ל-`h1`: "הוספת תשלום" (`button-primary`) ו"מפגש חדש" (`button-secondary`), שתי עמודות שוות, רווח 8 |
 | `radio-card` | `RadioGroup` | בחירה אחת מתוך מעט אפשרויות כשורות גדולות (לקוחה חדשה / קיימת, אמצעי תשלום, זיכוי / החזר): רקע card, מסגרת 1px ink-muted, פינה 4px, גובה ≥48px, עיגול 20px. נבחרה: רקע muted **וגם** מסגרת ink **וגם** עיגול מלא ב-primary (הרקע לבדו לא מספיק). אמצעי תשלום — רשת של שתיים בשורה רק כשכל השמות נכנסים בשורה אחת; אחרת (שם ארוך, 320px, זום 200%) עמודה אחת. התווית נשברת ולא נחתכת. ראו [key-admin-payment](mockups/key-admin-payment.html) |
 | `empty-state` | מותאם | כותרת `display-md`, משפט `body-lg`, פעולה אחת `button-primary`. בלי איור; מותר צילום אוכל שטל העלתה (החלטת משתמשת 2026-09-29) |
 | `value-change-row` | מותאם | אדמין: מתחת לשדה שורת מקור ב-`label` ink-muted ("מההגדרות: 20:00 ביום הקודם"). אחרי שינוי: תיבה ברקע `{colors.muted}`, פינה 4px, ריפוד 12×16 — "ישן ← חדש" ב-`body-strong` (החץ קישוטי, משתקף ב-RTL), הערת היקף ב-`body-sm`, `button-secondary` "לשמור את השינוי" ו-`button-link` "חזרה לברירת המחדל". בלי צ׳קבוקס — הוא רק ב-`sensitive-confirm-dialog` |
@@ -718,7 +786,11 @@ components:
 
 | Do | Don't |
 |---|---|
-| לתת לצילום האוכל להיות הצבע | צבעים רוויים, גרדיאנטים, רקעים צבעוניים בממשק |
+| לתת לצילום האוכל להיות הצבע; זעפרן רק במונים | צבעים רוויים, גרדיאנטים, רקעים צבעוניים בממשק; זעפרן כטקסט, כרקע או לסימון זמינות |
+| שורות וקווים באתר ובאזור האישי; קוביות רק בבית האדמין | מסגרת סביב סקשן באתר; קובייה בתוך קובייה |
+| כל נתון פעם אחת במסך | "8/12 מקומות" וגם "8 נרשמות"; כותרת שחוזרת על התוכן שמתחתיה |
+| שעת הבראנץ׳ רק בעמוד המפגש | שעה ברשימות, בכרטיס המפגש הקרוב או בקוביות |
+| ערכי ריווח וגודל מהטבלאות בלבד | ערך "בערך", גודל או משקל שלא בטבלה |
 | קווי הפרדה דקים, טון ומרווח | צללים, כרטיסים "צפים", מסגרות כבדות |
 | כותרות ב-Heebo 300; 200 רק לשם העסק הגדול על קרם; Assistant לכל מספר ותאריך | Heebo למספרים; משקל 200 בכותרת או מעל צילום |
 | טבעת פוקוס דו-גונית עם offset בכל רכיב | `outline: none`, או טבעת שמחליפה את מסגרת השדה |

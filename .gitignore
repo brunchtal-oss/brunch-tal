@@ -46,3 +46,6 @@ context-practice-files/
 
 # BMAD skill render cache (generated)
 _bmad/render/
+
+# design-versions skill output (local only)
+versions*/
