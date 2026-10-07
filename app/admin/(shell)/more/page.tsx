@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ChevronLeftIcon } from "lucide-react"
 
+import { NavIcon } from "@/components/shared/nav-icon"
 import { PageHeading } from "@/components/shared/page-heading"
 import { shellCopy } from "@/lib/copy/shell"
 import { ACCESSIBILITY_HREF, adminMoreNav } from "@/lib/nav"
@@ -26,7 +27,10 @@ export default function AdminMorePage() {
               href={row.href}
               className="flex min-h-12 items-center justify-between gap-3 py-3 text-base font-semibold"
             >
-              {row.label}
+              <span className="flex items-center gap-3">
+                {row.icon && <NavIcon icon={row.icon} className="size-5" />}
+                {row.label}
+              </span>
               <ChevronLeftIcon
                 aria-hidden
                 strokeWidth={1.5}

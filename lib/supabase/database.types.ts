@@ -507,6 +507,38 @@ export type Database = {
           },
         ]
       }
+      customer_notes: {
+        Row: {
+          body: string
+          created_at: string
+          created_by: string
+          customer_id: string
+          id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          created_by: string
+          customer_id: string
+          id?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          created_by?: string
+          customer_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_notes_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       entitlement_movements: {
         Row: {
           action: string
@@ -1166,6 +1198,47 @@ export type Database = {
         }
         Relationships: []
       }
+      shopping_items: {
+        Row: {
+          body: string
+          bought: boolean
+          created_at: string
+          id: string
+          quantity: string | null
+          sheet_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          bought?: boolean
+          created_at?: string
+          id?: string
+          quantity?: string | null
+          sheet_id: string
+          sort_order: number
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          bought?: boolean
+          created_at?: string
+          id?: string
+          quantity?: string | null
+          sheet_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shopping_items_sheet_id_fkey"
+            columns: ["sheet_id"]
+            isOneToOne: false
+            referencedRelation: "work_sheets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_dishes: {
         Row: {
           created_at: string
@@ -1312,11 +1385,28 @@ export type Database = {
       }
     }
     Functions: {
+      admin_add_customer_note: {
+        Args: {
+          p_body: string
+          p_customer_id: string
+          p_idempotency_key: string
+        }
+        Returns: Json
+      }
       admin_add_prep_day: {
         Args: {
           p_day_offset: number
           p_event_id: string
           p_idempotency_key: string
+        }
+        Returns: Json
+      }
+      admin_add_shopping_item: {
+        Args: {
+          p_body: string
+          p_event_id: string
+          p_idempotency_key: string
+          p_quantity: string
         }
         Returns: Json
       }
@@ -1386,6 +1476,14 @@ export type Database = {
         Args: { p_idempotency_key: string; p_product: Json }
         Returns: Json
       }
+      admin_delete_customer_note: {
+        Args: { p_idempotency_key: string; p_note_id: string }
+        Returns: Json
+      }
+      admin_delete_shopping_item: {
+        Args: { p_idempotency_key: string; p_item_id: string }
+        Returns: Json
+      }
       admin_delete_work_dish: {
         Args: { p_dish_id: string; p_idempotency_key: string }
         Returns: Json
@@ -1410,6 +1508,7 @@ export type Database = {
       }
       admin_get_attention_items: { Args: never; Returns: Json }
       admin_get_content_page: { Args: { p_slug: string }; Returns: Json }
+      admin_get_customer: { Args: { p_customer_id: string }; Returns: Json }
       admin_get_event_details: { Args: { p_event_id: string }; Returns: Json }
       admin_get_home: { Args: never; Returns: Json }
       admin_get_work_sheet: { Args: { p_event_id: string }; Returns: Json }
@@ -1422,6 +1521,7 @@ export type Database = {
         Returns: Json
       }
       admin_list_bookable_events: { Args: never; Returns: Json }
+      admin_list_customers: { Args: { p_query: string }; Returns: Json }
       admin_list_links: { Args: never; Returns: Json }
       admin_list_payments: { Args: never; Returns: Json }
       admin_publish_content: {
@@ -1463,6 +1563,14 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_set_shopping_item_bought: {
+        Args: { p_bought: boolean; p_item_id: string }
+        Returns: Json
+      }
+      admin_set_shopping_item_order: {
+        Args: { p_ids: string[] }
+        Returns: Json
+      }
       admin_set_work_dish_order: { Args: { p_ids: string[] }; Returns: Json }
       admin_set_work_task_done: {
         Args: { p_done: boolean; p_task_id: string }
@@ -1496,6 +1604,15 @@ export type Database = {
           p_changes: Json
           p_idempotency_key: string
           p_product_id: string
+        }
+        Returns: Json
+      }
+      admin_update_shopping_item: {
+        Args: {
+          p_body: string
+          p_idempotency_key: string
+          p_item_id: string
+          p_quantity: string
         }
         Returns: Json
       }

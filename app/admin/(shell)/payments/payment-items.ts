@@ -2,6 +2,8 @@ import { adminCopy } from "@/lib/copy/admin"
 import { formatAgorot } from "@/lib/money"
 import { formatDayMonth } from "@/lib/time"
 
+import { customerHref } from "../customers/customer-items"
+
 // What /admin/payments shows for each row of admin_list_payments (pure: rows
 // in, items out). Product, price and method come from the payment's snapshot.
 
@@ -32,6 +34,8 @@ export type PaymentItem = {
   title: string
   // The customer has not joined yet (the title is the "new customer" text).
   unbound: boolean
+  // A bound purchase: the customer's card (story 4.2).
+  customerHref: string | null
   details: string
   // Only when the amount differs from the snapshot price.
   override: string | null
@@ -61,6 +65,7 @@ export function toPaymentItem(row: PaymentRow): PaymentItem {
         ? copy.unboundNamed(row.payer_label)
         : copy.unbound,
     unbound: !bound,
+    customerHref: bound ? customerHref(row.customer_id as string) : null,
     details: copy.details(
       row.product_name ?? "",
       formatAgorot(row.amount_agorot),

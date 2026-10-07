@@ -23,6 +23,8 @@ export const shellCopy = {
     // The admin's work tab (story 4.9): the next sessions' work sheets.
     work: "עבודה",
     payments: "תשלומים",
+    // The admin's customers (story 4.2), the first row of "more".
+    customers: "לקוחות",
     purchases: "היסטוריית רכישות",
     // The customer's sessions tab (user decision 2026-10-06); the admin's
     // stays "מפגשים".
