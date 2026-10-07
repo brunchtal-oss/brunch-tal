@@ -226,6 +226,7 @@ describe("the bookings handed to the client (story 4.10)", () => {
         dietaryNotes: "ללא גלוטן",
         guestDetails: "צמחונית",
         photoConsent: true,
+        personalPhotoConsent: false,
         babies: [{ name: "עומר", birthDate: "2026-06-15" }],
       },
     ])
@@ -236,6 +237,7 @@ describe("the bookings handed to the client (story 4.10)", () => {
       dietaryNotes: "ללא גלוטן",
       guestDetails: "צמחונית",
       photoConsent: true,
+      personalPhotoConsent: false,
       babies: [{ name: "עומר", birthDate: "2026-06-15" }],
     })
   })

@@ -196,6 +196,7 @@ export function tableAttendees(attendees: readonly Attendee[]): Attendee[] {
     dietaryNotes: a.dietaryNotes,
     guestDetails: a.guestDetails,
     photoConsent: a.photoConsent,
+    personalPhotoConsent: a.personalPhotoConsent,
     babies: a.babies.map((b) => ({ name: b.name, birthDate: b.birthDate })),
   }))
 }

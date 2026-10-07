@@ -398,7 +398,7 @@ describe("admin_get_customer", () => {
       await db.query(
         `update public.profiles
          set dietary_notes = 'בלי גלוטן', photo_consent = true,
-             photo_consent_at = now()
+             photo_consent_at = now(), personal_photo_consent = false
          where id = $1`,
         [customer]
       )
@@ -442,6 +442,8 @@ describe("admin_get_customer", () => {
         dietary_notes: "בלי גלוטן",
         photo_consent: true,
         photo_consent_at: expect.any(String),
+        personal_photo_consent: false,
+        personal_photo_consent_at: null,
         last_activity_on: "2026-10-03",
       })
       expect(r.babies).toEqual([

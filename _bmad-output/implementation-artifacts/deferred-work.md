@@ -475,6 +475,11 @@
   summary: הסרת פרטים (`admin_anonymize_customer`) מבטלת את ההרשמות העתידיות של הלקוחה, או ש-`private.job_reminders` מדלג על פרופיל עם `anonymized_at`; אחרת לקוחה שפרטיה הוסרו תקבל תזכורת חדשה אחרי הניקוי.
   evidence: ביקורת 5.17 (edge-case-hunter). ‏`job_reminders` בודק רק `customer_id is not null`; ‏`profiles.anonymized_at` קיים, אבל אין עדיין זרימה שקובעת אותו.
 
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-13-two-photo-consents.md`
+  target: 4.6
+  summary: הסרת פרטים (`admin_anonymize_customer`) מאפסת את שתי ההסכמות לתמונות, גם את `personal_photo_consent`, ‏`_at` ו-`_text_version` שנוספו ב-2.13, ולא רק את `photo_consent*`.
+  evidence: ביקורת 2.13 (blind-hunter). עוד אין פונקציית הסרה. בלי זה, לקוחה שפרטיה הוסרו נשארת "אישרה תמונות אישיות".
+
 - source_spec: `_bmad-output/implementation-artifacts/spec-design-testimonials-carousel.md`
   target: סבב העיצוב (הגלריה)
   summary: ב-/gallery בלי תמונות, כשכל המלצות התמונה בלי קובץ מפורסם, ‏`TestimonialsSection` מחזיר null אבל `GalleryView` לא מציג את הדף הריק, כי הוא מחליט לפי התוכן לפני סינון התמונות. התיקון ב-`components/public/page-views.tsx`.

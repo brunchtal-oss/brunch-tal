@@ -688,6 +688,7 @@ describe("the session's details", () => {
           dietary_notes: "gluten free",
           // Story 4.10: only for an active customer.
           photo_consent: false,
+          personal_photo_consent: false,
           babies: [
             { name: "Ori", birth_date: await babyDate(90) },
             { name: "Maya", birth_date: await babyDate(30) },

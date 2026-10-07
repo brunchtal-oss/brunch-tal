@@ -43,6 +43,7 @@ const VALID: Array<[string, string]> = [
   ["confirm", PASSWORD],
   ["privacyConsent", "on"],
   ["photoConsent", "no"],
+  ["personalPhotoConsent", "yes"],
 ]
 
 function form(
@@ -85,6 +86,7 @@ describe("validateJoin", () => {
         dietaryNotes: null,
         privacyConsent: true,
         photoConsent: false,
+        personalPhotoConsent: true,
         babies: [{ name: "Baby", birthDate: "2026-09-01" }],
       },
     })
@@ -112,6 +114,7 @@ describe("validateJoin", () => {
         confirm: "",
         privacyConsent: null,
         photoConsent: null,
+        personalPhotoConsent: null,
       })
     )
     expect(result).toEqual({
@@ -125,6 +128,7 @@ describe("validateJoin", () => {
         { field: "password", message: "FIELD_REQUIRED" },
         { field: "privacy", message: "CONSENT_REQUIRED" },
         { field: "photoConsent", message: "photoConsent" },
+        { field: "personalPhotoConsent", message: "personalPhotoConsent" },
       ],
     })
   })
@@ -172,6 +176,21 @@ describe("validateJoin", () => {
     expect(no.ok && no.input.photoConsent).toBe(false)
     expect(validateJoin(form({ photoConsent: "maybe" }))).toMatchObject({
       ok: false,
+    })
+  })
+
+  // Story 2.13: the personal consent is its own required answer.
+  it("reads the personal photo answer apart from the atmosphere one", () => {
+    const result = validateJoin(
+      form({ photoConsent: "yes", personalPhotoConsent: "no" })
+    )
+    expect(result.ok && result.input.photoConsent).toBe(true)
+    expect(result.ok && result.input.personalPhotoConsent).toBe(false)
+    expect(validateJoin(form({ personalPhotoConsent: null }))).toEqual({
+      ok: false,
+      errors: [
+        { field: "personalPhotoConsent", message: "personalPhotoConsent" },
+      ],
     })
   })
 })
@@ -311,6 +330,10 @@ describe("submitJoinAction", () => {
     [
       { field: "photo_consent" },
       { field: "photoConsent", message: "photoConsent" },
+    ],
+    [
+      { field: "personal_photo_consent" },
+      { field: "personalPhotoConsent", message: "personalPhotoConsent" },
     ],
     [
       { field: "baby_name", index: 1 },

@@ -18,6 +18,7 @@ const BASE: Attendee = {
   dietaryNotes: null,
   guestDetails: null,
   photoConsent: null,
+  personalPhotoConsent: null,
   babies: [],
 }
 
@@ -45,6 +46,16 @@ describe("AttendeeRow", () => {
     expect(html).toContain(copy.companion("vegan"))
     expect(html).not.toContain("<button")
     expect(html).not.toContain("<a ")
+  })
+
+  // Story 2.13: both consents in words, only for an active customer.
+  it("an active customer's two photo consents, a line each", () => {
+    const html = row({ photoConsent: false, personalPhotoConsent: true })
+    expect(html).toContain(adminCopy.photoConsents.atmosphere.no)
+    expect(html).toContain(adminCopy.photoConsents.personal.yes)
+    const none = row({ pendingJoin: true, name: null })
+    expect(none).not.toContain(adminCopy.photoConsents.atmosphere.no)
+    expect(none).not.toContain(adminCopy.photoConsents.atmosphere.yes)
   })
 
   it("an empty field shows nothing (no placeholder)", () => {

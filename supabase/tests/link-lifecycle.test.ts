@@ -86,6 +86,7 @@ function profile(email: string, phone: string) {
     dietary_notes: null,
     privacy_consent: true,
     photo_consent: false,
+    personal_photo_consent: false,
     babies: [{ name: testName("baby"), birth_date: "2026-09-01" }],
   }
 }

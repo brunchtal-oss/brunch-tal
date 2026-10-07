@@ -421,7 +421,7 @@ describe("photo consent in the session's details", { timeout: 30_000 }, () => {
         [ruth, testName("ruth")]
       )
       await db.query(
-        "update public.profiles set photo_consent = true, dietary_notes = 'ללא גלוטן' where id = $1",
+        "update public.profiles set photo_consent = true, personal_photo_consent = false, dietary_notes = 'ללא גלוטן' where id = $1",
         [f.customerA]
       )
       const policy = '{"cancel_window_hours": 48, "reminder_lead_hours": 24}'
@@ -457,6 +457,7 @@ describe("photo consent in the session's details", { timeout: 30_000 }, () => {
       expect(bookings[0]).toMatchObject({
         customer_id: f.customerA,
         photo_consent: true,
+        personal_photo_consent: false,
         dietary_notes: "ללא גלוטן",
       })
       expect(bookings[1]).toMatchObject({
@@ -473,6 +474,7 @@ describe("photo consent in the session's details", { timeout: 30_000 }, () => {
       expect(bookings[2]).not.toHaveProperty("guest_details")
       expect(bookings[3]).toMatchObject({ pending_join: true })
       expect(bookings[3]).not.toHaveProperty("photo_consent")
+      expect(bookings[3]).not.toHaveProperty("personal_photo_consent")
 
       // A customer whose details were removed has no photo_consent either.
       await db.query(
@@ -481,6 +483,7 @@ describe("photo consent in the session's details", { timeout: 30_000 }, () => {
       )
       const after = (await call(db, f, DETAILS, [id])).bookings
       expect(after[0]).not.toHaveProperty("photo_consent")
+      expect(after[0]).not.toHaveProperty("personal_photo_consent")
     })
   })
 })

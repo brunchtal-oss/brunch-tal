@@ -5,7 +5,7 @@ import { whatsappShareHref } from "@/components/admin/link-share"
 import { adminCopy } from "@/lib/copy/admin"
 
 import {
-  consentText,
+  consentMarks,
   dietLines,
   shoppingMessage,
   whatsappBlockedReason,
@@ -33,6 +33,7 @@ const BASE: Attendee = {
   dietaryNotes: null,
   guestDetails: null,
   photoConsent: null,
+  personalPhotoConsent: null,
   babies: [],
 }
 
@@ -100,13 +101,21 @@ describe("the registrants table's cells (story 4.10, round 2)", () => {
     ).toEqual(["ללא גלוטן", adminCopy.sessions.companion("צמחונית")])
   })
 
-  it("photo consent: אישרה, לא אישרה, empty for a pending booking", () => {
-    expect(consentText({ ...BASE, photoConsent: true })).toBe(
-      copy.photoConsentShort
-    )
-    expect(consentText({ ...BASE, photoConsent: false })).toBe(
-      copy.noPhotoConsentShort
-    )
-    expect(consentText({ ...BASE, pendingJoin: true })).toBeNull()
+  // Story 2.13: a short mark per consent, the label in full words.
+  it("photo consents: a mark each, none for a pending booking", () => {
+    const photo = adminCopy.photoConsents
+    expect(
+      consentMarks({ ...BASE, photoConsent: true, personalPhotoConsent: false })
+    ).toEqual([
+      { text: "אווירה ✓", label: photo.atmosphere.yes, declined: false },
+      { text: "אישיות ✗", label: photo.personal.no, declined: true },
+    ])
+    expect(
+      consentMarks({ ...BASE, photoConsent: false, personalPhotoConsent: true })
+    ).toEqual([
+      { text: "אווירה ✗", label: photo.atmosphere.no, declined: true },
+      { text: "אישיות ✓", label: photo.personal.yes, declined: false },
+    ])
+    expect(consentMarks({ ...BASE, pendingJoin: true })).toEqual([])
   })
 })

@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import {
   addBaby,
   deleteBaby,
+  setPersonalPhotoConsent,
   setPhotoConsent,
   updateBaby,
   updateDetails,
@@ -306,6 +307,42 @@ describe("setPhotoConsent", () => {
     expect(callRpc).not.toHaveBeenCalled()
     callRpc.mockResolvedValue({ ok: false, code: "NOT_AUTHORIZED" })
     await expect(setPhotoConsent({ consent: false })).resolves.toEqual({
+      ok: false,
+      code: "NOT_AUTHORIZED",
+    })
+  })
+})
+
+// Story 2.13.
+describe("setPersonalPhotoConsent", () => {
+  it("calls set_personal_photo_consent with the session", async () => {
+    callRpc.mockResolvedValue({
+      ok: true,
+      data: { personal_photo_consent: true },
+    })
+    await expect(setPersonalPhotoConsent({ consent: true })).resolves.toEqual({
+      ok: true,
+      data: undefined,
+    })
+    expect(callRpc).toHaveBeenCalledWith(
+      expect.objectContaining({ from }),
+      "set_personal_photo_consent",
+      { p_consent: true }
+    )
+    expect(revalidatePath).toHaveBeenCalledWith("/me/profile")
+  })
+
+  it("refuses a non-boolean and passes the RPC's code through", async () => {
+    await expect(
+      setPersonalPhotoConsent({ consent: null as unknown as boolean })
+    ).resolves.toEqual({
+      ok: false,
+      code: "INVALID_INPUT",
+      detail: { field: "personal_photo_consent" },
+    })
+    expect(callRpc).not.toHaveBeenCalled()
+    callRpc.mockResolvedValue({ ok: false, code: "NOT_AUTHORIZED" })
+    await expect(setPersonalPhotoConsent({ consent: false })).resolves.toEqual({
       ok: false,
       code: "NOT_AUTHORIZED",
     })

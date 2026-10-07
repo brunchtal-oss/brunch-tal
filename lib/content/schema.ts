@@ -24,15 +24,56 @@ const phone = z
   .max(30)
   .refine((value) => whatsappHref(value) !== null)
 
-// join-form › photo_consent: the question (lines separated by "\n") and the
-// two answers of the photo consent (CAP-40).
+// join-form › photo_consent (CAP-40, story 2.13): two consents, the
+// atmosphere photos (published) and the personal photos (the WhatsApp
+// group), each with a title, a question (lines separated by "\n") and two
+// answers, and one note under both. Flat fields, as the editor saves them.
+const consentShort = z.string().trim().min(1).max(200)
+const consentLong = z.string().trim().min(1).max(1000)
+
 export const photoConsentSchema = z.object({
-  question: z.string().trim().min(1),
-  yes_label: z.string().trim().min(1),
-  no_label: z.string().trim().min(1),
+  atmosphere_title: consentShort,
+  atmosphere_question: consentLong,
+  atmosphere_yes: consentShort,
+  atmosphere_no: consentShort,
+  personal_title: consentShort,
+  personal_question: consentLong,
+  personal_yes: consentShort,
+  personal_no: consentShort,
+  note: consentLong,
 })
 
 export type PhotoConsentContent = z.infer<typeof photoConsentSchema>
+
+// The two consents of the block.
+export type PhotoConsentKind = "atmosphere" | "personal"
+
+// One question of the block, for the fieldset.
+export type PhotoConsentQuestion = {
+  title: string
+  question: string
+  yesLabel: string
+  noLabel: string
+}
+
+export function photoConsentQuestion(
+  content: PhotoConsentContent,
+  kind: PhotoConsentKind
+): PhotoConsentQuestion {
+  return kind === "atmosphere"
+    ? {
+        title: content.atmosphere_title,
+        question: content.atmosphere_question,
+        yesLabel: content.atmosphere_yes,
+        noLabel: content.atmosphere_no,
+      }
+    : {
+        title: content.personal_title,
+        question: content.personal_question,
+        yesLabel: content.personal_yes,
+        noLabel: content.personal_no,
+      }
+}
 
 // An image of a block (story 5.4): the media_assets row, its alt text
 // (recommended, not required: user decision 2026-10-05; empty is alt="")

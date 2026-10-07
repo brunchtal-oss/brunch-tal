@@ -657,6 +657,43 @@ describe("claim_join", () => {
     })
   })
 
+  // Story 2.13: the claim screen asks no photo question and claim_join
+  // leaves both consents as they were.
+  it("leaves both photo consents unchanged", async () => {
+    await inRollback(async (db) => {
+      const { a } = await awaitingLogin(db)
+      await db.query(
+        `update public.profiles
+         set photo_consent = true, photo_consent_at = '2026-09-01T08:00:00Z',
+             photo_consent_text_version = 0, personal_photo_consent = false,
+             personal_photo_consent_at = null,
+             personal_photo_consent_text_version = null
+         where id = $1`,
+        [a.f.customerA]
+      )
+      const consents = async () =>
+        (
+          await db.query(
+            `select photo_consent, photo_consent_at, photo_consent_text_version,
+                    personal_photo_consent, personal_photo_consent_at,
+                    personal_photo_consent_text_version
+             from public.profiles where id = $1`,
+            [a.f.customerA]
+          )
+        ).rows[0]
+      const before = await consents()
+
+      expect(
+        await claimAs(db, a.f.customerA, a.token, randomUUID())
+      ).toMatchObject({ outcome: "claimed" })
+      expect(await consents()).toEqual(before)
+      expect(before).toMatchObject({
+        photo_consent: true,
+        personal_photo_consent: false,
+      })
+    })
+  })
+
   it.each(["customer_b", "admin", "expired", "pending", "reset"])(
     "refuses %s with NOT_AUTHORIZED and changes nothing",
     async (scenario) => {
@@ -787,6 +824,7 @@ describe("join_complete conflicts", () => {
             dietary_notes: null,
             privacy_consent: true,
             photo_consent: false,
+            personal_photo_consent: false,
             babies: [{ name: testName("baby"), birth_date: "2026-09-01" }],
           }),
           randomUUID(),

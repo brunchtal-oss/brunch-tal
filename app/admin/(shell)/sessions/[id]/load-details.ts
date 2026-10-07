@@ -36,6 +36,8 @@ type RawBooking = {
   guest_details?: string
   // Story 4.10: only for an active customer.
   photo_consent?: boolean
+  // Story 2.13: the same condition as photo_consent.
+  personal_photo_consent?: boolean
   babies?: { name: string; birth_date: string }[]
 }
 
@@ -82,6 +84,10 @@ export function parseEventDetails(raw: unknown): EventDetails {
       guestDetails: text(b.guest_details),
       photoConsent:
         typeof b.photo_consent === "boolean" ? b.photo_consent : null,
+      personalPhotoConsent:
+        typeof b.personal_photo_consent === "boolean"
+          ? b.personal_photo_consent
+          : null,
       babies: (b.babies ?? []).map((baby) => ({
         name: baby.name,
         birthDate: baby.birth_date,

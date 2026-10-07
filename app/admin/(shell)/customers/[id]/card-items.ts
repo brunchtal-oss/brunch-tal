@@ -1,6 +1,7 @@
 import { babyAge } from "@/components/admin/baby-age"
 import { METER_MAX } from "@/components/customer/balance-card"
 import type { StatusTone } from "@/components/shared/status-chip"
+import { consentLines } from "@/lib/admin/photo-consents"
 import { adminCopy } from "@/lib/copy/admin"
 import { formatAgorot } from "@/lib/money"
 import { formatLocalPhone } from "@/lib/phone"
@@ -32,6 +33,9 @@ export type CardProfile = {
   dietary_notes: string | null
   photo_consent: boolean
   photo_consent_at: string | null
+  // Story 2.13: the personal photos (the WhatsApp group).
+  personal_photo_consent: boolean
+  personal_photo_consent_at: string | null
   last_activity_on: string | null
 }
 
@@ -107,12 +111,18 @@ export function cardHeader(profile: CardProfile): CardHeader {
   }
 }
 
-export type DetailRow = { label: string; value: string; ltr?: boolean }
+// value: one line, or several (the photo consents).
+export type DetailRow = {
+  label: string
+  value: string | readonly string[]
+  ltr?: boolean
+}
 
-// The details under the balances (the phone is in the header).
+// The details under the balances (the phone is in the header). The photo
+// consents: a line each, without a date (story 2.13, user decision
+// 2026-10-07).
 export function detailRows(profile: CardProfile): DetailRow[] {
-  const consent = profile.photo_consent ? copy.consents : copy.declines
-  return [
+  const rows: DetailRow[] = [
     { label: copy.email, value: profile.email ?? "", ltr: true },
     {
       label: copy.joined,
@@ -132,11 +142,13 @@ export function detailRows(profile: CardProfile): DetailRow[] {
     },
     {
       label: copy.photoConsent,
-      value: profile.photo_consent_at
-        ? `${consent}, ${copy.consentSince(formatShortDate(profile.photo_consent_at))}`
-        : consent,
+      value: consentLines({
+        atmosphere: profile.photo_consent,
+        personal: profile.personal_photo_consent,
+      }),
     },
-  ].filter((row) => row.value !== "")
+  ]
+  return rows.filter((row) => row.value !== "")
 }
 
 export type BabyItem = { key: string; name: string; age: string }

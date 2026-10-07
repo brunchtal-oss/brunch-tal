@@ -53,6 +53,11 @@ function rpcFieldError(
       return { field: "dietaryNotes", message: code }
     case "photo_consent":
       return { field: "photoConsent", message: "photoConsent" }
+    case "personal_photo_consent":
+      return {
+        field: "personalPhotoConsent",
+        message: "personalPhotoConsent",
+      }
     case "baby_name":
       return { field: "babyName", index: index ?? 0, message: "FIELD_REQUIRED" }
     case "birth_date":
