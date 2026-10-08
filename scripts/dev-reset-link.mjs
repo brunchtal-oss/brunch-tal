@@ -8,6 +8,10 @@
 //   (PowerShell strips the `--` of `npm run dev:reset-link -- --flag`)
 //                                     # also print a link for that deploy
 //                                     # (only deploys wired to the DEV project)
+//   node scripts/dev-reset-link.mjs --email maya.barak@demo.example.com
+//                                     # a demo customer (story 5.18): only an
+//                                     # existing user on demo.example.com, on
+//                                     # the DEV project; nothing is created
 //
 // The account gets a random password that is never printed; the link is the
 // only way in. Running it again reuses the same account and revokes the
@@ -18,6 +22,8 @@ import { existsSync } from "node:fs"
 import { networkInterfaces } from "node:os"
 
 import { createClient } from "@supabase/supabase-js"
+
+import { devRef, parseEmail } from "./dev-guard.mjs"
 
 if (existsSync(".env.local")) process.loadEnvFile(".env.local")
 
@@ -31,6 +37,15 @@ if (!url || !secretKey) {
 }
 
 const asAdmin = process.argv.includes("--admin")
+
+// --email <x@demo.example.com> or --email=<x@demo.example.com>: an existing
+// demo customer (story 5.18).
+const parsedEmail = parseEmail(process.argv.slice(2))
+if (parsedEmail.error) {
+  console.error(parsedEmail.error)
+  process.exit(1)
+}
+const demoEmail = parsedEmail.email
 
 // --url <base> or --url=<base>: a deployed origin (preview / production).
 function parseBaseUrl(argv) {
@@ -54,7 +69,9 @@ function parseBaseUrl(argv) {
   return parsed.origin
 }
 const baseUrl = parseBaseUrl(process.argv.slice(2))
-const account = asAdmin
+const account = demoEmail
+  ? { email: demoEmail, label: "לקוחת הדגמה", demo: true }
+  : asAdmin
   ? { email: "dev-admin@example.com", label: "אדמין בדויה" }
   : {
       email: "dev-customer@example.com",
@@ -113,26 +130,63 @@ function lanAddresses() {
     )
 }
 
-async function main() {
-  const { user, created } = await findOrCreateUser(account.email)
+// A demo customer: only an existing user with an activated profile, on the
+// DEV project; no user and no profile is created or changed.
+async function findDemoUser(email) {
+  if (
+    !devRef({
+      supabaseUrl: url,
+      databaseUrl: process.env.DEV_DATABASE_URL,
+    })
+  ) {
+    console.error(
+      "--email רץ רק מול פרויקט הפיתוח: DEV_DATABASE_URL ב-.env.local חייב להכיל את ה-ref של NEXT_PUBLIC_SUPABASE_URL."
+    )
+    process.exit(1)
+  }
+  const user = await findUserByEmail(email)
+  if (!user) {
+    console.error(`אין לקוחת הדגמה ${email}. קודם: npm run demo:seed`)
+    process.exit(1)
+  }
+  const { data: profile, error } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("id", user.id)
+    .not("activated_at", "is", null)
+    .maybeSingle()
+  if (error) throw new Error(`profile read failed: ${error.code}`)
+  if (!profile) {
+    console.error(`ל-${email} אין פרופיל פעיל. קודם: npm run demo:seed`)
+    process.exit(1)
+  }
+  return user
+}
 
-  const row = asAdmin
-    ? supabase
-        .from("admin_roles")
-        .upsert(
-          { user_id: user.id },
-          { onConflict: "user_id", ignoreDuplicates: true }
+async function main() {
+  const { user, created } = account.demo
+    ? { user: await findDemoUser(account.email), created: false }
+    : await findOrCreateUser(account.email)
+
+  if (!account.demo) {
+    const row = asAdmin
+      ? supabase
+          .from("admin_roles")
+          .upsert(
+            { user_id: user.id },
+            { onConflict: "user_id", ignoreDuplicates: true }
+          )
+      : supabase.from("profiles").upsert(
+          {
+            id: user.id,
+            full_name: account.fullName,
+            activated_at: new Date().toISOString(),
+          },
+          { onConflict: "id", ignoreDuplicates: true }
         )
-    : supabase.from("profiles").upsert(
-        {
-          id: user.id,
-          full_name: account.fullName,
-          activated_at: new Date().toISOString(),
-        },
-        { onConflict: "id", ignoreDuplicates: true }
-      )
-  const { error: rowError } = await row
-  if (rowError) throw new Error(`profile/admin row failed: ${rowError.code}`)
+    const { error: rowError } = await row
+    if (rowError) throw new Error(`profile/admin row failed: ${rowError.code}`)
+  }
 
   const { data, error } = await supabase.rpc("issue_reset_token", {
     p_user_id: user.id,
