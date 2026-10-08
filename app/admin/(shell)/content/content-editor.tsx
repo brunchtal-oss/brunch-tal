@@ -192,6 +192,9 @@ export function ContentEditor({
     const found = fieldErrors(ref, content)
     setErrors(found)
     if (found) {
+      // The fields are in the list: leave the gallery's arrange view first,
+      // so the focus finds the first invalid one.
+      setArranging(false)
       setFocusTarget("error")
       return false
     }
@@ -203,6 +206,7 @@ export function ContentEditor({
     if (!answer.ok) {
       if (answer.code === "INVALID_INPUT" && answer.detail?.field) {
         setErrors({ [answer.detail.field]: { kind: "invalid" } })
+        setArranging(false)
         setFocusTarget("error")
       } else {
         fail(answer.code)

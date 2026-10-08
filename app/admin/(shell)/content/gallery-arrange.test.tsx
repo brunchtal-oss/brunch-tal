@@ -93,7 +93,11 @@ describe("GalleryArrange", () => {
     expect(html).toContain("grid-cols-4")
     expect(html.match(/aria-pressed="false"/g)).toHaveLength(4)
     expect(html).not.toContain('aria-pressed="true"')
-    expect(html).not.toContain("data-arrange-bar")
+    // The bar is always there, with nothing selected: the hint, all three
+    // disabled (the grid never jumps).
+    expect(html).toContain("data-arrange-bar")
+    expect(html).toContain(copy.barHint)
+    expect(html.match(/aria-disabled="true"/g)).toHaveLength(3)
     expect(html).toContain(`${copy.photo(2)}, ${copy.hidden}`)
     expect(html).toContain("lucide-eye-off")
     expect(html).toContain("aspect-[4/5]")

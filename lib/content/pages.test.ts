@@ -121,13 +121,43 @@ describe("getPublishedSections", () => {
 
 describe("getPublishedPageSlugs", () => {
   it("returns the published slugs, tagged content:<slug> for each", async () => {
-    inList.mockResolvedValue({ data: [{ slug: "privacy" }], error: null })
+    inList
+      .mockResolvedValueOnce({ data: [{ slug: "privacy" }], error: null })
+      .mockResolvedValueOnce({
+        data: [{ page_slug: "privacy", published_content: { body: "b" } }],
+        error: null,
+      })
     await expect(getPublishedPageSlugs(["terms", "privacy"])).resolves.toEqual([
       "privacy",
     ])
     expect(inList).toHaveBeenCalledWith("slug", ["terms", "privacy"])
     expect(cacheTag).toHaveBeenCalledWith("content:terms")
     expect(cacheTag).toHaveBeenCalledWith("content:privacy")
+  })
+
+  // 2026-10-08: the body is optional in the editor; an empty privacy or
+  // terms page is not published for the links and the join form.
+  it("leaves out a privacy or terms page whose published body is empty", async () => {
+    inList
+      .mockResolvedValueOnce({
+        data: [
+          { slug: "privacy" },
+          { slug: "terms" },
+          { slug: "accessibility" },
+        ],
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: [
+          { page_slug: "privacy", published_content: { body: " " } },
+          { page_slug: "terms", published_content: { body: "t" } },
+        ],
+        error: null,
+      })
+    await expect(
+      getPublishedPageSlugs(["privacy", "terms", "accessibility"])
+    ).resolves.toEqual(["terms", "accessibility"])
+    expect(inList).toHaveBeenLastCalledWith("page_slug", ["privacy", "terms"])
   })
 
   it("gives [] on a read error", async () => {

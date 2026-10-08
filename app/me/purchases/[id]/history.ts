@@ -5,7 +5,8 @@
 // used or released) "נרשמת", used "השתתפת", released "בוטלה"; the row
 // carries the session's weekday and date and its title ("בראנץ׳
 // {concept}"), never the movement's own date or units. A movement without
-// a booking (opening balance, adjustment) keeps its label and its date.
+// a booking (opening balance, adjustment) keeps its label, its date and its
+// signed units.
 // Rows go by date: a booking by its session's start, any other row by
 // when it was recorded.
 
@@ -47,8 +48,17 @@ export type HistoryEntry =
       kind: "other"
       id: string
       label: string
+      // "+1", "-1"; null for a movement without units.
+      units: string | null
       createdAt: string
     }
+
+// A row without a booking keeps its signed units ("תיקון · 12.10 +1");
+// a booking row has none (its state says it).
+export function signedUnits(units: number): string | null {
+  if (units === 0) return null
+  return units > 0 ? `+${units}` : `-${Math.abs(units)}`
+}
 
 type Action = keyof typeof customerCopy.movement
 
@@ -89,6 +99,7 @@ export function buildHistory(rows: {
         kind: "other",
         id: m.id,
         label: isAction(m.action) ? customerCopy.movement[m.action] : m.action,
+        units: signedUnits(m.units),
         createdAt: m.created_at,
       },
     })

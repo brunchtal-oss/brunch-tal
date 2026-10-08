@@ -226,13 +226,15 @@ export const adminCopy = {
     // A saved draft that does not pass the schema (edited elsewhere).
     draftInvalid: "בטיוטה השמורה יש שדה לא תקין. כדאי לתקן ולשמור שוב",
     hero: {
-      title: "כותרת",
+      title: "כותרת (לא חובה)",
       description: "תיאור (לא חובה)",
     },
-    // text_block (story 5.3).
+    // text_block (story 5.3). Since 2026-10-08 only three fields are
+    // required (the statement's, the photo consents, the WhatsApp
+    // number); every other label says "(לא חובה)".
     textBlock: {
       eyebrow: "שורה קטנה מעל הכותרת (לא חובה)",
-      title: "כותרת",
+      title: "כותרת (לא חובה)",
       body: "טקסט",
       bodyOptional: "טקסט (לא חובה)",
     },
@@ -241,20 +243,20 @@ export const adminCopy = {
     steps: {
       item: (n: number) => `שלב ${n}`,
       add: "הוספת שלב",
-      title: "שם השלב",
-      body: "הסבר",
+      title: "שם השלב (לא חובה)",
+      body: "הסבר (לא חובה)",
     },
     faq: {
       item: (n: number) => `שאלה ${n}`,
       add: "הוספת שאלה",
-      question: "שאלה",
-      answer: "תשובה",
+      question: "שאלה (לא חובה)",
+      answer: "תשובה (לא חובה)",
     },
     testimonials: {
       item: (n: number) => `המלצה ${n}`,
       add: "הוספת המלצה",
-      name: "שם לתצוגה",
-      text: "טקסט ההמלצה",
+      name: "שם לתצוגה (לא חובה)",
+      text: "טקסט ההמלצה (לא חובה)",
       // Story 5.4: a testimonial is text or an image (a screenshot).
       kind: "סוג ההמלצה",
       kinds: { text: "טקסט", image: "תמונה" },
@@ -278,15 +280,15 @@ export const adminCopy = {
     footerLinks: {
       item: (n: number) => `קישור ${n}`,
       add: "הוספת קישור",
-      label: "שם לתצוגה",
+      label: "שם לתצוגה (לא חובה)",
       labelHint: "למשל: אינסטגרם",
-      url: "כתובת",
+      url: "כתובת (לא חובה)",
       urlHint: "מתחילה ב-https://. הקישור ייפתח בחלון חדש",
     },
     // A section of a legal text (story 5.5): privacy, terms and the
     // statement's extra sections.
     legal: {
-      body: "הנוסח המלא",
+      body: "הנוסח המלא (לא חובה)",
       // The formatting of components/public/legal-text.tsx (user decision
       // 2026-10-06: one field, pasted whole).
       hint: 'אפשר להדביק את כל הנוסח, בלי הכותרת הראשית ובלי תאריך העדכון: הם מוצגים אוטומטית. שורה ריקה מתחילה פסקה חדשה. שורה שמתחילה ב-"## " היא כותרת. שורה שמתחילה ב-"- " היא פריט ברשימה. **מודגש**. קישור: [טקסט](https://...), טלפון: [054-0000000](tel:+972540000000), מייל: [טקסט](mailto:...)',
@@ -354,6 +356,10 @@ export const adminCopy = {
       before: (n: number) => `להעביר את תמונה ${n} מקום אחד קודם`,
       after: (n: number) => `להעביר את תמונה ${n} מקום אחד אחרי`,
       cancel: "ביטול הבחירה",
+      // The bar with nothing selected.
+      barHint: "בוחרים תמונה",
+      beforeNone: "מקום אחד קודם",
+      afterNone: "מקום אחד אחרי",
     },
     itemCount: (n: number) => (n === 1 ? "פריט אחד" : `${n} פריטים`),
     emptyList: "אין פריטים. בלי פריט גלוי הסקשן לא מוצג באתר",
@@ -579,10 +585,10 @@ export const adminCopy = {
     // age's wording is lib/copy/baby-age.ts (shared with the profile).
     babyLine: (name: string, age: string) => (age ? `${name} · ${age}` : name),
     // "מי מגיעה" on the session's details (user decision 2026-10-08): "{אמא}
-    // - {תינוק} ({גיל})", several babies with a comma.
-    babyWithAge: (name: string, age: string) =>
-      age ? `${name} (${age})` : name,
-    nameWithBabies: (name: string, babies: string) => `${name} - ${babies}`,
+    // - {תינוק} ({גיל})", several babies with a comma: the separator after
+    // the mother's name (and "×2"), a baby's age after its name.
+    namesSeparator: " - ",
+    babyAgeSuffix: (age: string) => ` (${age})`,
     babiesSeparator: ", ",
     // "({n}/{n})" when every place is taken; a couple session with one place
     // left is full too.

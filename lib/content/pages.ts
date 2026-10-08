@@ -156,8 +156,34 @@ export async function getPublishedPageSlugs(
     console.error("content.read_failed", { pages: slugs })
     return []
   }
-  return (data ?? []).map((row) => row.slug)
+  const published = (data ?? []).map((row) => row.slug)
+  // A legal text's body is optional in the editor (2026-10-08): privacy and
+  // terms count as published only with a non-blank published body, so an
+  // empty page is never linked or required at join. The accessibility
+  // statement keeps its own required fields.
+  const legal = published.filter((slug) => LEGAL_TEXT_SLUGS.includes(slug))
+  if (legal.length === 0) return published
+  const bodies = await createPublicClient()
+    .from("content_sections")
+    .select("page_slug, published_content")
+    .in("page_slug", legal)
+  if (bodies.error) {
+    console.error("content.read_failed", { pages: legal })
+    return published.filter((slug) => !legal.includes(slug))
+  }
+  const filled = new Set(
+    (bodies.data ?? [])
+      .filter((row) => {
+        const body = (row.published_content as { body?: unknown } | null)?.body
+        return typeof body === "string" && body.trim() !== ""
+      })
+      .map((row) => row.page_slug)
+  )
+  return published.filter((slug) => !legal.includes(slug) || filled.has(slug))
 }
+
+// The pages whose one section is a legal_text (key "body").
+const LEGAL_TEXT_SLUGS: readonly string[] = ["privacy", "terms"]
 
 // When a public page was last published (content_pages.published_at; it
 // moves only on a publish that changed something), cached and tagged

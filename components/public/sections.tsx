@@ -312,8 +312,9 @@ export function TestimonialsSection({
 }
 
 // The grid of each column count (user decision 2026-10-08): the gaps
-// shrink with the columns; at 4 the caption is smaller and at most two
-// lines, so it never overflows a narrow column (320px).
+// shrink with the columns; at 4 the caption is smaller (13px) and breaks
+// long words, so it never overflows a narrow column (320px); it is never
+// cut, so all of it can be read.
 const GALLERY_GRID: Record<GalleryColumns, string> = {
   2: "grid-cols-2 gap-x-3 gap-y-5",
   3: "grid-cols-3 gap-x-2 gap-y-4",
@@ -367,7 +368,7 @@ export function GallerySection({
                   <figcaption
                     className={cn(
                       "mt-2 leading-snug text-pretty break-words text-muted-foreground",
-                      columns === 4 ? "line-clamp-2 text-[13px]" : "text-[15px]"
+                      columns === 4 ? "text-[13px]" : "text-[15px]"
                     )}
                   >
                     {item.caption}

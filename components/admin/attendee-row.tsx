@@ -54,16 +54,37 @@ export function attendeeTitle(attendee: Attendee): string {
   return attendee.name ?? copy.detailsRemoved
 }
 
-// "{אמא} - {תינוק} ({גיל})", several babies with a comma, each with its age
-// on the session's day; without babies just the name (user decision
-// 2026-10-08).
-export function attendeeLine(attendee: Attendee, onDay: string): string {
-  const title = attendeeTitle(attendee)
-  if (attendee.babies.length === 0) return title
-  const babies = attendee.babies
-    .map((baby) => copy.babyWithAge(baby.name, babyAge(baby.birthDate, onDay)))
-    .join(copy.babiesSeparator)
-  return copy.nameWithBabies(title, babies)
+// "{אמא} ×2 - {תינוק} ({גיל})", several babies with a comma, each with its
+// age on the session's day; without babies just the name (user decision
+// 2026-10-08). Each name is its own <bdi> (a Latin name does not flip the
+// line), the separators and the ages outside them; "×2" for a couple
+// booking right after the mother's name.
+function AttendeeLine({
+  attendee,
+  onDay,
+}: {
+  attendee: Attendee
+  onDay: string
+}) {
+  return (
+    <>
+      <bdi className="break-words">{attendeeTitle(attendee)}</bdi>
+      {attendee.partySize === 2 && (
+        <span className="font-semibold text-foreground"> {copy.couple}</span>
+      )}
+      {attendee.babies.length > 0 && copy.namesSeparator}
+      {attendee.babies.map((baby, index) => {
+        const age = babyAge(baby.birthDate, onDay)
+        return (
+          <Fragment key={index}>
+            {index > 0 && copy.babiesSeparator}
+            <bdi className="break-words">{baby.name}</bdi>
+            {age && copy.babyAgeSuffix(age)}
+          </Fragment>
+        )
+      })}
+    </>
+  )
 }
 
 // DESIGN.md › attendee-row (story 3.4; lines by the user's decision
@@ -99,12 +120,7 @@ export function AttendeeRow({
               : "text-base leading-[1.35] font-semibold"
           }
         >
-          <bdi className="break-words">{attendeeLine(attendee, onDay)}</bdi>
-          {attendee.partySize === 2 && (
-            <span className="ms-2 font-semibold text-foreground">
-              {copy.couple}
-            </span>
-          )}
+          <AttendeeLine attendee={attendee} onDay={onDay} />
         </p>
         {attendee.pendingJoin && attendee.payerLabel && (
           <p className="text-[15px] text-muted-foreground">

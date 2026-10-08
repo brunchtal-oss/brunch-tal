@@ -72,17 +72,15 @@ export function GalleryArrange({
   return (
     <div className="flex flex-col gap-3">
       <p className="text-[15px] text-muted-foreground">{copy.hint}</p>
-      {selected !== null && (
-        <ArrangeBar
-          selected={selected}
-          total={items.length}
-          onStep={step}
-          onCancel={() => {
-            setSelected(null)
-            announce(copy.cancelled)
-          }}
-        />
-      )}
+      <ArrangeBar
+        selected={selected}
+        total={items.length}
+        onStep={step}
+        onCancel={() => {
+          setSelected(null)
+          announce(copy.cancelled)
+        }}
+      />
       <ol
         data-columns={columns}
         className={cn("grid", GRID[columns] ?? GRID["3"])}
@@ -153,33 +151,42 @@ export function GalleryArrange({
 const ICON =
   "size-11 rounded-lg border border-foreground bg-transparent p-0 text-foreground aria-disabled:opacity-50"
 
-// The selected photo's bar: its number, "קודם" and "אחרי" (44px; disabled
-// at the ends) and "ביטול הבחירה".
+// The bar above the grid, always there (the grid never jumps under her
+// finger): the selected photo's number, "קודם" and "אחרי" (44px; disabled
+// at the ends) and "ביטול הבחירה"; with nothing selected, a short hint and
+// the three disabled.
 export function ArrangeBar({
   selected,
   total,
   onStep,
   onCancel,
 }: {
-  selected: number
+  selected: number | null
   total: number
   onStep: (delta: -1 | 1) => void
   onCancel: () => void
 }) {
-  const first = selected === 0
-  const last = selected === total - 1
+  const none = selected === null
+  const first = none || selected === 0
+  const last = none || selected === total - 1
+  const n = (selected ?? 0) + 1
   return (
     <div
       data-arrange-bar=""
       className="flex flex-wrap items-center gap-2 rounded-xl bg-muted px-3 py-2"
     >
-      <span className="min-w-0 flex-1 text-[15px] font-semibold">
-        {copy.photo(selected + 1)}
+      <span
+        className={cn(
+          "min-w-0 flex-1 text-[15px]",
+          none ? "text-muted-foreground" : "font-semibold"
+        )}
+      >
+        {none ? copy.barHint : copy.photo(n)}
       </span>
       {/* RTL: "קודם" points to the start (right), "אחרי" to the end. */}
       <button
         type="button"
-        aria-label={copy.before(selected + 1)}
+        aria-label={none ? copy.beforeNone : copy.before(n)}
         aria-disabled={first || undefined}
         onClick={() => onStep(-1)}
         className={buttonClass({ variant: "outline", className: ICON })}
@@ -188,7 +195,7 @@ export function ArrangeBar({
       </button>
       <button
         type="button"
-        aria-label={copy.after(selected + 1)}
+        aria-label={none ? copy.afterNone : copy.after(n)}
         aria-disabled={last || undefined}
         onClick={() => onStep(1)}
         className={buttonClass({ variant: "outline", className: ICON })}
@@ -197,8 +204,11 @@ export function ArrangeBar({
       </button>
       <button
         type="button"
-        onClick={onCancel}
-        className="inline-flex min-h-11 items-center px-2 text-[15px] underline underline-offset-[3px]"
+        aria-disabled={none || undefined}
+        onClick={() => {
+          if (!none) onCancel()
+        }}
+        className="inline-flex min-h-11 items-center px-2 text-[15px] underline underline-offset-[3px] aria-disabled:opacity-50"
       >
         {copy.cancel}
       </button>

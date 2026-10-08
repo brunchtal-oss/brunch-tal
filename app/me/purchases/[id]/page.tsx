@@ -199,12 +199,19 @@ async function EntitlementContent({
                     )}
                   </>
                 ) : (
-                  <span className="text-base font-semibold">
-                    {entry.label}
-                    {" · "}
-                    <time dateTime={formatLocalDate(entry.createdAt)}>
-                      <bdi>{formatDayMonth(entry.createdAt)}</bdi>
-                    </time>
+                  <span className="flex items-baseline justify-between gap-4 text-base font-semibold">
+                    <span>
+                      {entry.label}
+                      {" · "}
+                      <time dateTime={formatLocalDate(entry.createdAt)}>
+                        <bdi>{formatDayMonth(entry.createdAt)}</bdi>
+                      </time>
+                    </span>
+                    {entry.units && (
+                      <bdi dir="ltr" className="tabular-nums">
+                        {entry.units}
+                      </bdi>
+                    )}
                   </span>
                 )}
               </li>

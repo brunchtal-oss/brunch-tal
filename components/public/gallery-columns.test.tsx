@@ -75,7 +75,10 @@ describe("gallery columns", () => {
       />
     )
     expect(html).toContain(classes)
-    // Four narrow columns: the caption is clamped to two lines.
-    expect(html.includes("line-clamp-2")).toBe(columns === 4)
+    // Four narrow columns: a smaller caption that breaks long words, never
+    // cut (no clamp).
+    expect(html).not.toContain("line-clamp")
+    expect(html).toContain("break-words")
+    expect(html.includes("text-[13px]")).toBe(columns === 4)
   })
 })

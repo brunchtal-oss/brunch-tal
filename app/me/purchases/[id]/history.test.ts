@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import { customerCopy } from "@/lib/copy/customer"
 
-import { buildHistory, type MovementRow } from "./history"
+import { buildHistory, signedUnits, type MovementRow } from "./history"
 
 function move(
   id: string,
@@ -31,6 +31,14 @@ const BOOKINGS = [
   { id: "b-booked", event_id: "ev-2" },
   { id: "b-cancelled", event_id: "ev-3" },
 ]
+
+describe("signedUnits", () => {
+  it("keeps the sign, none for zero", () => {
+    expect(signedUnits(4)).toBe("+4")
+    expect(signedUnits(-1)).toBe("-1")
+    expect(signedUnits(0)).toBeNull()
+  })
+})
 
 describe("buildHistory", () => {
   const movements = [
@@ -76,8 +84,11 @@ describe("buildHistory", () => {
       kind: "other",
       id: "m-7",
       label: customerCopy.movement.adjust,
+      units: "+1",
       createdAt: "2026-10-13T07:00:00+00:00",
     })
+    // Booking rows carry no units.
+    expect(history[0]).not.toHaveProperty("units")
   })
 
   it("a booking whose session is unknown: the state without a day or title", () => {

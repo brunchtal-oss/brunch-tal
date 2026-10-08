@@ -22,6 +22,11 @@ const BASE: Attendee = {
   babies: [],
 }
 
+// The visible text without the tags (each name is its own <bdi>).
+function text(html: string): string {
+  return html.replace(/<[^>]*>/g, "")
+}
+
 function row(attendee: Partial<Attendee>) {
   return renderToStaticMarkup(
     <ul>
@@ -42,8 +47,11 @@ describe("AttendeeRow", () => {
     expect(html).toContain(copy.couple)
     // No phone on the row (user decision 2026-10-08).
     expect(html).not.toContain("050-123-4567")
-    // Line 1: "{name} - {baby} ({age})" (user decision 2026-10-08).
-    expect(html).toContain("Dana - Ori (3 חודשים)")
+    // Line 1: "{name} ×2 - {baby} ({age})" (user decision 2026-10-08): ×2
+    // right after the mother's name, each name its own <bdi>.
+    expect(text(html)).toContain(`Dana ${copy.couple} - Ori (3 חודשים)`)
+    expect(html).toContain(">Dana</bdi>")
+    expect(html).toContain(">Ori</bdi> (3 חודשים)")
     expect(html).toContain("gluten free")
     expect(html).toContain(copy.companion("vegan"))
     expect(html).not.toContain("<button")
@@ -117,14 +125,15 @@ describe("AttendeeRow lines (user decision 2026-10-08)", () => {
       ],
       dietaryNotes: "gluten free",
     })
-    expect(html).toContain("Dana - Ori (3 חודשים), Noa (3 חודשים)")
+    expect(text(html)).toContain("Dana - Ori (3 חודשים), Noa (3 חודשים)")
+    expect(html).toContain(">Noa</bdi>")
     expect(html).toContain("gluten free")
   })
 
   it("no babies: just the name", () => {
     const html = row({})
     expect(html).toContain(">Dana</bdi>")
-    expect(html).not.toContain("Dana -")
+    expect(text(html)).not.toContain("Dana -")
   })
 })
 
