@@ -12,8 +12,8 @@ import { SessionPhoto } from "./session-photo"
 // concept's; without one the muted square of SessionPhoto, never an empty
 // frame), 16px, then "בראנץ׳" in label ink-muted, the concept name in
 // display-sm and the weekday and date in body-sm ink, never the time (user
-// decision 2026-10-08). A signed-in customer also sees her status-chip
-// under the date. Thin rules between the rows (the list draws them). The
+// decision 2026-10-08). A signed-in customer also sees her status-chip at
+// inline-end of the name's line (2026-10-08). Thin rules between the rows (the list draws them). The
 // whole row is one link: the title link's ::after covers it, and its
 // accessible name is the title, the date and the status.
 export function SessionRow({
@@ -51,19 +51,28 @@ export function SessionRow({
         >
           {customerCopy.brunch}
         </span>
-        <Heading className="font-heading text-[22px] leading-[1.25] font-light text-balance">
-          <Link
-            href={href}
-            className="rounded-lg after:absolute after:inset-0 after:content-['']"
-          >
-            <span className="sr-only">{customerCopy.brunch} </span>
-            <bdi>{conceptName}</bdi>
-            <span className="sr-only">
-              , {formatAccessibleDate(startsAt)}
-              {statusText ? `, ${statusText}` : ""}
+        {/* The chip at inline-end of the name's line, centred with it; the
+            name wraps first, the chip never does (2026-10-08). */}
+        <div className="flex items-center gap-3">
+          <Heading className="min-w-0 flex-1 font-heading text-[22px] leading-[1.25] font-light text-balance">
+            <Link
+              href={href}
+              className="rounded-lg after:absolute after:inset-0 after:content-['']"
+            >
+              <span className="sr-only">{customerCopy.brunch} </span>
+              <bdi>{conceptName}</bdi>
+              <span className="sr-only">
+                , {formatAccessibleDate(startsAt)}
+                {statusText ? `, ${statusText}` : ""}
+              </span>
+            </Link>
+          </Heading>
+          {status && (
+            <span aria-hidden className="flex shrink-0 whitespace-nowrap">
+              {status}
             </span>
-          </Link>
-        </Heading>
+          )}
+        </div>
         <time
           dateTime={startsAt}
           aria-hidden
@@ -71,11 +80,6 @@ export function SessionRow({
         >
           {formatSessionDate(startsAt)}
         </time>
-        {status && (
-          <span aria-hidden className="flex">
-            {status}
-          </span>
-        )}
       </div>
     </article>
   )

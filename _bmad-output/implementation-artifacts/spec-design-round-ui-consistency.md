@@ -2,7 +2,7 @@
 title: 'סבב העיצוב: כללי האחידות במסכי האתר, הלקוחה והאדמין'
 type: 'feature'
 created: '2026-10-07'
-status: 'in-review'
+status: 'done'
 baseline_commit: '2319bcd3ec02295d9297cb13a2e903a8e48fc337'
 route: 'full'
 route_source: 'auto'

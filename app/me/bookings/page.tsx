@@ -93,9 +93,7 @@ async function Bookings() {
                   showTime
                   statusText={customerCopy.booked}
                   status={
-                    <StatusChip tone="success">
-                      {customerCopy.booked}
-                    </StatusChip>
+                    <StatusChip tone="booked">{customerCopy.booked}</StatusChip>
                   }
                 />
               </li>

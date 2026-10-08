@@ -10,6 +10,12 @@ const TONES = {
   expired: { chip: "bg-expired-tint text-expired", dot: "bg-expired-dot" },
   // A conflict that stops a join ("לטיפול", DESIGN › status-chip error).
   error: { chip: "bg-error-tint text-error", dot: "bg-error-dot" },
+  // Her own booking, "נרשמת" (user decision 2026-10-08): filled, on-primary
+  // on primary (8.46:1), so it never looks like "יש מקום" (success).
+  booked: {
+    chip: "bg-primary text-primary-foreground",
+    dot: "bg-primary-foreground",
+  },
 } as const
 
 export type StatusTone = keyof typeof TONES

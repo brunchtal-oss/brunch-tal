@@ -57,17 +57,36 @@ describe("SessionRow", () => {
     expect(html).not.toContain("<img")
   })
 
-  it("the status-chip sits under the date", () => {
+  it("the status-chip sits at inline-end of the name's line, before the date", () => {
     const html = renderToStaticMarkup(
       <SessionRow
         {...base}
         statusText={customerCopy.booked}
-        status={<StatusChip tone="success">{customerCopy.booked}</StatusChip>}
+        status={<StatusChip tone="booked">{customerCopy.booked}</StatusChip>}
       />
     )
-    expect(html.indexOf("12.10</time>")).toBeLessThan(
+    // One line with the name, then the chip (never wrapping), then the date.
+    expect(html.indexOf("</h2>")).toBeLessThan(
       html.lastIndexOf(customerCopy.booked)
     )
+    expect(html.lastIndexOf(customerCopy.booked)).toBeLessThan(
+      html.indexOf("12.10</time>")
+    )
+    expect(html).toContain("shrink-0 whitespace-nowrap")
+  })
+
+  it("'נרשמת' is filled (booked), unlike 'יש מקום' (success)", () => {
+    const booked = renderToStaticMarkup(
+      <StatusChip tone="booked">{customerCopy.booked}</StatusChip>
+    )
+    const available = renderToStaticMarkup(
+      <StatusChip tone="success">
+        {customerCopy.availability.available}
+      </StatusChip>
+    )
+    expect(booked).toContain("bg-primary text-primary-foreground")
+    expect(booked).toContain("bg-primary-foreground")
+    expect(available).toContain("bg-success-tint")
   })
 
   it("the list draws a rule between the rows and around them", () => {

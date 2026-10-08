@@ -50,7 +50,8 @@ export function sessionStatus(input: {
   booked: boolean
   availability: Availability | undefined
 }): { tone: StatusTone; text: string } | null {
-  if (input.booked) return { tone: "success", text: customerCopy.booked }
+  // "נרשמת" is filled (booked), never the "יש מקום" green (2026-10-08).
+  if (input.booked) return { tone: "booked", text: customerCopy.booked }
   // Registration is closed: a place label would promise what the page
   // refuses, so no chip.
   if (!input.availability?.registrationOpen) return null

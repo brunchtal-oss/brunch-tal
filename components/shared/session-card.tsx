@@ -15,8 +15,8 @@ import { SessionPhoto } from "./session-photo"
 // One uniform card for every session (user's decision 2026-10-04, UX
 // memlog; replaces the concept band of DESIGN.md › session-card): a wide
 // photo at 2:1 on top (a low, rectangular card), then "בראנץ׳", the concept
-// name in the site's heading face and ink, and the date with, for a
-// signed-in customer, the status-chip. No concept colour or face. A single
+// name in the site's heading face and ink with, for a signed-in customer,
+// the status-chip level with it at inline-end (2026-10-08), then the date. No concept colour or face. A single
 // target: one link on the concept name whose ::after covers the card; its
 // accessible name is the title, the full date and the status. No
 // regular/couple label and no number of places. The photo is the session's,
@@ -99,10 +99,8 @@ export function SessionCard({
             {customerCopy.brunch}
           </span>
         )}
-        <div
-          className={cn(!framed && "flex items-start justify-between gap-3")}
-        >
-          <Heading className="min-w-0 font-heading text-[22px] leading-tight font-light text-balance">
+        <div className="flex items-center justify-between gap-3">
+          <Heading className="min-w-0 flex-1 font-heading text-[22px] leading-tight font-light text-balance">
             <Link
               href={href}
               className="rounded-[4px] after:absolute after:inset-0 after:content-['']"
@@ -122,8 +120,8 @@ export function SessionCard({
               </span>
             </Link>
           </Heading>
-          {!framed && status && (
-            <span aria-hidden className="shrink-0 pt-1">
+          {status && (
+            <span aria-hidden className="flex shrink-0 whitespace-nowrap">
               {status}
             </span>
           )}
@@ -138,7 +136,6 @@ export function SessionCard({
               ? formatSessionDateTime(startsAt)
               : formatSessionDate(startsAt)}
           </time>
-          {framed && status && <span aria-hidden>{status}</span>}
         </div>
       </div>
       {horizontal && (

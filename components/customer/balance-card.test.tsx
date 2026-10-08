@@ -62,7 +62,9 @@ describe("BalanceCard of an entry that is not a card", () => {
       <BalanceCard {...single} reserved={1} counts={false} />
     )
     expect(html).toContain(customerCopy.booked)
-    expect(html).toContain("bg-success-tint")
+    // "נרשמת" is filled, never the "יש מקום" green (2026-10-08).
+    expect(html).toContain("bg-primary text-primary-foreground")
+    expect(html).not.toContain("bg-success-tint")
     expect(html).not.toContain(customerCopy.toBook)
     expect(html).not.toContain(customerCopy.bookedOf(1, 1))
   })

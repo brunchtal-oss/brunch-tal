@@ -44,7 +44,7 @@ export function BalanceCard({
   awaiting?: boolean
   // false for an entry that is not a card (single, couple, intro; user
   // decision 2026-10-08): no plates and no "ניצלת"/"נרשמת X/N" lines, only
-  // a status-chip, "נרשמת" (success) while it funds a booking, else "יש
+  // a status-chip, "נרשמת" (booked, filled) while it funds a booking, else "יש
   // להירשם" (pending: waiting for her to act; warning stays for expiring).
   counts?: boolean
 }) {
@@ -62,7 +62,7 @@ export function BalanceCard({
       {!counts && (
         <span className="flex">
           {reserved > 0 ? (
-            <StatusChip tone="success">{customerCopy.booked}</StatusChip>
+            <StatusChip tone="booked">{customerCopy.booked}</StatusChip>
           ) : (
             <StatusChip tone="pending">{customerCopy.toBook}</StatusChip>
           )}
