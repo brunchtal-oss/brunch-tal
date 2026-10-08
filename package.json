@@ -18,7 +18,9 @@
     "test:db": "vitest run --project db",
     "test:watch": "vitest --project unit",
     "dev:reset-link": "node scripts/dev-reset-link.mjs",
-    "dev:seed-media": "node scripts/dev-seed-media.mjs"
+    "dev:seed-media": "node scripts/dev-seed-media.mjs",
+    "demo:seed": "node scripts/demo-seed.mjs",
+    "demo:clear": "node scripts/demo-clear.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
@@ -32,7 +34,7 @@
     "embla-carousel-react": "^8.6.0",
     "input-otp": "^1.4.2",
     "lucide-react": "^1.24.0",
-    "next": "~16.3.7",
+    "next": "~16.3.8",
     "next-themes": "^0.4.6",
     "react": "^19.2.7",
     "react-day-picker": "^10.0.1",

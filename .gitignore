@@ -49,3 +49,7 @@ _bmad/render/
 
 # design-versions skill output (local only)
 versions*/
+
+# demo data (story 5.18): the seed's local ids and the prepared removal SQL
+.demo-data.local.json
+*.local.sql

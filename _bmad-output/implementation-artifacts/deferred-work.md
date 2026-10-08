@@ -484,3 +484,18 @@
   target: סבב העיצוב (הגלריה)
   summary: ב-/gallery בלי תמונות, כשכל המלצות התמונה בלי קובץ מפורסם, ‏`TestimonialsSection` מחזיר null אבל `GalleryView` לא מציג את הדף הריק, כי הוא מחליט לפי התוכן לפני סינון התמונות. התיקון ב-`components/public/page-views.tsx`.
   evidence: ביקורת הקרוסלה (סבב 1). המצב היה קיים גם לפני השינוי (`ul` ריק). נדיר: המלצת תמונה שהקובץ שלה לא פורסם.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-18-demo-data.md`
+  target: 5.19
+  summary: אין בדיקת unit לבניית ה-SQL של `demo-clear` (סדר המחיקה, `replica` רק סביב `entitlement_movements`, בדיקת השמירה לפני כל מחיקה, ואדמינים שלא נכנסים לקובץ) ולדילוג של `step()` בהרצה חוזרת. כדאי להוציא `buildClearSql(ids, mode)` לפונקציה טהורה ולבדוק אותה.
+  evidence: ביקורת 5.18 (verification-gap ו-blind). כרגע זה נבדק רק בהרצה ידנית מול הפיתוח. העסקה האחת מגבילה את הנזק.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-18-demo-data.md`
+  target: 5.18 חלק ב׳
+  summary: אין בדיקה שהקאסט ב-`scripts/demo-cast.mjs` תואם לתסריט: שכל מפתח ב-`ADMIN_BOOKINGS`, ‏`NOTES`, ‏`CONFLICT` ו-`SELF_*` קיים, ש-E5 יוצא 10 מתוך 12, ושלמאיה נשארת כניסה פנויה.
+  evidence: ביקורת 5.18 (verification-gap). שינוי בקאסט עובר את כל הבדיקות ומשנה את מה שהמבקרים יראו. הבדיקה בטלפון מכסה עד אז.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-18-demo-data.md`
+  target: 5.19
+  summary: ‏`scripts/dev-seed-media.mjs` קורא `admin.auth.signOut()` עם ברירת המחדל `scope: 'global'`, ולכן כל הרצה שלו מנתקת את אדמין הפיתוח בכל המכשירים. התיקון: `signOut({ scope: "local" })`, כמו ב-`demo-seed.mjs`.
+  evidence: ביקורת 5.18 מצאה את זה ב-`demo-seed.mjs`. אותה שורה קיימת ב-`dev-seed-media.mjs:369`, וה-spec של 5.18 אוסר לערוך אותו.

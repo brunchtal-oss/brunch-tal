@@ -40,6 +40,19 @@
 
 העזרים ב-`supabase/tests/support/db.ts`: ‏`inRollback` (עסקה שתמיד מתגלגלת אחורה), ‏`asAuthenticated` (תפקיד `authenticated` ו-`auth.uid()` של משתמשת נתונה, בתוך העסקה), ‏`testName` (קידומת `test_<run-id>` לכל נתון בדוי) ו-`onCleanup` (מחיקה בסוף הקובץ).
 
+### נתוני הדגמה
+
+עסק בדוי במסד הפיתוח (סיפור 5.18): 15 לקוחות, מהן 14 במיילים `@demo.example.com` (אחת שילמה ועוד לא הצטרפה), שמונה מפגשים, רכישות, הרשמות, הערות ודף עבודה. הכול נוצר דרך אותן פונקציות שהמסכים משתמשים בהן. רק מול פרויקט הפיתוח, ורק נתונים בדויים. התסריט להצגה: `_bmad-output/implementation-artifacts/demo-walkthrough-5-18.md`.
+
+סדר ההרצה:
+
+1. **פעם אחת, ניקוי נתוני הבדיקה:** `node scripts/demo-clear.mjs --dev-test-data`. הסקריפט לא מוחק כלום. הוא רק כותב את `.dev-test-clear.local.sql` ומדפיס כמה שורות יימחקו בכל טבלה. בודקים את הקובץ ומריצים אותו ב-SQL Editor של פרויקט הפיתוח (שאילתה חדשה וריקה).
+2. אם אין אדמין פיתוח: `node scripts/dev-reset-link.mjs --admin`. אם אין תמונות בגלריה: `npm run dev:seed-media`.
+3. `npm run demo:seed`, בין 06:10 ל-23:30 ולא בשבת, כי מפגש ההדגמה של היום מסתיים כמה דקות אחרי ההרצה. הסקריפט שומר את המזהים ב-`.demo-data.local.json` (לא ב-git). הרצה חוזרת לא מוסיפה כלום. בלי הקובץ הסקריפט לא ממשיך, אז לא מוחקים אותו.
+4. **סיסמה למבקרים:** `node scripts/dev-reset-link.mjs --email maya.barak@demo.example.com --url https://<כתובת ה-Vercel>`. פותחים את הקישור, בוחרים סיסמה, ומוסרים למבקרים את המייל, את הסיסמה ואת פרטי נעילת האתר. לכניסת אדמין עושים אותו דבר עם `--admin`.
+
+הסרת ההדגמה: `npm run demo:clear`. גם הוא רק כותב קובץ (`.demo-clear.local.sql`), שמריצים ב-SQL Editor. אחרי זה `demo:seed` מתחיל מחדש עם תאריכים חדשים.
+
 ## CI וכללי lint
 
 ‏GitHub Actions (`.github/workflows/ci.yml`) רץ על כל push ועל כל PR, מ-checkout נקי, בלי `.env`, בלי סודות ובלי מסד: ‏`npm ci`, ‏`npm run lint`, ‏`npm run format:check`, ‏`npm run typecheck`, ‏`npm test` ו-`npm audit --omit=dev --audit-level=high`. בדיקות המסד (`npm run test:db`) רצות רק מקומית.
