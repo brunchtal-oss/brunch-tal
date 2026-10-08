@@ -201,7 +201,7 @@ export function WeekdaysField({
       className="flex flex-col gap-2"
       aria-describedby={empty ? errorId : undefined}
     >
-      <legend className="mb-2 text-sm font-medium">
+      <legend className="mb-2 text-[15px] font-semibold">
         {copy.fields.weekdays}
       </legend>
       <div className="grid grid-cols-2 gap-x-4 gap-y-1">

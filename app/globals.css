@@ -66,6 +66,11 @@
   --color-expired-dot: #b0a998;
   --color-scrim-ink: #2e2a1f;
 
+  /* Saffron (design round 2026-10-07): counters only (the bells' unread
+       count, the "לטיפול" count), an ink number on it (7.6:1). Never text,
+       an area, a button or an availability mark. */
+  --color-saffron: #e9b949;
+
   /* Corners (DESIGN.md › Shapes): shadcn buttons and inputs use rounded-lg
        (4px), cards and dialogs rounded-xl (8px); a bottom sheet's top corners
        take rounded-t-2xl (12px). Badges keep their pill (rounded-4xl). */
@@ -230,8 +235,9 @@ body:has([data-tab-bar]) {
 
 /*
  * Public shell (story 5.2). The top-bar is sticky: a focused control is
- * never scrolled under it. The whatsapp-bar is fixed to the bottom (48px +
- * 16px from the edge + safe area): the public layout keeps that room below
+ * never scrolled under it. The whatsapp-bar is a strip flush to the bottom
+ * (1px rule + 12 + 48 + 12 + safe area, 2026-10-08): the public layout keeps
+ * that room below
  * the footer, and a focused control is not scrolled under it (DESIGN ›
  * Layout). Below a 480px window height (zoom, landscape) the bar is not
  * shown (`short:hidden`) and its link is in the flow, so no room is kept.
@@ -242,7 +248,9 @@ html:has([data-top-bar]) {
   scroll-padding-top: 5rem;
 }
 html:has([data-whatsapp-bar]) {
-  scroll-padding-bottom: calc(3rem + 1rem + env(safe-area-inset-bottom) + 1rem);
+  scroll-padding-bottom: calc(
+    4.5rem + 1px + env(safe-area-inset-bottom) + 1rem
+  );
 }
 @media (max-height: 479.98px) {
   html:has([data-whatsapp-bar]) {
@@ -250,14 +258,14 @@ html:has([data-whatsapp-bar]) {
   }
 }
 /*
- * Room for the fixed whatsapp-bar (48px + 16px from the edge + safe area,
- * plus air) inside the footer's band, so its text ends above the bar and the
+ * Room for the fixed whatsapp-bar strip (1px + 12 + 48 + 12 + safe area,
+ * plus 16 of air) inside the footer's band, so its text ends above the bar and the
  * band reaches the bottom of the screen. Only while the bar is shown (story
  * 5.7: not for a signed-in customer), and none when the bar is in the flow
  * (short window).
  */
 body:has([data-whatsapp-bar]) [data-site-footer] {
-  padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+  padding-bottom: calc(5.5rem + 1px + env(safe-area-inset-bottom));
 }
 @media (max-height: 479.98px) {
   body:has([data-whatsapp-bar]) [data-site-footer] {

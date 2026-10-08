@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 
 import { InlineNotice } from "@/components/shared/inline-notice"
-import { Button, buttonVariants } from "@/components/ui/button"
+import { Button } from "@/components/ui/button"
+import { buttonClass } from "@/components/shared/button-class"
 import { Spinner } from "@/components/ui/spinner"
 import { adminCopy } from "@/lib/copy/admin"
 import { type ErrorCode } from "@/lib/errors"
@@ -80,7 +81,7 @@ export function ManualBooking({
   const detailsLink = (
     <Link
       href={`/admin/sessions/${eventId}`}
-      className={buttonVariants({
+      className={buttonClass({
         variant: "outline",
         size: "lg",
         className: ACTION,
@@ -100,7 +101,7 @@ export function ManualBooking({
               {detailsLink}
               <Link
                 href={`/admin/sessions/${eventId}/book`}
-                className={buttonVariants({
+                className={buttonClass({
                   variant: "outline",
                   size: "lg",
                   className: ACTION,
@@ -127,7 +128,7 @@ export function ManualBooking({
             action === "payment" ? (
               <Link
                 href={`/admin/payments/new/existing/${customer.id}`}
-                className={buttonVariants({
+                className={buttonClass({
                   variant: "outline",
                   size: "lg",
                   className: ACTION,
@@ -138,7 +139,7 @@ export function ManualBooking({
             ) : action === "capacity" ? (
               <Link
                 href={`/admin/sessions/${eventId}/edit`}
-                className={buttonVariants({
+                className={buttonClass({
                   variant: "outline",
                   size: "lg",
                   className: ACTION,

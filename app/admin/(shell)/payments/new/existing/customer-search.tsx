@@ -76,7 +76,7 @@ export function CustomerSearch({
   const shown = answerFor(query, answer)
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6">
       <Field>
         <FieldLabel htmlFor={`${id}-q`}>{copy.searchLabel}</FieldLabel>
         <Input

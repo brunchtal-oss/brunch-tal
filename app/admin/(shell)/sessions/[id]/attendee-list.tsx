@@ -1,15 +1,14 @@
 import { AttendeeRow } from "@/components/admin/attendee-row"
-import { SummaryCard } from "@/components/admin/summary-card"
 import { adminCopy } from "@/lib/copy/admin"
 import { formatLocalDate } from "@/lib/time"
 
 import { AttendeeCancel } from "./attendee-cancel"
-import { detailsSummary, type EventDetails } from "./load-details"
+import type { EventDetails } from "./load-details"
 
 const copy = adminCopy.sessions
 
-// The summary-card and "מי מגיעה" (story 3.4), shared by the session's
-// details and the session-morning view. Bookings by confirmation time.
+// "מי מגיעה" (story 3.4) on the session's details (the summary-card sits
+// above the actions there, user decision 2026-10-08). Bookings by confirmation time.
 // cancellable: each row gets Tal's cancel (story 3.6; the session's details
 // while it has not ended, never the morning view).
 export function AttendeeList({
@@ -22,7 +21,6 @@ export function AttendeeList({
   const onDay = formatLocalDate(details.startsAt)
   return (
     <>
-      <SummaryCard summary={detailsSummary(details)} />
       <section aria-labelledby="attendees-heading" className="flex flex-col">
         <h2
           id="attendees-heading"

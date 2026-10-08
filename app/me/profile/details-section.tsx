@@ -87,7 +87,7 @@ export function DetailsSection({
       <div className="flex items-baseline justify-between gap-3">
         <h2
           id="details-title"
-          className="font-heading text-xl leading-tight font-light"
+          className="font-heading text-[22px] leading-[1.25] font-light"
         >
           {copy.detailsTitle}
         </h2>
@@ -109,7 +109,7 @@ export function DetailsSection({
       </div>
 
       {editing ? (
-        <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
+        <form onSubmit={onSubmit} className="flex flex-col gap-6" noValidate>
           <Field data-invalid={nameError || undefined}>
             <FieldLabel htmlFor="fullName">{copy.fullName}</FieldLabel>
             <Input
@@ -199,7 +199,7 @@ function Row({
   children: React.ReactNode
 }) {
   return (
-    <div className="flex flex-col gap-0.5">
+    <div className="flex flex-col gap-1">
       <dt className="text-[15px] text-muted-foreground">{label}</dt>
       <dd className="text-base">{children}</dd>
     </div>

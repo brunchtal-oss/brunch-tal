@@ -1,9 +1,13 @@
-import { consentLines, type PhotoConsents } from "@/lib/admin/photo-consents"
+import { Fragment } from "react"
+
+import { consentMarks, type PhotoConsents } from "@/lib/admin/photo-consents"
 import { adminCopy } from "@/lib/copy/admin"
+import { cn } from "@/lib/utils"
 
 import { babyAge } from "./baby-age"
 
 const copy = adminCopy.sessions
+const photoCopy = adminCopy.photoConsents
 
 export type AttendeeBaby = { name: string; birthDate: string }
 
@@ -50,16 +54,50 @@ export function attendeeTitle(attendee: Attendee): string {
   return attendee.name ?? copy.detailsRemoved
 }
 
-// DESIGN.md › attendee-row (story 3.4): the name in body-strong with "×2" for
-// a couple booking, the phone, a line per baby with the age on the session's
-// day, the two photo consents in words (story 2.13), the dietary notes as
-// written on a warning tint, and the companion's
-// note the same way with "מלווה:". An empty field shows nothing. A pending
-// booking: "לקוחה חדשה · ממתינה להצטרפות" and the payer label; removed
-// details: "פרטי הלקוחה הוסרו". onDay: the session's local date
-// ("YYYY-MM-DD"). action: an optional slot at the row's end (the cancel of
-// story 3.6, on the session's details only); without it the row has no
-// buttons.
+// "{אמא} ×2 - {תינוק} ({גיל})", several babies with a comma, each with its
+// age on the session's day; without babies just the name (user decision
+// 2026-10-08). Each name is its own <bdi> (a Latin name does not flip the
+// line), the separators and the ages outside them; "×2" for a couple
+// booking right after the mother's name.
+function AttendeeLine({
+  attendee,
+  onDay,
+}: {
+  attendee: Attendee
+  onDay: string
+}) {
+  return (
+    <>
+      <bdi className="break-words">{attendeeTitle(attendee)}</bdi>
+      {attendee.partySize === 2 && (
+        <span className="font-semibold text-foreground"> {copy.couple}</span>
+      )}
+      {attendee.babies.length > 0 && copy.namesSeparator}
+      {attendee.babies.map((baby, index) => {
+        const age = babyAge(baby.birthDate, onDay)
+        return (
+          <Fragment key={index}>
+            {index > 0 && copy.babiesSeparator}
+            <bdi className="break-words">{baby.name}</bdi>
+            {age && copy.babyAgeSuffix(age)}
+          </Fragment>
+        )
+      })}
+    </>
+  )
+}
+
+// DESIGN.md › attendee-row (story 3.4; lines by the user's decision
+// 2026-10-08): line 1 the name and the babies with their ages ("×2" for a
+// couple booking); line 2 the two photo consents as "תמונות אווירה ✓ -
+// תמונות אישיות ✗" (each read in full words; a "not approved" in warning, as
+// on the work sheet); line 3 the dietary notes as written on a warning tint,
+// and the companion's note the same way with "מלווה:". No phone (user
+// decision 2026-10-08: it stays on the customer card). An empty field shows nothing. A pending booking: "לקוחה חדשה ·
+// ממתינה להצטרפות" and the payer label; removed details: "פרטי הלקוחה
+// הוסרו". onDay: the session's local date ("YYYY-MM-DD"). action: an
+// optional slot at the row's end (the cancel of story 3.6, on the session's
+// details only); without it the row has no buttons.
 export function AttendeeRow({
   attendee,
   onDay,
@@ -69,7 +107,6 @@ export function AttendeeRow({
   onDay: string
   action?: React.ReactNode
 }) {
-  const title = attendeeTitle(attendee)
   const consents = attendeeConsents(attendee)
   const muted = !attendee.pendingJoin && attendee.name === null
 
@@ -83,36 +120,29 @@ export function AttendeeRow({
               : "text-base leading-[1.35] font-semibold"
           }
         >
-          <bdi className="break-words">{title}</bdi>
-          {attendee.partySize === 2 && (
-            <span className="ms-2 font-semibold text-foreground">
-              {copy.couple}
-            </span>
-          )}
+          <AttendeeLine attendee={attendee} onDay={onDay} />
         </p>
         {attendee.pendingJoin && attendee.payerLabel && (
           <p className="text-[15px] text-muted-foreground">
             <bdi>{attendee.payerLabel}</bdi>
           </p>
         )}
-        {attendee.phone && (
-          <p className="text-[15px] text-muted-foreground">
-            <bdi dir="ltr">{attendee.phone}</bdi>
+        {consents && (
+          <p className="text-[15px]">
+            {consentMarks(consents).map((mark, index) => (
+              <Fragment key={mark.label}>
+                {index > 0 && <span aria-hidden>{photoCopy.rowSeparator}</span>}
+                <span
+                  aria-hidden
+                  className={cn(mark.declined && "font-semibold text-warning")}
+                >
+                  {mark.rowText}
+                </span>
+                <span className="sr-only">{mark.label}</span>
+              </Fragment>
+            ))}
           </p>
         )}
-        {attendee.babies.map((baby, index) => (
-          <p key={index} className="text-[15px]">
-            <bdi>
-              {copy.babyLine(baby.name, babyAge(baby.birthDate, onDay))}
-            </bdi>
-          </p>
-        ))}
-        {consents &&
-          consentLines(consents).map((line) => (
-            <p key={line} className="text-[15px] text-muted-foreground">
-              {line}
-            </p>
-          ))}
         {attendee.dietaryNotes && (
           <p className="mt-1 rounded-md bg-warning-tint px-3 py-2 text-[15px] whitespace-pre-line text-warning">
             <bdi>{attendee.dietaryNotes}</bdi>

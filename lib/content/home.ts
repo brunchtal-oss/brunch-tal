@@ -28,5 +28,9 @@ export async function getHomeHero(): Promise<HeroContent | null> {
   }
 
   const parsed = heroSchema.safeParse(data?.published_content)
-  return parsed.success ? parsed.data : null
+  if (!parsed.success) return null
+  // Every field is optional (2026-10-08): a hero with nothing to show (the
+  // old cta_label is never shown) is the same as none.
+  const { title, description, image } = parsed.data
+  return title || description || image ? parsed.data : null
 }

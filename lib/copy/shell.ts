@@ -19,15 +19,15 @@ export const shellCopy = {
     adminLabel: "ניווט בפאנל הניהול",
     footerLabel: "קישורים",
     home: "בית",
-    sessions: "מפגשים",
+    // The admin's sessions tab, one line (user decision 2026-10-08).
+    sessions: "בראנצ׳ים",
     // The admin's work tab (story 4.9): the next sessions' work sheets.
     work: "עבודה",
     payments: "תשלומים",
     // The admin's customers (story 4.2), the first row of "more".
     customers: "לקוחות",
     purchases: "היסטוריית רכישות",
-    // The customer's sessions tab (user decision 2026-10-06); the admin's
-    // stays "מפגשים".
+    // The customer's sessions tab (user decision 2026-10-06).
     customerSessions: "לו״ז בראנצ׳ים",
     // The customer's last tab (story 2.10, user decision 2026-10-06); the
     // page's h1 is profileTitle.
@@ -35,7 +35,9 @@ export const shellCopy = {
     profileTitle: "הפרופיל שלי",
     more: "עוד",
     // The public pages (menu-sheet); also each page's h1 and <title>.
-    publicSessions: "בראנצ׳ים",
+    // The public sessions page and its menu item (user decision
+    // 2026-10-08; the home page's section keeps its own heading).
+    publicSessions: "לו״ז בראנצ׳ים",
     howItWorks: "איך זה עובד ושאלות נפוצות",
     gallery: "גלריה והמלצות",
     contact: "יצירת קשר",

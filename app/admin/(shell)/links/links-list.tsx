@@ -339,7 +339,7 @@ export function LinksList({ items }: { items: readonly LinkListItem[] }) {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-[20px] font-light">
+            <AlertDialogTitle className="font-heading text-[22px] leading-[1.25] font-light">
               {copy.confirmTitle}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-[15px]">

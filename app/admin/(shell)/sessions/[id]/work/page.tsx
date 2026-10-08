@@ -58,7 +58,6 @@ async function WorkSheetContent({
         eventId={id}
         conceptName={sheet.event.conceptName}
         startsAt={sheet.event.startsAt}
-        endsAt={sheet.event.endsAt}
       />
       <WorkSheetView
         sheet={sheet}

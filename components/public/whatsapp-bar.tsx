@@ -4,8 +4,11 @@ import { shellCopy } from "@/lib/copy/shell"
 
 const copy = shellCopy.public
 
-// whatsapp-bar (DESIGN, EXPERIENCE › whatsapp-bar): a full-width bar fixed
-// to the bottom of every public page, inside <aside aria-label="יצירת קשר">
+// whatsapp-bar (DESIGN, EXPERIENCE › whatsapp-bar): a full-width strip
+// flush to the bottom of every public page (user decision 2026-10-08: no
+// longer floating, so nothing shows under or around it), on the page
+// background with a thin top rule, 12 above and 12 + safe area below the
+// green link (max 672px, centred), inside <aside aria-label="יצירת קשר">
 // after <main>. It opens wa.me with the business details' number and
 // prepared message. The page keeps room under it (app/globals.css ›
 // [data-whatsapp-bar]). Below a 480px window height (zoom, landscape) the
@@ -20,9 +23,11 @@ export function WhatsappBar({ href }: { href: string | null }) {
     <aside
       aria-label={copy.whatsappLabel}
       data-whatsapp-bar=""
-      className="fixed inset-x-6 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-20 mx-auto max-w-[672px] short:hidden"
+      className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background px-6 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] short:hidden"
     >
-      <WhatsappLink href={href} />
+      <div className="mx-auto max-w-[672px]">
+        <WhatsappLink href={href} />
+      </div>
     </aside>
   )
 }

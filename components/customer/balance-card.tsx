@@ -10,8 +10,9 @@ import { cn } from "@/lib/utils"
 // alone says it.
 export const METER_MAX = 12
 
-// DESIGN.md › balance-card, on home only: the active card (user decision
-// 2026-10-06). The product name links to the purchase's detail (a single
+// DESIGN.md › balance-card, on home only: an entry that returned after a
+// cancelled pinned booking (story 3.6; the active card is a home-card since
+// the design round, 2026-10-07). The product name links to the purchase's detail (a single
 // target: its ::after covers the card; the chevron is decorative). Under
 // it, one plate per entry: filled for used, accent for booked, an empty
 // ring for free (decorative: the line after it says it in words), then
@@ -28,6 +29,7 @@ export function BalanceCard({
   daysLeft,
   isExpiring = false,
   awaiting = false,
+  counts = true,
 }: {
   href: string
   productName: string
@@ -40,6 +42,11 @@ export function BalanceCard({
   // A returned entry that waits for the next sessions (story 3.6): the
   // words in place of the validity.
   awaiting?: boolean
+  // false for an entry that is not a card (single, couple, intro; user
+  // decision 2026-10-08): no plates and no "ניצלת"/"נרשמת X/N" lines, only
+  // a status-chip, "נרשמת" (booked, filled) while it funds a booking, else "יש
+  // להירשם" (pending: waiting for her to act; warning stays for expiring).
+  counts?: boolean
 }) {
   return (
     <div className="relative flex flex-col gap-3 rounded-lg bg-muted px-4 py-4 pe-10">
@@ -49,14 +56,25 @@ export function BalanceCard({
       >
         <bdi>{productName}</bdi>
       </Link>
-      {total > 0 && total <= METER_MAX && (
+      {counts && total > 0 && total <= METER_MAX && (
         <EntryMeter used={used} reserved={reserved} total={total} />
       )}
-      <div className="flex flex-col gap-0.5">
-        <p className="flex flex-wrap gap-x-4 text-base">
-          <bdi>{customerCopy.usedOf(used, total)}</bdi>
-          <bdi>{customerCopy.bookedOf(reserved, total)}</bdi>
-        </p>
+      {!counts && (
+        <span className="flex">
+          {reserved > 0 ? (
+            <StatusChip tone="booked">{customerCopy.booked}</StatusChip>
+          ) : (
+            <StatusChip tone="pending">{customerCopy.toBook}</StatusChip>
+          )}
+        </span>
+      )}
+      <div className="flex flex-col gap-1">
+        {counts && (
+          <p className="flex flex-wrap gap-x-4 text-base">
+            <bdi>{customerCopy.usedOf(used, total)}</bdi>
+            <bdi>{customerCopy.bookedOf(reserved, total)}</bdi>
+          </p>
+        )}
         <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[15px] text-muted-foreground">
           {awaiting ? (
             <span>{customerCopy.awaitingSessions}</span>

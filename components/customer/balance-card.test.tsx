@@ -42,6 +42,42 @@ describe("BalanceCard", () => {
   })
 })
 
+describe("BalanceCard of an entry that is not a card", () => {
+  const single = { ...base, used: 0, reserved: 0, total: 1 }
+
+  it("no plates and no counts: 'יש להירשם' while it funds no booking", () => {
+    const html = renderToStaticMarkup(
+      <BalanceCard {...single} counts={false} />
+    )
+    expect(html).not.toContain("data-entry")
+    expect(html).not.toContain(customerCopy.usedOf(0, 1))
+    expect(html).not.toContain(customerCopy.bookedOf(0, 1))
+    expect(html).toContain(customerCopy.toBook)
+    expect(html).toContain("bg-pending-tint")
+    expect(html).toContain(customerCopy.validUntil)
+  })
+
+  it("'נרשמת' while it funds a booking", () => {
+    const html = renderToStaticMarkup(
+      <BalanceCard {...single} reserved={1} counts={false} />
+    )
+    expect(html).toContain(customerCopy.booked)
+    // "נרשמת" is filled, never the "יש מקום" green (2026-10-08).
+    expect(html).toContain("bg-primary text-primary-foreground")
+    expect(html).not.toContain("bg-success-tint")
+    expect(html).not.toContain(customerCopy.toBook)
+    expect(html).not.toContain(customerCopy.bookedOf(1, 1))
+  })
+
+  it("keeps the awaiting words in place of the validity", () => {
+    const html = renderToStaticMarkup(
+      <BalanceCard {...single} counts={false} awaiting />
+    )
+    expect(html).toContain(customerCopy.awaitingSessions)
+    expect(html).not.toContain(customerCopy.validUntil)
+  })
+})
+
 describe("customerCopy", () => {
   it("says the last day for 0 days", () => {
     expect(customerCopy.daysLeft(0)).toBe("היום האחרון")

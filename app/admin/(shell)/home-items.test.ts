@@ -7,8 +7,8 @@ import {
   toAttentionItem,
   toAttentionItems,
   toExpiringCard,
+  toSessionTile,
   totalsView,
-  upcomingRowText,
   type AttentionKind,
   type AttentionRow,
 } from "./home-items"
@@ -226,18 +226,29 @@ describe("toAttentionItem", () => {
 })
 
 describe("home rows", () => {
-  it("an upcoming session: concept, day and places", () => {
-    expect(
-      upcomingRowText({
-        event_id: EVENT,
-        concept_name: "שישי מיוחד",
-        kind: "regular",
-        starts_at: "2026-10-16T07:00:00Z",
-        ends_at: "2026-10-16T11:00:00Z",
-        occupied: 10,
-        capacity: 12,
-      })
-    ).toBe("בראנץ׳ שישי מיוחד · יום שישי 16.10 · 10/12")
+  it("a session tile: title, day without the time, places and the bar", () => {
+    const row = {
+      event_id: EVENT,
+      concept_name: "שישי מיוחד",
+      kind: "regular",
+      starts_at: "2026-10-16T07:00:00Z",
+      ends_at: "2026-10-16T11:00:00Z",
+      occupied: 9,
+      capacity: 12,
+    }
+    expect(toSessionTile(row)).toEqual({
+      id: EVENT,
+      href: `/admin/sessions/${EVENT}`,
+      title: "בראנץ׳ שישי מיוחד",
+      day: "יום שישי 16.10",
+      dayAt: "2026-10-16",
+      places: "9/12",
+      fillPercent: 75,
+    })
+    // Over capacity (Tal lowered it) fills the bar, no more; no capacity
+    // leaves it empty.
+    expect(toSessionTile({ ...row, occupied: 14 }).fillPercent).toBe(100)
+    expect(toSessionTile({ ...row, capacity: 0 }).fillPercent).toBe(0)
   })
 
   it("an expiring card: the name (or a new customer), free entries and the date", () => {

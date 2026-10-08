@@ -137,7 +137,7 @@ export function PreviewBar({
               aria-describedby={
                 isBlocked ? "preview-publish-blocked" : undefined
               }
-              className="h-11 rounded-[4px] bg-background px-5 text-[15px] font-semibold text-foreground hover:bg-background/90 aria-disabled:opacity-60"
+              className="h-11 rounded-[4px] bg-background px-6 text-[15px] font-semibold text-foreground hover:bg-background/90 aria-disabled:opacity-60"
             >
               {busy && <Spinner aria-hidden />}
               {copy.publish}

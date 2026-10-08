@@ -30,7 +30,7 @@ import {
   type ImageMap,
   type PublishedSections,
 } from "@/lib/content/pages"
-import { visibleImages } from "@/lib/content/visible"
+import { footerLinks, visibleImages } from "@/lib/content/visible"
 import { whatsappHref as plainWhatsappHref } from "@/lib/content/whatsapp"
 import { adminCopy } from "@/lib/copy/admin"
 import { joinCopy } from "@/lib/copy/join"
@@ -233,7 +233,7 @@ async function PageView({
         "photo_consent"
       )
       return (
-        <div className="mx-auto flex w-full max-w-[480px] flex-col gap-6 px-6 pt-10">
+        <div className="mx-auto flex w-full max-w-[480px] flex-col gap-6 px-6 pt-12">
           <PageHeading>{joinCopy.title}</PageHeading>
           {consent && <PhotoConsentQuestions content={consent} />}
         </div>
@@ -275,10 +275,10 @@ async function PageView({
           <SiteFooter
             details={details}
             legal={visibleLegalNav(legalSlugs)}
-            links={
+            links={footerLinks(
               sectionContent(previewSections(pages.site), "footer", "footer")
-                ?.items ?? []
-            }
+                ?.items
+            )}
           />
         </div>
       )

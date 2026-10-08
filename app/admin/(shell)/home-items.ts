@@ -5,10 +5,11 @@ import {
   formatDayMonth,
   formatLocalDate,
   formatMonthYear,
-  formatWeekday,
+  formatSessionDate,
 } from "@/lib/time"
 
 import { customerHref } from "./customers/customer-items"
+import { sessionTitle } from "./sessions/session-draft"
 
 // What /admin shows for the rows of admin_get_attention_items and
 // admin_get_home (pure: rows in, items out). Every state, date boundary and
@@ -212,14 +213,34 @@ export function toAttentionItems(rows: AttentionRow[]): AttentionItem[] {
 // on /admin/attention.
 export const HOME_ATTENTION_LIMIT = 3
 
-// "בראנץ׳ {concept} · {יום DD.MM} · {occupied}/{capacity}"
-export function upcomingRowText(row: UpcomingSessionRow): string {
-  return copy.upcomingRow(
-    row.concept_name,
-    `${formatWeekday(row.starts_at)} ${formatDayMonth(row.starts_at)}`,
-    row.occupied,
-    row.capacity
-  )
+// One session-tile of the home (design round, user decision 2026-10-07):
+// the title, the weekday and date (never the time, 2026-10-08), the places
+// "{occupied}/{capacity}" from the server, and how full it is for the
+// decorative occupancy bar (0-100).
+export type SessionTileItem = {
+  id: string
+  href: string
+  title: string
+  day: string
+  dayAt: string
+  places: string
+  fillPercent: number
+}
+
+export function toSessionTile(row: UpcomingSessionRow): SessionTileItem {
+  const fill =
+    row.capacity > 0
+      ? Math.round((Math.min(row.occupied, row.capacity) / row.capacity) * 100)
+      : 0
+  return {
+    id: row.event_id,
+    href: `/admin/sessions/${row.event_id}`,
+    title: sessionTitle(row.concept_name),
+    day: formatSessionDate(row.starts_at),
+    dayAt: formatLocalDate(row.starts_at),
+    places: `${row.occupied}/${row.capacity}`,
+    fillPercent: Math.max(0, fill),
+  }
 }
 
 export type ExpiringCardItem = {

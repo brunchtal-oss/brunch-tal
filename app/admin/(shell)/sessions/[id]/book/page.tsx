@@ -4,7 +4,7 @@ import Link from "next/link"
 import { notFound, redirect } from "next/navigation"
 
 import { InlineNotice } from "@/components/shared/inline-notice"
-import { buttonVariants } from "@/components/ui/button"
+import { buttonClass } from "@/components/shared/button-class"
 import { adminCopy } from "@/lib/copy/admin"
 import { shellCopy } from "@/lib/copy/shell"
 import { errorMessage } from "@/lib/errors"
@@ -83,7 +83,7 @@ async function ManualBookingContent({
         startsAt={details.startsAt}
         endsAt={details.endsAt}
       />
-      <section aria-labelledby="manual-heading" className="flex flex-col gap-5">
+      <section aria-labelledby="manual-heading" className="flex flex-col gap-6">
         <h2
           id="manual-heading"
           className="font-heading text-[22px] leading-[1.25] font-light"
@@ -117,7 +117,7 @@ async function CustomerBooking({
   const change = (
     <Link
       href={searchHref}
-      className={buttonVariants({
+      className={buttonClass({
         variant: "outline",
         size: "lg",
         className: "h-11 text-base",
@@ -151,7 +151,7 @@ async function CustomerBooking({
         </p>
         <Link
           href={searchHref}
-          className="py-2.5 text-[15px] font-semibold underline underline-offset-[3px]"
+          className="py-3 text-[15px] font-semibold underline underline-offset-[3px]"
         >
           {adminCopy.payments.changeCustomer}
         </Link>

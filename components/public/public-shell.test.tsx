@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest"
 import { shellCopy } from "@/lib/copy/shell"
 
 import { ContactDetails, hasContactDetails, telHref } from "./contact-details"
+import { socialKind } from "./social-icon"
 import { EmptyPublicPage, PublicPageHeading } from "./public-page"
 import {
   FaqSection,
@@ -123,9 +124,35 @@ describe("SiteFooter", () => {
     expect(html).toMatch(/^<footer[^>]*data-site-footer/)
     expect(html).toContain("bg-foreground")
     expect(html).toContain('href="tel:0501234567"')
-    expect(html).toMatch(/href="https:\/\/waze\.com\/ul\?q=x"[^>]*>addr/)
+    expect(html).toMatch(
+      /href="https:\/\/waze\.com\/ul\?q=x" target="_blank"[^>]*>(?:(?!<\/a>)[\s\S])*addr/
+    )
     expect(html).toContain('href="/privacy"')
     expect(html).toContain('href="/admin/login"')
+    // One centred column (user decision 2026-10-08), with icon rows for the
+    // contact and the short olive rule above the small line of links.
+    expect(html).toContain("items-center")
+    expect(html).toContain("text-center")
+    expect(html).toContain("lucide-phone")
+    expect(html).toContain("lucide-map-pin")
+    expect(html).toContain("h-px w-12 bg-brand-accent")
+    expect(html.indexOf("bg-brand-accent")).toBeLessThan(
+      html.indexOf('href="/privacy"')
+    )
+    // No editor links: no social row.
+    expect(html).not.toContain("data-footer-links")
+  })
+
+  it("shows only the legal links it is given (the published ones)", () => {
+    const html = renderToStaticMarkup(
+      <SiteFooter
+        details={null}
+        legal={[{ href: "/accessibility", label: "acc" }]}
+      />
+    )
+    expect(html).toContain('href="/accessibility"')
+    expect(html).not.toContain('href="/privacy"')
+    expect(html).not.toContain('href="/terms"')
   })
 
   it("leaves out what is not published", () => {
@@ -150,16 +177,48 @@ describe("SiteFooter", () => {
         links={[{ label: "insta", url: "https://instagram.com/x" }]}
       />
     )
+    // An Instagram address is its icon, named by the link's label.
     expect(html).toMatch(
-      /href="https:\/\/instagram\.com\/x" target="_blank" rel="noopener noreferrer"[^>]*>insta/
+      new RegExp(
+        `href="https://instagram\\.com/x" target="_blank" rel="noopener noreferrer" aria-label="insta ${copy.contact.opensOutside.replace(/[()]/g, "\\$&")}"`
+      )
     )
-    expect(html).toContain(copy.contact.opensOutside)
+    expect(html).toContain('data-social="instagram"')
     expect(html.indexOf("instagram")).toBeLessThan(html.indexOf("/admin/login"))
+  })
+
+  it("shows Facebook as an icon and any other link as text", () => {
+    const html = renderToStaticMarkup(
+      <SiteFooter
+        details={null}
+        legal={[]}
+        links={[
+          { label: "fb", url: "https://m.facebook.com/x" },
+          { label: "blog", url: "https://blog.example/x" },
+        ]}
+      />
+    )
+    expect(html).toContain('data-social="facebook"')
+    expect(html).toMatch(/href="https:\/\/blog\.example\/x"[^>]*>blog/)
+    expect(html).toContain(copy.contact.opensOutside)
   })
 
   it("always links to the install guide (story 5.9)", () => {
     const html = renderToStaticMarkup(<SiteFooter details={null} legal={[]} />)
     expect(html).toMatch(/href="\/install"[^>]*>[^<]+<\/a>/)
+  })
+})
+
+describe("socialKind", () => {
+  it("knows Instagram and Facebook hosts, with www. or m.", () => {
+    expect(socialKind("https://www.instagram.com/x")).toBe("instagram")
+    expect(socialKind("https://instagram.com/x")).toBe("instagram")
+    expect(socialKind("https://facebook.com/x")).toBe("facebook")
+    expect(socialKind("https://m.facebook.com/x")).toBe("facebook")
+    expect(socialKind("https://www.fb.com/x")).toBe("facebook")
+    expect(socialKind("https://instagram.com.evil.example/x")).toBeNull()
+    expect(socialKind("https://blog.example")).toBeNull()
+    expect(socialKind("not a url")).toBeNull()
   })
 })
 
@@ -232,16 +291,40 @@ describe("ContactDetails", () => {
     payment_instructions: "pay",
   }
 
-  it("shows the phone, address, arrival and navigation, without WhatsApp or payment", () => {
+  // The look of the user's choice (2026-10-08): a card of action rows.
+  it("a card with the phone row and the address row as links, no arrival, WhatsApp or payment", () => {
     const html = renderToStaticMarkup(<ContactDetails details={full} />)
-    expect(html).toContain('href="tel:0501234567"')
-    expect(html).toContain("addr")
-    expect(html).toContain("arrive")
-    expect(html).toContain('href="https://maps.example.com/x"')
+    expect(html).toContain("bg-card")
+    expect(html.match(/<li>/g)).toHaveLength(2)
+    expect(html).toMatch(/<a href="tel:0501234567"[^>]*>.*050-123 4567/)
+    // The whole address row opens the navigation app, in a new window.
+    expect(html).toMatch(
+      /<a href="https:\/\/maps\.example\.com\/x" target="_blank" rel="noopener noreferrer"[^>]*>.*addr/
+    )
+    // No visible navigation line; the link's name still says it (sr-only).
+    const srOnly = [...html.matchAll(/<span class="sr-only">([^<]*)<\/span>/g)]
+      .map((m) => m[1])
+      .join(" ")
+    expect(srOnly).toContain(copy.contact.navigation)
+    expect(srOnly).toContain(copy.contact.opensOutside)
+    const visible = html.replace(/<span class="sr-only">[^<]*<\/span>/g, "")
+    expect(visible).not.toContain(copy.contact.navigation)
+    expect(html).not.toContain("arrive")
+    expect(html).not.toContain(copy.contact.arrival)
     expect(html).not.toContain("wa.me")
     expect(html).not.toContain("054-425-6456")
     expect(html).not.toContain("pay")
     expect(html).toContain("<bdi")
+  })
+
+  it("without a navigation link the address is plain text", () => {
+    const html = renderToStaticMarkup(
+      <ContactDetails
+        details={{ whatsapp_phone: "0544256456", address: "a" }}
+      />
+    )
+    expect(html).not.toContain("<a ")
+    expect(html).not.toContain(copy.contact.navigation)
   })
 
   it("leaves out an empty field", () => {
@@ -264,6 +347,14 @@ describe("ContactDetails", () => {
     expect(hasContactDetails(only)).toBe(false)
     expect(renderToStaticMarkup(<ContactDetails details={only} />)).toBe("")
     expect(hasContactDetails({ ...only, address: "a" })).toBe(true)
+    // Arrival instructions or a navigation link alone show nothing now.
+    expect(
+      hasContactDetails({
+        ...only,
+        arrival_instructions: "x",
+        navigation_url: "https://maps.example.com/x",
+      })
+    ).toBe(false)
     expect(hasContactDetails(null)).toBe(false)
   })
 

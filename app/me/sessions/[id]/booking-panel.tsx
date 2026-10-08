@@ -75,11 +75,11 @@ export function BookingPanel({
         <h2
           ref={climaxRef}
           tabIndex={-1}
-          className="font-heading text-[32px] leading-[1.15] font-light"
+          className="font-heading text-[26px] leading-[1.2] font-light"
         >
           {copy.climax}
         </h2>
-        <Link href="/me" className={cn(LINK, "self-start py-2.5")}>
+        <Link href="/me" className={cn(LINK, "self-start py-3")}>
           {copy.toMyBalance}
         </Link>
       </section>
@@ -130,12 +130,12 @@ export function BookingPanel({
           href={contactHref}
           target="_blank"
           rel="noopener noreferrer"
-          className={cn(LINK, "py-2.5")}
+          className={cn(LINK, "py-3")}
         >
           {copy.contactPhrase}
         </a>
       ) : (
-        <Link href="/me/sessions" className={cn(LINK, "py-2.5")}>
+        <Link href="/me/sessions" className={cn(LINK, "py-3")}>
           {copy.allSessions}
         </Link>
       )
@@ -252,7 +252,7 @@ export function BookingPanel({
           onClick={confirm}
           aria-busy={busy || undefined}
           aria-disabled={busy || undefined}
-          className="mt-5 h-12 w-full rounded-[4px] text-base font-semibold"
+          className="mt-6 h-12 w-full rounded-[4px] text-base font-semibold"
         >
           {busy && <Spinner aria-hidden />}
           {copy.book}

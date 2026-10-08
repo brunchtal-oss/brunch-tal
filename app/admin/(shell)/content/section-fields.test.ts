@@ -248,15 +248,24 @@ describe("section fields", () => {
     ])
   })
 
-  it("refuses a new testimonial without its text, next to the field", () => {
+  // No field is required but three (2026-10-08): a testimonial without its
+  // text saves; an over-long one is refused next to its field.
+  it("saves a new testimonial without its text; refuses one over its limit next to the field", () => {
     const items = addItem([item("a", "Noa")], list, "n1")
     items[1] = {
       ...items[1],
       values: { kind: "text", name: "Lea", text: "" },
     }
     const content = toContent(spec, { text: {}, items, hidden: false })
-    const errors = fieldErrors(TESTIMONIALS, content)
-    expect(errors).toEqual({ "items.1.text": { kind: "required" } })
+    expect(fieldErrors(TESTIMONIALS, content)).toBeNull()
+    items[1] = {
+      ...items[1],
+      values: { kind: "text", name: "Lea", text: "x".repeat(1501) },
+    }
+    const long = toContent(spec, { text: {}, items, hidden: false })
+    expect(fieldErrors(TESTIMONIALS, long)).toEqual({
+      "items.1.text": { kind: "tooLong", max: 1500 },
+    })
     expect(fieldId("items.1.text")).toBe("field-items-1-text")
   })
 
@@ -305,9 +314,8 @@ describe("legal fields", () => {
     ])
     const state = fromContent(legalSpec, { hidden: true, body: "## a\n\nb" })
     expect(toContent(legalSpec, state)).toEqual({ body: "## a\n\nb" })
-    expect(fieldErrors(LEGAL, { body: "" })).toEqual({
-      body: { kind: "required" },
-    })
+    // Optional since 2026-10-08; the page shows nothing without it.
+    expect(fieldErrors(LEGAL, { body: "" })).toBeNull()
   })
 
   it("edits the statement as one large text, then the three contact fields", () => {

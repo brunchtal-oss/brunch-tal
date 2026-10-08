@@ -53,8 +53,14 @@ function expectNoPlacesOrKind(html: string) {
   expect(html.replace(/<[^>]*>/g, " ")).not.toMatch(/\d+\s*\/\s*\d+/)
 }
 
+// The brunch time is never in a list of sessions (design round, user
+// decision 2026-10-08), visible or for screen readers.
+function expectNoTime(html: string) {
+  expect(html.replace(/<[^>]*>/g, " ")).not.toMatch(/\d{2}:\d{2}/)
+}
+
 describe("PublicSessionList", () => {
-  it("shows a card per session linking to its public page, in order", () => {
+  it("shows a session-row per session linking to its public page, in order", () => {
     const html = renderToStaticMarkup(
       <PublicSessionList
         sessions={[session(1), session(2)]}
@@ -68,7 +74,11 @@ describe("PublicSessionList", () => {
     expect(html.match(/<h2[ >]/g)).toHaveLength(2)
     expect(html).not.toContain("<h3")
     expect(html).not.toContain(customerCopy.sessionsEmpty)
+    // Design round 2026-10-07: rows with an 84px photo, not cards.
+    expect(html.match(/size-\[84px\]/g)).toHaveLength(2)
+    expect(html).toContain("divide-y")
     expectNoPlacesOrKind(html)
+    expectNoTime(html)
   })
 
   it("shows the empty-state with the WhatsApp link", () => {
@@ -109,6 +119,7 @@ describe("UpcomingSessionsSection", () => {
     expect(html).toMatch(new RegExp(`href="/sessions"[^>]*>${copy.all}<`))
     expect(html.indexOf(copy.upcoming)).toBeLessThan(html.indexOf(copy.all))
     expectNoPlacesOrKind(html)
+    expectNoTime(html)
   })
 
   it("is not there without sessions", () => {

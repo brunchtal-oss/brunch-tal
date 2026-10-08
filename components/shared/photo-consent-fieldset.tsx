@@ -74,7 +74,7 @@ export function PhotoConsentFieldset({
         </div>
       ))}
       {error && (
-        <p id={errorId} className="text-sm text-destructive">
+        <p id={errorId} className="text-[15px] text-destructive">
           {error}
         </p>
       )}
@@ -115,7 +115,7 @@ export function PhotoConsentQuestions({
 // The note under both questions (one line per "\n").
 export function PhotoConsentNote({ note }: { note: string }) {
   return (
-    <p className="text-sm text-muted-foreground">
+    <p className="text-[15px] text-muted-foreground">
       {note.split("\n").map((line, index) => (
         <span key={index} className="block">
           {line}

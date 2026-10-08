@@ -131,7 +131,7 @@ export function TemplateEditor({ row }: { row: TemplateRow }) {
       <FieldChips allowed={row.allowed_vars} onInsert={insertField} />
 
       <ul className="flex flex-col divide-y divide-border border-y border-border">
-        <li className="py-5">
+        <li className="py-6">
           <ValueChangeRow
             label={copy.fields.title}
             oldValue={row.title}
@@ -165,7 +165,7 @@ export function TemplateEditor({ row }: { row: TemplateRow }) {
             </Field>
           </ValueChangeRow>
         </li>
-        <li className="py-5">
+        <li className="py-6">
           {hasBody ? (
             <ValueChangeRow
               label={copy.fields.body}
@@ -244,7 +244,7 @@ function FieldChips({
   }
   return (
     <div className="flex flex-col gap-2">
-      <p id="template-fields" className="text-sm font-medium">
+      <p id="template-fields" className="text-[15px] font-semibold">
         {copy.fieldsLegend}
       </p>
       <div
@@ -259,7 +259,7 @@ function FieldChips({
             // Keep the caret in the field: the click must not take focus.
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => onInsert(name)}
-            className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-border px-4 text-[15px] hover:bg-muted"
+            className="inline-flex min-h-11 items-center gap-2 rounded-full border border-border px-4 text-[15px] hover:bg-muted"
           >
             <span aria-hidden className="text-muted-foreground">
               +

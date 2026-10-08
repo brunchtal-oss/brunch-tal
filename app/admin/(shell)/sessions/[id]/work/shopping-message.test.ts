@@ -107,14 +107,34 @@ describe("the registrants table's cells (story 4.10, round 2)", () => {
     expect(
       consentMarks({ ...BASE, photoConsent: true, personalPhotoConsent: false })
     ).toEqual([
-      { text: "אווירה ✓", label: photo.atmosphere.yes, declined: false },
-      { text: "אישיות ✗", label: photo.personal.no, declined: true },
+      {
+        text: "אווירה ✓",
+        rowText: "תמונות אווירה ✓",
+        label: photo.atmosphere.yes,
+        declined: false,
+      },
+      {
+        text: "אישיות ✗",
+        rowText: "תמונות אישיות ✗",
+        label: photo.personal.no,
+        declined: true,
+      },
     ])
     expect(
       consentMarks({ ...BASE, photoConsent: false, personalPhotoConsent: true })
     ).toEqual([
-      { text: "אווירה ✗", label: photo.atmosphere.no, declined: true },
-      { text: "אישיות ✓", label: photo.personal.yes, declined: false },
+      {
+        text: "אווירה ✗",
+        rowText: "תמונות אווירה ✗",
+        label: photo.atmosphere.no,
+        declined: true,
+      },
+      {
+        text: "אישיות ✓",
+        rowText: "תמונות אישיות ✓",
+        label: photo.personal.yes,
+        declined: false,
+      },
     ])
     expect(consentMarks({ ...BASE, pendingJoin: true })).toEqual([])
   })

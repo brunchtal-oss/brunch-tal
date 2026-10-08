@@ -499,3 +499,6 @@
   target: 5.19
   summary: ‏`scripts/dev-seed-media.mjs` קורא `admin.auth.signOut()` עם ברירת המחדל `scope: 'global'`, ולכן כל הרצה שלו מנתקת את אדמין הפיתוח בכל המכשירים. התיקון: `signOut({ scope: "local" })`, כמו ב-`demo-seed.mjs`.
   evidence: ביקורת 5.18 מצאה את זה ב-`demo-seed.mjs`. אותה שורה קיימת ב-`dev-seed-media.mjs:369`, וה-spec של 5.18 אוסר לערוך אותו.
+- source_spec: `_bmad-output/implementation-artifacts/spec-design-round-ui-consistency.md`
+  summary: The admin customer card's entry lines do not match the customer's movement log (no "בוטלה" rows, no per-booking rows for single and couple entitlements).
+  evidence: Memlog 2026-10-08 says the admin card detail looks the same in third person; card-items.ts entryLines shows entry slots (used/booked/free) only.

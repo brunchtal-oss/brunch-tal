@@ -5,7 +5,8 @@ import Link from "next/link"
 
 import { PasswordInput } from "@/components/auth/password-input"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Button, buttonVariants } from "@/components/ui/button"
+import { Button } from "@/components/ui/button"
+import { buttonClass } from "@/components/shared/button-class"
 import {
   Field,
   FieldDescription,
@@ -48,7 +49,7 @@ export function ResetForm({
         {view === "saved-signed-in" ? (
           <Link
             href="/me"
-            className={buttonVariants({
+            className={buttonClass({
               size: "lg",
               className: "h-12 text-base",
             })}
@@ -58,7 +59,7 @@ export function ResetForm({
         ) : (
           <Link
             href="/login?next=/me"
-            className={buttonVariants({
+            className={buttonClass({
               size: "lg",
               className: "h-12 text-base",
             })}

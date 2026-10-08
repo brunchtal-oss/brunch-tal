@@ -24,7 +24,7 @@ export default function NewPaymentChoicePage() {
     <>
       <PageHeading>{copy.newTitle}</PageHeading>
       <nav aria-labelledby="payment-for" className="flex flex-col gap-2">
-        <h2 id="payment-for" className="mb-2 text-sm font-medium">
+        <h2 id="payment-for" className="mb-2 text-[15px] font-semibold">
           {copy.choiceLegend}
         </h2>
         <ul className="flex flex-col gap-2">

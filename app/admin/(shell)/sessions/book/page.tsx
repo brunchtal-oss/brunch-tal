@@ -5,7 +5,7 @@ import { ChevronLeftIcon } from "lucide-react"
 
 import { InlineNotice } from "@/components/shared/inline-notice"
 import { PageHeading } from "@/components/shared/page-heading"
-import { buttonVariants } from "@/components/ui/button"
+import { buttonClass } from "@/components/shared/button-class"
 import { adminCopy } from "@/lib/copy/admin"
 import { shellCopy } from "@/lib/copy/shell"
 import { errorMessage } from "@/lib/errors"
@@ -60,7 +60,7 @@ async function BookCustomerContent({
         actions={
           <Link
             href="/admin/sessions"
-            className={buttonVariants({
+            className={buttonClass({
               variant: "outline",
               size: "lg",
               className: "h-11 text-base",
@@ -111,7 +111,7 @@ async function BookCustomerContent({
                   href={`/admin/sessions/${event.id}/book?customer=${customer.id}`}
                   className="flex min-h-14 items-center justify-between gap-3 py-3"
                 >
-                  <span className="flex min-w-0 flex-col gap-0.5">
+                  <span className="flex min-w-0 flex-col gap-1">
                     <span className="text-base font-semibold break-words">
                       <bdi>
                         {adminCopy.payments.eventOptionTitle(event.conceptName)}

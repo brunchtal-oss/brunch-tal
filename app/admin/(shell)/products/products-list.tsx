@@ -18,13 +18,13 @@ export function ProductsList({ rows }: { rows: readonly ProductRow[] }) {
             href={`/admin/products/${row.id}`}
             className="flex min-h-14 items-center justify-between gap-3 py-3"
           >
-            <span className="flex min-w-0 flex-col gap-0.5">
+            <span className="flex min-w-0 flex-col gap-1">
               <span className="flex flex-wrap items-center gap-2">
                 <span className="text-base font-semibold break-words">
                   <bdi>{row.name}</bdi>
                 </span>
                 {!row.active && (
-                  <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-expired-tint px-2.5 py-0.5 text-[13px] font-semibold text-expired">
+                  <span className="inline-flex shrink-0 items-center gap-2 rounded-full bg-expired-tint px-2.5 py-0.5 text-[13px] font-semibold text-expired">
                     <span
                       aria-hidden
                       className="size-[7px] rounded-full bg-expired-dot"

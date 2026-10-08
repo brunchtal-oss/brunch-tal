@@ -2,7 +2,35 @@ import { describe, expect, it } from "vitest"
 
 import { customerCopy } from "@/lib/copy/customer"
 
-import { buildHistory, signedUnits } from "./history"
+import { buildHistory, signedUnits, type MovementRow } from "./history"
+
+function move(
+  id: string,
+  action: string,
+  bookingId: string | null,
+  createdAt: string,
+  units = 0
+): MovementRow {
+  return {
+    id,
+    booking_id: bookingId,
+    action,
+    units,
+    created_at: createdAt,
+  }
+}
+
+// Monday 12.10 and Thursday 15.10, 10:00 Jerusalem.
+const SESSIONS = [
+  { id: "ev-1", starts_at: "2026-10-12T07:00:00Z", concept_name: "יווני" },
+  { id: "ev-2", starts_at: "2026-10-15T07:00:00Z", concept_name: "אמהות" },
+  { id: "ev-3", starts_at: "2026-10-01T07:00:00Z", concept_name: "זוגות" },
+]
+const BOOKINGS = [
+  { id: "b-used", event_id: "ev-1" },
+  { id: "b-booked", event_id: "ev-2" },
+  { id: "b-cancelled", event_id: "ev-3" },
+]
 
 describe("signedUnits", () => {
   it("keeps the sign, none for zero", () => {
@@ -14,83 +42,80 @@ describe("signedUnits", () => {
 
 describe("buildHistory", () => {
   const movements = [
-    {
-      id: "m-1",
-      booking_id: null,
-      action: "grant",
-      units: 4,
-      created_at: "2026-09-23T07:00:00+00:00",
-    },
-    {
-      id: "m-2",
-      booking_id: "b-1",
-      action: "reserve",
-      units: -1,
-      created_at: "2026-09-24T07:00:00+00:00",
-    },
-    {
-      id: "m-3",
-      booking_id: "b-1",
-      action: "use",
-      units: 0,
-      created_at: "2026-10-12T09:00:00+00:00",
-    },
-    {
-      id: "m-4",
-      booking_id: "b-2",
-      action: "release",
-      units: 1,
-      created_at: "2026-09-25T07:00:00+00:00",
-    },
+    move("m-1", "grant", null, "2026-09-23T07:00:00+00:00", 4),
+    move("m-2", "reserve", "b-used", "2026-09-24T07:00:00+00:00", -1),
+    move("m-3", "use", "b-used", "2026-10-12T09:00:00+00:00"),
+    move("m-4", "reserve", "b-booked", "2026-09-25T07:00:00+00:00", -1),
+    move("m-5", "reserve", "b-cancelled", "2026-09-26T07:00:00+00:00", -1),
+    move("m-6", "release", "b-cancelled", "2026-09-27T07:00:00+00:00", 1),
+    move("m-7", "adjust", null, "2026-10-13T07:00:00+00:00", 1),
   ]
 
-  it("labels each movement, keeps the order and names the session of a booking", () => {
+  it("no purchase row, one row per booking by its state, by date", () => {
     const history = buildHistory({
       movements,
-      bookings: [{ id: "b-1", event_id: "ev-1" }],
-      // Monday 12.10 10:00 Jerusalem.
-      sessions: [
-        {
-          id: "ev-1",
-          starts_at: "2026-10-12T07:00:00Z",
-          concept_name: "יווני",
-        },
-      ],
+      bookings: BOOKINGS,
+      sessions: SESSIONS,
     })
-    expect(history.map((h) => h.id)).toEqual(["m-1", "m-2", "m-3", "m-4"])
+    expect(history.map((h) => h.id)).toEqual([
+      "b-cancelled",
+      "b-used",
+      "m-7",
+      "b-booked",
+    ])
     expect(history[0]).toEqual({
-      id: "m-1",
-      label: customerCopy.movement.grant,
-      units: "+4",
-      createdAt: "2026-09-23T07:00:00+00:00",
-      session: null,
+      kind: "booking",
+      id: "b-cancelled",
+      state: "cancelled",
+      label: customerCopy.bookingState.cancelled,
+      day: "יום חמישי 01.10",
+      startsAt: "2026-10-01T07:00:00Z",
+      title: customerCopy.sessionTitle("זוגות"),
     })
     expect(history[1]).toMatchObject({
-      label: customerCopy.movement.reserve,
-      units: "-1",
-      session: `${customerCopy.sessionTitle("יווני")} · יום שני 12.10`,
+      state: "used",
+      label: "השתתפת",
+      day: "יום שני 12.10",
+      title: customerCopy.sessionTitle("יווני"),
     })
-    expect(history[2]).toMatchObject({
-      label: customerCopy.movement.use,
-      units: null,
+    expect(history[3]).toMatchObject({ state: "booked", label: "נרשמת" })
+    // A movement without a booking: its label and its date only.
+    expect(history[2]).toEqual({
+      kind: "other",
+      id: "m-7",
+      label: customerCopy.movement.adjust,
+      units: "+1",
+      createdAt: "2026-10-13T07:00:00+00:00",
     })
-    // A booking whose session is unknown: no session line.
-    expect(history[3]).toMatchObject({
-      label: customerCopy.movement.release,
-      session: null,
+    // Booking rows carry no units.
+    expect(history[0]).not.toHaveProperty("units")
+  })
+
+  it("a booking whose session is unknown: the state without a day or title", () => {
+    const [entry] = buildHistory({
+      movements: [move("m-1", "reserve", "b-x", "2026-09-24T07:00:00Z", -1)],
+      bookings: [],
+      sessions: [],
+    })
+    expect(entry).toMatchObject({
+      kind: "booking",
+      label: customerCopy.bookingState.booked,
+      day: null,
+      title: null,
     })
   })
 
-  it("labels every action of the log", () => {
-    for (const action of Object.keys(customerCopy.movement)) {
+  it("labels the other actions of the log", () => {
+    for (const action of ["opening_balance", "adjust"] as const) {
       const [entry] = buildHistory({
-        movements: [{ ...movements[0], action }],
+        movements: [move("m", action, null, "2026-09-24T07:00:00Z")],
         bookings: [],
         sessions: [],
       })
-      expect(entry.label).toBe(
-        customerCopy.movement[action as keyof typeof customerCopy.movement]
-      )
+      expect(entry).toMatchObject({
+        kind: "other",
+        label: customerCopy.movement[action],
+      })
     }
   })
 })

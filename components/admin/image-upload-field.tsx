@@ -208,7 +208,7 @@ export function ImageUploadField({
       aria-describedby={describedBy || undefined}
       className="flex flex-col gap-3"
     >
-      <p id={`${id}-label`} className="text-sm font-medium">
+      <p id={`${id}-label`} className="text-[15px] font-semibold">
         {label}
       </p>
       {hint && (
@@ -243,7 +243,7 @@ export function ImageUploadField({
           aria-describedby={describedBy || undefined}
           data-focus-error={error ? true : undefined}
           className={cn(
-            "flex min-h-32 w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-muted-foreground bg-card p-5 text-center outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+            "flex min-h-32 w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-muted-foreground bg-card p-6 text-center outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
             error && "border-error"
           )}
         >
@@ -293,8 +293,8 @@ export function ImageUploadField({
             </div>
           )}
 
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor={`${id}-alt`} className="text-sm font-medium">
+          <div className="flex flex-col gap-2">
+            <label htmlFor={`${id}-alt`} className="text-[15px] font-semibold">
               {copy.alt}
             </label>
             <input

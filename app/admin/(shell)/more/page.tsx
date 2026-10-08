@@ -5,16 +5,17 @@ import { ChevronLeftIcon } from "lucide-react"
 import { NavIcon } from "@/components/shared/nav-icon"
 import { PageHeading } from "@/components/shared/page-heading"
 import { shellCopy } from "@/lib/copy/shell"
-import { ACCESSIBILITY_HREF, adminMoreNav } from "@/lib/nav"
+import { adminMoreNav } from "@/lib/nav"
 
 export const metadata: Metadata = {
   title: shellCopy.admin.moreTitle,
 }
 
 // "עוד" gathers the admin screens that are not in the tab bar, one row each
-// (lib/nav.ts › adminMoreNav), then the accessibility statement; sign-out is
-// in the top-bar. The site is RTL
-// only, so the chevron points to the inline end.
+// (lib/nav.ts › adminMoreNav), each with its icon (24, ink-muted) at
+// inline-start; the accessibility statement is no longer here (user
+// decision 2026-10-08; it stays in the public footer). Sign-out is in the
+// top-bar. The site is RTL only, so the chevron points to the inline end.
 
 export default function AdminMorePage() {
   return (
@@ -28,7 +29,10 @@ export default function AdminMorePage() {
               className="flex min-h-12 items-center justify-between gap-3 py-3 text-base font-semibold"
             >
               <span className="flex items-center gap-3">
-                {row.icon && <NavIcon icon={row.icon} className="size-5" />}
+                <NavIcon
+                  icon={row.icon}
+                  className="size-6 shrink-0 text-muted-foreground"
+                />
                 {row.label}
               </span>
               <ChevronLeftIcon
@@ -40,13 +44,6 @@ export default function AdminMorePage() {
           </li>
         ))}
       </ul>
-      {/* After the list: the public accessibility statement (story 5.5). */}
-      <Link
-        href={ACCESSIBILITY_HREF}
-        className="inline-flex min-h-11 items-center self-start text-[15px] underline underline-offset-[3px]"
-      >
-        {shellCopy.public.footer.accessibility}
-      </Link>
     </>
   )
 }

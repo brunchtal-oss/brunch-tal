@@ -4,7 +4,7 @@ import Link from "next/link"
 import { PlusIcon } from "lucide-react"
 
 import { PageHeading } from "@/components/shared/page-heading"
-import { buttonVariants } from "@/components/ui/button"
+import { buttonClass } from "@/components/shared/button-class"
 import { adminCopy } from "@/lib/copy/admin"
 import { shellCopy } from "@/lib/copy/shell"
 import { createClient } from "@/lib/supabase/server"
@@ -27,7 +27,7 @@ export default function ProductsPage() {
       <PageHeading>{copy.title}</PageHeading>
       <Link
         href="/admin/products/new"
-        className={buttonVariants({
+        className={buttonClass({
           variant: "outline",
           size: "lg",
           className: "h-12 self-start border-foreground px-4 text-base",

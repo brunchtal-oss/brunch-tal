@@ -7,7 +7,7 @@ import { formatAgorot } from "@/lib/money"
 import { formatLocalPhone } from "@/lib/phone"
 import {
   formatDayMonth,
-  formatSessionDateTime,
+  formatSessionDate,
   formatShortDate,
   formatTime,
   formatWeekday,
@@ -182,15 +182,18 @@ export type EntryLine = {
   key: string
   kind: "used" | "booked" | "free"
   text: string
+  // "בראנץ׳ {concept}" under a used or booked entry; null for a free one.
+  title: string | null
 }
 
 function sessionDay(startsAt: string): string {
   return `${formatWeekday(startsAt)} ${formatDayMonth(startsAt)}`
 }
 
-// The entries by session date (used "נוצלה · יום DD.MM", booked "שוריינה
-// · יום DD.MM"), then one line per free entry: "פנויה, יש לשריין", or
-// "לא נוצלה" once the card expired.
+// The entries by session date (used "השתתפה · יום DD.MM", booked "נרשמה ·
+// יום DD.MM", each with the session's title under it, user decision
+// 2026-10-08), then one line per free entry: "פנויה, יש לשריין", or "לא
+// נוצלה" once the card expired.
 export function entryLines(row: CardEntitlement): EntryLine[] {
   const taken = [...row.entries]
     .sort((a, b) => (a.starts_at < b.starts_at ? -1 : 1))
@@ -202,6 +205,7 @@ export function entryLines(row: CardEntitlement): EntryLine[] {
         text: used
           ? copy.entryUsed(sessionDay(entry.starts_at))
           : copy.entryBooked(sessionDay(entry.starts_at)),
+        title: adminCopy.sessions.sessionTitle(entry.concept_name),
       }
     })
   const free = Array.from(
@@ -210,6 +214,7 @@ export function entryLines(row: CardEntitlement): EntryLine[] {
       key: `free:${i}`,
       kind: "free",
       text: row.is_expired ? copy.entryUnused : copy.entryFree,
+      title: null,
     })
   )
   return [...taken, ...free]
@@ -324,7 +329,7 @@ export function toBookingItem(row: CardBooking): BookingItem {
     key: row.booking_id,
     href: `/admin/sessions/${row.event_id}`,
     title: adminCopy.sessions.sessionTitle(row.concept_name),
-    when: formatSessionDateTime(row.starts_at),
+    when: formatSessionDate(row.starts_at),
     startsAt: row.starts_at,
     status: copy.bookingStatus[row.status] ?? row.status,
     tone: BOOKING_TONES[row.status] ?? "pending",

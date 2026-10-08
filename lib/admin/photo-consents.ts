@@ -18,11 +18,18 @@ export function consentLines(consents: PhotoConsents): string[] {
 
 // One mark of the work sheet: "אווירה ✓", its full label, and whether it is
 // a "not approved" (the warning style).
-export type ConsentMark = { text: string; label: string; declined: boolean }
+// rowText: "תמונות אווירה ✓", the session's registrant row (2026-10-08).
+export type ConsentMark = {
+  text: string
+  rowText: string
+  label: string
+  declined: boolean
+}
 
 export function consentMarks(consents: PhotoConsents): ConsentMark[] {
   return KINDS.map((kind) => ({
     text: `${copy[kind].short} ${consents[kind] ? copy.yesMark : copy.noMark}`,
+    rowText: `${copy[kind].label} ${consents[kind] ? copy.yesMark : copy.noMark}`,
     label: consents[kind] ? copy[kind].yes : copy[kind].no,
     declined: !consents[kind],
   }))

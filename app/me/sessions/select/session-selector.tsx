@@ -19,10 +19,9 @@ import { customerCopy as copy } from "@/lib/copy/customer"
 import { errorMessage, type ErrorCode } from "@/lib/errors"
 import { newIdempotencyKey } from "@/lib/idempotency"
 import {
-  formatAccessibleDateTime,
+  formatAccessibleDate,
   formatDayMonth,
   formatSessionDateTime,
-  formatTime,
   formatWeekday,
 } from "@/lib/time"
 import { cn } from "@/lib/utils"
@@ -155,7 +154,7 @@ export function SessionSelector({
                     aria-describedby={
                       blocked ? reasonId : capped ? counterId : undefined
                     }
-                    aria-label={`${copy.sessionTitle(session.conceptName)}, ${formatAccessibleDateTime(session.startsAt)}`}
+                    aria-label={`${copy.sessionTitle(session.conceptName)}, ${formatAccessibleDate(session.startsAt)}`}
                     className="peer absolute inset-0 size-full cursor-[inherit] scroll-mb-44 opacity-0 focus-visible:outline-none"
                   />
                   <span
@@ -179,7 +178,7 @@ export function SessionSelector({
                     >
                       <bdi>{formatDayMonth(session.startsAt)}</bdi>
                     </span>
-                    <span className="mt-1.5 block text-[13px] text-muted-foreground">
+                    <span className="mt-2 block text-[13px] text-muted-foreground">
                       {formatWeekday(session.startsAt)}
                     </span>
                   </span>
@@ -192,12 +191,6 @@ export function SessionSelector({
                       )}
                     >
                       <bdi>{copy.sessionTitle(session.conceptName)}</bdi>
-                    </span>
-                    <span
-                      aria-hidden
-                      className="text-[13px] text-muted-foreground"
-                    >
-                      <bdi>{formatTime(session.startsAt)}</bdi>
                     </span>
                     {blocked ? (
                       <span
@@ -325,14 +318,14 @@ export function SessionSelector({
                 onClick={confirm}
                 aria-busy={busy || undefined}
                 aria-disabled={busy || undefined}
-                className="mt-5 h-12 w-full rounded-[4px] text-base font-semibold"
+                className="mt-6 h-12 w-full rounded-[4px] text-base font-semibold"
               >
                 {busy && <Spinner aria-hidden />}
                 {copy.book}
               </Button>
             </SheetContent>
           </Sheet>
-          <Link href="/me/sessions" className={cn(LINK, "py-2.5 text-[15px]")}>
+          <Link href="/me/sessions" className={cn(LINK, "py-3 text-[15px]")}>
             {copy.clearSelection}
           </Link>
         </div>
@@ -354,7 +347,6 @@ function Results({
   byId: Map<string, SelectableSession>
   headingRef: React.RefObject<HTMLHeadingElement | null>
 }) {
-  const saved = results.filter((r) => r.ok).length
   const heading = resultsHeading(results)
 
   return (
@@ -367,10 +359,7 @@ function Results({
         id="booking-results"
         ref={headingRef}
         tabIndex={-1}
-        className={cn(
-          "font-heading leading-[1.15] font-light",
-          saved === results.length ? "text-[32px]" : "text-[26px]"
-        )}
+        className={cn("font-heading text-[26px] leading-[1.2] font-light")}
       >
         {heading}
       </h2>
@@ -416,10 +405,10 @@ function Results({
         })}
       </ul>
       <div className="flex flex-wrap gap-x-6">
-        <Link href="/me" className={cn(LINK, "py-2.5")}>
+        <Link href="/me" className={cn(LINK, "py-3")}>
           {copy.toMyBalance}
         </Link>
-        <Link href="/me/sessions" className={cn(LINK, "py-2.5")}>
+        <Link href="/me/sessions" className={cn(LINK, "py-3")}>
           {copy.allSessions}
         </Link>
       </div>

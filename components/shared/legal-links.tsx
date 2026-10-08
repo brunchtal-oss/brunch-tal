@@ -26,7 +26,7 @@ export function LegalLinksRow({
   if (items.length === 0) return null
   return (
     <nav aria-label={shellCopy.public.legal.linksLabel}>
-      <ul className="flex flex-wrap items-center gap-x-5 text-[15px] text-muted-foreground">
+      <ul className="flex flex-wrap items-center gap-x-6 text-[15px] text-muted-foreground">
         {items.map((item) => (
           <li key={item.href}>
             <Link

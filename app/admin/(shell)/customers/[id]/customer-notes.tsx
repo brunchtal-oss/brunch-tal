@@ -4,7 +4,8 @@ import { useId, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 
 import { InlineNotice } from "@/components/shared/inline-notice"
-import { Button, buttonVariants } from "@/components/ui/button"
+import { Button } from "@/components/ui/button"
+import { buttonClass } from "@/components/shared/button-class"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Spinner } from "@/components/ui/spinner"
 import { Textarea } from "@/components/ui/textarea"
@@ -18,11 +19,11 @@ import { NOTE_MAX, type NoteItem } from "./card-items"
 
 const copy = adminCopy.customers.card
 
-const OUTLINE = buttonVariants({
+const OUTLINE = buttonClass({
   variant: "outline",
   size: "lg",
   className:
-    "h-11 rounded-[4px] border-foreground px-3.5 text-[15px] font-semibold",
+    "h-11 rounded-[4px] border-foreground px-4 text-[15px] font-semibold",
 })
 
 type Result = { tone: "success" | "error"; text: string } | null

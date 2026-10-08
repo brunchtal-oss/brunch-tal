@@ -94,7 +94,8 @@ describe("saveContentDraftAction", () => {
     expect(updateTag).not.toHaveBeenCalled()
   })
 
-  it("refuses an intro without its text without saving", async () => {
+  // No field is required but three (user decision 2026-10-08).
+  it("saves an intro without its text, or with nothing at all", async () => {
     answer(page("home", [section({ key: "intro", kind: "text_block" })]), {
       ok: true,
       data: {},
@@ -103,12 +104,26 @@ describe("saveContentDraftAction", () => {
       saveContentDraftAction({
         slug: "home",
         key: "intro",
-        content: { title: "t", body: " " },
+        content: { title: "", body: " " },
+      })
+    ).resolves.toEqual({ ok: true, data: undefined })
+  })
+
+  it("refuses a field over its limit without saving", async () => {
+    answer(page("home", [section({ key: "intro", kind: "text_block" })]), {
+      ok: true,
+      data: {},
+    })
+    await expect(
+      saveContentDraftAction({
+        slug: "home",
+        key: "intro",
+        content: { title: "x".repeat(121) },
       })
     ).resolves.toEqual({
       ok: false,
       code: "INVALID_INPUT",
-      detail: { field: "body" },
+      detail: { field: "title" },
     })
     expect(callRpc).not.toHaveBeenCalledWith(
       expect.anything(),
@@ -142,7 +157,7 @@ describe("saveContentDraftAction", () => {
         content: {
           items: [
             { name: "a", text: "b" },
-            { name: "c", text: " " },
+            { name: "c", text: "x".repeat(1501) },
           ],
         },
       })
@@ -338,7 +353,9 @@ describe("publishContentAction", () => {
   })
 
   it("publishes nothing when a pending draft is invalid", async () => {
-    answer(page("home", [section({ draft_content: { cta_label: "c" } })]))
+    answer(
+      page("home", [section({ draft_content: { title: "x".repeat(81) } })])
+    )
     await expect(
       publishContentAction({ slug: "home", idempotencyKey: KEY })
     ).resolves.toEqual({
@@ -351,13 +368,14 @@ describe("publishContentAction", () => {
   })
 
   it("checks a pending draft with its section's schema", async () => {
-    // about › main needs its text, though text_block's body is optional.
+    // about › main no longer needs its text (2026-10-08); a title over its
+    // limit is still refused.
     answer(
       page("about", [
         section({
           key: "main",
           kind: "text_block",
-          draft_content: { title: "t" },
+          draft_content: { title: "x".repeat(121) },
         }),
       ])
     )

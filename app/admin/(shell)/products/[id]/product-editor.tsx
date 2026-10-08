@@ -177,7 +177,7 @@ export function ProductEditor({ row }: { row: ProductRow }) {
       <InlineNotice tone="info">{copy.scopeNote}</InlineNotice>
 
       <ul className="flex flex-col divide-y divide-border border-y border-border">
-        <li className="py-5">
+        <li className="py-6">
           {fieldRow(
             "type",
             copy.fields.type,
@@ -188,7 +188,7 @@ export function ProductEditor({ row }: { row: ProductRow }) {
             />
           )}
         </li>
-        <li className="py-5">
+        <li className="py-6">
           {fieldRow(
             "name",
             copy.fields.name,
@@ -203,7 +203,7 @@ export function ProductEditor({ row }: { row: ProductRow }) {
             />
           )}
         </li>
-        <li className="py-5">
+        <li className="py-6">
           <ValueChangeRow
             label={copy.fields.price}
             oldValue={price?.from ?? ""}
@@ -224,7 +224,7 @@ export function ProductEditor({ row }: { row: ProductRow }) {
             />
           </ValueChangeRow>
         </li>
-        <li className="py-5">
+        <li className="py-6">
           {fieldRow(
             "units",
             copy.fields.units,
@@ -240,7 +240,7 @@ export function ProductEditor({ row }: { row: ProductRow }) {
             />
           )}
         </li>
-        <li className="py-5">
+        <li className="py-6">
           {fieldRow(
             "validity",
             copy.fields.validity,
@@ -254,7 +254,7 @@ export function ProductEditor({ row }: { row: ProductRow }) {
             />
           )}
         </li>
-        <li className="py-5">
+        <li className="py-6">
           {weekdaysOpen ? (
             fieldRow(
               "weekdays",
@@ -275,7 +275,7 @@ export function ProductEditor({ row }: { row: ProductRow }) {
             />
           )}
         </li>
-        <li className="py-5">
+        <li className="py-6">
           {fieldRow(
             "eventKind",
             copy.fields.eventKind,
@@ -286,7 +286,7 @@ export function ProductEditor({ row }: { row: ProductRow }) {
             />
           )}
         </li>
-        <li className="py-5">
+        <li className="py-6">
           {fieldRow(
             "partySize",
             copy.fields.partySize,
@@ -297,7 +297,7 @@ export function ProductEditor({ row }: { row: ProductRow }) {
             />
           )}
         </li>
-        <li className="py-5">
+        <li className="py-6">
           {fieldRow(
             "introOnly",
             copy.fields.introOnly,
@@ -308,7 +308,7 @@ export function ProductEditor({ row }: { row: ProductRow }) {
             />
           )}
         </li>
-        <li className="py-5">
+        <li className="py-6">
           {fieldRow(
             "postJoinMessage",
             copy.fields.postJoinMessage,
@@ -322,7 +322,7 @@ export function ProductEditor({ row }: { row: ProductRow }) {
             />
           )}
         </li>
-        <li className="py-5">
+        <li className="py-6">
           {fieldRow(
             "postJoinButtonLabel",
             copy.fields.postJoinButtonLabel,
@@ -337,7 +337,7 @@ export function ProductEditor({ row }: { row: ProductRow }) {
             />
           )}
         </li>
-        <li className="py-5">
+        <li className="py-6">
           <ValueChangeRow
             label={copy.state}
             oldValue={row.active ? copy.stateOffered : copy.stateHidden}

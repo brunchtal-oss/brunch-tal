@@ -3,12 +3,14 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { babyAgeText } from "./copy/baby-age"
 import {
   babyAge,
+  formatAccessibleDate,
   formatAccessibleDateTime,
   formatDayMonth,
   formatFullDate,
   formatLocalDate,
   formatMonthYear,
   formatNotificationTime,
+  formatSessionDate,
   formatSessionDateTime,
   formatShortDate,
   formatShortDay,
@@ -125,6 +127,13 @@ describe("lib/time", () => {
     expect(formatAccessibleDateTime(SESSION)).toBe(
       "יום שני, 12 באוקטובר, 10:00"
     )
+  })
+
+  it("formats the date without the time, visible and for screen readers", () => {
+    expect(formatSessionDate(SESSION)).toBe("יום שני 12.10")
+    expect(formatAccessibleDate(SESSION)).toBe("יום שני, 12 באוקטובר")
+    // Late evening UTC is already the next day in Jerusalem.
+    expect(formatSessionDate("2026-09-30T21:30:00Z")).toBe("יום חמישי 01.10")
   })
 
   it("accepts a Date as well as an ISO string", () => {

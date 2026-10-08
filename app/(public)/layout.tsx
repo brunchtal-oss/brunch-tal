@@ -14,6 +14,7 @@ import {
   sectionContent,
 } from "@/lib/content/pages"
 import { shellCopy } from "@/lib/copy/shell"
+import { footerLinks } from "@/lib/content/visible"
 import { publicLegalNav, visibleLegalNav } from "@/lib/nav"
 
 // Public shell (AD-2, story 5.2): the sticky top-bar with the menu-sheet,
@@ -40,7 +41,7 @@ export default async function PublicLayout({
     getPublishedPageSlugs(publicLegalNav.map((item) => item.slug)),
     getPublishedSections("site"),
   ])
-  const footerLinks = sectionContent(site, "footer", "footer")?.items ?? []
+  const links = footerLinks(sectionContent(site, "footer", "footer")?.items)
   const name = details?.business_name ?? shellCopy.wordmark
   const whatsappHref = guestWhatsappHref(details)
 
@@ -59,7 +60,7 @@ export default async function PublicLayout({
       <SiteFooter
         details={details}
         legal={visibleLegalNav(legalSlugs)}
-        links={footerLinks}
+        links={links}
       />
     </div>
   )

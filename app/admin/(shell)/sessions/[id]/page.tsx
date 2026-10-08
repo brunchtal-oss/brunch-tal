@@ -3,27 +3,30 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 
+import { SummaryCard } from "@/components/admin/summary-card"
 import { InlineNotice } from "@/components/shared/inline-notice"
 import { ResultNoticeHost } from "@/components/shared/result-notice"
-import { buttonVariants } from "@/components/ui/button"
+import { buttonClass } from "@/components/shared/button-class"
 import { adminCopy } from "@/lib/copy/admin"
 import { shellCopy } from "@/lib/copy/shell"
 
 import { isReadOnlySession } from "../load-session"
 import { AttendeeList } from "./attendee-list"
-import { isFull, loadEventDetails } from "./load-details"
+import { detailsSummary, isFull, loadEventDetails } from "./load-details"
 import { SessionHeader } from "./session-header"
 
 const copy = adminCopy.sessions
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-const BUTTON = "h-12 text-base"
+// The two small actions: button-secondary, the same size, 44px high.
+const SMALL = "h-11 rounded-lg px-4 text-base font-semibold"
+const SECONDARY = `${SMALL} min-w-32 border border-foreground bg-transparent text-foreground`
 
 export const metadata: Metadata = {
   title: copy.title,
 }
 
 // The session's details (story 3.4, CAP-12): the head, the summary-card,
-// the actions and "מי מגיעה". A full session shows "המפגש מלא" and a way to
+// the actions and "מי מגיעה" (order: user decision 2026-10-08). A full session shows "המפגש מלא" and a way to
 // raise the capacity instead of the manual booking (no silent overbooking).
 // A cancelled, completed or ended session is read-only: no booking, no
 // editing. A draft has no manual booking yet. Rendered inside the admin
@@ -69,67 +72,78 @@ async function SessionDetailsContent({
         endsAt={details.endsAt}
       />
 
+      {/* The figures right under the title, then the work sheet (its only
+          link on this page) as the big action, then the manual booking at
+          inline-start and editing at inline-end (user decision
+          2026-10-08). */}
       <div className="flex flex-col gap-3">
-        {bookable &&
-          (full ? (
-            <InlineNotice
-              tone="warning"
-              actions={
-                <Link
-                  href={`/admin/sessions/${id}/edit`}
-                  className={buttonVariants({
-                    variant: "outline",
-                    size: "lg",
-                    className: "h-11 text-base",
-                  })}
-                >
-                  {copy.raiseCapacity}
-                </Link>
-              }
-            >
-              {copy.full(details.occupied, details.capacity)}
-            </InlineNotice>
-          ) : (
-            <Link
-              href={`/admin/sessions/${id}/book`}
-              className={buttonVariants({
-                variant: "default",
-                size: "lg",
-                className: BUTTON,
-              })}
-            >
-              {copy.manualBooking}
-            </Link>
-          ))}
-        <div className="flex flex-wrap gap-3">
-          {!readOnly && (
-            <Link
-              href={`/admin/sessions/${id}/edit`}
-              className={buttonVariants({
-                variant: "outline",
-                size: "lg",
-                className: `${BUTTON} border-foreground px-4`,
-              })}
-            >
-              {copy.edit}
-            </Link>
-          )}
-          <Link
-            href={`/admin/sessions/${id}/work`}
-            className={buttonVariants({
-              variant: "outline",
-              size: "lg",
-              className: `${BUTTON} border-foreground px-4`,
-            })}
+        <SummaryCard summary={detailsSummary(details)} />
+        <Link
+          href={`/admin/sessions/${id}/work`}
+          className={buttonClass({
+            variant: "default",
+            size: "lg",
+            className: "h-12 w-full rounded-lg text-base font-semibold",
+          })}
+        >
+          {copy.morningView}
+        </Link>
+        {bookable && full && (
+          <InlineNotice
+            tone="warning"
+            actions={
+              <Link
+                href={`/admin/sessions/${id}/edit`}
+                className={buttonClass({
+                  variant: "outline",
+                  size: "lg",
+                  className: `${SMALL} border-foreground`,
+                })}
+              >
+                {copy.raiseCapacity}
+              </Link>
+            }
           >
-            {copy.morningView}
-          </Link>
-        </div>
+            {copy.full(details.occupied, details.capacity)}
+          </InlineNotice>
+        )}
+        {((bookable && !full) || !readOnly) && (
+          <div className="flex items-center justify-between gap-2">
+            {bookable && !full ? (
+              <Link
+                href={`/admin/sessions/${id}/book`}
+                className={buttonClass({
+                  variant: "outline",
+                  size: "lg",
+                  className: SECONDARY,
+                })}
+              >
+                {copy.manualBooking}
+              </Link>
+            ) : (
+              <span />
+            )}
+            {!readOnly && (
+              <Link
+                href={`/admin/sessions/${id}/edit`}
+                className={buttonClass({
+                  variant: "outline",
+                  size: "lg",
+                  className: SECONDARY,
+                })}
+              >
+                {copy.edit}
+              </Link>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Story 3.6: Tal cancels a booking until the session ends; the
           result stays above the list after the row leaves it. */}
-      <ResultNoticeHost className="flex flex-col gap-8">
+      {/* 48 above "מי מגיעה" (the main's 32 + 16; user decision
+          2026-10-08). */}
+      <ResultNoticeHost className="mt-4 flex flex-col gap-8">
         <AttendeeList details={details} cancellable={!readOnly} />
       </ResultNoticeHost>
     </>

@@ -35,22 +35,32 @@ export const CONSENT_SAVERS = {
 
 // The photo consents (story 2.10, CAP-40; two consents from story 2.13):
 // one heading, then a form per consent (the join form's question, the saved
-// answer checked and its own save button), and the note under both.
+// answer checked and its own save button), and the note under both. On its
+// own page (/me/profile/photos, user decision 2026-10-08) the page's h1 is
+// the heading: titled = false leaves the section's own h2 out.
 export function PhotoConsentSection({
   content,
   consents,
+  titled = true,
 }: {
   content: PhotoConsentContent
   consents: Record<PhotoConsentKind, boolean>
+  titled?: boolean
 }) {
   return (
-    <section aria-labelledby="photo-title" className="flex flex-col gap-6">
-      <h2
-        id="photo-title"
-        className="font-heading text-xl leading-tight font-light"
-      >
-        {copy.photoTitle}
-      </h2>
+    <section
+      aria-labelledby={titled ? "photo-title" : undefined}
+      aria-label={titled ? undefined : copy.photoTitle}
+      className="flex flex-col gap-6"
+    >
+      {titled && (
+        <h2
+          id="photo-title"
+          className="font-heading text-[22px] leading-[1.25] font-light"
+        >
+          {copy.photoTitle}
+        </h2>
+      )}
       <PhotoConsentForm
         kind="atmosphere"
         content={content}
@@ -103,7 +113,7 @@ export function PhotoConsentForm({
     <form
       key={String(consent)}
       onSubmit={onSubmit}
-      className="flex flex-col gap-5"
+      className="flex flex-col gap-6"
     >
       <PhotoConsentFieldset
         name={name}

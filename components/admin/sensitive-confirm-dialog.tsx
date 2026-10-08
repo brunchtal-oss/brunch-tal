@@ -76,7 +76,7 @@ export function SensitiveConfirmPanel({
 
   return (
     <div className="flex flex-col gap-4">
-      <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 rounded-md bg-muted px-4 py-3 text-[15px]">
+      <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-2 rounded-md bg-muted px-4 py-3 text-[15px]">
         {impact.map((row) => (
           <div key={row.label} className="contents">
             <dt className="text-muted-foreground">{row.label}</dt>
@@ -183,7 +183,7 @@ export function SensitiveConfirmDialog({
     >
       <AlertDialogContent
         initialFocus={titleRef}
-        className="max-h-[calc(100dvh-32px)] w-[calc(100%-32px)] gap-3 overflow-y-auto rounded-md bg-card p-5 data-[size=default]:max-w-md data-[size=default]:sm:max-w-md"
+        className="max-h-[calc(100dvh-32px)] w-[calc(100%-32px)] gap-3 overflow-y-auto rounded-md bg-card p-6 data-[size=default]:max-w-md data-[size=default]:sm:max-w-md"
       >
         <AlertDialogTitle
           ref={titleRef}

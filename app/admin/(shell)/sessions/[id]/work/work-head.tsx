@@ -3,25 +3,23 @@ import { ChevronRightIcon } from "lucide-react"
 
 import { PageHeading } from "@/components/shared/page-heading"
 import { adminCopy } from "@/lib/copy/admin"
-import { formatLocalDate, formatTime } from "@/lib/time"
+import { formatLocalDate } from "@/lib/time"
 
-import { sessionTitle, whenText } from "../../session-draft"
+import { dayText, sessionTitle } from "../../session-draft"
 
 // The work sheet's head on screen (story 4.10, second phone check
 // 2026-10-07; in place of SessionHeader on this page): "לפרטי המפגש"
 // without an underline, then "בראנץ׳ {קונספט}" as the page's title and
-// under it the date and time. No status-chip. Hidden in print (the printed
+// under it the weekday and date (no time, design round 2026-10-08). No status-chip. Hidden in print (the printed
 // head is in WorkSheetView).
 export function WorkSheetHead({
   eventId,
   conceptName,
   startsAt,
-  endsAt,
 }: {
   eventId: string
   conceptName: string
   startsAt: string
-  endsAt: string
 }) {
   const day = formatLocalDate(startsAt)
   return (
@@ -38,7 +36,7 @@ export function WorkSheetHead({
       </PageHeading>
       <p className="text-base text-muted-foreground">
         <time dateTime={day}>
-          <bdi>{whenText(day, formatTime(startsAt), formatTime(endsAt))}</bdi>
+          <bdi>{dayText(day)}</bdi>
         </time>
       </p>
     </div>

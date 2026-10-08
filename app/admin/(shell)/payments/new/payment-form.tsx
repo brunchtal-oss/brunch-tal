@@ -14,7 +14,8 @@ import { LinkShare } from "@/components/admin/link-share"
 import { RadioCardGroup } from "@/components/admin/radio-card"
 import { SensitiveConfirmDialog } from "@/components/admin/sensitive-confirm-dialog"
 import { InlineNotice } from "@/components/shared/inline-notice"
-import { Button, buttonVariants } from "@/components/ui/button"
+import { Button } from "@/components/ui/button"
+import { buttonClass } from "@/components/shared/button-class"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
   Field,
@@ -394,7 +395,7 @@ export function PaymentForm({
     <form
       ref={formRef}
       onSubmit={onSubmit}
-      className="flex flex-col gap-5"
+      className="flex flex-col gap-6"
       noValidate
     >
       <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
@@ -622,7 +623,7 @@ export function PaymentForm({
         <summary className="min-h-11 cursor-pointer py-2 text-base">
           {copy.more}
         </summary>
-        <div className="mt-3 flex flex-col gap-5">
+        <div className="mt-3 flex flex-col gap-6">
           <Field>
             <FieldLabel htmlFor="reference">{copy.reference}</FieldLabel>
             <Input
@@ -645,7 +646,7 @@ export function PaymentForm({
       </details>
 
       <section aria-labelledby="preview-title" aria-live="polite">
-        <h2 id="preview-title" className="mb-2 text-sm font-semibold">
+        <h2 id="preview-title" className="mb-2 text-[15px] font-semibold">
           {copy.preview}
         </h2>
         {shownPreview?.ok && (
@@ -830,7 +831,7 @@ function AnotherPayment() {
   return (
     <a
       href="/admin/payments/new"
-      className={buttonVariants({
+      className={buttonClass({
         variant: "outline",
         size: "lg",
         className: BUTTON,
@@ -867,7 +868,7 @@ export function ApprovedPurchase({
   }, [])
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6">
       <div ref={noticeRef} tabIndex={-1} className="outline-none">
         <InlineNotice tone="success">
           {copy.successExisting(customerName)}
@@ -887,7 +888,7 @@ export function ApprovedPurchase({
       {!placed && (
         <a
           href={`/admin/sessions/book?customer=${encodeURIComponent(customerId)}`}
-          className={buttonVariants({
+          className={buttonClass({
             variant: "default",
             size: "lg",
             className: BUTTON,
@@ -899,7 +900,7 @@ export function ApprovedPurchase({
       <AnotherPayment />
       <a
         href="/admin/payments"
-        className={buttonVariants({
+        className={buttonClass({
           variant: "ghost",
           size: "lg",
           className: BUTTON,
@@ -934,7 +935,7 @@ export function ApprovedLink({
   // A repeat of an approval that already succeeded: no link to show.
   if (!link) {
     return (
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-6">
         <div ref={noticeRef} tabIndex={-1} className="outline-none">
           <InlineNotice tone="warning">{copy.linkNotShown}</InlineNotice>
         </div>
@@ -944,7 +945,7 @@ export function ApprovedLink({
   }
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6">
       <div ref={noticeRef} tabIndex={-1} className="outline-none">
         <InlineNotice tone="success">{copy.success}</InlineNotice>
       </div>
@@ -1028,7 +1029,7 @@ function EventRadioGroup({
       aria-describedby={invalid ? "event-error" : "event-hint"}
       className="flex flex-col gap-2 outline-none"
     >
-      <legend className="mb-1 text-sm font-medium">
+      <legend className="mb-1 text-[15px] font-semibold">
         {copy.event} {authCopy.required}
       </legend>
       <p id="event-hint" className="mb-1 text-[15px] text-muted-foreground">
@@ -1037,7 +1038,7 @@ function EventRadioGroup({
       {options.map((option) => (
         <label
           key={option.id}
-          className="group flex min-h-12 cursor-pointer items-center gap-3 rounded-sm border border-muted-foreground bg-card px-3.5 py-2.5 text-base has-checked:border-foreground has-checked:bg-muted has-focus-visible:ring-2 has-focus-visible:ring-primary has-focus-visible:ring-offset-2 has-focus-visible:ring-offset-background has-disabled:cursor-not-allowed has-disabled:border-border has-disabled:text-muted-foreground"
+          className="group flex min-h-12 cursor-pointer items-center gap-3 rounded-sm border border-muted-foreground bg-card px-4 py-3 text-base has-checked:border-foreground has-checked:bg-muted has-focus-visible:ring-2 has-focus-visible:ring-primary has-focus-visible:ring-offset-2 has-focus-visible:ring-offset-background has-disabled:cursor-not-allowed has-disabled:border-border has-disabled:text-muted-foreground"
         >
           <input
             type="radio"

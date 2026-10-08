@@ -30,7 +30,7 @@ describe("sessionStatus", () => {
         booked: true,
         availability: { label: "full", registrationOpen: true },
       })
-    ).toEqual({ tone: "success", text: customerCopy.booked })
+    ).toEqual({ tone: "booked", text: customerCopy.booked })
   })
 
   it("maps each label to its tone and word; full is muted, not red", () => {
@@ -51,7 +51,7 @@ describe("sessionStatus", () => {
     const closed = { label: "available", registrationOpen: false } as const
     expect(sessionStatus({ booked: false, availability: closed })).toBe(null)
     expect(sessionStatus({ booked: true, availability: closed })).toEqual({
-      tone: "success",
+      tone: "booked",
       text: customerCopy.booked,
     })
   })

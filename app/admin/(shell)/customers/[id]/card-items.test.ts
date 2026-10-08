@@ -167,12 +167,15 @@ describe("the balances", () => {
         ],
       })
     )
-    expect(lines.map((l) => [l.kind, l.text])).toEqual([
-      ["used", copy.entryUsed("יום שני 12.10")],
-      ["used", copy.entryUsed("יום חמישי 15.10")],
-      ["booked", copy.entryBooked("יום שני 19.10")],
-      ["free", copy.entryFree],
+    expect(lines.map((l) => [l.kind, l.text, l.title])).toEqual([
+      ["used", copy.entryUsed("יום שני 12.10"), "בראנץ׳ א"],
+      ["used", copy.entryUsed("יום חמישי 15.10"), "בראנץ׳ א"],
+      ["booked", copy.entryBooked("יום שני 19.10"), "בראנץ׳ א"],
+      ["free", copy.entryFree, null],
     ])
+    // Third person, like the customer's log (user decision 2026-10-08).
+    expect(copy.entryUsed("יום שני 12.10")).toBe("השתתפה · יום שני 12.10")
+    expect(copy.entryBooked("יום שני 19.10")).toBe("נרשמה · יום שני 19.10")
     expect(new Set(lines.map((l) => l.key)).size).toBe(4)
   })
 
@@ -330,7 +333,8 @@ describe("the other parts", () => {
       key: "b1",
       href: "/admin/sessions/ev1",
       title: "בראנץ׳ אמהות",
-      when: expect.stringContaining("12.10 · 10:00"),
+      // The weekday and date only (design round 2026-10-08).
+      when: "יום שני 12.10",
       startsAt: MON_12,
       status: copy.bookingStatus.completed,
       tone: "pending",

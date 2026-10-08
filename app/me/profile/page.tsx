@@ -15,7 +15,6 @@ import { localToday } from "@/lib/time"
 
 import { BabiesSection } from "./babies-section"
 import { DetailsSection } from "./details-section"
-import { PhotoConsentSection } from "./photo-consent-form"
 import { ProfileToaster } from "./profile-toaster"
 
 export const metadata: Metadata = {
@@ -30,12 +29,17 @@ const PROFILE_LEGAL = ["privacy", "accessibility"] as const
 
 // The customer's profile (story 2.10, CAP-8, CAP-40): her details (name and
 // dietary notes to edit, phone and email to read), her babies, the photo
-// consent and the links. Only her own rows (RLS); the email from the Auth
+// consent as a row to its own page (/me/profile/photos, user decision
+// 2026-10-08) and the links. Only her own rows (RLS); the email from the Auth
 // claims. Rendered inside the layout's customer gate.
 export default function ProfilePage() {
   return (
     <>
-      <PageHeading>{shellCopy.nav.profileTitle}</PageHeading>
+      {/* No visible heading (user decision 2026-10-08); the page keeps its
+          h1 for screen readers and the route focus. */}
+      <PageHeading className="sr-only">
+        {shellCopy.nav.profileTitle}
+      </PageHeading>
       <Suspense
         fallback={<p className="text-muted-foreground">{shellCopy.loading}</p>}
       >
@@ -57,9 +61,7 @@ async function Profile() {
     await Promise.all([
       supabase
         .from("profiles")
-        .select(
-          "full_name, dietary_notes, phone_e164, photo_consent, personal_photo_consent"
-        )
+        .select("full_name, dietary_notes, phone_e164")
         .eq("id", userId ?? "")
         .maybeSingle(),
       supabase
@@ -93,13 +95,19 @@ async function Profile() {
         today={today}
       />
       {photoContent && (
-        <PhotoConsentSection
-          content={photoContent}
-          consents={{
-            atmosphere: profile.photo_consent,
-            personal: profile.personal_photo_consent,
-          }}
-        />
+        // A heading-size link to its own page, in the section's place (user
+        // decision 2026-10-08): the title in display-sm, a chevron after it.
+        <Link
+          href="/me/profile/photos"
+          className="inline-flex min-h-11 items-center gap-2 self-start rounded-lg font-heading text-[22px] leading-[1.25] font-light"
+        >
+          {copy.photoTitle}
+          <ChevronLeftIcon
+            aria-hidden
+            strokeWidth={1.5}
+            className="size-5 shrink-0 text-muted-foreground"
+          />
+        </Link>
       )}
       <nav aria-label={copy.linksLabel}>
         <ul className="flex flex-col divide-y divide-border border-y border-border">

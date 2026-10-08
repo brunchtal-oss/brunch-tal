@@ -90,12 +90,18 @@ export const imageSchema = z.object({
 
 export type ImageContent = z.infer<typeof imageSchema>
 
-// home › hero (story 5.1): the title and an optional description, and from
+// No field of the editor is required (user decision 2026-10-08) except
+// three that stay as they were: the accessibility statement's fields, the
+// two photo-consent texts and the business details' WhatsApp number. The
+// site leaves out an empty heading, an item with nothing in it and a block
+// with nothing at all (lib/content/visible.ts).
+
+// home › hero (story 5.1): an optional title and description, and from
 // 5.4 an optional photo. cta_label is no longer edited or shown (the hero has
 // no button, user decision 2026-10-05); it stays optional so a hero
 // published with it still parses (story 5.3).
 export const heroSchema = z.object({
-  title: z.string().trim().min(1).max(80),
+  title: optionalText(80),
   description: optionalText(300),
   cta_label: optionalText(40),
   image: imageSchema.optional(),
@@ -148,7 +154,7 @@ const hidden = z.boolean().optional()
 // (story 5.4; the editor offers it only in about › main).
 export const textBlockSchema = z.object({
   eyebrow: optionalText(60),
-  title: requiredText(120),
+  title: optionalText(120),
   body: optionalText(5000),
   image: imageSchema.optional(),
   hidden,
@@ -162,8 +168,8 @@ export const stepsSchema = z.object({
   items: z
     .array(
       z.object({
-        title: requiredText(120),
-        body: requiredText(1000),
+        title: optionalText(120),
+        body: optionalText(1000),
         hidden,
       })
     )
@@ -180,8 +186,8 @@ export const faqSchema = z.object({
   items: z
     .array(
       z.object({
-        question: requiredText(300),
-        answer: requiredText(3000),
+        question: optionalText(300),
+        answer: optionalText(3000),
         hidden,
       })
     )
@@ -198,8 +204,8 @@ export type FaqContent = z.infer<typeof faqSchema>
 // saved before 5.4 has no kind and is text.
 const textTestimonialSchema = z.object({
   kind: z.literal("text"),
-  name: requiredText(80),
-  text: requiredText(1500),
+  name: optionalText(80),
+  text: optionalText(1500),
   hidden,
 })
 
@@ -232,10 +238,28 @@ export const testimonialsSchema = z.object({
 
 export type TestimonialsContent = z.infer<typeof testimonialsSchema>
 
+// The gallery's columns on the phone (user decision 2026-10-08): 2, 3 or
+// 4, chosen in the editor; missing means 3 (content published before has
+// none; the site and the editor read it as 3). The editor sends its choice
+// as text ("3").
+export const GALLERY_COLUMNS = [2, 3, 4] as const
+export type GalleryColumns = (typeof GALLERY_COLUMNS)[number]
+
+const galleryColumns = z.preprocess(
+  (value) =>
+    typeof value === "string"
+      ? value.trim() === ""
+        ? undefined
+        : Number(value)
+      : value,
+  z.union([z.literal(2), z.literal(3), z.literal(4)]).optional()
+)
+
 // gallery › photos (story 5.4): the gallery, before the testimonials on
 // /gallery. Each item is an image with an optional caption.
 export const gallerySchema = z.object({
   title: optionalText(120),
+  columns: galleryColumns,
   items: z
     .array(
       z.object({
@@ -259,12 +283,19 @@ export const footerSchema = z.object({
   items: z
     .array(
       z.object({
-        label: requiredText(60),
-        url: z
-          .string()
-          .trim()
-          .min(1)
-          .pipe(z.url({ protocol: /^https$/ }).max(500)),
+        label: optionalText(60),
+        // Optional too (2026-10-08); a link is shown only with both.
+        url: z.preprocess(
+          (value) =>
+            typeof value === "string" && value.trim() === ""
+              ? undefined
+              : value,
+          z
+            .string()
+            .trim()
+            .pipe(z.url({ protocol: /^https$/ }).max(500))
+            .optional()
+        ),
         hidden,
       })
     )
@@ -282,7 +313,7 @@ export type FooterContent = z.infer<typeof footerSchema>
 // check): the whole wording in one field, pasted as is; a line starting with
 // "## " is a heading (h2 on the page).
 export const legalTextSchema = z.object({
-  body: requiredText(50000),
+  body: optionalText(50000),
 })
 
 export type LegalTextContent = z.infer<typeof legalTextSchema>
@@ -342,26 +373,10 @@ export function schemaForKind(kind: string) {
     : null
 }
 
-// The text blocks whose body is required (story 5.3). home › contact stays a
-// heading with the WhatsApp button.
-export const BODY_REQUIRED_SECTIONS: readonly string[] = [
-  "home/intro",
-  "about/main",
-  "contact/intro",
-]
-
-const textBlockWithBodySchema = textBlockSchema.extend({
-  body: requiredText(5000),
-})
-
 // The schema the editor and its Server Actions check a section with: the
-// kind's schema, stricter for some sections. The site keeps parsing by kind
-// (schemaForKind), so content that is already published is not refused.
-export function schemaForSection(slug: string, key: string, kind: string) {
-  if (
-    kind === "text_block" &&
-    BODY_REQUIRED_SECTIONS.includes(`${slug}/${key}`)
-  )
-    return textBlockWithBodySchema
+// kind's schema (no section is stricter since 2026-10-08, when the bodies
+// of home › intro, about › main and contact › intro stopped being
+// required).
+export function schemaForSection(_slug: string, _key: string, kind: string) {
   return schemaForKind(kind)
 }

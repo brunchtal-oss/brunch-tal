@@ -3,8 +3,12 @@ import {
   ClipboardListIcon,
   CreditCardIcon,
   EllipsisIcon,
+  FileTextIcon,
   HouseIcon,
+  Link2Icon,
+  PackageIcon,
   ReceiptTextIcon,
+  SettingsIcon,
   UserRoundIcon,
   UsersRoundIcon,
 } from "lucide-react"
@@ -20,6 +24,11 @@ const ICONS = {
   profile: UserRoundIcon,
   more: EllipsisIcon,
   customers: UsersRoundIcon,
+  // The rows of the admin's "more" (user decision 2026-10-08).
+  links: Link2Icon,
+  products: PackageIcon,
+  content: FileTextIcon,
+  settings: SettingsIcon,
 } satisfies Record<NavIconKey, unknown>
 
 // Decorative: the item's label is always visible next to it.

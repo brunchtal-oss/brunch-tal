@@ -13,6 +13,7 @@ import {
 import {
   formatDayMonth,
   formatLocalDate,
+  formatSessionDate,
   formatSessionDateTime,
   formatTime,
   formatWeekday,
@@ -111,8 +112,9 @@ export function localDateTime(instant: string): string {
   return `${formatLocalDate(instant)}T${formatTime(instant)}`
 }
 
-// "יום שני 15.12" of a plain local date.
-function dayText(date: string): string {
+// "יום שני 15.12" of a plain local date (also the work sheet and the work
+// list: no time there, design round 2026-10-08).
+export function dayText(date: string): string {
   return `${formatWeekday(date)} ${formatDayMonth(date)}`
 }
 
@@ -302,12 +304,13 @@ export function descriptionText(value: string | null): string {
   return trimmed === "" ? adminCopy.products.empty : trimmed
 }
 
-// The list row's line: "יום שני 15.12 · 10:00 · 12 מקומות".
+// The list row's line: "יום שני 15.12 · 12 מקומות" (no time, design round
+// 2026-10-08).
 export function listSummary(row: {
   starts_at: string
   capacity_adults: number
 }): string {
-  return `${formatSessionDateTime(row.starts_at)} · ${copy.places(row.capacity_adults)}`
+  return `${formatSessionDate(row.starts_at)} · ${copy.places(row.capacity_adults)}`
 }
 
 // --- The editor's changes ---------------------------------------------------

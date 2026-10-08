@@ -1,4 +1,4 @@
-import { BODY_REQUIRED_SECTIONS } from "@/lib/content/schema"
+import { GALLERY_COLUMNS } from "@/lib/content/schema"
 import { adminCopy } from "@/lib/copy/admin"
 
 import type { ContentObject, SectionRef } from "./content-items"
@@ -69,7 +69,8 @@ export type ListField = {
   fields: readonly ItemFieldSpec[]
 }
 
-export type EditorFieldSpec = TextField | ImageField | ListField
+// A choice can also be a field of the block (the gallery's columns).
+export type EditorFieldSpec = TextField | ImageField | ChoiceField | ListField
 
 export type SectionSpec = {
   fields: readonly EditorFieldSpec[]
@@ -195,19 +196,16 @@ export function sectionSpec(ref: SectionRef): SectionSpec {
         ],
       }
     case "text_block": {
-      const bodyRequired = BODY_REQUIRED_SECTIONS.includes(
-        `${ref.slug}/${ref.key}`
-      )
+      // No required body (user decision 2026-10-08).
       return {
         hideable: true,
         fields: [
           text("eyebrow", copy.textBlock.eyebrow, { maxLength: 60 }),
           text("title", copy.textBlock.title, { maxLength: 120 }),
-          text(
-            "body",
-            bodyRequired ? copy.textBlock.body : copy.textBlock.bodyOptional,
-            { multiline: true, maxLength: 5000 }
-          ),
+          text("body", copy.textBlock.bodyOptional, {
+            multiline: true,
+            maxLength: 5000,
+          }),
           // Only about › main has an image (story 5.4).
           ...(ref.slug === "about" && ref.key === "main"
             ? [image("image", copy.blockImage, { aspects: PORTRAIT_ASPECTS })]
@@ -304,6 +302,16 @@ export function sectionSpec(ref: SectionRef): SectionSpec {
         hideable: true,
         fields: [
           listTitle,
+          {
+            type: "choice",
+            name: "columns",
+            label: copy.gallery.columns,
+            options: GALLERY_COLUMNS.map((n) => ({
+              value: String(n),
+              label: String(n),
+            })),
+            defaultValue: "3",
+          },
           {
             type: "list",
             name: "items",
@@ -476,9 +484,18 @@ export function fromContent(
   const itemImages = imageFields(list?.fields ?? [])
   const state: EditorState = {
     text: Object.fromEntries(
-      spec.fields
-        .filter((field): field is TextField => field.type === "text")
-        .map((field) => [field.name, str(content[field.name])])
+      spec.fields.flatMap((field) =>
+        field.type === "text"
+          ? [[field.name, str(content[field.name])]]
+          : field.type === "choice"
+            ? [
+                [
+                  field.name,
+                  itemValue(field, String(content[field.name] ?? "")),
+                ],
+              ]
+            : []
+      )
     ),
     items: rawItems.map((raw, index) => {
       const item = (raw ?? {}) as Record<string, unknown>
@@ -526,6 +543,8 @@ export function toContent(
   for (const field of spec.fields) {
     if (field.type === "text") {
       content[field.name] = state.text[field.name] ?? ""
+    } else if (field.type === "choice") {
+      content[field.name] = state.text[field.name] ?? field.defaultValue
     } else if (field.type === "image") {
       const value = state.images?.[field.name]
       if (value) content[field.name] = imageContent(value)
@@ -658,4 +677,36 @@ export function stateImages(state: EditorState): ImageValue[] {
     }
   }
   return all
+}
+
+// The gallery's arrange view (user decision 2026-10-08): the items at `a`
+// and `b` change places, the others stay put. Out of range or the same
+// place: the items unchanged (a copy).
+export function swapItems(
+  items: readonly EditorItem[],
+  a: number,
+  b: number
+): EditorItem[] {
+  const next = [...items]
+  if (a === b || a < 0 || b < 0 || a >= items.length || b >= items.length) {
+    return next
+  }
+  ;[next[a], next[b]] = [next[b], next[a]]
+  return next
+}
+
+// Tap to swap: a tap with nothing selected selects; on the selected one it
+// cancels; on another photo the two swap places (and the selection ends).
+export type ArrangeTap =
+  | { kind: "select"; index: number }
+  | { kind: "cancel" }
+  | { kind: "swap"; a: number; b: number }
+
+export function arrangeTap(
+  selected: number | null,
+  tapped: number
+): ArrangeTap {
+  if (selected === null) return { kind: "select", index: tapped }
+  if (selected === tapped) return { kind: "cancel" }
+  return { kind: "swap", a: selected, b: tapped }
 }

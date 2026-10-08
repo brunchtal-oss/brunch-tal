@@ -57,7 +57,7 @@ async function TemplatesList() {
             href={`/admin/settings/templates/${row.type}`}
             className="flex min-h-12 items-center justify-between gap-3 py-3"
           >
-            <span className="flex min-w-0 flex-col gap-0.5">
+            <span className="flex min-w-0 flex-col gap-1">
               <span className="text-base font-semibold">
                 {copy.types[row.type] ?? row.type}
               </span>
