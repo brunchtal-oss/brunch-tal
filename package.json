@@ -18,7 +18,9 @@
     "test:db": "vitest run --project db",
     "test:watch": "vitest --project unit",
     "dev:reset-link": "node scripts/dev-reset-link.mjs",
-    "dev:seed-media": "node scripts/dev-seed-media.mjs"
+    "dev:seed-media": "node scripts/dev-seed-media.mjs",
+    "demo:seed": "node scripts/demo-seed.mjs",
+    "demo:clear": "node scripts/demo-clear.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
