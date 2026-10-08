@@ -9,7 +9,6 @@ import { PageHeading } from "@/components/shared/page-heading"
 import { StatusChip } from "@/components/shared/status-chip"
 import { customerCopy } from "@/lib/copy/customer"
 import { shellCopy } from "@/lib/copy/shell"
-import { formatAgorot } from "@/lib/money"
 import { createClient } from "@/lib/supabase/server"
 import { formatDayMonth, formatLocalDate } from "@/lib/time"
 
@@ -25,9 +24,10 @@ export const metadata: Metadata = {
 
 // One purchase of hers (story 4.12, CAP-9; below the purchase history,
 // user decision 2026-10-06): back to the history, the name (h1), one line
-// with the price, the purchase date and the validity (or the word of an
-// ended one), and for a card its entries ("ניצלת X/N · נרשמת Y/N" with the
-// plates); then the movement log by time. Every balance comes from
+// with the purchase date and the validity (or the word of an ended one; no
+// price, user decision 2026-10-08), and for a card its entries ("ניצלת X/N
+// · נרשמת Y/N" with the plates); then the movement log: one row per
+// booking by its state, with the session's day and title. Every balance comes from
 // get_my_entitlements; the movements, bookings and sessions from RLS. An id
 // that is not hers, or does not exist, is a plain 404 (nothing about it is
 // shown). Rendered inside the layout's customer gate.
@@ -100,7 +100,7 @@ async function EntitlementContent({
   const isCard = entitlement.kind === "card"
 
   return (
-    <div className="flex flex-col gap-10 pb-8">
+    <div className="flex flex-col gap-8 pb-8">
       <div className="flex flex-col gap-3">
         <Link
           href="/me/purchases"
@@ -113,9 +113,6 @@ async function EntitlementContent({
           <bdi>{entitlementName(entitlement, names)}</bdi>
         </PageHeading>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[15px] text-muted-foreground">
-          <bdi className="text-foreground">
-            {formatAgorot(entitlement.amountAgorot)}
-          </bdi>
           <span>
             {customerCopy.purchasedOn}{" "}
             <time dateTime={entitlement.paidOn}>
@@ -172,7 +169,7 @@ async function EntitlementContent({
       <section aria-labelledby="history-title" className="flex flex-col gap-3">
         <h2
           id="history-title"
-          className="font-heading text-xl leading-tight font-light"
+          className="font-heading text-[22px] leading-[1.25] font-light"
         >
           {customerCopy.historyTitle}
         </h2>
@@ -181,20 +178,35 @@ async function EntitlementContent({
         ) : (
           <ol className="flex flex-col divide-y divide-border border-y border-border">
             {history.map((entry) => (
-              <li
-                key={entry.id}
-                className="grid grid-cols-[1fr_auto] items-baseline gap-x-4 gap-y-0.5 py-3"
-              >
-                <span className="text-base font-semibold">{entry.label}</span>
-                <span className="text-base font-semibold tabular-nums">
-                  {entry.units && <bdi dir="ltr">{entry.units}</bdi>}
-                </span>
-                <span className="col-span-2 flex flex-wrap gap-x-4 text-[15px] text-muted-foreground">
-                  {entry.session && <bdi>{entry.session}</bdi>}
-                  <time dateTime={formatLocalDate(entry.createdAt)}>
-                    <bdi>{formatDayMonth(entry.createdAt)}</bdi>
-                  </time>
-                </span>
+              <li key={entry.id} className="flex flex-col gap-1 py-3">
+                {entry.kind === "booking" ? (
+                  <>
+                    <span className="text-base font-semibold">
+                      {entry.label}
+                      {entry.day && entry.startsAt && (
+                        <>
+                          {" · "}
+                          <time dateTime={formatLocalDate(entry.startsAt)}>
+                            <bdi>{entry.day}</bdi>
+                          </time>
+                        </>
+                      )}
+                    </span>
+                    {entry.title && (
+                      <bdi className="text-[15px] text-muted-foreground">
+                        {entry.title}
+                      </bdi>
+                    )}
+                  </>
+                ) : (
+                  <span className="text-base font-semibold">
+                    {entry.label}
+                    {" · "}
+                    <time dateTime={formatLocalDate(entry.createdAt)}>
+                      <bdi>{formatDayMonth(entry.createdAt)}</bdi>
+                    </time>
+                  </span>
+                )}
               </li>
             ))}
           </ol>

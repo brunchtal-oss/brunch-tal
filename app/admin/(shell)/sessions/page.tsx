@@ -4,7 +4,7 @@ import Link from "next/link"
 import { PlusIcon } from "lucide-react"
 
 import { PageHeading } from "@/components/shared/page-heading"
-import { buttonVariants } from "@/components/ui/button"
+import { buttonClass } from "@/components/shared/button-class"
 import { adminCopy } from "@/lib/copy/admin"
 import { shellCopy } from "@/lib/copy/shell"
 import { createClient } from "@/lib/supabase/server"
@@ -29,22 +29,29 @@ export default function SessionsPage() {
   return (
     <>
       <PageHeading>{copy.title}</PageHeading>
-      <Link
-        href="/admin/sessions/new"
-        className={buttonVariants({
-          variant: "outline",
-          size: "lg",
-          className: "h-12 self-start border-foreground px-4 text-base",
-        })}
-      >
-        <PlusIcon aria-hidden strokeWidth={1.5} className="size-5" />
-        {copy.add}
-      </Link>
-      <Suspense
-        fallback={<p className="text-muted-foreground">{shellCopy.loading}</p>}
-      >
-        <SessionsContent />
-      </Suspense>
+      {/* button-primary at inline-start, 12px above the first session; the
+          content starts at inline-start, a 16px plus 8px before the text
+          (user decision 2026-10-08). */}
+      <div className="flex flex-col gap-3">
+        <Link
+          href="/admin/sessions/new"
+          className={buttonClass({
+            size: "lg",
+            className:
+              "h-12 items-center justify-start gap-2 self-start rounded-lg px-4 text-base font-semibold",
+          })}
+        >
+          <PlusIcon aria-hidden strokeWidth={1.5} className="size-4" />
+          {copy.addBrunch}
+        </Link>
+        <Suspense
+          fallback={
+            <p className="text-muted-foreground">{shellCopy.loading}</p>
+          }
+        >
+          <SessionsContent />
+        </Suspense>
+      </div>
     </>
   )
 }

@@ -269,10 +269,11 @@ describe("fieldChange", () => {
 })
 
 describe("listSummary", () => {
-  it("shows when and how many places", () => {
+  it("shows the day and how many places, never the time", () => {
     const text = listSummary(ROW)
     expect(text).toContain("15.12")
-    expect(text).toContain("10:00")
+    expect(text).not.toContain("10:00")
+    expect(text).not.toMatch(/\d{2}:\d{2}/)
     expect(text).toContain(copy.places(12))
   })
 })

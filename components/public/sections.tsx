@@ -5,6 +5,7 @@ import { ChevronDownIcon } from "lucide-react"
 import type { ImageMap, ResolvedImage } from "@/lib/content/pages"
 import type {
   FaqContent,
+  GalleryColumns,
   GalleryContent,
   StepsContent,
   TestimonialsContent,
@@ -44,7 +45,9 @@ export function PublicSection({
 }
 
 // The heading of a section: optional eyebrow (a quiet label the content
-// gives), the title in display-md, and the short olive rule.
+// gives), the title in display-md, and the short olive rule. Without a
+// title (optional since 2026-10-08) there is no h2 and no rule; an eyebrow
+// alone stays a quiet line.
 export function SectionHeading({
   id,
   eyebrow,
@@ -52,8 +55,9 @@ export function SectionHeading({
 }: {
   id: string
   eyebrow?: string
-  title: string
+  title?: string
 }) {
+  if (!title && !eyebrow) return null
   return (
     <div className="flex flex-col items-center text-center">
       {eyebrow && (
@@ -61,16 +65,20 @@ export function SectionHeading({
           {eyebrow}
         </p>
       )}
-      <h2
-        id={id}
-        className={cn(
-          "font-heading text-[26px] leading-[1.2] font-light text-balance",
-          eyebrow && "mt-2"
-        )}
-      >
-        {title}
-      </h2>
-      <div aria-hidden className="mt-4 h-px w-8 bg-brand-accent" />
+      {title && (
+        <>
+          <h2
+            id={id}
+            className={cn(
+              "font-heading text-[26px] leading-[1.2] font-light text-balance",
+              eyebrow && "mt-2"
+            )}
+          >
+            {title}
+          </h2>
+          <div aria-hidden className="mt-4 h-px w-8 bg-brand-accent" />
+        </>
+      )}
     </div>
   )
 }
@@ -89,8 +97,9 @@ export function TextBlockSection({
   children?: React.ReactNode
 }) {
   const id = useId()
+  // The section is named by its heading only when there is one.
   return (
-    <PublicSection titleId={id}>
+    <PublicSection titleId={content.title ? id : undefined}>
       {image && (
         <div className="relative mx-auto mb-8 aspect-[4/5] w-full max-w-[420px] overflow-hidden rounded-lg bg-muted">
           <Image
@@ -112,7 +121,12 @@ export function TextBlockSection({
       )}
       <SectionHeading id={id} eyebrow={content.eyebrow} title={content.title} />
       {content.body && (
-        <p className="mx-auto mt-5 max-w-[60ch] text-center text-[17px] leading-[1.65] text-pretty whitespace-pre-line">
+        <p
+          className={cn(
+            "mx-auto max-w-[60ch] text-center text-[17px] leading-[1.65] text-pretty whitespace-pre-line",
+            (content.title || content.eyebrow) && "mt-5"
+          )}
+        >
           {content.body}
         </p>
       )}
@@ -147,12 +161,21 @@ export function StepsSection({
               {index + 1}
             </span>
             <div>
-              <h3 className="text-base leading-[1.35] font-semibold">
-                {step.title}
-              </h3>
-              <p className="mt-1.5 text-base leading-normal whitespace-pre-line">
-                {step.body}
-              </p>
+              {step.title && (
+                <h3 className="text-base leading-[1.35] font-semibold">
+                  {step.title}
+                </h3>
+              )}
+              {step.body && (
+                <p
+                  className={cn(
+                    "text-base leading-normal whitespace-pre-line",
+                    step.title && "mt-1.5"
+                  )}
+                >
+                  {step.body}
+                </p>
+              )}
             </div>
           </li>
         ))}
@@ -175,21 +198,35 @@ export function FaqSection({
     <PublicSection titleId={content.title ? id : undefined} label={label}>
       {content.title && <SectionHeading id={id} title={content.title} />}
       <div className={cn("border-t border-border", content.title && "mt-6")}>
-        {content.items.map((item, index) => (
-          <details key={index} className="group border-b border-border">
-            <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 py-3 text-base leading-[1.35] font-semibold [&::-webkit-details-marker]:hidden">
-              <span>{item.question}</span>
-              <ChevronDownIcon
-                aria-hidden
-                strokeWidth={1.5}
-                className="size-5 shrink-0 text-muted-foreground transition-transform duration-150 group-open:rotate-180"
-              />
-            </summary>
-            <p className="pb-5 text-base leading-normal whitespace-pre-line">
-              {item.answer}
+        {content.items.map((item, index) =>
+          // An answer without a question is a plain paragraph (nothing to
+          // open); a question without an answer is plain text too.
+          !item.question || !item.answer ? (
+            <p
+              key={index}
+              className={cn(
+                "border-b border-border py-3 text-base leading-normal whitespace-pre-line",
+                item.question && "font-semibold"
+              )}
+            >
+              {item.question ?? item.answer}
             </p>
-          </details>
-        ))}
+          ) : (
+            <details key={index} className="group border-b border-border">
+              <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 py-3 text-base leading-[1.35] font-semibold [&::-webkit-details-marker]:hidden">
+                <span>{item.question}</span>
+                <ChevronDownIcon
+                  aria-hidden
+                  strokeWidth={1.5}
+                  className="size-5 shrink-0 text-muted-foreground transition-transform duration-150 group-open:rotate-180"
+                />
+              </summary>
+              <p className="pb-5 text-base leading-normal whitespace-pre-line">
+                {item.answer}
+              </p>
+            </details>
+          )
+        )}
       </div>
     </PublicSection>
   )
@@ -241,14 +278,25 @@ export function TestimonialsSection({
       )
       continue
     }
+    // A text testimonial with neither part is skipped (visibleSection).
+    if (!item.text && !item.name) continue
     items.push(
       <figure className="flex w-full flex-col border-s-2 border-brand-accent ps-4">
-        <blockquote className="text-[17px] leading-[1.65] text-pretty whitespace-pre-line">
-          {item.text}
-        </blockquote>
-        <figcaption className="mt-2 text-[15px] text-muted-foreground">
-          {item.name}
-        </figcaption>
+        {item.text && (
+          <blockquote className="text-[17px] leading-[1.65] text-pretty whitespace-pre-line">
+            {item.text}
+          </blockquote>
+        )}
+        {item.name && (
+          <figcaption
+            className={cn(
+              "text-[15px] text-muted-foreground",
+              item.text && "mt-2"
+            )}
+          >
+            {item.name}
+          </figcaption>
+        )}
       </figure>
     )
   }
@@ -263,9 +311,18 @@ export function TestimonialsSection({
   )
 }
 
-// gallery › photos (story 5.4): two columns of photos at 4:5, each at its
-// focus point, with its caption under it; lazy (next/image loads a photo
-// only near the viewport), sized for the column.
+// The grid of each column count (user decision 2026-10-08): the gaps
+// shrink with the columns; at 4 the caption is smaller and at most two
+// lines, so it never overflows a narrow column (320px).
+const GALLERY_GRID: Record<GalleryColumns, string> = {
+  2: "grid-cols-2 gap-x-3 gap-y-5",
+  3: "grid-cols-3 gap-x-2 gap-y-4",
+  4: "grid-cols-4 gap-x-2 gap-y-3",
+}
+
+// gallery › photos (story 5.4): the photos at 4:5 in the columns Tal chose
+// (3 by default), each at its focus point, with its caption under it; lazy
+// (next/image loads a photo only near the viewport), sized for the column.
 export function GallerySection({
   content,
   label,
@@ -276,14 +333,13 @@ export function GallerySection({
   images: ImageMap
 }) {
   const id = useId()
+  const columns: GalleryColumns = content.columns ?? 3
   return (
     <PublicSection titleId={content.title ? id : undefined} label={label}>
       {content.title && <SectionHeading id={id} title={content.title} />}
       <ul
-        className={cn(
-          "grid grid-cols-2 gap-x-3 gap-y-5",
-          content.title && "mt-8"
-        )}
+        data-columns={columns}
+        className={cn("grid", GALLERY_GRID[columns], content.title && "mt-8")}
       >
         {content.items.map((item, index) => {
           const image = images[item.image.media_id]
@@ -296,7 +352,7 @@ export function GallerySection({
                     src={image.src}
                     alt={image.alt}
                     fill
-                    sizes="(min-width: 720px) 336px, 50vw"
+                    sizes={`(min-width: 720px) ${Math.ceil(672 / columns)}px, ${Math.ceil(100 / columns)}vw`}
                     unoptimized={image.unoptimized}
                     className="object-cover"
                     style={{
@@ -308,7 +364,12 @@ export function GallerySection({
                   />
                 </div>
                 {item.caption && (
-                  <figcaption className="mt-2 text-[15px] leading-snug text-pretty text-muted-foreground">
+                  <figcaption
+                    className={cn(
+                      "mt-2 leading-snug text-pretty break-words text-muted-foreground",
+                      columns === 4 ? "line-clamp-2 text-[13px]" : "text-[15px]"
+                    )}
+                  >
                     {item.caption}
                   </figcaption>
                 )}

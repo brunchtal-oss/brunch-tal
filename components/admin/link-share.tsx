@@ -2,7 +2,8 @@
 
 import { useState } from "react"
 
-import { Button, buttonVariants } from "@/components/ui/button"
+import { Button } from "@/components/ui/button"
+import { buttonClass } from "@/components/shared/button-class"
 import { Input } from "@/components/ui/input"
 import { adminCopy } from "@/lib/copy/admin"
 
@@ -60,7 +61,7 @@ export function LinkShare({ link }: { link: string }) {
         href={whatsappShareHref(link)}
         target="_blank"
         rel="noopener noreferrer"
-        className={buttonVariants({ size: "lg", className: BUTTON })}
+        className={buttonClass({ size: "lg", className: BUTTON })}
       >
         {copy.sendWhatsapp}
       </a>

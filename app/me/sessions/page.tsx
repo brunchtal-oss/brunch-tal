@@ -3,9 +3,9 @@ import type { Metadata } from "next"
 import Link from "next/link"
 
 import { PageHeading } from "@/components/shared/page-heading"
-import { SessionCard } from "@/components/shared/session-card"
+import { SessionRow, SessionRowList } from "@/components/shared/session-row"
 import { StatusChip } from "@/components/shared/status-chip"
-import { buttonVariants } from "@/components/ui/button"
+import { buttonClass } from "@/components/shared/button-class"
 import { customerCopy } from "@/lib/copy/customer"
 import { shellCopy } from "@/lib/copy/shell"
 import { callRpc } from "@/lib/rpc"
@@ -32,7 +32,8 @@ export const metadata: Metadata = {
 type SearchParams = Promise<Record<string, string | string[] | undefined>>
 
 // The sessions (CAP-13, story 3.2): every published session that has not
-// started, by date, as a session-card with its status-chip ("נרשמת" for her
+// started, by date, as a session-row (design round 2026-10-07) with its
+// status-chip under the date ("נרשמת" for her
 // own confirmed booking, including one placed for her before she joined;
 // otherwise the availability label, never a number). Story 3.3: with 2 or
 // more available entries, "לבחור כמה תאריכים" opens the selection mode
@@ -123,21 +124,23 @@ async function SessionsList({ searchParams }: { searchParams: SearchParams }) {
     : 0
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-3 pb-8">
+      {/* button-secondary at inline-start, 12px above the first row (user
+          decision 2026-10-08). */}
       {showsSelectEntry(available) && (
         <Link
           href="/me/sessions?select=1"
-          className={buttonVariants({
+          className={buttonClass({
             variant: "outline",
             size: "lg",
             className:
-              "h-12 max-w-xs rounded-[4px] border-foreground text-base font-semibold",
+              "h-12 self-start rounded-lg border border-foreground bg-transparent px-6 text-base font-semibold text-foreground",
           })}
         >
           {customerCopy.selectDates}
         </Link>
       )}
-      <ul className="flex flex-col gap-6 pb-8">
+      <SessionRowList>
         {sessions.map((session) => {
           const status = sessionStatus({
             booked: booked.has(session.id),
@@ -145,7 +148,7 @@ async function SessionsList({ searchParams }: { searchParams: SearchParams }) {
           })
           return (
             <li key={session.id}>
-              <SessionCard
+              <SessionRow
                 href={`/me/sessions/${session.id}`}
                 conceptName={session.concept_name}
                 photo={session.photo}
@@ -160,7 +163,7 @@ async function SessionsList({ searchParams }: { searchParams: SearchParams }) {
             </li>
           )
         })}
-      </ul>
+      </SessionRowList>
     </div>
   )
 }

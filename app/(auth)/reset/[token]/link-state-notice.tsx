@@ -1,7 +1,7 @@
 import Link from "next/link"
 
 import { Alert, AlertTitle } from "@/components/ui/alert"
-import { buttonVariants } from "@/components/ui/button"
+import { buttonClass } from "@/components/shared/button-class"
 import { authCopy } from "@/lib/copy/auth"
 
 // "Already used" and "expired / revoked / unknown" screens of a reset link.
@@ -14,7 +14,7 @@ export function LinkStateNotice({ state }: { state: "used" | "expired" }) {
         </Alert>
         <Link
           href="/login"
-          className={buttonVariants({
+          className={buttonClass({
             size: "lg",
             className: "h-12 text-base",
           })}

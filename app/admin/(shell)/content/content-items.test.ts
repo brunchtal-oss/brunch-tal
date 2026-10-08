@@ -224,15 +224,13 @@ describe("content items", () => {
   it("names the first error of each field, inside items too", () => {
     const hero: SectionRef = { slug: "home", key: "hero", kind: "hero" }
     expect(fieldErrors(hero, { title: "t", cta_label: "c" })).toBeNull()
+    // No field is required but three (2026-10-08): an empty title is fine.
     expect(
       fieldErrors(hero, { title: "", description: "x".repeat(301) })
     ).toEqual({
-      title: { kind: "required" },
       description: { kind: "tooLong", max: 300 },
     })
-    expect(fieldErrors(hero, {})).toMatchObject({
-      title: { kind: "required" },
-    })
+    expect(fieldErrors(hero, {})).toBeNull()
     expect(
       fieldErrors(
         { slug: "contact", key: "business_details", kind: "business_details" },
@@ -248,11 +246,11 @@ describe("content items", () => {
         {
           items: [
             { name: "a", text: "b" },
-            { name: "", text: "c" },
+            { name: "x".repeat(81), text: "" },
           ],
         }
       )
-    ).toEqual({ "items.1.name": { kind: "required" } })
+    ).toEqual({ "items.1.name": { kind: "tooLong", max: 80 } })
     expect(
       fieldErrors(
         { slug: "site", key: "footer", kind: "footer" },
@@ -262,21 +260,27 @@ describe("content items", () => {
     expect(
       fieldErrors(
         { slug: "site", key: "footer", kind: "footer" },
-        { items: [{ label: "x", url: " " }] }
+        { items: [{ label: "", url: " " }] }
       )
-    ).toEqual({ "items.0.url": { kind: "required" } })
+    ).toBeNull()
+    // The three that stay required (2026-10-08): the WhatsApp number.
+    expect(
+      fieldErrors(
+        { slug: "contact", key: "business_details", kind: "business_details" },
+        {}
+      )
+    ).toMatchObject({ whatsapp_phone: { kind: "required" } })
   })
 
-  it("requires the body by section, not by kind", () => {
+  it("requires no text block's body or title (2026-10-08)", () => {
     const intro: SectionRef = { slug: "home", key: "intro", kind: "text_block" }
     const contact: SectionRef = {
       slug: "home",
       key: "contact",
       kind: "text_block",
     }
-    expect(fieldErrors(intro, { title: "t", body: "" })).toEqual({
-      body: { kind: "required" },
-    })
+    expect(fieldErrors(intro, { title: "t", body: "" })).toBeNull()
+    expect(fieldErrors(intro, { title: "", body: "" })).toBeNull()
     expect(fieldErrors(contact, { title: "t", body: "" })).toBeNull()
   })
 

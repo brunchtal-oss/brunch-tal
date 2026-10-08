@@ -4,7 +4,7 @@ import { StatusChip } from "@/components/shared/status-chip"
 import { adminCopy } from "@/lib/copy/admin"
 
 import { toExpiringCard } from "../home-items"
-import { HomeSection } from "./home-section"
+import { HomeSection, cubeRows } from "./home-section"
 import { loadHome } from "./load-home"
 
 const copy = adminCopy.home
@@ -21,23 +21,20 @@ export async function ExpiringCards() {
       {rows.length === 0 ? (
         <p className="text-base text-muted-foreground">{copy.expiringEmpty}</p>
       ) : (
-        <ul className="flex flex-col">
+        <ul className={cubeRows}>
           {rows.map((row) => {
             const item = toExpiringCard(row)
             return (
-              <li
-                key={item.key}
-                className="flex flex-col gap-0.5 border-b border-border py-4 first:border-t"
-              >
+              <li key={item.key} className="flex flex-col gap-1 py-3">
                 {/* The chip shares only the name's line, so the entries
                     line takes the full width; "בתוקף עד DD.MM" never
                     breaks apart (phone check 2026-10-06). */}
-                <div className="flex items-start gap-2.5">
+                <div className="flex items-start gap-2">
                   <p className="min-w-0 flex-1 text-base leading-[1.35] font-semibold">
                     {item.href ? (
                       <Link
                         href={item.href}
-                        className="rounded-[4px] underline underline-offset-4"
+                        className="rounded-lg underline underline-offset-[3px]"
                       >
                         <bdi className="break-words">{item.title}</bdi>
                       </Link>
@@ -45,7 +42,7 @@ export async function ExpiringCards() {
                       <bdi className="break-words">{item.title}</bdi>
                     )}
                   </p>
-                  <StatusChip tone="warning" className="mt-0.5 shrink-0">
+                  <StatusChip tone="warning" className="shrink-0">
                     {copy.expiringChip}
                   </StatusChip>
                 </div>

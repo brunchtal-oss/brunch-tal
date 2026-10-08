@@ -156,6 +156,23 @@ describe("navigation", () => {
     expect(isCurrent(adminNav, home, "/admin/customers/1")).toBe(false)
   })
 
+  it("user decision 2026-10-08: an icon on every row of more, no accessibility row, sessions tab 'בראנצ׳ים'", () => {
+    expect(adminMoreNav.map((row) => row.icon)).toEqual([
+      "customers",
+      "links",
+      "products",
+      "content",
+      "settings",
+    ])
+    expect(adminMoreNav.some((row) => row.href === "/accessibility")).toBe(
+      false
+    )
+    expect(adminNav[1]).toMatchObject({
+      href: "/admin/sessions",
+      label: "בראנצ׳ים",
+    })
+  })
+
   it("shows the accessibility statement always, privacy and terms once published (story 5.5)", () => {
     const hrefs = (items: { href: string }[]) => items.map((i) => i.href)
     expect(hrefs(visibleLegalNav([]))).toEqual(["/accessibility"])

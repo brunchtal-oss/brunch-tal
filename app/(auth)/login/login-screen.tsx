@@ -6,7 +6,7 @@ import { InlineNotice } from "@/components/shared/inline-notice"
 import { LegalLinks } from "@/components/shared/legal-links"
 import { PageHeading } from "@/components/shared/page-heading"
 import { SignOutButton } from "@/components/shared/sign-out-button"
-import { buttonVariants } from "@/components/ui/button"
+import { buttonClass } from "@/components/shared/button-class"
 import {
   loginPageOutcome,
   toSessionRole,
@@ -99,7 +99,7 @@ function SessionNotice({ role }: { role: SessionRole }) {
           {isCustomer && (
             <Link
               href="/me"
-              className={buttonVariants({
+              className={buttonClass({
                 variant: "outline",
                 className:
                   "min-h-11 border-foreground bg-transparent px-4 text-base font-semibold",

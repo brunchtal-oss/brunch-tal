@@ -122,12 +122,12 @@ export function SessionEditor({
       {row.status === "draft" && <PublishBox eventId={row.id} />}
 
       <ul className="flex flex-col divide-y divide-border border-y border-border">
-        <li className="py-5">
+        <li className="py-6">
           {fieldRow(
             "when",
             copy.fields.when,
             <fieldset className="flex flex-col gap-3">
-              <legend className="mb-2 text-sm font-medium">
+              <legend className="mb-2 text-[15px] font-semibold">
                 {copy.fields.when}
               </legend>
               <WhenFields
@@ -145,7 +145,7 @@ export function SessionEditor({
             </fieldset>
           )}
         </li>
-        <li className="py-5">
+        <li className="py-6">
           {fieldRow(
             "description",
             copy.fields.description,
@@ -159,7 +159,7 @@ export function SessionEditor({
             />
           )}
         </li>
-        <li className="py-5">
+        <li className="py-6">
           {fieldRow(
             "capacity",
             copy.fields.capacity,
@@ -175,7 +175,7 @@ export function SessionEditor({
             />
           )}
         </li>
-        <li className="py-5">
+        <li className="py-6">
           {fieldRow(
             "closes",
             copy.fields.closes,
@@ -194,7 +194,7 @@ export function SessionEditor({
             copy.closesScope
           )}
         </li>
-        <li className="py-5">
+        <li className="py-6">
           {fieldRow(
             "price",
             copy.fields.price,
@@ -283,7 +283,7 @@ function ImageBox({
         <Button
           type="button"
           size="lg"
-          className="h-12 self-start px-5 text-base"
+          className="h-12 self-start px-6 text-base"
           aria-busy={pending || undefined}
           aria-disabled={pending || undefined}
           onClick={save}
@@ -334,7 +334,7 @@ function PublishBox({ eventId }: { eventId: string }) {
       <Button
         type="button"
         size="lg"
-        className="h-12 self-start px-5 text-base"
+        className="h-12 self-start px-6 text-base"
         aria-busy={pending || undefined}
         aria-disabled={pending || undefined}
         onClick={publish}

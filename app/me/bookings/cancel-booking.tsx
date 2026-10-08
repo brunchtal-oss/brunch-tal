@@ -192,7 +192,7 @@ export function CancelBooking({
                     href={contactHref}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={cn(LINK, "py-2.5")}
+                    className={cn(LINK, "py-3")}
                   >
                     {customerCopy.contactPhrase}
                   </a>
@@ -208,7 +208,7 @@ export function CancelBooking({
             onClick={confirm}
             aria-busy={busy || undefined}
             aria-disabled={busy || undefined}
-            className="mt-5 h-12 w-full rounded-[4px] text-base font-semibold"
+            className="mt-6 h-12 w-full rounded-[4px] text-base font-semibold"
           >
             {busy && <Spinner aria-hidden />}
             {copy.confirm}
@@ -225,7 +225,7 @@ export function CancelBooking({
                 href={contactHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={cn(LINK, "py-2.5")}
+                className={cn(LINK, "py-3")}
               >
                 {customerCopy.contactPhrase}
               </a>

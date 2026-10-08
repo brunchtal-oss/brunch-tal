@@ -11,7 +11,7 @@ import { Spinner } from "@/components/ui/spinner"
 import { adminCopy } from "@/lib/copy/admin"
 import { errorMessage, type ErrorCode } from "@/lib/errors"
 import { newIdempotencyKey } from "@/lib/idempotency"
-import { formatSessionDateTime } from "@/lib/time"
+import { formatSessionDate } from "@/lib/time"
 
 import { adminCancelBookingAction, previewAdminCancelAction } from "./actions"
 import { cancelReturnsText, type CancelPlan } from "./cancel-plan"
@@ -148,9 +148,7 @@ export function AttendeeCancel({
                 <>
                   <bdi>{sessionsCopy.sessionTitle(conceptName)}</bdi>
                   {" · "}
-                  <time dateTime={startsAt}>
-                    {formatSessionDateTime(startsAt)}
-                  </time>
+                  <time dateTime={startsAt}>{formatSessionDate(startsAt)}</time>
                 </>
               ),
             },

@@ -6,13 +6,14 @@ import { PageHeading } from "@/components/shared/page-heading"
 import { ResultNoticeHost } from "@/components/shared/result-notice"
 import { SessionCard } from "@/components/shared/session-card"
 import { StatusChip } from "@/components/shared/status-chip"
-import { buttonVariants } from "@/components/ui/button"
+import { buttonClass } from "@/components/shared/button-class"
 import { customerCopy } from "@/lib/copy/customer"
 import { shellCopy } from "@/lib/copy/shell"
 import { callRpc } from "@/lib/rpc"
 import { createClient } from "@/lib/supabase/server"
 import { formatDayMonth, formatWeekday } from "@/lib/time"
 
+import { sessionPhotos } from "../sessions/load-sessions"
 import { parseMyBookings, pastBookingStatus } from "./cancel-result"
 
 export const metadata: Metadata = {
@@ -42,6 +43,12 @@ async function Bookings() {
   const result = await callRpc(supabase, "get_my_bookings")
   if (!result.ok) throw new Error("get_my_bookings failed")
   const { upcoming, past } = parseMyBookings(result.data)
+  // The cards' photos (user decision 2026-10-08), read like the session
+  // screens; no RPC change.
+  const photos = await sessionPhotos(
+    supabase,
+    upcoming.map((b) => b.eventId)
+  )
 
   if (upcoming.length === 0 && past.length === 0) {
     return (
@@ -49,7 +56,7 @@ async function Bookings() {
         <p className="text-[17px]">{customerCopy.bookingsEmpty}</p>
         <Link
           href="/me/sessions"
-          className={buttonVariants({
+          className={buttonClass({
             size: "lg",
             className: "h-12 w-full max-w-xs text-base",
           })}
@@ -61,7 +68,7 @@ async function Bookings() {
   }
 
   return (
-    <ResultNoticeHost className="flex flex-col gap-10 pb-8">
+    <ResultNoticeHost className="flex flex-col gap-8 pb-8">
       {upcoming.length > 0 && (
         <section
           aria-labelledby="upcoming-title"
@@ -69,7 +76,7 @@ async function Bookings() {
         >
           <h2
             id="upcoming-title"
-            className="font-heading text-xl leading-tight font-light"
+            className="font-heading text-[22px] leading-[1.25] font-light"
           >
             {customerCopy.upcomingBookings}
           </h2>
@@ -79,9 +86,11 @@ async function Bookings() {
                 <SessionCard
                   href={`/me/sessions/${b.eventId}`}
                   conceptName={b.conceptName}
+                  photo={photos.get(b.eventId) ?? null}
                   startsAt={b.startsAt}
                   headingLevel={3}
                   layout="horizontal"
+                  showTime
                   statusText={customerCopy.booked}
                   status={
                     <StatusChip tone="success">
@@ -99,7 +108,7 @@ async function Bookings() {
         <section aria-labelledby="past-title" className="flex flex-col gap-3">
           <h2
             id="past-title"
-            className="font-heading text-xl leading-tight font-light"
+            className="font-heading text-[22px] leading-[1.25] font-light"
           >
             {customerCopy.pastBookings}
           </h2>

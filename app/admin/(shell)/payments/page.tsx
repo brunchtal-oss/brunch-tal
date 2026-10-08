@@ -3,7 +3,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 
 import { PageHeading } from "@/components/shared/page-heading"
-import { buttonVariants } from "@/components/ui/button"
+import { buttonClass } from "@/components/shared/button-class"
 import { adminCopy } from "@/lib/copy/admin"
 import { shellCopy } from "@/lib/copy/shell"
 import { callRpc } from "@/lib/rpc"
@@ -26,10 +26,12 @@ export default function PaymentsPage() {
   return (
     <>
       <PageHeading>{copy.title}</PageHeading>
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+      {/* The links screen right under "הוספת תשלום" (user decision
+          2026-10-08). */}
+      <div className="flex flex-col items-start gap-1">
         <Link
           href="/admin/payments/new"
-          className={buttonVariants({
+          className={buttonClass({
             size: "lg",
             className: "h-12 text-base",
           })}
@@ -38,7 +40,7 @@ export default function PaymentsPage() {
         </Link>
         <Link
           href="/admin/links"
-          className="inline-flex min-h-11 items-center text-[15px] underline underline-offset-4"
+          className="inline-flex min-h-11 items-center text-[15px] underline underline-offset-[3px]"
         >
           {adminCopy.payments.allLinks}
         </Link>

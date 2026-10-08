@@ -39,11 +39,11 @@ export function TaskRow({
   chip,
 }: TaskRowProps) {
   return (
-    <li className="relative flex min-h-11 flex-col gap-0.5 border-b border-border py-4 first:border-t">
+    <li className="relative flex min-h-11 flex-col gap-1 border-b border-border py-4 first:border-t">
       {/* Only the title shares its line with the chip and the chevron; the
           detail and the meta take the row's full width (phone check
           2026-10-06). */}
-      <div className="flex items-start gap-2.5">
+      <div className="flex items-start gap-2">
         <Link
           href={href}
           className="min-w-0 flex-1 rounded-[4px] text-base leading-[1.35] font-semibold after:absolute after:inset-0 after:content-['']"

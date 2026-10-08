@@ -118,7 +118,7 @@ export function ProductCreateForm({
       ref={formRef}
       onSubmit={onSubmit}
       noValidate
-      className="flex flex-col gap-5"
+      className="flex flex-col gap-6"
     >
       <InlineNotice tone="info">{copy.scopeNote}</InlineNotice>
 

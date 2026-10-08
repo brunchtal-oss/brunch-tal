@@ -33,7 +33,7 @@ export function ConceptHeader({
         sizes="(min-width: 640px) 640px, 100vw"
         priority
       />
-      <div className="px-6 pt-5">
+      <div className="px-6 pt-6">
         <h1 tabIndex={-1} className="flex flex-col gap-2 outline-offset-4">
           <span className="text-[15px] leading-none text-muted-foreground">
             {customerCopy.brunch}

@@ -13,7 +13,8 @@ import { PasswordInput } from "@/components/auth/password-input"
 import { ContactText } from "@/components/shared/contact-text"
 import { PhotoConsentQuestions } from "@/components/shared/photo-consent-fieldset"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Button, buttonVariants } from "@/components/ui/button"
+import { Button } from "@/components/ui/button"
+import { buttonClass } from "@/components/shared/button-class"
 import {
   Field,
   FieldDescription,
@@ -204,7 +205,7 @@ export function JoinForm({
         </Alert>
         <Link
           href="/login?next=/me"
-          className={buttonVariants({ size: "lg", className: BUTTON })}
+          className={buttonClass({ size: "lg", className: BUTTON })}
         >
           {joinCopy.goToLogin}
         </Link>

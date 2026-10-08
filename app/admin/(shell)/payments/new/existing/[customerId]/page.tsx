@@ -4,7 +4,7 @@ import Link from "next/link"
 
 import { InlineNotice } from "@/components/shared/inline-notice"
 import { PageHeading } from "@/components/shared/page-heading"
-import { buttonVariants } from "@/components/ui/button"
+import { buttonClass } from "@/components/shared/button-class"
 import { adminCopy } from "@/lib/copy/admin"
 import { shellCopy } from "@/lib/copy/shell"
 import { errorMessage } from "@/lib/errors"
@@ -57,7 +57,7 @@ async function ExistingCustomerContent({
         actions={
           <Link
             href="/admin/payments/new/existing"
-            className={buttonVariants({
+            className={buttonClass({
               variant: "outline",
               size: "lg",
               className: "h-11 text-base",

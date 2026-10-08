@@ -11,7 +11,7 @@ import { shellCopy } from "@/lib/copy/shell"
 import { formatLocalDate, localToday } from "@/lib/time"
 import { cn } from "@/lib/utils"
 
-import { HomeSection } from "../../home/home-section"
+import { PageSection } from "../../home/home-section"
 import { BackLink } from "./back-link"
 import {
   balanceViews,
@@ -85,10 +85,10 @@ async function CustomerCardContent({
         )}
       </header>
 
-      <HomeSection id="card-details" title={copy.details}>
+      <PageSection id="card-details" title={copy.details}>
         <dl className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
           {detailRows(card.profile).map((row) => (
-            <div key={row.label} className="flex flex-col gap-0.5">
+            <div key={row.label} className="flex flex-col gap-1">
               <dt className="text-[13px] text-muted-foreground">{row.label}</dt>
               <dd className="text-base break-words">
                 {typeof row.value === "string" ? (
@@ -104,9 +104,9 @@ async function CustomerCardContent({
             </div>
           ))}
         </dl>
-      </HomeSection>
+      </PageSection>
 
-      <HomeSection id="card-babies" title={copy.babies}>
+      <PageSection id="card-babies" title={copy.babies}>
         {babies.length === 0 ? (
           <Muted>{copy.noBabies}</Muted>
         ) : (
@@ -121,9 +121,9 @@ async function CustomerCardContent({
             ))}
           </ul>
         )}
-      </HomeSection>
+      </PageSection>
 
-      <HomeSection id="card-balances" title={copy.balances}>
+      <PageSection id="card-balances" title={copy.balances}>
         {balances.length === 0 ? (
           <Muted>{copy.noBalances}</Muted>
         ) : (
@@ -137,9 +137,9 @@ async function CustomerCardContent({
             )}
           </ul>
         )}
-      </HomeSection>
+      </PageSection>
 
-      <HomeSection id="card-history" title={copy.history}>
+      <PageSection id="card-history" title={copy.history}>
         <ul className="-mx-3 flex flex-col">
           <HistoryLink href={historyHref(card.profile.id, "bookings")}>
             {copy.bookingsLink(card.bookings.length)}
@@ -148,9 +148,9 @@ async function CustomerCardContent({
             {copy.purchasesLink(card.payments.length)}
           </HistoryLink>
         </ul>
-      </HomeSection>
+      </PageSection>
 
-      <HomeSection
+      <PageSection
         id="card-notes"
         title={copy.notes}
         aside={
@@ -163,7 +163,7 @@ async function CustomerCardContent({
           customerId={card.profile.id}
           notes={card.notes.map(toNoteItem)}
         />
-      </HomeSection>
+      </PageSection>
     </>
   )
 }
@@ -179,7 +179,7 @@ function BalancePlate({ item }: { item: BalanceItem }) {
         item.entries.length > 0 ? "pb-1" : "pb-4"
       )}
     >
-      <div className="flex items-start gap-2.5">
+      <div className="flex items-start gap-2">
         <p className="min-w-0 flex-1 text-[17px] leading-[1.35] font-semibold">
           <bdi className="break-words">{item.productName}</bdi>
         </p>
@@ -196,7 +196,7 @@ function BalancePlate({ item }: { item: BalanceItem }) {
           total={item.total}
         />
       )}
-      <div className="flex flex-col gap-0.5">
+      <div className="flex flex-col gap-1">
         <p className="text-base">
           <bdi>{item.summary}</bdi>
         </p>
@@ -208,7 +208,7 @@ function BalancePlate({ item }: { item: BalanceItem }) {
       </div>
       {item.entries.length > 0 ? (
         <details className="group">
-          <summary className="flex min-h-11 cursor-pointer list-none items-center gap-1.5 self-start text-[15px] font-semibold underline-offset-4 hover:underline [&::-webkit-details-marker]:hidden">
+          <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 self-start text-[15px] font-semibold underline-offset-4 hover:underline [&::-webkit-details-marker]:hidden">
             {copy.entriesToggle}
             <ChevronDownIcon
               aria-hidden
@@ -232,7 +232,7 @@ function BalancePlate({ item }: { item: BalanceItem }) {
 function SinglePlate({ item }: { item: SingleItem }) {
   return (
     <li className="flex flex-col gap-1 rounded-lg bg-muted p-4">
-      <div className="flex items-start gap-2.5">
+      <div className="flex items-start gap-2">
         <p className="min-w-0 flex-1 text-[17px] leading-[1.35] font-semibold">
           <bdi className="break-words">{item.productName}</bdi>
         </p>
@@ -249,14 +249,16 @@ function SinglePlate({ item }: { item: SingleItem }) {
   )
 }
 
-// The dot repeats the meter's plate (decorative; the words say it).
+// The dot repeats the meter's plate (decorative; the words say it). A used
+// or booked entry has the session's title under it, as in the customer's
+// log.
 function EntryRow({ line }: { line: EntryLine }) {
   return (
-    <li className="flex items-center gap-2.5 text-[15px]">
+    <li className="flex items-start gap-2 text-[15px]">
       <span
         aria-hidden
         className={cn(
-          "size-3 shrink-0 rounded-full",
+          "mt-1 size-3 shrink-0 rounded-full",
           line.kind === "used"
             ? "bg-primary"
             : line.kind === "booked"
@@ -264,7 +266,12 @@ function EntryRow({ line }: { line: EntryLine }) {
               : "border border-brand-accent"
         )}
       />
-      <bdi>{line.text}</bdi>
+      <span className="flex min-w-0 flex-col">
+        <bdi>{line.text}</bdi>
+        {line.title && (
+          <bdi className="text-muted-foreground">{line.title}</bdi>
+        )}
+      </span>
     </li>
   )
 }

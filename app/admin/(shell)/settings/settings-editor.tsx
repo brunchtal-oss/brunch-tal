@@ -95,7 +95,7 @@ export function SettingsEditor({ row }: { row: SettingsRow }) {
   const settingRow = (field: EditorField, children: React.ReactNode) => {
     const change = settingChange(field, row, draft)
     return (
-      <li className="py-5">
+      <li className="py-6">
         <ValueChangeRow
           label={copy.labels[field]}
           oldValue={change?.from ?? ""}
@@ -123,7 +123,7 @@ export function SettingsEditor({ row }: { row: SettingsRow }) {
     )
 
   return (
-    <div className="flex flex-col gap-10">
+    <div className="flex flex-col gap-8">
       <LinkGroup
         id="settings-business"
         title={copy.groups.business}
@@ -136,7 +136,7 @@ export function SettingsEditor({ row }: { row: SettingsRow }) {
         {settingRow(
           "close",
           <fieldset className="flex flex-col gap-3">
-            <legend className="mb-2 text-sm font-medium">
+            <legend className="mb-2 text-[15px] font-semibold">
               {copy.fields.close}
             </legend>
             <div className="grid grid-cols-2 gap-3">
@@ -164,7 +164,7 @@ export function SettingsEditor({ row }: { row: SettingsRow }) {
         {settingRow(
           "sessionHours",
           <fieldset className="flex flex-col gap-3">
-            <legend className="mb-2 text-sm font-medium">
+            <legend className="mb-2 text-[15px] font-semibold">
               {copy.fields.sessionHours}
             </legend>
             <div className="grid grid-cols-2 gap-3">
@@ -279,7 +279,7 @@ function LinkGroup({
         href={href}
         className="flex min-h-12 items-center justify-between gap-3 border-b border-border py-3"
       >
-        <span className="flex flex-col gap-0.5">
+        <span className="flex flex-col gap-1">
           <span className="text-base font-semibold">{label}</span>
           <span className="text-[13px] text-muted-foreground">{note}</span>
         </span>

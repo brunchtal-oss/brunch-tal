@@ -167,7 +167,7 @@ export function SessionCreateForm({
       ref={formRef}
       onSubmit={onSubmit}
       noValidate
-      className="flex flex-col gap-5"
+      className="flex flex-col gap-6"
     >
       <ConceptField
         name="concept"
@@ -271,7 +271,7 @@ export function SessionCreateForm({
       )}
 
       <div className="flex flex-col gap-3">
-        <p className="text-sm text-muted-foreground">{copy.create.note}</p>
+        <p className="text-[15px] text-muted-foreground">{copy.create.note}</p>
         <div className="grid grid-cols-2 gap-3">
           {/* The draft comes first: Enter in a field saves a draft, never
               publishes. */}

@@ -76,6 +76,19 @@ export function formatTime(value: DateInput): string {
   return `${hour}:${minute}`
 }
 
+/** The hour and minute in Jerusalem, as numbers (display only). */
+export function localHourMinute(value: DateInput): {
+  hour: number
+  minute: number
+} {
+  const { hour, minute } = parts(value, "en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  })
+  return { hour: Number(hour), minute: Number(minute) }
+}
+
 /** "יום שני" */
 export function formatWeekday(value: DateInput): string {
   return parts(value, "he-IL", { weekday: "long" }).weekday
@@ -92,13 +105,27 @@ export function formatSessionDateTime(value: DateInput): string {
   return `${formatWeekday(value)} ${formatDayMonth(value)} · ${formatTime(value)}`
 }
 
+/**
+ * "יום שני 12.10": a session's weekday and date without the time (design
+ * round, user decision 2026-10-08: the brunch time shows only where it
+ * serves the customer).
+ */
+export function formatSessionDate(value: DateInput): string {
+  return `${formatWeekday(value)} ${formatDayMonth(value)}`
+}
+
 /** "יום שני, 12 באוקטובר, 10:00" - the full text for screen readers. */
 export function formatAccessibleDateTime(value: DateInput): string {
+  return `${formatAccessibleDate(value)}, ${formatTime(value)}`
+}
+
+/** "יום שני, 12 באוקטובר" - the screen-reader text without the time. */
+export function formatAccessibleDate(value: DateInput): string {
   const { day, month } = parts(value, "he-IL", {
     day: "numeric",
     month: "long",
   })
-  return `${formatWeekday(value)}, ${day} ב${month}, ${formatTime(value)}`
+  return `${formatWeekday(value)}, ${day} ב${month}`
 }
 
 /** "אוקטובר 2026" (the month and year of a date, e.g. a period start) */

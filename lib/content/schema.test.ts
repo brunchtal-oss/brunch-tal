@@ -90,9 +90,16 @@ describe("heroSchema", () => {
     })
   })
 
+  // Optional since 2026-10-08 (no field required but three).
+  it("parses a hero without a title", () => {
+    expect(heroSchema.safeParse({ ...hero, title: undefined }).success).toBe(
+      true
+    )
+    expect(heroSchema.parse({ ...hero, title: " " }).title).toBeUndefined()
+    expect(heroSchema.safeParse({}).success).toBe(true)
+  })
+
   it.each([
-    ["no title", { ...hero, title: undefined }],
-    ["an empty title", { ...hero, title: " " }],
     ["a title over 80", { ...hero, title: "x".repeat(81) }],
     ["a description over 300", { ...hero, description: "x".repeat(301) }],
   ])("refuses %s", (_label, value) => {
@@ -176,8 +183,12 @@ describe("textBlockSchema", () => {
     expect(JSON.parse(JSON.stringify(parsed))).toEqual({ title: "t" })
   })
 
-  it("refuses a block without a title", () => {
-    expect(textBlockSchema.safeParse({ body: "b" }).success).toBe(false)
+  it("parses a block without a title, or empty (2026-10-08)", () => {
+    expect(textBlockSchema.safeParse({ body: "b" }).success).toBe(true)
+    expect(textBlockSchema.parse({ title: " ", body: "" })).toEqual({})
+    expect(textBlockSchema.safeParse({ title: "x".repeat(121) }).success).toBe(
+      false
+    )
   })
 })
 
@@ -203,19 +214,19 @@ describe("list schemas", () => {
     }
   )
 
-  it("refuses a step without a body", () => {
+  it("parses items with empty fields (2026-10-08); the site skips empty ones", () => {
     expect(
       stepsSchema.safeParse({ items: [{ title: "t", body: "" }] }).success
-    ).toBe(false)
-    expect(
-      stepsSchema.safeParse({ items: [{ title: "t", body: "b" }] }).success
     ).toBe(true)
-  })
-
-  it("refuses a testimonial without a name", () => {
+    expect(
+      faqSchema.safeParse({ items: [{ question: "", answer: "" }] }).success
+    ).toBe(true)
     expect(
       testimonialsSchema.safeParse({ items: [{ name: " ", text: "t" }] })
         .success
+    ).toBe(true)
+    expect(
+      stepsSchema.safeParse({ items: [{ title: "x".repeat(121) }] }).success
     ).toBe(false)
   })
 })
@@ -237,11 +248,21 @@ describe("footerSchema", () => {
   it.each([
     ["http", { label: "x", url: "http://instagram.com/x" }],
     ["text that is not a link", { label: "x", url: "instagram" }],
-    ["no label", { label: " ", url: "https://x.example" }],
-    ["an empty address", { label: "x", url: " " }],
     ["javascript", { label: "x", url: "javascript:alert(1)" }],
   ])("refuses a link with %s", (_label, item) => {
     expect(footerSchema.safeParse({ items: [item] }).success).toBe(false)
+  })
+
+  it("parses a link without a label or an address (2026-10-08)", () => {
+    expect(
+      footerSchema.safeParse({
+        items: [
+          { label: " ", url: "https://x.example" },
+          { label: "x", url: " " },
+          { label: "", url: "" },
+        ],
+      }).success
+    ).toBe(true)
   })
 })
 
@@ -254,14 +275,15 @@ describe("textBlockSchema hidden", () => {
 })
 
 describe("schemaForSection", () => {
+  // No section requires its body any more (2026-10-08).
   it.each(["home/intro", "about/main", "contact/intro"])(
-    "requires the body of %s",
+    "does not require the body of %s",
     (section) => {
       const [slug, key] = section.split("/")
       const schema = schemaForSection(slug, key, "text_block")
-      expect(schema?.safeParse({ title: "t" }).success).toBe(false)
-      expect(schema?.safeParse({ title: "t", body: " " }).success).toBe(false)
-      expect(schema?.safeParse({ title: "t", body: "b" }).success).toBe(true)
+      expect(schema).toBe(textBlockSchema)
+      expect(schema?.safeParse({ title: "t" }).success).toBe(true)
+      expect(schema?.safeParse({}).success).toBe(true)
     }
   )
 
@@ -302,10 +324,10 @@ describe("schemaForKind", () => {
 
 // Story 5.5: the legal pages (one text field, user decision 2026-10-06).
 describe("legalTextSchema", () => {
-  it("needs the body, up to 50000 characters", () => {
+  it("takes an optional body, up to 50000 characters", () => {
     expect(legalTextSchema.safeParse({ body: "## a\n\nb" }).success).toBe(true)
-    expect(legalTextSchema.safeParse({ body: " " }).success).toBe(false)
-    expect(legalTextSchema.safeParse({}).success).toBe(false)
+    expect(legalTextSchema.parse({ body: " " })).toEqual({})
+    expect(legalTextSchema.safeParse({}).success).toBe(true)
     expect(legalTextSchema.safeParse({ body: "x".repeat(50001) }).success).toBe(
       false
     )

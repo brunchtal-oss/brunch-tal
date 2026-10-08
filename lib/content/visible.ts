@@ -12,28 +12,68 @@ const LIST_KINDS: readonly string[] = [
   "gallery",
 ]
 
+// The kinds whose every field is required anyway: never "empty".
+const ALWAYS_FILLED: readonly string[] = [
+  "business_details",
+  "photo_consent",
+  "accessibility_statement",
+]
+
+// A value the site can show: a non-blank text, an image, a non-empty list.
+function hasValue(value: unknown): boolean {
+  if (typeof value === "string") return value.trim() !== ""
+  if (Array.isArray(value)) return value.length > 0
+  return value !== null && typeof value === "object"
+}
+
+// Whether a block or an item has anything to show besides its flags (since
+// 2026-10-08 no editor field but three is required, so an item or a block
+// may be saved empty).
+export function hasContent(record: Record<string, unknown>): boolean {
+  return Object.entries(record).some(
+    ([key, value]) => key !== "hidden" && key !== "kind" && hasValue(value)
+  )
+}
+
 // What of a parsed section the site shows (story 5.3), shared by the public
 // pages (getPublishedSections) and the admin preview, so both show the same
 // thing: a hidden section is not shown, a hidden item is left out, and a
 // list (steps, faq, testimonials, gallery) without a visible item is not a section.
 // The footer's hidden links are left out too; the footer itself is never
-// hidden. null when nothing of the section is shown.
+// hidden. An item with nothing in it is left out, and a block with nothing
+// at all is not shown (user decision 2026-10-08). null when nothing of the
+// section is shown.
 export function visibleSection(section: ParsedSection): ParsedSection | null {
   const content = section.content as Record<string, unknown>
   if (content.hidden === true) return null
 
   const items = content.items
   if (!Array.isArray(items)) {
-    return LIST_KINDS.includes(section.kind) ? null : section
+    if (LIST_KINDS.includes(section.kind)) return null
+    if (!ALWAYS_FILLED.includes(section.kind) && section.kind !== "footer") {
+      if (!hasContent(content)) return null
+    }
+    return section
   }
   const visible = items.filter(
-    (item: { hidden?: boolean }) => item.hidden !== true
+    (item: Record<string, unknown> & { hidden?: boolean }) =>
+      item.hidden !== true && hasContent(item)
   )
   if (visible.length === 0 && LIST_KINDS.includes(section.kind)) return null
   return {
     kind: section.kind,
     content: { ...content, items: visible },
   } as ParsedSection
+}
+
+// The footer's links that can be shown: both a display name and an address
+// (each is optional in the editor since 2026-10-08).
+export function footerLinks(
+  items: readonly { label?: string; url?: string }[] | undefined
+): { label: string; url: string }[] {
+  return (items ?? []).flatMap((item) =>
+    item.label && item.url ? [{ label: item.label, url: item.url }] : []
+  )
 }
 
 // An image of the site (story 5.4), resolved from media_assets (the public

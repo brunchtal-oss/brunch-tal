@@ -144,7 +144,19 @@ describe("toSections", () => {
       toSections([
         { key: "faq", kind: "faq", content: { items: [] } },
         { key: "steps", kind: "steps", content: STEPS },
-        { key: "bad", kind: "faq", content: { items: [{ question: "q" }] } },
+        {
+          key: "bad",
+          kind: "faq",
+          content: { items: [{ question: "q".repeat(301) }] },
+        },
+        // Every field is optional (2026-10-08): an item with nothing in it
+        // is left out, and a list left empty is not a section.
+        {
+          key: "empty",
+          kind: "faq",
+          content: { items: [{ question: " ", answer: "" }] },
+        },
+        { key: "blank", kind: "text_block", content: { title: " " } },
       ])
     ).toEqual({ steps: { kind: "steps", content: STEPS } })
   })

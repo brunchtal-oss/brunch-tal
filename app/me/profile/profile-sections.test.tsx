@@ -120,6 +120,32 @@ describe("PhotoConsentSection", () => {
   })
 })
 
+describe("PhotoConsentSection on its own page", () => {
+  it("leaves its h2 out (the page's h1 is the title), same forms and note", () => {
+    const html = renderToStaticMarkup(
+      <PhotoConsentSection
+        content={{
+          atmosphere_title: "Atmosphere",
+          atmosphere_question: "AQ",
+          atmosphere_yes: "Yes",
+          atmosphere_no: "No",
+          personal_title: "Personal",
+          personal_question: "PQ",
+          personal_yes: "Yes",
+          personal_no: "No",
+          note: "Note",
+        }}
+        consents={{ atmosphere: true, personal: false }}
+        titled={false}
+      />
+    )
+    expect(html).not.toContain("<h2")
+    expect(html).toContain(`aria-label="${copy.photoTitle}"`)
+    expect(html.match(/<form/g)).toHaveLength(2)
+    expect(html.indexOf("Note")).toBeGreaterThan(html.lastIndexOf("</form>"))
+  })
+})
+
 describe("CONSENT_SAVERS", () => {
   it("saves each answer into its own consent, from its own field", () => {
     expect(CONSENT_SAVERS.personal.save).toBe(setPersonalPhotoConsent)

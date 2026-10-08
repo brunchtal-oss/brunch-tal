@@ -113,7 +113,7 @@ export function BabiesSection({
     <section aria-labelledby="babies-title" className="flex flex-col gap-4">
       <h2
         id="babies-title"
-        className="font-heading text-xl leading-tight font-light"
+        className="font-heading text-[22px] leading-[1.25] font-light"
       >
         {copy.babiesTitle}
       </h2>
@@ -137,7 +137,7 @@ export function BabiesSection({
               ) : (
                 <div className="flex flex-col gap-3">
                   <div className="flex items-start justify-between gap-3">
-                    <div className="flex min-w-0 flex-col gap-0.5">
+                    <div className="flex min-w-0 flex-col gap-1">
                       <p className="text-[17px] leading-snug font-semibold">
                         <bdi className="break-words">
                           {copy.babyLine(
@@ -288,7 +288,7 @@ function BabyForm({
   const dateId = `birthDate-${id}`
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
+    <form onSubmit={onSubmit} className="flex flex-col gap-6" noValidate>
       <input type="hidden" name="babyId" value={baby?.id ?? ""} />
       <Field data-invalid={nameError ? true : undefined}>
         <FieldLabel htmlFor={nameId}>{copy.babyName}</FieldLabel>

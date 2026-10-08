@@ -12,7 +12,8 @@ import Link from "next/link"
 import { ContactText } from "@/components/shared/contact-text"
 import { SignOutButton } from "@/components/shared/sign-out-button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Button, buttonVariants } from "@/components/ui/button"
+import { Button } from "@/components/ui/button"
+import { buttonClass } from "@/components/shared/button-class"
 import { Spinner } from "@/components/ui/spinner"
 import { joinCopy } from "@/lib/copy/join"
 import { errorMessage } from "@/lib/errors"
@@ -63,7 +64,7 @@ export function ExistingAccountLogin({
       <Link
         href={claimLoginHref(token)}
         prefetch={false}
-        className={buttonVariants({ size: "lg", className: BUTTON })}
+        className={buttonClass({ size: "lg", className: BUTTON })}
       >
         {joinCopy.existingAccountLogin}
       </Link>
@@ -158,7 +159,7 @@ export function ClaimScreen({
         </Alert>
         <Link
           href="/me"
-          className={buttonVariants({ size: "lg", className: BUTTON })}
+          className={buttonClass({ size: "lg", className: BUTTON })}
         >
           {joinCopy.goToLogin}
         </Link>

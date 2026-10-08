@@ -21,8 +21,18 @@ describe("photo consents", () => {
 
   it("a short mark per consent, the declined one flagged", () => {
     expect(consentMarks({ atmosphere: false, personal: true })).toEqual([
-      { text: "אווירה ✗", label: copy.atmosphere.no, declined: true },
-      { text: "אישיות ✓", label: copy.personal.yes, declined: false },
+      {
+        text: "אווירה ✗",
+        rowText: "תמונות אווירה ✗",
+        label: copy.atmosphere.no,
+        declined: true,
+      },
+      {
+        text: "אישיות ✓",
+        rowText: "תמונות אישיות ✓",
+        label: copy.personal.yes,
+        declined: false,
+      },
     ])
   })
 })

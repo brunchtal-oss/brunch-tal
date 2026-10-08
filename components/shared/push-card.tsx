@@ -165,10 +165,10 @@ export function PushCardView({
             {copy.error}
           </p>
         )}
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
           <Button
             type="button"
-            className="h-12 px-[22px] text-base font-semibold"
+            className="h-12 px-6 text-base font-semibold"
             disabled={busy}
             aria-busy={busy || undefined}
             onClick={onEnable}
@@ -192,11 +192,11 @@ export function PushCardView({
         tabIndex={-1}
         aria-label={copy.label}
         data-push-card={state}
-        className={`${frame} flex min-h-14 items-center justify-between gap-3 py-1.5 ps-4 pe-2`}
+        className={`${frame} flex min-h-14 items-center justify-between gap-3 py-2 ps-4 pe-2`}
       >
         <p
           aria-live="polite"
-          className="flex items-center gap-2.5 text-[15px] leading-normal"
+          className="flex items-center gap-2 text-[15px] leading-normal"
         >
           <Icon
             aria-hidden
@@ -224,10 +224,10 @@ export function PushCardView({
       tabIndex={-1}
       aria-label={copy.label}
       data-push-card={state}
-      className={`${frame} flex flex-col gap-1.5 px-4 py-3`}
+      className={`${frame} flex flex-col gap-2 px-4 py-3`}
     >
       {state === "denied" && (
-        <p className="flex items-center gap-2.5 text-[15px] leading-normal font-semibold">
+        <p className="flex items-center gap-2 text-[15px] leading-normal font-semibold">
           <BellOffIcon
             aria-hidden
             strokeWidth={1.5}

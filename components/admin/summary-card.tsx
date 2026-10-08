@@ -37,7 +37,7 @@ export function SummaryCard({ summary }: { summary: SessionSummary }) {
       {items.map((item) => (
         <li
           key={item.key}
-          className="flex min-w-0 flex-col items-center gap-1.5 text-center"
+          className="flex min-w-0 flex-col items-center gap-1 text-center"
         >
           <span
             className={cn(

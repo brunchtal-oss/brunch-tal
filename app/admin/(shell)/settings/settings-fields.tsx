@@ -105,7 +105,7 @@ export function PrepDaysField({
       className="flex flex-col gap-2"
       aria-describedby={empty ? errorId : undefined}
     >
-      <legend className="mb-2 text-sm font-medium">
+      <legend className="mb-2 text-[15px] font-semibold">
         {copy.fields.prepDays}
       </legend>
       <div className="flex flex-wrap gap-2">

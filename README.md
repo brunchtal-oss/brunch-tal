@@ -85,6 +85,7 @@
 - [ ] "Automatically expose new tables" כבוי (גם בפיתוח).
 - [ ] ‏pg_graphql לא מופעל.
 - [ ] מפתח `sb_secret_` עובד (למשל `npm run dev:reset-link` מצליח).
+- [ ] שם התצוגה של המנהלת מוגדר פעם אחת כ-`full_name` במטא-דאטה של משתמש ה-Auth שלה (`raw_user_meta_data`). הברכה בבית האדמין משתמשת בו.
 
 ### Supabase Vault
 

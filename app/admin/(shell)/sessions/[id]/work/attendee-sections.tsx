@@ -22,7 +22,7 @@ const copy = adminCopy.work
 const sessions = adminCopy.sessions
 const photoCopy = adminCopy.photoConsents
 
-const CELL = "border-b border-border px-2 py-2.5 text-start align-top"
+const CELL = "border-b border-border px-2 py-3 text-start align-top"
 const HEAD = cn(
   CELL,
   "border-t bg-muted text-[13px] leading-[1.4] font-semibold text-muted-foreground"

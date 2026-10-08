@@ -28,6 +28,9 @@ export const customerCopy = {
   cardTitle: "הכרטיסייה שלי",
   usedOf: (used: number, total: number) => `ניצלת ${used}/${total}`,
   bookedOf: (booked: number, total: number) => `נרשמת ${booked}/${total}`,
+  // Beside the number of free entries on home's home-card (design round,
+  // the one new label the user approved on 2026-10-07).
+  availableEntriesLabel: "כניסות זמינות",
   emptyHomeTitle: "השולחן מחכה לפעם הבאה",
   // Purchase history (story 4.12, user decision 2026-10-06; the tab and
   // the h1 are shellCopy.nav.purchases).
@@ -40,6 +43,16 @@ export const customerCopy = {
   // The detail screen.
   historyTitle: "יומן תנועות",
   historyEmpty: "עוד אין תנועות",
+  // One row per booking in the log, by its current state (user decision
+  // 2026-10-08): "{state} · {יום DD.MM}", the session's title under it.
+  bookingState: {
+    booked: "נרשמת",
+    used: "השתתפת",
+    cancelled: "בוטלה",
+  },
+  // A returned non-card entry on home that funds no booking yet (user
+  // decision 2026-10-08).
+  toBook: "יש להירשם",
   movement: {
     grant: "רכישה",
     opening_balance: "יתרת פתיחה",
@@ -156,6 +169,8 @@ export const customerCopy = {
     saving: "שומרת…",
     cancel: "ביטול",
     photoTitle: "אישור תמונות",
+    // Back from /me/profile/photos (user decision 2026-10-08).
+    backToProfile: "לפרופיל",
     saved: "הפרטים נשמרו",
     birthDateFuture: "תאריך הלידה לא יכול להיות בעתיד",
     linksLabel: "עוד באזור האישי",

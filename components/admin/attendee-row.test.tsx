@@ -40,8 +40,10 @@ describe("AttendeeRow", () => {
     })
     expect(html).toContain("Dana")
     expect(html).toContain(copy.couple)
-    expect(html).toContain("050-123-4567")
-    expect(html).toContain(copy.babyLine("Ori", "3 חודשים"))
+    // No phone on the row (user decision 2026-10-08).
+    expect(html).not.toContain("050-123-4567")
+    // Line 1: "{name} - {baby} ({age})" (user decision 2026-10-08).
+    expect(html).toContain("Dana - Ori (3 חודשים)")
     expect(html).toContain("gluten free")
     expect(html).toContain(copy.companion("vegan"))
     expect(html).not.toContain("<button")
@@ -49,10 +51,16 @@ describe("AttendeeRow", () => {
   })
 
   // Story 2.13: both consents in words, only for an active customer.
-  it("an active customer's two photo consents, a line each", () => {
+  it("an active customer's two photo consents on one line, read in full words", () => {
     const html = row({ photoConsent: false, personalPhotoConsent: true })
     expect(html).toContain(adminCopy.photoConsents.atmosphere.no)
     expect(html).toContain(adminCopy.photoConsents.personal.yes)
+    const visible = html.replace(/<span class="sr-only">[^<]*<\/span>/g, "")
+    expect(visible.replace(/<[^>]*>/g, "")).toContain(
+      "תמונות אווירה ✗ - תמונות אישיות ✓"
+    )
+    // The declined one in warning.
+    expect(html).toMatch(/text-warning[^>]*>תמונות אווירה ✗</)
     const none = row({ pendingJoin: true, name: null })
     expect(none).not.toContain(adminCopy.photoConsents.atmosphere.no)
     expect(none).not.toContain(adminCopy.photoConsents.atmosphere.yes)
@@ -97,6 +105,26 @@ describe("AttendeeRow", () => {
     )
     expect(withAction).toContain("cancel-slot")
     expect(row({})).not.toContain("<button")
+  })
+})
+
+describe("AttendeeRow lines (user decision 2026-10-08)", () => {
+  it("several babies with a comma, each with its age", () => {
+    const html = row({
+      babies: [
+        { name: "Ori", birthDate: "2026-07-12" },
+        { name: "Noa", birthDate: "2026-07-12" },
+      ],
+      dietaryNotes: "gluten free",
+    })
+    expect(html).toContain("Dana - Ori (3 חודשים), Noa (3 חודשים)")
+    expect(html).toContain("gluten free")
+  })
+
+  it("no babies: just the name", () => {
+    const html = row({})
+    expect(html).toContain(">Dana</bdi>")
+    expect(html).not.toContain("Dana -")
   })
 })
 

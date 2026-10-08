@@ -6,13 +6,14 @@ import {
   toAttentionItems,
   type AttentionItem,
 } from "../home-items"
-import { HomeLink, HomeSection } from "./home-section"
+import { CubeCounter, HomeLink, HomeSection, cubeRows } from "./home-section"
 import { loadAttentionItems } from "./load-home"
 
 const copy = adminCopy.home
 
 // "לטיפול" on the home (story 4.1, AD-22): admin_get_attention_items is the
-// only source, newest first. A counter pill and "{n} דברים מחכים לך" count
+// only source, newest first. A cube with a saffron counter pill (design
+// round 2026-10-07) and "{n} דברים מחכים לך" count
 // every item; only the three newest are listed, and with more,
 // "לכל הדברים לטיפול ({n})" leads to /admin/attention (user decision
 // 2026-10-06). Empty: one line, no counter.
@@ -23,24 +24,13 @@ export async function AttentionList() {
     <HomeSection
       id="home-attention"
       title={copy.attention}
-      aside={
-        items.length > 0 ? (
-          <span
-            aria-hidden
-            className="rounded-full bg-primary px-2.5 py-px text-[13px] font-semibold text-primary-foreground tabular-nums"
-          >
-            {items.length}
-          </span>
-        ) : null
-      }
+      aside={items.length > 0 ? <CubeCounter count={items.length} /> : null}
     >
-      <AttentionRows items={items} limit={HOME_ATTENTION_LIMIT} />
+      <AttentionRows items={items} limit={HOME_ATTENTION_LIMIT} inCube />
       {items.length > HOME_ATTENTION_LIMIT && (
-        <div>
-          <HomeLink href="/admin/attention">
-            {copy.attentionAll(items.length)}
-          </HomeLink>
-        </div>
+        <HomeLink href="/admin/attention">
+          {copy.attentionAll(items.length)}
+        </HomeLink>
       )}
     </HomeSection>
   )
@@ -60,9 +50,13 @@ export async function AllAttentionItems() {
 export function AttentionRows({
   items,
   limit,
+  inCube = false,
 }: {
   items: AttentionItem[]
   limit?: number
+  // On the home the rows sit in a cube: no rule above the first or under
+  // the last.
+  inCube?: boolean
 }) {
   if (items.length === 0) {
     return (
@@ -74,7 +68,7 @@ export function AttentionRows({
       <p className="text-[15px] text-muted-foreground">
         {copy.attentionCount(items.length)}
       </p>
-      <ul className="flex flex-col">
+      <ul className={inCube ? cubeRows : "flex flex-col"}>
         {items.slice(0, limit ?? items.length).map(({ key, ...item }) => (
           <TaskRow key={key} {...item} />
         ))}

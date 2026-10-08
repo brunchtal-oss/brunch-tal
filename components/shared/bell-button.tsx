@@ -31,8 +31,8 @@ export function requestUnreadRefresh(): void {
 
 // bell-button (DESIGN › bell-button, EXPERIENCE › bell-button; story 5.7): a
 // 44×44 link to the surface's notification center on the olive top-bar. The
-// unread count is a pill (on-primary with primary text, so it reads on the
-// bar) in the top inline-end corner, and is part of the link's name
+// unread count is a pill (an ink number on saffron, design round
+// 2026-10-07; 7.6:1) in the top inline-end corner, and is part of the link's name
 // ("התראות, 3 שלא נקראו"). The first value comes from the server
 // (`initialCount`, null while it streams in); afterwards the bell asks
 // `refresh` on every route change and when the app comes back into view, so a
@@ -120,7 +120,7 @@ export function BellButton({
           <span
             aria-hidden
             data-unread-count=""
-            className="absolute -end-0.5 -top-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary-foreground px-1 text-[12px] leading-none font-semibold text-primary tabular-nums ring-2 ring-primary"
+            className="absolute -end-0.5 -top-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-saffron px-1 text-[13px] leading-none font-semibold text-foreground tabular-nums"
           >
             {formatUnreadCount(count)}
           </span>

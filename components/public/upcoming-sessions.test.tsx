@@ -33,6 +33,9 @@ describe("UpcomingSessions", () => {
     expect(list).toHaveBeenCalledWith(HOME_SESSIONS)
     expect(html).toContain(shellCopy.public.sessions.upcoming)
     expect(html).toContain("concept-1")
+    // The weekday and date, never the time (design round 2026-10-08).
+    expect(html).toContain("11.12")
+    expect(html.replace(/<[^>]*>/g, " ")).not.toMatch(/\d{2}:\d{2}/)
   })
 
   it("leaves the area out and logs when the read fails", async () => {

@@ -11,15 +11,19 @@ export const adminCopy = {
       yes: "אישרה תמונות אווירה",
       no: "לא אישרה תמונות אווירה",
       short: "אווירה",
+      // The registrant row: "תמונות אווירה ✓ - תמונות אישיות ✗".
+      label: "תמונות אווירה",
     },
     personal: {
       yes: "אישרה תמונות אישיות",
       no: "לא אישרה תמונות אישיות",
       short: "אישיות",
+      label: "תמונות אישיות",
     },
     yesMark: "✓",
     noMark: "✗",
     separator: " · ",
+    rowSeparator: " - ",
   },
   payments: {
     newTitle: "הוספת תשלום",
@@ -265,6 +269,8 @@ export const adminCopy = {
       add: "הוספת תמונה",
       image: "תמונה",
       caption: "כיתוב (לא חובה)",
+      // The columns of the gallery on the phone (user decision 2026-10-08).
+      columns: "מספר עמודות",
     },
     // The image of a block (hero, about).
     blockImage: "תמונה (לא חובה)",
@@ -331,6 +337,23 @@ export const adminCopy = {
       confirmRemove: (name: string) => `למחוק את ${name}?`,
       cancel: "ביטול",
       added: "נוסף פריט חדש",
+    },
+    // The gallery's arrange view (user decision 2026-10-08): the photos
+    // as on the site, tap one and then its new place.
+    arrange: {
+      views: "תצוגת העריכה",
+      list: "רשימה",
+      grid: "סידור",
+      hint: "לוחצים על תמונה ואז על תמונה אחרת כדי להחליף ביניהן. השינוי נשמר עם שמירת הטיוטה",
+      photo: (n: number) => `תמונה ${n}`,
+      hidden: "מוסתרת",
+      selected: (n: number) =>
+        `תמונה ${n} נבחרה. לוחצים על תמונה אחרת כדי להחליף ביניהן, או עליה שוב לביטול`,
+      cancelled: "הבחירה בוטלה",
+      swapped: (a: number, b: number) => `תמונות ${a} ו-${b} הוחלפו`,
+      before: (n: number) => `להעביר את תמונה ${n} מקום אחד קודם`,
+      after: (n: number) => `להעביר את תמונה ${n} מקום אחד אחרי`,
+      cancel: "ביטול הבחירה",
     },
     itemCount: (n: number) => (n === 1 ? "פריט אחד" : `${n} פריטים`),
     emptyList: "אין פריטים. בלי פריט גלוי הסקשן לא מוצג באתר",
@@ -461,13 +484,16 @@ export const adminCopy = {
   },
   // /admin/sessions (story 3.1, wording approved by the user on 2026-10-04).
   sessions: {
-    title: "מפגשים",
-    add: "מפגש חדש",
+    // The list's h1 and the session pages' <title> (user decision
+    // 2026-10-08; the tab's label is shellCopy.nav.sessions).
+    title: "לו״ז בראנצ׳ים",
+    // The list's button and the home's action (user decision 2026-10-08).
+    addBrunch: "בראנץ׳ חדש",
     // The title of a session is always the concept's name (no events.title).
     sessionTitle: (concept: string) => `בראנץ׳ ${concept}`,
     status: { draft: "טיוטה", published: "פורסם" },
     places: (n: number) => `${n} מקומות`,
-    empty: 'אין מפגשים קרובים. "מפגש חדש" יוצר את הראשון',
+    empty: 'אין מפגשים קרובים. "בראנץ׳ חדש" יוצר את הראשון',
     fields: {
       concept: "קונספט",
       date: "תאריך",
@@ -552,6 +578,12 @@ export const adminCopy = {
     // A baby's age on the session's day, computed for display only; the
     // age's wording is lib/copy/baby-age.ts (shared with the profile).
     babyLine: (name: string, age: string) => (age ? `${name} · ${age}` : name),
+    // "מי מגיעה" on the session's details (user decision 2026-10-08): "{אמא}
+    // - {תינוק} ({גיל})", several babies with a comma.
+    babyWithAge: (name: string, age: string) =>
+      age ? `${name} (${age})` : name,
+    nameWithBabies: (name: string, babies: string) => `${name} - ${babies}`,
+    babiesSeparator: ", ",
     // "({n}/{n})" when every place is taken; a couple session with one place
     // left is full too.
     full: (occupied: number, capacity: number) =>
@@ -674,18 +706,23 @@ export const adminCopy = {
   // /admin (story 4.1, CAP-24). The sum is "approved payments minus
   // refunds"; never "profit" or "income" (source §7).
   home: {
+    // The h1 of the admin home by the time of day in Jerusalem and her
+    // first name (user decision 2026-10-08); "היי" without a known time.
+    greeting: {
+      morning: "בוקר טוב",
+      noon: "צהריים טובים",
+      evening: "ערב טוב",
+      night: "לילה טוב",
+      unknown: "היי",
+    },
+    greetingWithName: (greeting: string, name: string) =>
+      `${greeting}, ${name}`,
+    // While the time is unknown: "היי {שם}", as on the customer home.
+    hiWithName: (name: string) => `היי ${name}`,
     nextSession: "המפגש הבא",
+    // The only link of a session-tile (design round, user decision
+    // 2026-10-08: "לדף העבודה" left the home).
     sessionDetails: "לפרטי המפגש",
-    // Next to "לפרטי המפגש" (story 4.9).
-    workSheet: "לדף העבודה",
-    upcoming: "מפגשים קרובים",
-    // "בראנץ׳ {concept} · {יום DD.MM} · {occupied}/{capacity}"
-    upcomingRow: (
-      concept: string,
-      day: string,
-      occupied: number,
-      capacity: number
-    ) => `בראנץ׳ ${concept} · ${day} · ${occupied}/${capacity}`,
     allSessions: "לכל המפגשים",
     noSessions: "אין מפגשים קרובים",
     toSessions: "למפגשים",
@@ -804,6 +841,8 @@ export const adminCopy = {
     tabIntro: "דפי העבודה של הבראנצ׳ים הקרובים",
     noSessions: "אין בראנצ׳ים קרובים",
     toSessions: "למפגשים",
+    // Under the list, to /admin/sessions (user decision 2026-10-08).
+    allBrunches: "לכל הבראנצ׳ים",
     // The work sheet's <title>.
     title: "דף עבודה",
     dishes: "מנות",
@@ -1130,8 +1169,10 @@ export const adminCopy = {
       cancelled: "בוטלה",
       // The disclosure of a card's entries, one line each.
       entriesToggle: "פירוט הכניסות",
-      entryUsed: (day: string) => `נוצלה · ${day}`,
-      entryBooked: (day: string) => `שוריינה · ${day}`,
+      // Like the customer's log (user decision 2026-10-08): the state and
+      // the session's day, its title under it.
+      entryUsed: (day: string) => `השתתפה · ${day}`,
+      entryBooked: (day: string) => `נרשמה · ${day}`,
       entryFree: "פנויה, יש לשריין",
       entryUnused: "לא נוצלה",
       // A single entitlement (second phone check, 2026-10-07): its booked

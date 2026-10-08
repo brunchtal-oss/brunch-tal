@@ -114,9 +114,9 @@ function ResultList({ list }: { list: CustomerList }) {
             <li key={item.key}>
               <Link
                 href={item.href}
-                className="flex min-h-14 items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-muted active:bg-muted"
+                className="flex min-h-14 items-center gap-3 rounded-lg px-3 py-3 hover:bg-muted active:bg-muted"
               >
-                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <span className="flex min-w-0 flex-1 flex-col gap-1">
                   <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
                     <bdi className="text-base font-semibold break-words">
                       {item.name}

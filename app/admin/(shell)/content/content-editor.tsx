@@ -35,6 +35,7 @@ import {
   type SectionRef,
 } from "./content-items"
 import { ContentStatusChip } from "./content-status-chip"
+import { GalleryArrange } from "./gallery-arrange"
 import {
   addItem,
   fieldId,
@@ -45,6 +46,7 @@ import {
   removeItem,
   sectionSpec,
   shownFor,
+  swapItems,
   toContent,
   toggleItemHidden,
   type EditorItem,
@@ -131,6 +133,9 @@ export function ContentEditor({
   const [errors, setErrors] = useState<Errors | null>(null)
   const [notice, setNotice] = useState<Notice | null>(null)
   const [announcement, setAnnouncement] = useState("")
+  // The gallery's arrange view (user decision 2026-10-08) instead of the
+  // list; the same items in the same draft.
+  const [arranging, setArranging] = useState(false)
   const noticeRef = useRef<HTMLDivElement>(null)
   const formRef = useRef<HTMLFormElement>(null)
   // After a change: the element to focus once rendered (an id), or the
@@ -417,6 +422,17 @@ export function ContentEditor({
               update({ ...state, text: { ...state.text, [field.name]: value } })
             }
           />
+        ) : field.type === "choice" ? (
+          <RadioCardGroup
+            key={field.name}
+            legend={field.label}
+            name={`block-${field.name}`}
+            options={field.options}
+            value={state.text[field.name] ?? field.defaultValue}
+            onChange={(value) =>
+              update({ ...state, text: { ...state.text, [field.name]: value } })
+            }
+          />
         ) : field.type === "image" ? (
           <ImageInput
             key={field.name}
@@ -432,41 +448,59 @@ export function ContentEditor({
               })
             }
           />
+        ) : kind === "gallery" && arranging ? (
+          <div key={field.name} className="flex flex-col gap-3">
+            <ArrangeSwitch arranging={arranging} onChange={setArranging} />
+            <GalleryArrange
+              items={state.items}
+              columns={state.text.columns ?? "3"}
+              previewUrls={previewUrls}
+              announce={setAnnouncement}
+              onSwap={(a, b) =>
+                update({ ...state, items: swapItems(state.items, a, b) })
+              }
+            />
+          </div>
         ) : (
-          <ItemList
-            key={field.name}
-            field={field}
-            items={state.items}
-            errors={errors}
-            previewUrls={previewUrls}
-            onImage={(index, name, value) =>
-              update({
-                ...state,
-                items: state.items.map((item, i) =>
-                  i === index
-                    ? { ...item, images: { ...item.images, [name]: value } }
-                    : item
-                ),
-              })
-            }
-            onChange={(index, name, value) =>
-              update({
-                ...state,
-                items: state.items.map((item, i) =>
-                  i === index
-                    ? { ...item, values: { ...item.values, [name]: value } }
-                    : item
-                ),
-              })
-            }
-            onAdd={() => onAdd(field)}
-            onMove={(index, delta) => onMove(field, index, delta)}
-            onToggleHidden={(index) => onToggleHidden(field, index)}
-            confirmingId={confirmingId}
-            onAskRemove={onAskRemove}
-            onCancelRemove={onCancelRemove}
-            onRemove={(index) => onRemove(field, index)}
-          />
+          <div key={field.name} className="flex flex-col gap-3">
+            {kind === "gallery" && (
+              <ArrangeSwitch arranging={arranging} onChange={setArranging} />
+            )}
+            <ItemList
+              key={field.name}
+              field={field}
+              items={state.items}
+              errors={errors}
+              previewUrls={previewUrls}
+              onImage={(index, name, value) =>
+                update({
+                  ...state,
+                  items: state.items.map((item, i) =>
+                    i === index
+                      ? { ...item, images: { ...item.images, [name]: value } }
+                      : item
+                  ),
+                })
+              }
+              onChange={(index, name, value) =>
+                update({
+                  ...state,
+                  items: state.items.map((item, i) =>
+                    i === index
+                      ? { ...item, values: { ...item.values, [name]: value } }
+                      : item
+                  ),
+                })
+              }
+              onAdd={() => onAdd(field)}
+              onMove={(index, delta) => onMove(field, index, delta)}
+              onToggleHidden={(index) => onToggleHidden(field, index)}
+              confirmingId={confirmingId}
+              onAskRemove={onAskRemove}
+              onCancelRemove={onCancelRemove}
+              onRemove={(index) => onRemove(field, index)}
+            />
+          </div>
         )
       )}
 
@@ -713,6 +747,45 @@ function ImageInput({
   )
 }
 
+// "רשימה | סידור" (DESIGN › segmented-switch): two views of the gallery's
+// photos; the chosen one in primary, aria-pressed.
+function ArrangeSwitch({
+  arranging,
+  onChange,
+}: {
+  arranging: boolean
+  onChange: (arranging: boolean) => void
+}) {
+  const arrange = copy.arrange
+  return (
+    <div
+      role="group"
+      aria-label={arrange.views}
+      className="inline-flex self-start overflow-hidden rounded-lg border border-muted-foreground"
+    >
+      {[
+        { value: false, label: arrange.list },
+        { value: true, label: arrange.grid },
+      ].map((option) => (
+        <button
+          key={option.label}
+          type="button"
+          aria-pressed={arranging === option.value}
+          onClick={() => onChange(option.value)}
+          className={cn(
+            "min-h-11 px-4 text-[15px] font-semibold",
+            arranging === option.value
+              ? "bg-primary text-primary-foreground"
+              : "bg-transparent text-foreground"
+          )}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 const ICON_BUTTON =
   "size-11 rounded-[4px] border-foreground bg-transparent p-0 aria-disabled:opacity-50"
 const LINK_BUTTON =
@@ -762,7 +835,7 @@ function InlineConfirm({
           }}
           aria-busy={busy || undefined}
           aria-disabled={busy || undefined}
-          className="h-11 rounded-[4px] bg-error px-5 text-[15px] font-semibold text-primary-foreground hover:bg-error/90"
+          className="h-11 rounded-[4px] bg-error px-6 text-[15px] font-semibold text-primary-foreground hover:bg-error/90"
         >
           {busy && <Spinner aria-hidden />}
           {confirmLabel}
@@ -771,7 +844,7 @@ function InlineConfirm({
           type="button"
           variant="outline"
           onClick={onCancel}
-          className="h-11 rounded-[4px] border-foreground bg-transparent px-5 text-[15px]"
+          className="h-11 rounded-[4px] border-foreground bg-transparent px-6 text-[15px]"
         >
           {cancelLabel}
         </Button>
@@ -849,7 +922,7 @@ export function ItemList({
             return (
               <li
                 key={item.id}
-                className="flex flex-col gap-4 border-b border-border py-5"
+                className="flex flex-col gap-4 border-b border-border py-6"
               >
                 <div className="flex flex-wrap items-center gap-2">
                   <h3

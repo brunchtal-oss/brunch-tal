@@ -52,9 +52,11 @@ export function HomeHero({
             </PageHeading>
             {hero && (
               <>
-                <p className="mt-5 max-w-[22ch] font-heading text-[22px] leading-[1.25] font-light text-balance">
-                  {hero.title}
-                </p>
+                {hero.title && (
+                  <p className="mt-5 max-w-[22ch] font-heading text-[22px] leading-[1.25] font-light text-balance">
+                    {hero.title}
+                  </p>
+                )}
                 {hero.description && (
                   <p className="mt-3 max-w-[34ch] text-base leading-normal text-pretty whitespace-pre-line">
                     {hero.description}
@@ -75,9 +77,11 @@ export function HomeHero({
       </PageHeading>
       {hero && (
         <>
-          <p className="mt-6 max-w-[22ch] font-heading text-[22px] leading-[1.25] font-light text-balance">
-            {hero.title}
-          </p>
+          {hero.title && (
+            <p className="mt-6 max-w-[22ch] font-heading text-[22px] leading-[1.25] font-light text-balance">
+              {hero.title}
+            </p>
+          )}
           {hero.description && (
             <p className="mt-3 max-w-[34ch] text-base leading-normal text-pretty whitespace-pre-line text-muted-foreground">
               {hero.description}

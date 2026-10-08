@@ -3,7 +3,8 @@ import { MessageCircleIcon } from "lucide-react"
 
 import { ConceptHeader } from "@/components/shared/concept-header"
 import { SessionCard } from "@/components/shared/session-card"
-import { buttonVariants } from "@/components/ui/button"
+import { SessionRow, SessionRowList } from "@/components/shared/session-row"
+import { buttonClass } from "@/components/shared/button-class"
 import { customerCopy } from "@/lib/copy/customer"
 import { shellCopy } from "@/lib/copy/shell"
 import { formatAgorot } from "@/lib/money"
@@ -20,7 +21,10 @@ const LINK =
 // the sessions (lib/sessions/public.ts) and the viewer, then render these.
 // A guest never sees places, availability or a regular/couple label.
 
-/** /sessions: every upcoming session as a session-card, or the empty-state. */
+/**
+ * /sessions: every upcoming session as a session-row (design round, user
+ * decision 2026-10-07), or the empty-state.
+ */
 export function PublicSessionList({
   sessions,
   whatsappHref,
@@ -32,16 +36,25 @@ export function PublicSessionList({
     return <NoSessions whatsappHref={whatsappHref} />
   }
   return (
-    <ul className="mx-auto flex w-full max-w-[720px] flex-col gap-6 px-6 pt-8">
-      {sessions.map((session) => (
-        <li key={session.id}>
-          <PublicSessionCard session={session} />
-        </li>
-      ))}
-    </ul>
+    <div className="mx-auto w-full max-w-[720px] px-6 pt-8">
+      <SessionRowList>
+        {sessions.map((session) => (
+          <li key={session.id}>
+            <SessionRow
+              href={`/sessions/${session.id}`}
+              conceptName={session.concept_name}
+              photo={session.photo}
+              startsAt={session.starts_at}
+            />
+          </li>
+        ))}
+      </SessionRowList>
+    </div>
   )
 }
 
+// The home page's cards (unchanged in the design round, except that the
+// time left them, user decision 2026-10-08).
 export function PublicSessionCard({
   session,
   headingLevel,
@@ -76,7 +89,7 @@ function NoSessions({ whatsappHref }: { whatsappHref: string | null }) {
           href={whatsappHref}
           target="_blank"
           rel="noopener noreferrer"
-          className={buttonVariants({
+          className={buttonClass({
             className:
               "mt-6 h-auto min-h-12 gap-2 rounded-[4px] px-5 py-2 text-base leading-[1.2] font-semibold whitespace-normal",
           })}
@@ -147,7 +160,7 @@ export function PublicSessionAction({
     return (
       <Link
         href={mine}
-        className={buttonVariants({
+        className={buttonClass({
           className:
             "h-12 w-full max-w-xs rounded-[4px] px-6 text-base font-semibold",
         })}

@@ -25,7 +25,7 @@ export function SessionsList({ rows }: { rows: readonly SessionRow[] }) {
             href={`/admin/sessions/${row.id}`}
             className="flex min-h-14 items-center justify-between gap-3 py-3"
           >
-            <span className="flex min-w-0 flex-col gap-0.5">
+            <span className="flex min-w-0 flex-col gap-1">
               <span className="flex flex-wrap items-center gap-2">
                 <span className="text-base font-semibold break-words">
                   <bdi>{sessionTitle(row.concept_name)}</bdi>

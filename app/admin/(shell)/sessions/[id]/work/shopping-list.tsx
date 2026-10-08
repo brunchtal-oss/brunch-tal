@@ -128,7 +128,7 @@ function ShoppingRow({
 
   return (
     <li className="flex flex-col gap-1 border-b border-border">
-      <div className="flex min-h-11 items-start gap-2.5">
+      <div className="flex min-h-11 items-start gap-2">
         <Checkbox
           id={`${id}-bought`}
           checked={item.bought}

@@ -92,7 +92,7 @@ export function LegalTextView({
   return (
     <>
       <PublicPageHeading>{title}</PublicPageHeading>
-      {content ? (
+      {content?.body ? (
         <>
           <div className={COLUMN}>
             <UpdatedLine publishedAt={publishedAt} />

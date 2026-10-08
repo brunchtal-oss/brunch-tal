@@ -91,3 +91,27 @@ export async function availabilityOf(
   })
   return result.ok ? parseAvailability(result.data) : new Map()
 }
+
+/**
+ * The photos of these sessions (the session's, else its concept's), by
+ * session id, with the same columns as the session screens (RLS: published
+ * images only). Her bookings' cards on /me/bookings (user decision
+ * 2026-10-08); an empty map when the read fails (the cards show their
+ * muted surface).
+ */
+export async function sessionPhotos(
+  supabase: Client,
+  eventIds: string[]
+): Promise<Map<string, SessionPhotoData | null>> {
+  if (eventIds.length === 0) return new Map()
+  const { data, error } = await supabase
+    .from("events")
+    .select(SESSION_COLUMNS)
+    .in("id", eventIds)
+  if (error) return new Map()
+  return new Map(
+    (data as unknown as Parameters<typeof toCustomerSession>[0][]).map(
+      (row) => [row.id, toCustomerSession(row).photo]
+    )
+  )
+}

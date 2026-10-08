@@ -5,7 +5,8 @@ import { ArrowDownIcon, ArrowUpIcon, PencilIcon, XIcon } from "lucide-react"
 
 import { RadioCardGroup } from "@/components/admin/radio-card"
 import { InlineNotice } from "@/components/shared/inline-notice"
-import { Button, buttonVariants } from "@/components/ui/button"
+import { Button } from "@/components/ui/button"
+import { buttonClass } from "@/components/shared/button-class"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
@@ -49,11 +50,11 @@ import {
 
 const copy = adminCopy.work
 
-export const OUTLINE = buttonVariants({
+export const OUTLINE = buttonClass({
   variant: "outline",
   size: "lg",
   className:
-    "h-11 rounded-[4px] border-foreground px-3.5 text-[15px] font-semibold",
+    "h-11 rounded-[4px] border-foreground px-4 text-[15px] font-semibold",
 })
 export const TEXT_BUTTON =
   "inline-flex min-h-11 items-center rounded-[4px] text-[15px] underline underline-offset-[3px] disabled:opacity-50"
@@ -120,7 +121,7 @@ export function WorkPanel({
             <XIcon aria-hidden strokeWidth={1.5} className="size-6" />
           </SheetClose>
         </div>
-        <div className="mt-4 flex flex-col gap-5">{children}</div>
+        <div className="mt-4 flex flex-col gap-6">{children}</div>
       </SheetContent>
     </Sheet>
   )
@@ -336,7 +337,7 @@ export function TaskItem({
 
   return (
     <li className="flex flex-col gap-1">
-      <div className="flex min-h-11 items-start gap-2.5">
+      <div className="flex min-h-11 items-start gap-2">
         <Checkbox
           id={`${id}-done`}
           checked={task.done}

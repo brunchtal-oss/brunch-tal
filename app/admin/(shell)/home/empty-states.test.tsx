@@ -109,41 +109,51 @@ function count(html: string, text: string): number {
 }
 
 describe("home sections with data", () => {
-  it("five sessions: the next one with its details button, then exactly three later rows and one link to all", async () => {
+  it("five sessions: a tile for the next and one for the one after it, then one link to all", async () => {
     withSessions(5)
     const html = renderToStaticMarkup(await NextSessions())
     expect(loadEventDetails).toHaveBeenCalledWith(ids[0])
-    // "לפרטי המפגש" is the only link to the next session; its title is
-    // plain text (after the phone check, 2026-10-06).
+    // Two tiles, each with "לפרטי המפגש" as its only link (design round,
+    // user decision 2026-10-08: no "לדף העבודה"); no rows after the second.
+    expect(count(html, "<section")).toBe(2)
     expect(html).toMatch(
       new RegExp(
         `href="/admin/sessions/${ids[0]}"[^>]*>${copy.sessionDetails}</a>`
       )
     )
-    expect(html).not.toContain("/day")
-    expect(html).not.toContain(adminCopy.sessions.morningView)
-    // "לדף העבודה" opens the next session's work sheet (story 4.9).
     expect(html).toMatch(
       new RegExp(
-        `href="/admin/sessions/${ids[0]}/work"[^>]*>${copy.workSheet}</a>`
+        `href="/admin/sessions/${ids[1]}"[^>]*>${copy.sessionDetails}</a>`
       )
     )
-    const rows = html.match(/<li[^>]*>/g) ?? []
-    // The summary-card's four figures are list items too.
-    const later = [...html.matchAll(/href="\/admin\/sessions\/([^"/]+)"/g)]
-      .map((m) => m[1])
-      .filter((id) => id !== ids[0])
-    expect(later).toEqual([ids[1], ids[2], ids[3]])
-    expect(rows.length).toBe(4 + 3)
-    expect(count(html, `href="/admin/sessions/${ids[0]}"`)).toBe(1)
+    expect(html).not.toContain("/work")
+    expect(html).not.toContain("/day")
+    expect(html).not.toContain(adminCopy.sessions.morningView)
+    const linked = [
+      ...html.matchAll(/href="\/admin\/sessions\/([^"/]+)"/g),
+    ].map((m) => m[1])
+    expect(linked).toEqual([ids[0], ids[1]])
     expect(count(html, copy.allSessions)).toBe(1)
+    // The next tile: places, babies and allergies; no "נרשמות".
+    expect(html).toContain(copy.nextSession)
+    expect(html).toContain(adminCopy.sessions.summary.places)
+    expect(html).toContain(adminCopy.sessions.summary.babies)
+    expect(html).toContain(adminCopy.sessions.summary.allergies)
+    expect(html).not.toContain(adminCopy.sessions.summary.bookings)
+    // The second tile's places, at inline-end of its date.
+    expect(html).toContain("1/12")
+    // The weekday and date, never the time (2026-10-08).
+    expect(html.replace(/<[^>]*>/g, " ")).not.toMatch(/\d{2}:\d{2}/)
   })
 
-  it("one session: no later rows and one link to all", async () => {
+  it("one session: one tile and one link to all", async () => {
     withSessions(1)
     const html = renderToStaticMarkup(await NextSessions())
-    expect(html).not.toContain(copy.upcoming)
+    expect(count(html, "<section")).toBe(1)
     expect(count(html, copy.allSessions)).toBe(1)
+    expect(html.indexOf(copy.sessionDetails)).toBeLessThan(
+      html.indexOf(copy.allSessions)
+    )
   })
 })
 
@@ -162,7 +172,7 @@ describe("לטיפול", () => {
     const html = renderToStaticMarkup(await AttentionList())
     expect(html).toContain(copy.attentionCount(2))
     expect(html).toMatch(
-      /<span aria-hidden="true"[^>]*bg-primary[^>]*>2<\/span>/
+      /<span aria-hidden="true"[^>]*bg-saffron[^>]*>2<\/span>/
     )
     expect(count(html, "<li")).toBe(2)
     expect(html).not.toContain('href="/admin/attention"')
@@ -181,7 +191,7 @@ describe("לטיפול", () => {
     expect(count(html, "<li")).toBe(3)
     expect(html).toContain(copy.attentionCount(5))
     expect(html).toMatch(
-      /<span aria-hidden="true"[^>]*bg-primary[^>]*>5<\/span>/
+      /<span aria-hidden="true"[^>]*bg-saffron[^>]*>5<\/span>/
     )
     expect(html).toContain('href="/admin/attention"')
     expect(html).toContain(copy.attentionAll(5))

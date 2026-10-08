@@ -62,8 +62,8 @@ async function BookingsContent({
           {card.bookings.map((row) => {
             const item = toBookingItem(row)
             return (
-              <li key={item.key} className="flex flex-col gap-0.5">
-                <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+              <li key={item.key} className="flex flex-col gap-1">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                   <Link
                     href={item.href}
                     className="inline-flex min-h-11 items-center text-base font-semibold underline underline-offset-4"

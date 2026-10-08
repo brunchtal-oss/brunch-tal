@@ -488,21 +488,22 @@ describe("the prep days of round 2 (story 4.10)", () => {
 })
 
 describe("the work sheet's head (story 4.10, second phone check)", () => {
-  it("the link without an underline, בראנץ׳ {קונספט}, then the date and time", () => {
+  it("the link without an underline, בראנץ׳ {קונספט}, then the date without the time", () => {
     const html = renderToStaticMarkup(
       <WorkSheetHead
         eventId={ID}
         conceptName="יווני"
         startsAt={SHEET.event.startsAt}
-        endsAt={SHEET.event.endsAt}
       />
     )
     const link = html.indexOf(adminCopy.sessions.toDetails)
     const title = html.indexOf(adminCopy.sessions.sessionTitle("יווני"))
-    const when = html.indexOf("10:00")
+    const when = html.indexOf("22.10")
     expect(link).toBeGreaterThan(-1)
     expect(link).toBeLessThan(title)
     expect(title).toBeLessThan(when)
+    // No brunch time on the work sheet (design round 2026-10-08).
+    expect(html).not.toContain("10:00")
     expect(html).toContain(`href="/admin/sessions/${ID}"`)
     expect(html).toContain("no-underline")
     expect(html).not.toMatch(/class="([^"]* )?underline[ "]/)

@@ -20,10 +20,10 @@ import { Spinner } from "@/components/ui/spinner"
 import { adminCopy } from "@/lib/copy/admin"
 import { errorMessage } from "@/lib/errors"
 import { newIdempotencyKey } from "@/lib/idempotency"
-import { formatLocalDate, formatTime } from "@/lib/time"
+import { formatLocalDate } from "@/lib/time"
 import { cn } from "@/lib/utils"
 
-import { whenText } from "../../session-draft"
+import { dayText } from "../../session-draft"
 
 import {
   addPrepDayAction,
@@ -224,16 +224,7 @@ function PrintHead({
         <bdi>{copy.printTitle(sheet.event.conceptName)}</bdi>
       </h2>
       <p className="text-[13px]">
-        <bdi>
-          {copy.printMeta(
-            whenText(
-              day,
-              formatTime(sheet.event.startsAt),
-              formatTime(sheet.event.endsAt)
-            ),
-            bookings
-          )}
-        </bdi>
+        <bdi>{copy.printMeta(dayText(day), bookings)}</bdi>
       </p>
     </div>
   )
@@ -253,7 +244,7 @@ function PrintButton() {
 // empty-state (DESIGN › empty-state): the heading and one action.
 function EmptyDishes({ eventId }: { eventId: string }) {
   return (
-    <div className="flex flex-col items-center gap-4 rounded-lg bg-muted px-4 py-7 text-center">
+    <div className="flex flex-col items-center gap-4 rounded-lg bg-muted px-4 py-6 text-center">
       <p className="font-heading text-[26px] leading-[1.2] font-light text-balance">
         {copy.empty}
       </p>
@@ -433,7 +424,7 @@ function DaysRow({
       </h3>
       <ul
         aria-labelledby={labelId}
-        className="flex flex-wrap items-center gap-x-5 gap-y-1"
+        className="flex flex-wrap items-center gap-x-6 gap-y-1"
       >
         {prepDays.map((day) => (
           <li key={day.offset} className="flex min-h-11 items-center">
@@ -546,7 +537,7 @@ function AddedDay({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-[20px] font-light">
+            <AlertDialogTitle className="font-heading text-[22px] leading-[1.25] font-light">
               {copy.removeDayTitle(name)}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-[15px]">
@@ -688,7 +679,7 @@ function DishCard({
   return (
     <article className="flex flex-col gap-1 rounded-lg border border-border bg-card px-4 pt-1 pb-3">
       <div className="flex items-start justify-between gap-3">
-        <h3 className="min-w-0 py-2.5 text-lg leading-[1.35] font-semibold break-words">
+        <h3 className="min-w-0 py-2.5 text-base leading-[1.35] font-semibold break-words">
           <bdi>{dish.name}</bdi>
         </h3>
         <DishEditButton dish={dish} dishIds={dishIds} />
@@ -700,7 +691,7 @@ function DishCard({
           {days.map((day) => {
             const tasks = tasksOn(dish, day.offset)
             return (
-              <li key={day.offset} className="relative flex flex-col ps-5">
+              <li key={day.offset} className="relative flex flex-col ps-6">
                 <span
                   aria-hidden
                   className={cn(

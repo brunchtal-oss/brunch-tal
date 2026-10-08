@@ -14,6 +14,10 @@ export type NavIcon =
   | "profile"
   | "more"
   | "customers"
+  | "links"
+  | "products"
+  | "content"
+  | "settings"
 
 export type NavItem = {
   href: string
@@ -30,21 +34,30 @@ export type NavItem = {
 
 // The rows of the admin's "more" screen (app/admin/(shell)/more/page.tsx).
 // The customers come first (story 4.2, user decision 2026-10-07: the tab
-// bar stays at 5 items); a customer's card keeps "more" current too.
+// bar stays at 5 items); a customer's card keeps "more" current too. Every
+// row has an icon (user decision 2026-10-08).
 export const adminMoreNav: readonly {
   href: string
   label: string
-  icon?: NavIcon
+  icon: NavIcon
 }[] = [
   {
     href: "/admin/customers",
     label: shellCopy.nav.customers,
     icon: "customers",
   },
-  { href: "/admin/links", label: adminCopy.links.title },
-  { href: "/admin/products", label: adminCopy.products.title },
-  { href: "/admin/content", label: adminCopy.content.title },
-  { href: "/admin/settings", label: adminCopy.settings.title },
+  { href: "/admin/links", label: adminCopy.links.title, icon: "links" },
+  {
+    href: "/admin/products",
+    label: adminCopy.products.title,
+    icon: "products",
+  },
+  { href: "/admin/content", label: adminCopy.content.title, icon: "content" },
+  {
+    href: "/admin/settings",
+    label: adminCopy.settings.title,
+    icon: "settings",
+  },
 ]
 
 // The public pages, in the menu-sheet's fixed order (story 5.2). Each
@@ -92,7 +105,8 @@ export function visibleLegalNav(
   )
 }
 
-// The accessibility statement's link (menu-sheet, "more").
+// The accessibility statement's link (menu-sheet; no longer in the
+// admin's "more", user decision 2026-10-08).
 export const ACCESSIBILITY_HREF = "/accessibility"
 
 // The public item that is current on a path: its own path, or below it
