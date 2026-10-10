@@ -288,6 +288,7 @@
   target: סיפור קטן אחרי 3.11
   summary: טקסט ברירת מחדל לפרטי בראנץ׳ שטל יכולה לערוך (למשל טקסט כללי כשאין תיאור למפגש ולקונספט, ועריכת תיאור הקונספט). החלטת המשתמשת 2026-10-05: בהמשך, כסיפור נפרד.
   evidence: בדיקת הטלפון של 3.11.
+  status: נסגר. הוסר בהחלטת המשתמשת 2026-10-10: מפגש בלי תיאור, שגם לקונספט שלו אין תיאור, לא מציג תיאור.
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-16-public-session-pages.md`
   target: 3.18 (החלטת המשתמשת 2026-10-10)
   summary: מחיר ברירת מחדל ממחיר המוצר בעמוד המפגש הציבורי. ב-5.16 מוצג רק `display_price_agorot`, ובלעדיו אין שורת מחיר.
@@ -302,6 +303,7 @@
   target: 4.8 (תוכנית ההשלמה 2026-10-10)
   summary: עריכת תיאור הקונספט (`concepts.description`) באדמין. אין היום מסך קונספטים, והתיאורים של חמשת הקונספטים נכתבו ישירות במסד הפיתוח.
   evidence: ‏spec 5.16, Design Notes.
+  status: נסגר ב-4.8 (2026-10-10). ‏`/admin/concepts`: שם, תיאור, סוג, תמונה, ארכיון ומחיקה (`admin_update_concept`).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-16-public-session-pages.md`
   target: 5.19
@@ -337,6 +339,7 @@
   target: מסך הקונספטים
   summary: בורר תמונה לקונספט (`concepts.default_image_id`, שכבר במסד). ‏`photoUrl` כבר נופל לתמונת הקונספט כשאין תמונת מפגש. צריך RPC של אדמין שקובע את התמונה (פרסום + הסתרה של הקודמת, כמו `admin_set_event_image`).
   evidence: החלטת המשתמשת 2026-10-05: בהדגמה רק תמונת מפגש.
+  status: נסגר ב-4.8 (2026-10-10). ‏`admin_set_concept_image` ושדה התמונה בעורך הקונספט (פרסום, ואז הסתרה של הקודמת).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-4-media-upload-and-publish.md`
   target: 5.10
@@ -518,3 +521,8 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-4-5-audit-log-viewer.md`
   summary: The audit log cannot answer Flow 9 ("why did a customer's balance change") directly: `book_session`/`cancel_booking` audit the bookings row without units or the charged entitlement, and `entitlement_movements` are not audited, so the viewer shows that a booking or cancel happened but not which card or how many units moved.
   evidence: Intent-alignment review of story 4.5; 4.5 forbids changing `private.audit` or any writer. Settle by deciding whether writers record the movement (units, entitlement) in `after`.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-4-8-concepts-admin.md`
+  target: 5.20
+  summary: ‏`admin_duplicate_event` משכפל גם מפגש של קונספט בארכיון, ולכן נוצרת טיוטה חדשה לקונספט שלא מוצע במפגש חדש. להחליט אם לחסום (כמו `admin_create_event`) או להשאיר.
+  evidence: ‏4.8 לא נוגע ב-`admin_duplicate_event` (גבול ה-spec). ‏`admin_create_event` כבר מסנן `archived_at`.

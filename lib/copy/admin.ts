@@ -488,6 +488,56 @@ export const adminCopy = {
       submit: "שמירת המוצר",
     },
   },
+  // /admin/concepts (story 4.8, CAP-41).
+  concepts: {
+    title: "קונספטים",
+    add: "קונספט",
+    addLabel: "הוספת קונספט",
+    empty: "אין עדיין קונספטים",
+    archivedChip: "בארכיון",
+    showArchive: "להציג ארכיון",
+    hideArchive: "להסתיר ארכיון",
+    kinds: { regular: "רגיל", couple: "זוגי" },
+    fields: {
+      name: "שם",
+      description: "תיאור (לא חובה)",
+      kind: "סוג",
+    },
+    // The notes under the editor's fields.
+    nameNote: "שינוי השם מופיע בכל המפגשים של הקונספט",
+    descriptionNote:
+      "מפגש חדש מקבל את התיאור הזה, ואפשר לשנות אותו במפגש. בלי תיאור במפגש, יוצג התיאור הזה.",
+    kindNote: "שינוי הסוג חל על מפגשים חדשים בלבד",
+    nameTooLong: "עד 100 תווים",
+    descriptionTooLong: "עד 2000 תווים",
+    save: "שמירה",
+    saved: "השינויים נשמרו",
+    image: {
+      label: "תמונה (לא חובה)",
+      hint: "מוצגת בכל מפגש בלי תמונה משלו",
+      save: "שמירת התמונה",
+      saved: "התמונה נשמרה ומוצגת באתר",
+      removed: "התמונה הוסרה",
+    },
+    archive: "העברה לארכיון",
+    restore: "החזרה מהארכיון",
+    archiveNote: "קונספט בארכיון לא מוצע במפגש חדש. מפגשים קיימים לא משתנים.",
+    archived: "הקונספט הועבר לארכיון",
+    restored: "הקונספט חזר מהארכיון",
+    delete: "מחיקת הקונספט",
+    // The concept_delete dialog (lib/admin/sensitive-actions.ts has its
+    // title).
+    deleteDialog: {
+      description: "אפשר למחוק רק קונספט שאין לו מפגשים. המחיקה סופית.",
+      concept: "קונספט",
+      confirm: (name: string) => `אני מאשרת למחוק את הקונספט ${name}`,
+      submit: "מחיקה",
+    },
+    create: {
+      title: "קונספט חדש",
+      submit: "יצירת הקונספט",
+    },
+  },
   // /admin/sessions (story 3.1, wording approved by the user on 2026-10-04).
   sessions: {
     // The list's h1 and the session pages' <title> (user decision

@@ -12,6 +12,8 @@ export const SENSITIVE_ACTIONS = {
   booking_cancel: "האם לבטל את ההרשמה?",
   // Deleting a notes topic that has notes, archived ones included (4.11).
   delete_note_topic: "האם למחוק את הנושא?",
+  // Deleting a concept that no session uses (4.8).
+  concept_delete: "האם למחוק את הקונספט?",
 } as const
 
 export type SensitiveAction = keyof typeof SENSITIVE_ACTIONS
