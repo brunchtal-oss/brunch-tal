@@ -162,6 +162,7 @@ describe("navigation", () => {
       "links",
       "products",
       "content",
+      "notes",
       "settings",
     ])
     expect(adminMoreNav.some((row) => row.href === "/accessibility")).toBe(
