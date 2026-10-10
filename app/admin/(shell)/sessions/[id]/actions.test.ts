@@ -25,12 +25,13 @@ describe("previewAdminCancelAction (story 3.6)", () => {
       data: {
         ok: true,
         pending_join: true,
-        outcome: "pinned",
+        outcome: "credit",
+        funding: "pinned",
         product_name: "Single",
-        within_window: true,
-        expires_on: "2026-10-20",
-        awaiting_sessions: false,
+        within_window: false,
+        choice_required: true,
         options_count: 2,
+        amount_agorot: 12800,
       },
     })
     await expect(
@@ -41,12 +42,12 @@ describe("previewAdminCancelAction (story 3.6)", () => {
         ok: true,
         pendingJoin: true,
         customerName: null,
-        outcome: "pinned",
+        funding: "pinned",
         productName: "Single",
-        withinWindow: true,
-        expiresOn: "2026-10-20",
-        awaitingSessions: false,
+        withinWindow: false,
+        choiceRequired: true,
         optionsCount: 2,
+        amountAgorot: 12800,
       },
     })
     callRpc.mockResolvedValue({
@@ -85,8 +86,37 @@ describe("adminCancelBookingAction (story 3.6)", () => {
     )
   })
 
+  it("story 3.7: sends the refund-or-credit choice only when there is one", async () => {
+    callRpc.mockResolvedValue({ ok: true, data: {} })
+    await adminCancelBookingAction({
+      bookingId: BOOKING_ID,
+      reason: "",
+      confirmed: true,
+      idempotencyKey: KEY,
+      choice: "refund",
+    })
+    expect(callRpc).toHaveBeenLastCalledWith(
+      { session: true },
+      "admin_cancel_booking",
+      {
+        p_booking_id: BOOKING_ID,
+        p_confirmed: true,
+        p_idempotency_key: KEY,
+        p_reason: undefined,
+        p_choice: "refund",
+      }
+    )
+  })
+
   it("refuses malformed input without calling the RPC", async () => {
     for (const input of [
+      {
+        bookingId: BOOKING_ID,
+        reason: "",
+        confirmed: true,
+        idempotencyKey: KEY,
+        choice: "maybe",
+      },
       { bookingId: "nope", reason: "", confirmed: true, idempotencyKey: KEY },
       {
         bookingId: BOOKING_ID,

@@ -28,7 +28,6 @@ export function BalanceCard({
   expiresOn,
   daysLeft,
   isExpiring = false,
-  awaiting = false,
   counts = true,
 }: {
   href: string
@@ -39,9 +38,6 @@ export function BalanceCard({
   expiresOn: string
   daysLeft?: number
   isExpiring?: boolean
-  // A returned entry that waits for the next sessions (story 3.6): the
-  // words in place of the validity.
-  awaiting?: boolean
   // false for an entry that is not a card (single, couple, intro; user
   // decision 2026-10-08): no plates and no "ניצלת"/"נרשמת X/N" lines, only
   // a status-chip, "נרשמת" (booked, filled) while it funds a booking, else "יש
@@ -76,20 +72,16 @@ export function BalanceCard({
           </p>
         )}
         <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[15px] text-muted-foreground">
-          {awaiting ? (
-            <span>{customerCopy.awaitingSessions}</span>
-          ) : (
-            <span>
-              {customerCopy.validUntil}{" "}
-              <time dateTime={formatLocalDate(expiresOn)}>
-                <bdi>{formatDayMonth(expiresOn)}</bdi>
-              </time>
-              {isExpiring && daysLeft !== undefined && (
-                <> · {customerCopy.daysLeft(daysLeft)}</>
-              )}
-            </span>
-          )}
-          {isExpiring && !awaiting && (
+          <span>
+            {customerCopy.validUntil}{" "}
+            <time dateTime={formatLocalDate(expiresOn)}>
+              <bdi>{formatDayMonth(expiresOn)}</bdi>
+            </time>
+            {isExpiring && daysLeft !== undefined && (
+              <> · {customerCopy.daysLeft(daysLeft)}</>
+            )}
+          </span>
+          {isExpiring && (
             <StatusChip tone="warning">{customerCopy.expiring}</StatusChip>
           )}
         </p>

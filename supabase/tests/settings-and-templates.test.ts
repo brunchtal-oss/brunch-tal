@@ -11,13 +11,7 @@ import { describe, expect, it } from "vitest"
 
 import { adminCopy } from "@/lib/copy/admin"
 
-import {
-  asAuthenticated,
-  inRollback,
-  sql,
-  testName,
-  type Db,
-} from "./support/db"
+import { asAuthenticated, inRollback, testName, type Db } from "./support/db"
 import { approve, seedMoney, type MoneyFixture } from "./support/money"
 
 const SETTINGS =
@@ -628,7 +622,7 @@ describe("admin_update_notification_template", { timeout: 30_000 }, () => {
     })
   })
 
-  it("the admin reads all 14 templates (policy and grant)", async () => {
+  it("the admin reads all 15 templates (policy and grant)", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)
       const types = await as(db, f.admin, async () => {
@@ -637,17 +631,19 @@ describe("admin_update_notification_template", { timeout: 30_000 }, () => {
         )
         return rows.map((row) => row.type as string)
       })
-      expect(types).toHaveLength(14)
+      expect(types).toHaveLength(15)
     })
   })
 
   it("every template type in the database has a name in the admin copy, and no other", async () => {
-    const rows = await sql<{ type: string }>(
-      "select type from public.notification_templates"
-    )
-    expect(new Set(Object.keys(adminCopy.settings.templates.types))).toEqual(
-      new Set(rows.map((row) => row.type))
-    )
+    await inRollback(async (db) => {
+      const { rows } = await db.query<{ type: string }>(
+        "select type from public.notification_templates"
+      )
+      expect(new Set(Object.keys(adminCopy.settings.templates.types))).toEqual(
+        new Set(rows.map((row) => row.type))
+      )
+    })
   })
 })
 
@@ -663,7 +659,7 @@ describe("the template contract", { timeout: 60_000 }, () => {
          from public.notification_templates
          order by type`
       )
-      expect(rows).toHaveLength(14)
+      expect(rows).toHaveLength(15)
     })
   })
 
@@ -708,30 +704,37 @@ describe("the template contract", { timeout: 60_000 }, () => {
     })
   })
 
-  it("booking_cancelled_pinned renders in the real flow", async () => {
-    await inRollback(async (db) => {
-      const f = await seed(db)
-      await fillAllFields(db, f, "booking_cancelled_pinned")
-      const event = await insertEvent(db, f, 5)
-      await insertEvent(db, f, 6)
-      await insertEvent(db, f, 7)
-      await grant(db, f, f.single, { eventId: event })
-      const { rows } = await db.query(
-        "select id from public.bookings where event_id = $1 and customer_id = $2",
-        [event, f.customerA]
-      )
-      await as(db, f.customerA, () =>
-        db.query(CANCEL, [rows[0].id, randomUUID()])
-      )
-      const sent = await notifications(
-        db,
-        f.customerA,
-        "booking_cancelled_pinned"
-      )
-      expect(sent).toHaveLength(1)
-      expectRendered(sent[0])
+  // Story 3.7: a pinned booking cancelled with a credit, or with a refund
+  // request.
+  for (const [type, choice] of [
+    ["booking_cancelled_pinned", "credit"],
+    ["booking_cancelled_refund", "refund"],
+  ] as const) {
+    it(`${type} renders in the real flow (${choice})`, async () => {
+      await inRollback(async (db) => {
+        const f = await seed(db)
+        await fillAllFields(db, f, type)
+        const event = await insertEvent(db, f, 5)
+        await insertEvent(db, f, 6)
+        await insertEvent(db, f, 7)
+        await grant(db, f, f.single, { eventId: event })
+        const { rows } = await db.query(
+          "select id from public.bookings where event_id = $1 and customer_id = $2",
+          [event, f.customerA]
+        )
+        await as(db, f.customerA, () =>
+          db.query("select public.cancel_booking($1, $2, $3) as r", [
+            rows[0].id,
+            randomUUID(),
+            choice,
+          ])
+        )
+        const sent = await notifications(db, f.customerA, type)
+        expect(sent).toHaveLength(1)
+        expectRendered(sent[0])
+      })
     })
-  })
+  }
 
   it("purchase_new_card renders when the purchase is bound", async () => {
     await inRollback(async (db) => {

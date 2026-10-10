@@ -225,21 +225,33 @@ export function BookingPanel({
         </p>
         <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 rounded-lg bg-muted px-4 py-3 text-[15px]">
           <dt className="text-muted-foreground">{copy.uses}</dt>
-          <dd className="font-semibold">
-            {copy.usesValue("")}
-            <bdi>{preview.productName}</bdi>
-          </dd>
-          <dt className="text-muted-foreground">{copy.remaining}</dt>
-          <dd className="font-semibold">
-            {copy.remainingValue(preview.availableAfter)}
-          </dd>
-          <dt className="text-muted-foreground">{copy.validUntilLabel}</dt>
-          <dd className="font-semibold">
-            <time dateTime={formatLocalDate(preview.expiresOn)}>
-              {formatWeekday(preview.expiresOn)}{" "}
-              <bdi>{formatDayMonth(preview.expiresOn)}</bdi>
-            </time>
-          </dd>
+          {preview.source === "credit" ? (
+            // Story 3.7: the credit of a cancelled session; nothing else
+            // to count or to expire.
+            <dd className="font-semibold">
+              <bdi>
+                {copy.creditTitle(formatDayMonth(preview.originStartsAt))}
+              </bdi>
+            </dd>
+          ) : (
+            <>
+              <dd className="font-semibold">
+                {copy.usesValue("")}
+                <bdi>{preview.productName}</bdi>
+              </dd>
+              <dt className="text-muted-foreground">{copy.remaining}</dt>
+              <dd className="font-semibold">
+                {copy.remainingValue(preview.availableAfter)}
+              </dd>
+              <dt className="text-muted-foreground">{copy.validUntilLabel}</dt>
+              <dd className="font-semibold">
+                <time dateTime={formatLocalDate(preview.expiresOn)}>
+                  {formatWeekday(preview.expiresOn)}{" "}
+                  <bdi>{formatDayMonth(preview.expiresOn)}</bdi>
+                </time>
+              </dd>
+            </>
+          )}
         </dl>
         {error && (
           <InlineNotice tone="error" className="mt-4">

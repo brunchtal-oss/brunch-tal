@@ -13,7 +13,7 @@ import { createClient } from "@/lib/supabase/server"
 import { formatDayMonth, formatLocalDate } from "@/lib/time"
 
 import { loadMyEntitlements, pinnedConceptNames } from "../../load-entitlements"
-import { entitlementName, pastStatus } from "../../purchase-items"
+import { creditChip, entitlementName, pastStatus } from "../../purchase-items"
 import { buildHistory } from "./history"
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -74,7 +74,7 @@ async function EntitlementContent({
   const bookingsResult = bookingIds.length
     ? await supabase
         .from("bookings")
-        .select("id, event_id")
+        .select("id, event_id, status")
         .in("id", bookingIds)
     : { data: [], error: null }
   if (bookingsResult.error) throw new Error("bookings failed")
@@ -98,6 +98,8 @@ async function EntitlementContent({
   })
   const past = pastStatus(entitlement)
   const isCard = entitlement.kind === "card"
+  // Story 3.7: a pinned purchase that became a credit or a refund request.
+  const chip = creditChip(entitlement)
 
   return (
     <div className="flex flex-col gap-8 pb-8">
@@ -119,10 +121,10 @@ async function EntitlementContent({
               <bdi>{formatDayMonth(entitlement.paidOn)}</bdi>
             </time>
           </span>
-          {past ? (
+          {chip ? (
+            <StatusChip tone="pending">{chip}</StatusChip>
+          ) : past ? (
             <span>{past}</span>
-          ) : entitlement.awaitingSessions ? (
-            <span>{customerCopy.awaitingSessions}</span>
           ) : (
             <span>
               {customerCopy.validUntil}{" "}

@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 
+import { RadioCardGroup } from "@/components/admin/radio-card"
 import { SensitiveConfirmDialog } from "@/components/admin/sensitive-confirm-dialog"
 import { InlineNotice } from "@/components/shared/inline-notice"
 import { useAnnounce } from "@/components/shared/result-notice"
@@ -14,7 +15,11 @@ import { newIdempotencyKey } from "@/lib/idempotency"
 import { formatSessionDate } from "@/lib/time"
 
 import { adminCancelBookingAction, previewAdminCancelAction } from "./actions"
-import { cancelReturnsText, type CancelPlan } from "./cancel-plan"
+import {
+  cancelReturnsText,
+  type CancelChoice,
+  type CancelPlan,
+} from "./cancel-plan"
 
 const copy = adminCopy.sessions.cancel
 const sessionsCopy = adminCopy.sessions
@@ -29,7 +34,9 @@ function refusal(code: ErrorCode): string {
 // the self-cancel window and a place held for a new customer (AD-23). The
 // row's button reads the plan (preview_admin_cancel_booking), then the
 // booking_cancel sensitive dialog shows its impact (who, which session,
-// what returns), an optional reason and the required checkbox. One key per
+// what returns), an optional reason and the required checkbox. A pinned
+// booking she could still cancel herself needs Tal's choice, refund or
+// credit, as radio-cards; what returns follows the choice (story 3.7). One key per
 // opening of the dialog (AD-5). On success the dialog closes, the page is
 // read again (the row leaves the list, the places go down) and the result
 // is announced above the list. A refusal (of the plan or of the cancel)
@@ -54,6 +61,8 @@ export function AttendeeCancel({
   const [plan, setPlan] = useState<ReadyPlan | null>(null)
   const [key, setKey] = useState("")
   const [reason, setReason] = useState("")
+  // Story 3.7: refund or credit, when the plan requires Tal to choose.
+  const [choice, setChoice] = useState<CancelChoice | null>(null)
   const [pending, setPending] = useState(false)
   const [rowError, setRowError] = useState<ErrorCode | null>(null)
 
@@ -73,6 +82,7 @@ export function AttendeeCancel({
       }
       setKey(newIdempotencyKey())
       setReason("")
+      setChoice(null)
       setPlan(fresh)
     } catch {
       setRowError("SERVER_ERROR")
@@ -91,6 +101,7 @@ export function AttendeeCancel({
         reason,
         confirmed: true,
         idempotencyKey: key,
+        choice: plan?.choiceRequired ? choice : null,
       })
       if (result.ok) {
         setPlan(null)
@@ -152,13 +163,47 @@ export function AttendeeCancel({
                 </>
               ),
             },
-            {
-              label: copy.returns,
-              value: <bdi>{cancelReturnsText(plan)}</bdi>,
-            },
+            ...(plan.choiceRequired && !choice
+              ? []
+              : [
+                  {
+                    label: copy.returns,
+                    value: <bdi>{cancelReturnsText(plan, choice)}</bdi>,
+                  },
+                ]),
           ]}
+          choice={
+            plan.choiceRequired ? (
+              <RadioCardGroup
+                legend={copy.returns}
+                name={`admin-cancel-choice-${bookingId}`}
+                required
+                value={choice ?? ""}
+                onChange={(value) => {
+                  setChoice(value === "refund" ? "refund" : "credit")
+                  // A changed request is a new request (AD-5).
+                  setKey(newIdempotencyKey())
+                }}
+                options={[
+                  { value: "credit", label: copy.choiceCredit },
+                  { value: "refund", label: copy.choiceRefund },
+                ]}
+              />
+            ) : undefined
+          }
+          choiceMissing={
+            plan.choiceRequired && !choice ? copy.choiceRequired : null
+          }
           notice={plan.withinWindow ? copy.withinWindow : undefined}
-          reason={{ label: copy.reason, value: reason, onChange: setReason }}
+          reason={{
+            label: copy.reason,
+            value: reason,
+            onChange: (value) => {
+              setReason(value)
+              // A changed request is a new request (AD-5).
+              setKey(newIdempotencyKey())
+            },
+          }}
           checkboxLabel={copy.checkbox(name)}
           confirmLabel={copy.confirm}
           destructive

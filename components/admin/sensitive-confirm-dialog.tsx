@@ -31,6 +31,11 @@ export type SensitiveConfirmProps = {
   // warning and an optional reason field (never required), the full wording
   // of the required checkbox.
   impact: readonly ImpactRow[]
+  // A required choice under the impact box (story 3.7: refund or credit).
+  // choiceMissing: while set, the confirm does not run and shows it as the
+  // hint (like the checkbox's).
+  choice?: React.ReactNode
+  choiceMissing?: string | null
   notice?: React.ReactNode
   reason?: { label: string; value: string; onChange: (value: string) => void }
   checkboxLabel: React.ReactNode
@@ -50,6 +55,8 @@ export type SensitiveConfirmProps = {
 // no form, so Enter never confirms.
 export function SensitiveConfirmPanel({
   impact,
+  choice,
+  choiceMissing = null,
   notice,
   reason,
   checkboxLabel,
@@ -67,7 +74,7 @@ export function SensitiveConfirmPanel({
 
   const confirm = () => {
     if (pending) return
-    if (!checked) {
+    if (!checked || choiceMissing) {
       setShowHint(true)
       return
     }
@@ -84,6 +91,8 @@ export function SensitiveConfirmPanel({
           </div>
         ))}
       </dl>
+
+      {choice}
 
       {notice && <InlineNotice tone="warning">{notice}</InlineNotice>}
 
@@ -125,7 +134,7 @@ export function SensitiveConfirmPanel({
             BUTTON,
             destructive && "bg-error text-primary-foreground"
           )}
-          aria-disabled={!checked || pending || undefined}
+          aria-disabled={!checked || !!choiceMissing || pending || undefined}
           aria-busy={pending || undefined}
           aria-describedby={hintId}
           onClick={confirm}
@@ -138,7 +147,11 @@ export function SensitiveConfirmPanel({
           aria-live="polite"
           className="min-h-5 text-[13px] text-error"
         >
-          {showHint && !checked ? copy.checkRequired : ""}
+          {showHint && choiceMissing
+            ? choiceMissing
+            : showHint && !checked
+              ? copy.checkRequired
+              : ""}
         </p>
         <Button
           type="button"

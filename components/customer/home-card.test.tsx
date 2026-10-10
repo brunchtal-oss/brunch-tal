@@ -35,10 +35,42 @@ describe("HomeCard", () => {
     expect(html).not.toContain(customerCopy.daysLeft(9))
   })
 
-  it("one part per entry: free, then booked, then used", () => {
+  it("the legend: used with the dark key, then booked with the light key; no free item (2026-10-10)", () => {
     const html = renderToStaticMarkup(<HomeCard {...base} />)
-    const parts = [...html.matchAll(/data-entry="(\w+)"/g)].map((m) => m[1])
-    expect(parts).toEqual(["free", "booked", "booked", "used"])
+    const used = html.indexOf(customerCopy.usedOf(1, 4))
+    const booked = html.indexOf(customerCopy.bookedOf(2, 4))
+    expect(used).toBeGreaterThan(-1)
+    expect(used).toBeLessThan(booked)
+    expect(html).not.toContain("פנויה")
+    // The key just before each item's words.
+    const keyBefore = (at: number) => {
+      const before = html.slice(0, at)
+      return before.lastIndexOf("bg-primary") >
+        before.lastIndexOf("bg-brand-accent")
+        ? "primary"
+        : "accent"
+    }
+    expect(keyBefore(used)).toBe("primary")
+    expect(keyBefore(booked)).toBe("accent")
+  })
+
+  it("one part per entry: used (dark), then booked (light), then free (grey)", () => {
+    const html = renderToStaticMarkup(<HomeCard {...base} />)
+    const parts = [
+      ...html.matchAll(/<span[^>]*data-entry="[a-z]+"[^>]*>/g),
+    ].map((m) => [
+      /data-entry="([a-z]+)"/.exec(m[0])?.[1] ?? "",
+      /class="([^"]*)"/.exec(m[0])?.[1] ?? "",
+    ])
+    expect(parts.map(([entry]) => entry)).toEqual([
+      "used",
+      "booked",
+      "booked",
+      "free",
+    ])
+    expect(parts[0][1]).toContain("bg-primary")
+    expect(parts[1][1]).toContain("bg-brand-accent")
+    expect(parts[3][1]).toContain("bg-border")
   })
 
   it("numeral-xl by default, numeral-lg for a second card", () => {

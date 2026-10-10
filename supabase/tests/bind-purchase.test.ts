@@ -61,7 +61,13 @@ async function approveCard(db: Db, f: MoneyFixture): Promise<string> {
 }
 
 // Filled by private.bind_purchase from the payment.
-const BOUND = ["bookings", "entitlements", "payments"]
+const BOUND = [
+  "bookings",
+  "cancellation_credits",
+  "entitlements",
+  "payments",
+  "refund_requests",
+]
 
 // Created only for a customer who already exists, never for an unbound
 // purchase.
@@ -102,10 +108,12 @@ function unclassified(tables: string[]): string[] {
 
 describe("bind_purchase coverage", () => {
   it("classifies every public table with customer_id", async () => {
-    const tables = await customerTables()
-    expect(unclassified(tables)).toEqual([])
-    // The lists name only tables that exist.
-    expect([...BOUND, ...NOT_BEFORE_BIND].sort()).toEqual(tables)
+    await inRollback(async (db) => {
+      const tables = await customerTables(db)
+      expect(unclassified(tables)).toEqual([])
+      // The lists name only tables that exist.
+      expect([...BOUND, ...NOT_BEFORE_BIND].sort()).toEqual(tables)
+    })
   })
 
   it("fails for a new table with customer_id", async () => {
@@ -133,7 +141,8 @@ describe("bind_purchase coverage", () => {
         entitlements: "payment_id = $1",
         bookings: "payment_id = $1",
       }
-      for (const table of BOUND) {
+      // A card purchase has no credit or refund request (below).
+      for (const table of Object.keys(lookup)) {
         const { rows } = await db.query(
           `select customer_id from public.${table} where ${lookup[table]}`,
           [paymentId]
@@ -157,6 +166,127 @@ describe("bind_purchase coverage", () => {
       )
       expect(notifications).toEqual([
         { dedupe_key: `booking_confirmed:${f.customerA}:${bookingId}` },
+      ])
+    })
+  })
+
+  // Story 3.7: Tal cancelled the held place of an unbound pinned purchase
+  // (a refund request, then a credit for another purchase); the bind moves
+  // the credit and the refund request with the payment, with an audit row
+  // each, and sends booking_cancelled_pinned for an active credit and
+  // booking_cancelled_refund for a refund request.
+  it("moves the purchase's credit and refund request, with audit; booking_cancelled_pinned for the credit, booking_cancelled_refund for the refund", async () => {
+    await inRollback(async (db) => {
+      const f = await seedMoney(db)
+      const { rows: products } = await db.query(
+        `insert into public.products (
+           name, type, price_agorot, units, validity_mode, validity_days,
+           allowed_weekdays, eligible_event_kind, party_size)
+         values ($1, 'single', 12800, 1, 'session', null, null, 'regular', 1)
+         returning id`,
+        [testName("single")]
+      )
+      // Only this test's sessions count as "the next sessions".
+      await db.query(
+        "update public.events set status = 'draft' where status = 'published'"
+      )
+      const { rows: events } = await db.query(
+        `insert into public.events (
+           concept_id, kind, starts_at, ends_at, capacity_adults,
+           registration_closes_at, status)
+         select c.id, 'regular', now() + make_interval(days => d),
+           now() + make_interval(days => d) + interval '2 hours', 12,
+           now() + make_interval(days => d), 'published'
+         from public.concepts c, unnest(array[5, 6, 9]) d
+         where c.theme_key = 'mothers'
+         order by d
+         returning id`
+      )
+
+      // Two unbound pinned purchases; Tal cancels each held place.
+      const cancelHeld = async (eventId: string, choice: string) => {
+        await asAuthenticated(db, f.admin)
+        const r = await approve(db, {
+          productId: products[0].id,
+          eventId,
+          amount: 12800,
+          paidOn: f.today,
+          methodId: f.method,
+          duplicateConfirmed: true,
+          key: randomUUID(),
+        })
+        const { rows: held } = await db.query(
+          "select id from public.bookings where payment_id = $1",
+          [r.payment_id]
+        )
+        const { rows: c } = await db.query(
+          "select public.admin_cancel_booking($1, true, $2, null, $3) as r",
+          [held[0].id, randomUUID(), choice]
+        )
+        await db.query("reset role")
+        return { paymentId: r.payment_id as string, result: c[0].r }
+      }
+      const refund = await cancelHeld(events[0].id, "refund")
+      const kept = await cancelHeld(events[1].id, "credit")
+
+      for (const { paymentId } of [refund, kept]) {
+        await db.query("select private.bind_purchase($1, $2)", [
+          paymentId,
+          f.customerA,
+        ])
+      }
+
+      const { rows: credits } = await db.query(
+        "select id, customer_id, status from public.cancellation_credits where id = any($1::uuid[]) order by status",
+        [[refund.result.credit_id, kept.result.credit_id]]
+      )
+      expect(credits).toEqual([
+        {
+          id: kept.result.credit_id,
+          customer_id: f.customerA,
+          status: "active",
+        },
+        {
+          id: refund.result.credit_id,
+          customer_id: f.customerA,
+          status: "refund_requested",
+        },
+      ])
+      const { rows: requests } = await db.query(
+        "select customer_id from public.refund_requests where id = $1",
+        [refund.result.refund_request_id]
+      )
+      expect(requests).toEqual([{ customer_id: f.customerA }])
+
+      const { rows: audit } = await db.query(
+        `select entity_type from public.audit_log
+         where action = 'bind_purchase' and entity_id = any($1::uuid[])
+         order by entity_type`,
+        [
+          [
+            refund.result.credit_id,
+            kept.result.credit_id,
+            refund.result.refund_request_id,
+          ],
+        ]
+      )
+      expect(audit.map((row) => row.entity_type)).toEqual([
+        "cancellation_credits",
+        "cancellation_credits",
+        "refund_requests",
+      ])
+
+      const { rows: sent } = await db.query(
+        "select dedupe_key from public.notifications where recipient_id = $1 and type like 'booking_cancelled%' order by type",
+        [f.customerA]
+      )
+      expect(sent).toEqual([
+        {
+          dedupe_key: `booking_cancelled_pinned:${f.customerA}:bind:${kept.result.credit_id}`,
+        },
+        {
+          dedupe_key: `booking_cancelled_refund:${f.customerA}:bind:${refund.result.credit_id}`,
+        },
       ])
     })
   })

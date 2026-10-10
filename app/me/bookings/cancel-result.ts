@@ -1,26 +1,27 @@
-// What the cancel screens show (story 3.6), from the RPCs' jsonb (pure: data
-// in, values out). Every decision (can_self_cancel, the funding, the new
-// validity of a returned entry) comes from the server; nothing is computed
-// from a clock here (AD-8).
+// What the cancel screens show (stories 3.6, 3.7), from the RPCs' jsonb
+// (pure: data in, values out). Every decision (can_self_cancel, the
+// funding, the outcome) comes from the server; nothing is computed from a
+// clock here (AD-8).
 
 import { customerCopy } from "@/lib/copy/customer"
-import { formatDayMonth } from "@/lib/time"
 
-// How a booking was funded: a card, a pinned purchase of this session, or a
-// pinned entry that already returned once (behaves like a card).
-export type Funding = "card" | "pinned" | "returned"
+// How a booking was funded: a card (a 3.6 returned entry too), a pinned
+// purchase of this session (she chooses refund or credit), or a
+// cancellation credit (the same credit comes back).
+export type Funding = "card" | "pinned" | "credit"
 
-const FUNDINGS: readonly Funding[] = ["card", "pinned", "returned"]
+const FUNDINGS: readonly Funding[] = ["card", "pinned", "credit"]
 
 export function parseFunding(value: unknown): Funding {
   return FUNDINGS.find((f) => f === value) ?? "card"
 }
 
+// The choice of a pinned booking (story 3.7).
+export type CancelChoice = "credit" | "refund"
+
 // cancel_booking's result.
 export type CancelResult = {
-  outcome: "card" | "pinned"
-  expiresOn: string | null
-  awaitingSessions: boolean
+  outcome: "card" | "credit" | "refund"
 }
 
 export function parseCancelResult(data: unknown): CancelResult {
@@ -29,29 +30,33 @@ export function parseCancelResult(data: unknown): CancelResult {
       ? (data as Record<string, unknown>)
       : {}
   return {
-    outcome: row.outcome === "pinned" ? "pinned" : "card",
-    expiresOn: typeof row.expires_on === "string" ? row.expires_on : null,
-    awaitingSessions: row.awaiting_sessions === true,
+    outcome:
+      row.outcome === "credit" || row.outcome === "refund"
+        ? row.outcome
+        : "card",
   }
 }
 
 /** The success notice after a cancel. */
 export function cancelDoneMessage(result: CancelResult): string {
   const copy = customerCopy.cancel
-  if (result.outcome !== "pinned") return copy.doneCard
-  if (result.awaitingSessions || !result.expiresOn) return copy.doneAwaiting
-  return copy.donePinned(formatDayMonth(result.expiresOn))
+  if (result.outcome === "credit") return copy.doneCredit
+  if (result.outcome === "refund") return copy.doneRefund
+  return copy.doneCard
 }
 
-/** "What returns" in the cancel sheet. */
+/**
+ * "What returns" in the cancel sheet, for a booking without a choice: a
+ * card's entry, or the same credit. A pinned booking shows the choice
+ * instead (null).
+ */
 export function returnsText(
   funding: Funding,
-  productName: string,
-  optionsCount: number
-): string {
+  productName: string
+): string | null {
   const copy = customerCopy.cancel
-  if (funding === "pinned") return copy.returnsPinned(optionsCount)
-  if (funding === "returned") return copy.returnsReturned
+  if (funding === "pinned") return null
+  if (funding === "credit") return copy.returnsCredit
   return copy.returnsCard(productName)
 }
 

@@ -12,6 +12,7 @@ import { AttentionList } from "./home/attention-list"
 import { ExpiringCards } from "./home/expiring-cards"
 import { MonthTotals } from "./home/month-totals"
 import { NextSessions } from "./home/next-sessions"
+import { OpenRefunds } from "./home/open-refunds"
 
 export const metadata: Metadata = {
   title: shellCopy.admin.homeTitle,
@@ -44,7 +45,8 @@ async function Greeting() {
 // (the greeting; the <title> stays "בית"), the two actions, a session-tile
 // for the next session and one for the session after it, "לכל המפגשים",
 // then a cube each for "לטיפול" (the
-// three newest), the cards about to expire and the month's sum. Cubes are
+// three newest), the open refund requests (story 3.7, only while there is
+// one), the cards about to expire and the month's sum. Cubes are
 // 12px apart. Each part is a separate component in its own <Suspense>.
 // Rendered inside the admin shell's <Suspense> gate.
 export default function AdminHomePage() {
@@ -61,6 +63,9 @@ export default function AdminHomePage() {
       </Suspense>
       <Suspense fallback={<Loading />}>
         <AttentionList />
+      </Suspense>
+      <Suspense fallback={<Loading />}>
+        <OpenRefunds />
       </Suspense>
       <Suspense fallback={<Loading />}>
         <ExpiringCards />

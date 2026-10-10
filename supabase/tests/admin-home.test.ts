@@ -42,8 +42,11 @@ type Home = {
     period_end: string
     approved_count: number
     approved_agorot: number
+    refunded_count: number
+    refunded_agorot: number
     net_agorot: number
   }
+  open_refunds: Record<string, unknown>[]
 }
 
 type Fixture = MoneyFixture & { single: string; concept: string }
@@ -557,7 +560,9 @@ describe("admin_get_home", () => {
       const after = (await home(db, f)).totals
       expect(after.approved_count - before.approved_count).toBe(3)
       expect(after.approved_agorot - before.approved_agorot).toBe(3 * 47200)
-      expect(after.net_agorot).toBe(after.approved_agorot)
+      expect(after.net_agorot).toBe(
+        after.approved_agorot - after.refunded_agorot
+      )
 
       // "Recent payments" on the home are the first rows of
       // admin_list_payments: newest created_at first.
@@ -689,6 +694,96 @@ describe("admin_get_home", () => {
       const ids = sessions.map((s) => s.event_id)
       expect(ids).not.toContain(draft)
       expect(ids).not.toContain(ended)
+    })
+  })
+})
+
+// Story 3.7: a refund request she opened by cancelling a pinned booking.
+describe("refund requests", { timeout: 30_000 }, () => {
+  // Customer B's pinned single on a session in 7 days, cancelled by her with
+  // a refund. Returns the refund request and the session.
+  async function openRefund(db: Db, f: Fixture) {
+    const eventId = await insertEvent(db, f)
+    const approved = await approveAs(db, f, {
+      customerId: f.customerB,
+      productId: f.single,
+      eventId,
+      amount: 12800,
+    })
+    const { rows: booking } = await db.query(
+      "select id from public.bookings where payment_id = $1",
+      [approved.payment_id]
+    )
+    await asAuthenticated(db, f.customerB)
+    const { rows } = await db.query(
+      "select public.cancel_booking($1, $2, 'refund') as r",
+      [booking[0].id, randomUUID()]
+    )
+    await db.query("reset role")
+    return { refundId: rows[0].r.refund_request_id as string, eventId }
+  }
+
+  it("an open request: in open_refunds and in 'to handle' (refund_requested); the month's totals do not change", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const before = await home(db, f)
+      const { refundId, eventId } = await openRefund(db, f)
+      const after = await home(db, f)
+
+      expect(
+        after.open_refunds.filter((r) => r.refund_request_id === refundId)
+      ).toEqual([
+        {
+          refund_request_id: refundId,
+          customer_id: f.customerB,
+          customer_label: testName("money_b"),
+          amount_agorot: 12800,
+          requested_at: expect.any(String),
+          event_id: eventId,
+          concept_name: expect.any(String),
+          starts_at: expect.any(String),
+        },
+      ])
+      // Only the approval of this test's purchase is new; no refund yet.
+      expect(after.totals.approved_count - before.totals.approved_count).toBe(1)
+      expect(after.totals.refunded_count).toBe(before.totals.refunded_count)
+      expect(after.totals.refunded_agorot).toBe(before.totals.refunded_agorot)
+
+      expect(only(await items(db, f), [refundId])).toEqual([
+        {
+          kind: "refund_requested",
+          id: refundId,
+          customer_label: testName("money_b"),
+          since: expect.any(String),
+          customer_id: f.customerB,
+          amount_agorot: 12800,
+          event_id: eventId,
+          concept_name: expect.any(String),
+          starts_at: expect.any(String),
+        },
+      ])
+    })
+  })
+
+  it("a completed request (3.9) leaves both lists and counts in the month: net = approved - refunded", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const { refundId } = await openRefund(db, f)
+      const before = (await home(db, f)).totals
+      await db.query(
+        "update public.refund_requests set status = 'completed', completed_at = now() where id = $1",
+        [refundId]
+      )
+      const after = await home(db, f)
+      expect(after.totals.refunded_count - before.refunded_count).toBe(1)
+      expect(after.totals.refunded_agorot - before.refunded_agorot).toBe(12800)
+      expect(after.totals.net_agorot).toBe(
+        after.totals.approved_agorot - after.totals.refunded_agorot
+      )
+      expect(
+        after.open_refunds.filter((r) => r.refund_request_id === refundId)
+      ).toEqual([])
+      expect(only(await items(db, f), [refundId])).toEqual([])
     })
   })
 })

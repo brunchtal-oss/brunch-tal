@@ -9,8 +9,8 @@ const copy = adminCopy.home
 // The one sum of the home (story 4.1, source §7): "approved payments minus
 // refunds" for the local month up to today, computed in SQL
 // (admin_get_home.totals), in a cube like the other parts (design round).
-// Until refunds exist (3.7) the net equals the approved sum and there is no
-// refunds line.
+// The refunds line (story 3.7) is always shown, also at 0; refunds count
+// once Tal completes them (3.9).
 export async function MonthTotals() {
   const { totals } = await loadHome()
   const view = totalsView(totals)
@@ -29,6 +29,10 @@ export async function MonthTotals() {
         <dt className="text-muted-foreground">{view.approvedLabel}</dt>
         <dd className="text-end tabular-nums">
           <bdi>{view.approved}</bdi>
+        </dd>
+        <dt className="text-muted-foreground">{view.refundedLabel}</dt>
+        <dd className="text-end tabular-nums">
+          <bdi>{view.refunded}</bdi>
         </dd>
       </dl>
     </HomeSection>

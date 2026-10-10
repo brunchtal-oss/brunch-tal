@@ -90,6 +90,33 @@ commit;
 `
 
 describe("buildClearSql", () => {
+  it("story 3.7: with the credit lists, refunds and options before the allocations, credits after them and before the bookings", () => {
+    const ids = {
+      ...fixture(),
+      refunds: [uuid(30)],
+      options: [uuid(31)],
+      credits: [uuid(32)],
+    }
+    const lines = buildClearSql(ids, "demo", NOW).split("\n")
+    const at = (text: string) => lines.findIndex((line) => line.includes(text))
+    expect(at("delete from public.refund_requests")).toBeGreaterThan(-1)
+    expect(at("delete from public.refund_requests")).toBeLessThan(
+      at("delete from public.credit_options")
+    )
+    expect(at("delete from public.credit_options")).toBeLessThan(
+      at("delete from public.booking_allocations")
+    )
+    expect(at("delete from public.booking_allocations")).toBeLessThan(
+      at("delete from public.cancellation_credits")
+    )
+    expect(at("delete from public.cancellation_credits")).toBeLessThan(
+      at("delete from public.bookings")
+    )
+    expect(() =>
+      buildClearSql({ ...ids, credits: [ADMIN] }, "demo", NOW)
+    ).toThrow()
+  })
+
   it("is the same SQL as before the extraction", () => {
     expect(buildClearSql(fixture(), "demo", NOW)).toBe(EXPECTED)
   })

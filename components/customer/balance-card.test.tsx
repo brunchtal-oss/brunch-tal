@@ -68,14 +68,6 @@ describe("BalanceCard of an entry that is not a card", () => {
     expect(html).not.toContain(customerCopy.toBook)
     expect(html).not.toContain(customerCopy.bookedOf(1, 1))
   })
-
-  it("keeps the awaiting words in place of the validity", () => {
-    const html = renderToStaticMarkup(
-      <BalanceCard {...single} counts={false} awaiting />
-    )
-    expect(html).toContain(customerCopy.awaitingSessions)
-    expect(html).not.toContain(customerCopy.validUntil)
-  })
 })
 
 describe("customerCopy", () => {
@@ -88,16 +80,5 @@ describe("customerCopy", () => {
   it("writes used and booked as X/N", () => {
     expect(customerCopy.usedOf(1, 4)).toBe("ניצלת 1/4")
     expect(customerCopy.bookedOf(2, 4)).toBe("נרשמת 2/4")
-  })
-
-  it("story 3.6: a waiting returned entry shows the words, never the provisional date", () => {
-    const html = renderToStaticMarkup(
-      <BalanceCard {...base} expiresOn="2036-10-14" isExpiring awaiting />
-    )
-    expect(html).toContain(customerCopy.awaitingSessions)
-    expect(html).not.toContain(customerCopy.validUntil)
-    expect(html).not.toContain("14.10")
-    expect(html).not.toContain(customerCopy.daysLeft(9))
-    expect(html).not.toContain(customerCopy.expiring)
   })
 })

@@ -40,7 +40,9 @@ if (existsSync(".env.local")) process.loadEnvFile(".env.local")
 
 const STATE_FILE = ".demo-data.local.json"
 const devTestData = process.argv.includes("--dev-test-data")
-const OUT_FILE = devTestData ? ".dev-test-clear.local.sql" : ".demo-clear.local.sql"
+const OUT_FILE = devTestData
+  ? ".dev-test-clear.local.sql"
+  : ".demo-clear.local.sql"
 
 if (
   !devRef({
@@ -119,7 +121,10 @@ async function main() {
       process.exitCode = 1
       return
     }
-    const admins = uuids(await q("select user_id from public.admin_roles"), "user_id")
+    const admins = uuids(
+      await q("select user_id from public.admin_roles"),
+      "user_id"
+    )
     const demoUsers = uuids(
       await q("select id from auth.users where lower(email) like $1", [
         `%@${DEMO_DOMAIN}`,
@@ -133,9 +138,13 @@ async function main() {
     let events
     if (devTestData) {
       const keep = [...new Set([...demoCustomers, ...admins])]
-      users = uuids(await q("select id from auth.users where id <> all($1::uuid[])", [keep]))
+      users = uuids(
+        await q("select id from auth.users where id <> all($1::uuid[])", [keep])
+      )
       customers = uuids(
-        await q("select id from public.profiles where id <> all($1::uuid[])", [keep])
+        await q("select id from public.profiles where id <> all($1::uuid[])", [
+          keep,
+        ])
       )
       payments = uuids(
         await q(
@@ -161,7 +170,9 @@ async function main() {
         )
       }
       users = uuids(
-        await q("select id from auth.users where id = any($1::uuid[])", [demoCustomers])
+        await q("select id from auth.users where id = any($1::uuid[])", [
+          demoCustomers,
+        ])
       )
       customers = uuids(
         await q("select id from public.profiles where id = any($1::uuid[])", [
@@ -221,11 +232,51 @@ async function main() {
       if (added.length === 0) break
       payments = [...payments, ...added]
     }
+    // Story 3.7: the credits of the removed customers, bookings and
+    // entitlements, their options (and any option on a removed session),
+    // and the refund requests. Only when the tables exist (the 3.7
+    // migration); otherwise the SQL is as before.
+    const hasCredits =
+      (
+        await q(
+          "select to_regclass('public.cancellation_credits') is not null as present"
+        )
+      )[0]?.present === true
+    const credits = hasCredits
+      ? uuids(
+          await q(
+            `select id from public.cancellation_credits
+             where customer_id = any($1::uuid[]) or origin_booking_id = any($2::uuid[])
+                or source_entitlement_id = any($3::uuid[])`,
+            [customers, bookings, entitlements]
+          )
+        )
+      : []
+    const options = hasCredits
+      ? uuids(
+          await q(
+            `select id from public.credit_options
+             where credit_id = any($1::uuid[]) or event_id = any($2::uuid[])`,
+            [credits, events]
+          )
+        )
+      : []
+    const refunds = hasCredits
+      ? uuids(
+          await q(
+            `select id from public.refund_requests
+             where credit_id = any($1::uuid[]) or payment_id = any($2::uuid[])
+                or booking_id = any($3::uuid[])`,
+            [credits, payments, bookings]
+          )
+        )
+      : []
     const allocations = uuids(
       await q(
         `select id from public.booking_allocations
-         where booking_id = any($1::uuid[]) or entitlement_id = any($2::uuid[])`,
-        [bookings, entitlements]
+         where booking_id = any($1::uuid[]) or entitlement_id = any($2::uuid[])
+            or credit_id = any($3::uuid[])`,
+        [bookings, entitlements, credits]
       )
     )
     const movements = uuids(
@@ -278,42 +329,52 @@ async function main() {
       )[0].n
     )
     const subscriptions = uuids(
-      await q("select id from public.push_subscriptions where user_id = any($1::uuid[])", [
-        people,
-      ])
+      await q(
+        "select id from public.push_subscriptions where user_id = any($1::uuid[])",
+        [people]
+      )
     )
     const sheets = uuids(
-      await q("select id from public.work_sheets where event_id = any($1::uuid[])", [
-        events,
-      ])
+      await q(
+        "select id from public.work_sheets where event_id = any($1::uuid[])",
+        [events]
+      )
     )
     const dishes = uuids(
-      await q("select id from public.work_dishes where sheet_id = any($1::uuid[])", [
-        sheets,
-      ])
+      await q(
+        "select id from public.work_dishes where sheet_id = any($1::uuid[])",
+        [sheets]
+      )
     )
     const tasks = uuids(
-      await q("select id from public.work_tasks where dish_id = any($1::uuid[])", [dishes])
+      await q(
+        "select id from public.work_tasks where dish_id = any($1::uuid[])",
+        [dishes]
+      )
     )
     const shopping = uuids(
-      await q("select id from public.shopping_items where sheet_id = any($1::uuid[])", [
-        sheets,
-      ])
+      await q(
+        "select id from public.shopping_items where sheet_id = any($1::uuid[])",
+        [sheets]
+      )
     )
     const notes = uuids(
-      await q("select id from public.customer_notes where customer_id = any($1::uuid[])", [
-        customers,
-      ])
+      await q(
+        "select id from public.customer_notes where customer_id = any($1::uuid[])",
+        [customers]
+      )
     )
     const babies = uuids(
-      await q("select id from public.babies where customer_id = any($1::uuid[])", [
-        customers,
-      ])
+      await q(
+        "select id from public.babies where customer_id = any($1::uuid[])",
+        [customers]
+      )
     )
     const audit = uuids(
-      await q("select id from public.audit_log where customer_id = any($1::uuid[])", [
-        customers,
-      ])
+      await q(
+        "select id from public.audit_log where customer_id = any($1::uuid[])",
+        [customers]
+      )
     )
     await client.query("rollback")
 
@@ -323,7 +384,14 @@ async function main() {
       ["notifications", notifications.length],
       ["push_subscriptions", subscriptions.length],
       ["entitlement_movements", movements.length],
+      ...(hasCredits
+        ? [
+            ["refund_requests", refunds.length],
+            ["credit_options", options.length],
+          ]
+        : []),
       ["booking_allocations", allocations.length],
+      ...(hasCredits ? [["cancellation_credits", credits.length]] : []),
       ["bookings", bookings.length],
       ["entitlements", entitlements.length],
       ["activation_tokens", tokens.length],
@@ -346,6 +414,7 @@ async function main() {
         subscriptions,
         movements,
         allocations,
+        ...(hasCredits ? { refunds, options, credits } : {}),
         bookings,
         entitlements,
         tokens,
@@ -377,7 +446,9 @@ async function main() {
       "לא נמחק כלום. בודקים את הקובץ ומריצים אותו ב-SQL Editor של פרויקט הפיתוח (שאילתה חדשה וריקה)."
     )
     if (!devTestData) {
-      console.log(`אחרי ההרצה אפשר למחוק את ${STATE_FILE}, או להשאיר אותו: הרצה הבאה של demo:seed תתחיל מחדש.`)
+      console.log(
+        `אחרי ההרצה אפשר למחוק את ${STATE_FILE}, או להשאיר אותו: הרצה הבאה של demo:seed תתחיל מחדש.`
+      )
     }
   } finally {
     await client.end()

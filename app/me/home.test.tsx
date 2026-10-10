@@ -60,26 +60,49 @@ function entitlement(extra: Partial<MyEntitlement>): MyEntitlement {
     validityDays: 49,
     pinnedEventId: null,
     paymentId: "pay-1",
-    returned: false,
-    awaitingSessions: false,
+    creditStatus: null,
     ...extra,
   }
 }
 
 const CARD = entitlement({})
-const RETURNED = entitlement({
-  id: "ent-returned",
-  kind: "single",
-  productName: "Single brunch",
-  originalUnits: 1,
-  available: 1,
-  reserved: 0,
-  used: 0,
-  returned: true,
-})
 
-function bookings(upcoming: ReturnType<typeof booking>[]) {
-  callRpc.mockResolvedValue({ ok: true, data: { upcoming, past: [] } })
+// Story 3.7: a credit she can book with (get_my_credits).
+const CREDIT = {
+  credit_id: "c1",
+  status: "active",
+  party_size: 1,
+  origin_starts_at: "2026-10-08T07:30:00Z",
+  origin_concept_name: "concept-c",
+  reserved_booking: null,
+  options: [],
+  waiting: true,
+  refund: null,
+}
+
+function bookings(
+  upcoming: ReturnType<typeof booking>[],
+  credits: unknown[] = [],
+  past: unknown[] = []
+) {
+  callRpc.mockImplementation(async (_client: unknown, name: string) =>
+    name === "get_my_credits"
+      ? { ok: true, data: credits }
+      : { ok: true, data: { upcoming, past } }
+  )
+}
+
+// An open refund request (get_my_credits).
+const REFUND = {
+  ...CREDIT,
+  credit_id: "c9",
+  status: "refund_requested",
+  waiting: false,
+  refund: {
+    amount_agorot: 12800,
+    status: "requested",
+    requested_at: "2026-10-09T07:00:00Z",
+  },
 }
 
 function text(html: string): string {
@@ -96,18 +119,21 @@ beforeEach(() => {
 // The spec's matrix (design round 2026-10-07/08): the home's order, and the
 // brunch time only on her next session.
 describe("customer home", () => {
-  it("next session, card, returned entry, later sessions, then all bookings; the time only on the next one", async () => {
-    bookings([
-      booking("b1", NEXT, "2026-10-12T07:30:00Z"),
-      booking("b2", LATER, "2026-10-15T07:30:00Z"),
-    ])
-    loadMyEntitlements.mockResolvedValue([CARD, RETURNED])
+  it("next session, card, the credit line, later sessions, then all bookings; the time only on the next one", async () => {
+    bookings(
+      [
+        booking("b1", NEXT, "2026-10-12T07:30:00Z"),
+        booking("b2", LATER, "2026-10-15T07:30:00Z"),
+      ],
+      [CREDIT]
+    )
+    loadMyEntitlements.mockResolvedValue([CARD])
     const html = renderToStaticMarkup(await Home())
 
     const order = [
       customerCopy.upcomingTitle,
       customerCopy.cardTitle,
-      customerCopy.returnedTitle,
+      customerCopy.homeCredit,
       customerCopy.moreUpcomingTitle,
       customerCopy.allMyBookings,
     ].map((label) => html.indexOf(label))
@@ -115,9 +141,8 @@ describe("customer home", () => {
     expect([...order].sort((a, b) => a - b)).toEqual(order)
     expect(html.split(customerCopy.allMyBookings).length - 1).toBe(1)
     expect(getPublicSession).toHaveBeenCalledWith(NEXT, {})
-    // The returned single entry: a chip, no plates or counts (2026-10-08).
-    expect(html).toContain(customerCopy.toBook)
-    expect(html).not.toContain(customerCopy.usedOf(0, 1))
+    // The credit line leads to her bookings (story 3.7).
+    expect(html).toContain('href="/me/bookings"')
 
     // A rule between the sections (user decision 2026-10-08).
     expect(html).toContain("section~section]:border-t")
@@ -153,7 +178,7 @@ describe("customer home", () => {
     )
   })
 
-  it("only a card: its section, no empty session section and no link to all bookings", async () => {
+  it("only a card: its section, no empty session section, and the link to all bookings (2026-10-10)", async () => {
     bookings([])
     loadMyEntitlements.mockResolvedValue([CARD])
     const html = renderToStaticMarkup(await Home())
@@ -162,9 +187,89 @@ describe("customer home", () => {
     expect(html).toContain(customerCopy.availableEntriesLabel)
     expect(html).not.toContain(customerCopy.upcomingTitle)
     expect(html).not.toContain(customerCopy.moreUpcomingTitle)
-    expect(html).not.toContain(customerCopy.allMyBookings)
+    expect(html).toContain(customerCopy.allMyBookings)
     expect(html).not.toContain(customerCopy.emptyHomeTitle)
     expect(html.match(/<section/g)).toHaveLength(1)
     expect(getPublicSession).not.toHaveBeenCalled()
+  })
+})
+
+describe("customer home: credits (story 3.7)", () => {
+  it("only a credit she can book with: no empty-state, the line to her bookings", async () => {
+    bookings([], [CREDIT])
+    loadMyEntitlements.mockResolvedValue([])
+    const html = renderToStaticMarkup(await Home())
+    expect(html).toContain(customerCopy.homeCredit)
+    expect(html).not.toContain(customerCopy.emptyHomeTitle)
+  })
+
+  it("an exhausted credit: no credit line", async () => {
+    bookings([], [{ ...CREDIT, waiting: false, exhausted: true }])
+    loadMyEntitlements.mockResolvedValue([])
+    const html = renderToStaticMarkup(await Home())
+    expect(html).not.toContain(customerCopy.homeCredit)
+  })
+
+  it("a credit that funds a booking, or a refund request: no credit line", async () => {
+    bookings(
+      [],
+      [
+        {
+          ...CREDIT,
+          reserved_booking: {
+            booking_id: "b9",
+            event_id: NEXT,
+            starts_at: "2026-10-12T07:30:00Z",
+          },
+        },
+        { ...CREDIT, credit_id: "c2", status: "refund_requested" },
+      ]
+    )
+    loadMyEntitlements.mockResolvedValue([])
+    const html = renderToStaticMarkup(await Home())
+    expect(html).not.toContain(customerCopy.homeCredit)
+    expect(html).toContain(customerCopy.emptyHomeTitle)
+  })
+})
+
+describe("customer home: all bookings and the refund line (2026-10-10)", () => {
+  function lastLink(html: string): boolean {
+    const at = html.lastIndexOf(customerCopy.allMyBookings)
+    return at > -1 && html.indexOf("href=", at) === -1
+  }
+
+  it("a card without an upcoming session: all bookings is the last element", async () => {
+    bookings([])
+    loadMyEntitlements.mockResolvedValue([CARD])
+    const html = renderToStaticMarkup(await Home())
+    expect(html.split(customerCopy.allMyBookings).length - 1).toBe(1)
+    expect(lastLink(html)).toBe(true)
+  })
+
+  it("an open refund request: its line to her bookings, and all bookings last", async () => {
+    bookings([], [REFUND])
+    loadMyEntitlements.mockResolvedValue([])
+    const html = renderToStaticMarkup(await Home())
+    expect(customerCopy.homeRefund).toBe("בקשת ההחזר שלך התקבלה")
+    expect(html).toContain(customerCopy.homeRefund)
+    expect(html).not.toContain(customerCopy.homeCredit)
+    expect(html).not.toContain(customerCopy.emptyHomeTitle)
+    expect(html.indexOf(customerCopy.homeRefund)).toBeLessThan(
+      html.indexOf(customerCopy.allMyBookings)
+    )
+    expect(lastLink(html)).toBe(true)
+  })
+
+  it("the empty home: all bookings only with past bookings", async () => {
+    bookings([], [], [booking("p1", NEXT, "2026-10-01T07:30:00Z")])
+    loadMyEntitlements.mockResolvedValue([])
+    let html = renderToStaticMarkup(await Home())
+    expect(html).toContain(customerCopy.emptyHomeTitle)
+    expect(html).toContain(customerCopy.allMyBookings)
+
+    bookings([])
+    html = renderToStaticMarkup(await Home())
+    expect(html).toContain(customerCopy.emptyHomeTitle)
+    expect(html).not.toContain(customerCopy.allMyBookings)
   })
 })

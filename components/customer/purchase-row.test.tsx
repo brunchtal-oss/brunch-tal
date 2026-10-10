@@ -47,12 +47,17 @@ describe("PurchaseRow", () => {
     expect(html).not.toContain(customerCopy.validUntil)
   })
 
-  it("story 3.6: a waiting returned entry shows the words, never the provisional date", () => {
+  it("story 3.7: a pinned purchase that became a credit shows its chip in place of the validity", () => {
     const html = renderToStaticMarkup(
-      <PurchaseRow {...base} expiresOn="2036-10-14" awaiting />
+      <PurchaseRow
+        {...base}
+        status={customerCopy.entitlementUsedUp}
+        creditChip={customerCopy.creditChip.credit}
+      />
     )
-    expect(html).toContain(customerCopy.awaitingSessions)
+    expect(html).toContain("הומרה לזיכוי")
+    expect(html).toContain("bg-pending-tint")
     expect(html).not.toContain(customerCopy.validUntil)
-    expect(html).not.toContain("14.10")
+    expect(html).not.toContain(customerCopy.entitlementUsedUp)
   })
 })

@@ -35,6 +35,8 @@ export type AttentionRow = {
   starts_at?: string
   // push_failed: failed jobs of the last 7 days.
   count?: number
+  // refund_requested (story 3.7): the customer's card.
+  customer_id?: string | null
 }
 
 export type AttentionItem = TaskRowProps & { key: string }
@@ -65,13 +67,29 @@ export type HomeTotals = {
   period_end: string
   approved_count: number
   approved_agorot: number
+  // Story 3.7: refunds completed in the month (3.9 completes them).
+  refunded_count: number
+  refunded_agorot: number
   net_agorot: number
+}
+
+// An open refund request (story 3.7).
+export type OpenRefundRow = {
+  refund_request_id: string
+  customer_id: string | null
+  customer_label: string | null
+  amount_agorot: number
+  requested_at: string
+  event_id: string
+  concept_name: string
+  starts_at: string
 }
 
 export type HomeData = {
   upcoming_sessions: UpcomingSessionRow[]
   expiring_cards: ExpiringCardRow[]
   totals: HomeTotals
+  open_refunds: OpenRefundRow[]
 }
 
 type Reason = keyof typeof copy.items.link_conflict.reasons
@@ -188,6 +206,21 @@ export function toAttentionItem(row: AttentionRow): AttentionItem {
         chip: { tone: "warning", label: c.chip },
       }
     }
+    case "refund_requested": {
+      const c = copy.items.refund_requested
+      return {
+        ...base,
+        href: row.customer_id
+          ? customerHref(row.customer_id)
+          : sessionHref(row),
+        title: c.title(
+          name,
+          formatAgorot(row.amount_agorot ?? 0),
+          row.concept_name ?? "",
+          dayOf(row.starts_at)
+        ),
+      }
+    }
     case "push_failed": {
       const c = copy.items.push_failed
       return {
@@ -268,6 +301,8 @@ export type TotalsView = {
   net: string
   approvedLabel: string
   approved: string
+  refundedLabel: string
+  refunded: string
 }
 
 export function totalsView(totals: HomeTotals): TotalsView {
@@ -277,5 +312,27 @@ export function totalsView(totals: HomeTotals): TotalsView {
     net: formatAgorot(totals.net_agorot),
     approvedLabel: copy.totalsApproved(totals.approved_count),
     approved: formatAgorot(totals.approved_agorot),
+    refundedLabel: copy.totalsRefunded(totals.refunded_count ?? 0),
+    refunded: formatAgorot(totals.refunded_agorot ?? 0),
+  }
+}
+
+export type OpenRefundItem = {
+  key: string
+  // The customer's card; null while the purchase is not bound.
+  href: string | null
+  text: string
+}
+
+export function toOpenRefund(row: OpenRefundRow): OpenRefundItem {
+  return {
+    key: row.refund_request_id,
+    href: row.customer_id ? customerHref(row.customer_id) : null,
+    text: copy.openRefundRow(
+      nameOf(row.customer_label),
+      formatAgorot(row.amount_agorot),
+      row.concept_name,
+      formatDayMonth(row.starts_at)
+    ),
   }
 }

@@ -6,7 +6,9 @@
 // carries the session's weekday and date and its title ("בראנץ׳
 // {concept}"), never the movement's own date or units. A movement without
 // a booking (opening balance, adjustment) keeps its label, its date and its
-// signed units.
+// signed units. A booking whose status is cancelled is "בוטלה" whatever its
+// movements (story 3.7: a pinned booking cancelled into a credit or a
+// refund closes its reserve with a use movement).
 // Rows go by date: a booking by its session's start, any other row by
 // when it was recorded.
 
@@ -21,7 +23,7 @@ export type MovementRow = {
   created_at: string
 }
 
-export type BookingRow = { id: string; event_id: string }
+export type BookingRow = { id: string; event_id: string; status: string }
 
 export type SessionRow = {
   id: string
@@ -106,11 +108,13 @@ export function buildHistory(rows: {
   }
 
   const bookingRows: Sorted[] = [...byBooking].map(
-    ([bookingId, { state, firstAt }]) => {
+    ([bookingId, { state: movementState, firstAt }]) => {
+      let state = movementState
       const booking = rows.bookings.find((b) => b.id === bookingId)
       const event = booking
         ? rows.sessions.find((s) => s.id === booking.event_id)
         : undefined
+      if (booking?.status === "cancelled") state = "cancelled"
       return {
         at: event?.starts_at ?? firstAt,
         entry: {

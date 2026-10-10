@@ -38,6 +38,8 @@ type Row = {
   validity_days: number | null
   pinned_event_id: string | null
   payment_id: string
+  // Story 3.7: the status of the credit a cancelled pinned booking became.
+  credit_status: string | null
 }
 
 type Fixture = MoneyFixture & { mothers: string }
@@ -189,7 +191,11 @@ describe("get_my_entitlements", () => {
         is_used_up: false,
         validity_days: 49,
         pinned_event_id: null,
+        credit_status: null,
       })
+      // The 3.6 fields are gone (3.7).
+      expect(rows[0]).not.toHaveProperty("awaiting_sessions")
+      expect(rows[0]).not.toHaveProperty("returned")
     })
   })
 
@@ -366,6 +372,32 @@ describe("get_my_entitlements", () => {
         await fromMovements(db, pinned.entitlement)
       )
       expect(pinnedRow.validity_days).toBeNull()
+      expect(pinnedRow.credit_status).toBeNull()
+
+      // Story 3.7: she cancels the pinned booking with a credit; the entry
+      // is used (no release) and carries the credit's status.
+      const { rows: pinnedBooking } = await db.query(
+        "select id from public.bookings where payment_id = $1",
+        [pinned.payment]
+      )
+      await asAuthenticated(db, f.customerA)
+      await db.query("select public.cancel_booking($1, $2, 'credit')", [
+        pinnedBooking[0].id,
+        randomUUID(),
+      ])
+      await db.query("reset role")
+      const cancelledRow = (await mine(db, f.customerA)).find(
+        (r) => r.entitlement_id === pinned.entitlement
+      )!
+      expect(cancelledRow).toMatchObject({
+        available: 0,
+        reserved: 0,
+        used: 1,
+        credit_status: "active",
+      })
+      expect(cancelledRow).toMatchObject(
+        await fromMovements(db, pinned.entitlement)
+      )
 
       // The session ends: a use movement on the card's booking (as the
       // owner) turns the reserved entry into a used one.
