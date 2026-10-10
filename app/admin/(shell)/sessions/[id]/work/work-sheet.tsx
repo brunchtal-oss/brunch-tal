@@ -4,7 +4,19 @@ import { useCallback, useId, useState } from "react"
 import { PrinterIcon, XIcon } from "lucide-react"
 
 import type { Attendee } from "@/components/admin/attendee-row"
+import {
+  ErrorNotice,
+  OUTLINE,
+  TextForm,
+  WorkPanel,
+} from "@/components/admin/edit-kit"
 import { RadioCardGroup } from "@/components/admin/radio-card"
+import {
+  AnnounceContext,
+  useAnnounce,
+  useKeyFor,
+  useWorkAction,
+} from "@/components/admin/use-work-action"
 import { InlineNotice } from "@/components/shared/inline-notice"
 import {
   AlertDialog,
@@ -33,21 +45,7 @@ import {
 } from "./actions"
 import { RegistrantsTable } from "./attendee-sections"
 import { ShoppingList, ShoppingPrint } from "./shopping-list"
-import {
-  AnnounceContext,
-  useAnnounce,
-  useKeyFor,
-  useWorkAction,
-} from "./use-work-action"
-import {
-  AddTask,
-  DishEditButton,
-  ErrorNotice,
-  OUTLINE,
-  TaskItem,
-  TextForm,
-  WorkPanel,
-} from "./work-parts"
+import { AddTask, DishEditButton, TaskItem } from "./work-parts"
 import {
   cardDays,
   dayDate,

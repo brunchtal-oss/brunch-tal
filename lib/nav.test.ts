@@ -169,6 +169,7 @@ describe("navigation", () => {
       "links",
       "products",
       "content",
+      "notes",
       "settings",
       "concepts",
     ])

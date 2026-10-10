@@ -12,12 +12,13 @@ import { useRouter } from "next/navigation"
 import type { ActionResult } from "@/lib/errors"
 import { newIdempotencyKey } from "@/lib/idempotency"
 
-// One write of the work sheet (story 4.9): no optimistic update. The control
-// stays locked (pending) from the call until the refreshed sheet arrives;
-// a failure keeps its code for an inline-notice next to the control. A
-// rejected call (network, deploy) is a SERVER_ERROR, and the sheet is
-// refreshed after a failure too, so a stale sheet (CONCURRENT_CHANGE,
-// NOT_FOUND) does not make every next try fail the same way.
+// One admin write (the work sheet of story 4.9, the notes of 4.11): no
+// optimistic update. The control stays locked (pending) from the call until
+// the refreshed page arrives; a failure keeps its code for an inline-notice
+// next to the control. A rejected call (network, deploy) is a SERVER_ERROR,
+// and the page is refreshed after a failure too, so a stale page
+// (CONCURRENT_CHANGE, NOT_FOUND) does not make every next try fail the same
+// way.
 export function useWorkAction() {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
@@ -64,7 +65,7 @@ export function useKeyFor() {
   }
 }
 
-// The sheet's live region: what a saved change did ("סומן כבוצע", a moved
+// The screen's live region: what a saved change did ("סומן כבוצע", a moved
 // dish), for screen readers.
 export const AnnounceContext = createContext<(text: string) => void>(() => {})
 

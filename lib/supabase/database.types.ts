@@ -794,6 +794,71 @@ export type Database = {
         }
         Relationships: []
       }
+      note_topics: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          sort_order: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      notes: {
+        Row: {
+          archived_at: string | null
+          body: string
+          created_at: string
+          done: boolean
+          id: string
+          pinned: boolean
+          sort_order: number
+          topic_id: string
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          body: string
+          created_at?: string
+          done?: boolean
+          id?: string
+          pinned?: boolean
+          sort_order: number
+          topic_id: string
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          body?: string
+          created_at?: string
+          done?: boolean
+          id?: string
+          pinned?: boolean
+          sort_order?: number
+          topic_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notes_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "note_topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_deliveries: {
         Row: {
           delivered_at: string
@@ -1405,6 +1470,14 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_add_note: {
+        Args: { p_body: string; p_idempotency_key: string; p_topic_id: string }
+        Returns: Json
+      }
+      admin_add_note_topic: {
+        Args: { p_idempotency_key: string; p_name: string }
+        Returns: Json
+      }
       admin_add_prep_day: {
         Args: {
           p_day_offset: number
@@ -1499,6 +1572,18 @@ export type Database = {
         Args: { p_idempotency_key: string; p_note_id: string }
         Returns: Json
       }
+      admin_delete_note: {
+        Args: { p_idempotency_key: string; p_note_id: string }
+        Returns: Json
+      }
+      admin_delete_note_topic: {
+        Args: {
+          p_confirmed: boolean
+          p_idempotency_key: string
+          p_topic_id: string
+        }
+        Returns: Json
+      }
       admin_delete_shopping_item: {
         Args: { p_idempotency_key: string; p_item_id: string }
         Returns: Json
@@ -1539,6 +1624,17 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_list_audit: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_customer_id?: string
+          p_event_id?: string
+          p_from?: string
+          p_to?: string
+        }
+        Returns: Json
+      }
       admin_list_bookable_events: { Args: never; Returns: Json }
       admin_list_customers: { Args: { p_query: string }; Returns: Json }
       admin_list_links: { Args: never; Returns: Json }
@@ -1568,6 +1664,10 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_rename_note_topic: {
+        Args: { p_idempotency_key: string; p_name: string; p_topic_id: string }
+        Returns: Json
+      }
       admin_revoke_link: {
         Args: { p_idempotency_key: string; p_token_id: string }
         Returns: Json
@@ -1589,6 +1689,23 @@ export type Database = {
         Args: { p_event_id: string; p_media_id: string }
         Returns: Json
       }
+      admin_set_note_archived: {
+        Args: { p_archived: boolean; p_note_id: string }
+        Returns: Json
+      }
+      admin_set_note_done: {
+        Args: { p_done: boolean; p_note_id: string }
+        Returns: Json
+      }
+      admin_set_note_order: {
+        Args: { p_ids: string[]; p_topic_id: string }
+        Returns: Json
+      }
+      admin_set_note_pinned: {
+        Args: { p_note_id: string; p_pinned: boolean }
+        Returns: Json
+      }
+      admin_set_note_topic_order: { Args: { p_ids: string[] }; Returns: Json }
       admin_set_product_price: {
         Args: {
           p_confirmed: boolean
@@ -1631,6 +1748,15 @@ export type Database = {
       }
       admin_update_event: {
         Args: { p_changes: Json; p_event_id: string; p_idempotency_key: string }
+        Returns: Json
+      }
+      admin_update_note: {
+        Args: {
+          p_body: string
+          p_idempotency_key: string
+          p_note_id: string
+          p_topic_id: string
+        }
         Returns: Json
       }
       admin_update_notification_template: {
@@ -1741,6 +1867,10 @@ export type Database = {
       }
       preview_admin_cancel_booking: {
         Args: { p_booking_id: string }
+        Returns: Json
+      }
+      preview_admin_delete_note_topic: {
+        Args: { p_topic_id: string }
         Returns: Json
       }
       preview_admin_set_product_price: {
