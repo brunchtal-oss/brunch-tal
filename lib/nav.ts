@@ -19,6 +19,7 @@ export type NavIcon =
   | "content"
   | "settings"
   | "notes"
+  | "audit"
   | "concepts"
 
 export type NavItem = {
@@ -56,6 +57,8 @@ export const adminMoreNav: readonly {
   },
   { href: "/admin/content", label: adminCopy.content.title, icon: "content" },
   { href: "/admin/notes", label: adminCopy.notes.title, icon: "notes" },
+  // The audit log (story 4.5), just before the settings.
+  { href: "/admin/audit", label: adminCopy.audit.title, icon: "audit" },
   {
     href: "/admin/settings",
     label: adminCopy.settings.title,

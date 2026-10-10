@@ -126,7 +126,9 @@ describe("navigation", () => {
       isCurrent(adminNav, payments, "/admin/payments/new/existing/x")
     ).toBe(true)
     expect(isCurrent(adminNav, home, "/admin/payments/new")).toBe(false)
-    expect(isCurrent(adminNav, home, "/admin/audit")).toBe(true)
+    // A path no other item covers falls back to home.
+    expect(isCurrent(adminNav, home, "/admin/elsewhere")).toBe(true)
+    expect(isCurrent(adminNav, home, "/admin/audit")).toBe(false)
     expect(isCurrent(adminNav, sessions, "/admin/sessions")).toBe(true)
     expect(isCurrent(adminNav, sessions, "/admin/sessions/new")).toBe(true)
     expect(isCurrent(adminNav, home, "/admin/sessions/new")).toBe(false)
@@ -149,6 +151,9 @@ describe("navigation", () => {
       isCurrent(adminNav, more, "/admin/settings/templates/reminder")
     ).toBe(true)
     expect(isCurrent(adminNav, home, "/admin/settings")).toBe(false)
+    // The audit log (story 4.5), just before the settings.
+    expect(adminMoreNav.at(-3)?.href).toBe("/admin/audit")
+    expect(isCurrent(adminNav, more, "/admin/audit")).toBe(true)
   })
 
   it("puts the customers first in more and keeps more current on a card (story 4.2)", () => {
@@ -170,6 +175,7 @@ describe("navigation", () => {
       "products",
       "content",
       "notes",
+      "audit",
       "settings",
       "concepts",
     ])

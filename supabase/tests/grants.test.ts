@@ -102,6 +102,7 @@ const EXPECTED_GRANTS = [
   "function public.admin_get_home() authenticated EXECUTE",
   "function public.admin_get_work_sheet(p_event_id uuid) authenticated EXECUTE",
   "function public.admin_issue_link(p_purpose text, p_target_id uuid, p_idempotency_key uuid) authenticated EXECUTE",
+  "function public.admin_list_audit(p_event_id uuid, p_customer_id uuid, p_from date, p_to date, p_before_created_at timestamp with time zone, p_before_id uuid) authenticated EXECUTE",
   "function public.admin_list_bookable_events() authenticated EXECUTE",
   "function public.admin_list_customers(p_query text) authenticated EXECUTE",
   "function public.admin_list_links() authenticated EXECUTE",
