@@ -1,3 +1,4 @@
+import { OccupancyBar } from "@/components/admin/occupancy-bar"
 import { adminCopy } from "@/lib/copy/admin"
 import { cn } from "@/lib/utils"
 
@@ -80,23 +81,6 @@ export function SessionTile({
       )}
       <HomeLink href={session.href}>{copy.sessionDetails}</HomeLink>
     </section>
-  )
-}
-
-// How full the session is: a 4px track in the border colour, filled in
-// primary. Decorative: the places are in the text.
-function OccupancyBar({ percent }: { percent: number }) {
-  return (
-    <span
-      aria-hidden
-      className="block h-1 overflow-hidden rounded-full bg-border"
-    >
-      <span
-        data-fill={percent}
-        className="block h-full rounded-full bg-primary"
-        style={{ width: `${percent}%` }}
-      />
-    </span>
   )
 }
 

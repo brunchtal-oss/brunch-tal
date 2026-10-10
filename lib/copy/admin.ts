@@ -548,7 +548,13 @@ export const adminCopy = {
     // The title of a session is always the concept's name (no events.title).
     sessionTitle: (concept: string) => `בראנץ׳ ${concept}`,
     status: { draft: "טיוטה", published: "פורסם" },
-    places: (n: number) => `${n} מקומות`,
+    // The list row's occupancy, as the admin home's tile (user decisions
+    // 2026-10-10): after the title, the bare number, or "מלא" when no room is
+    // left.
+    occupancySeparator: " · ",
+    occupancy: (occupied: number, capacity: number) =>
+      `${occupied}/${capacity}`,
+    listFull: "מלא",
     empty: 'אין מפגשים קרובים. "בראנץ׳ חדש" יוצר את הראשון',
     fields: {
       concept: "קונספט",
