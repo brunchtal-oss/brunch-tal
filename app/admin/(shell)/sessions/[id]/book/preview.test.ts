@@ -16,11 +16,41 @@ describe("parseBookPreview", () => {
       })
     ).toEqual({
       ok: true,
+      source: "entitlement",
       productName: "Card",
       expiresOn: "2026-11-19",
       occupied: 3,
       capacity: 12,
     })
+  })
+
+  it("story 3.7: reads a preview funded by a credit (no expires_on)", () => {
+    expect(
+      parseBookPreview({
+        ok: true,
+        source: "credit",
+        product_name: "Single",
+        occupied: 3,
+        capacity: 12,
+      })
+    ).toEqual({
+      ok: true,
+      source: "credit",
+      productName: "Single",
+      expiresOn: null,
+      occupied: 3,
+      capacity: 12,
+    })
+    // An entitlement without its date is still malformed.
+    expect(
+      parseBookPreview({
+        ok: true,
+        source: "entitlement",
+        product_name: "Card",
+        occupied: 3,
+        capacity: 12,
+      })
+    ).toMatchObject({ ok: false, code: "SERVER_ERROR" })
   })
 
   it("reads a refusal, with or without the session's numbers", () => {

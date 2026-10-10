@@ -75,6 +75,7 @@ describe("BookingPanel (story 3.6)", () => {
   it("bookable: the booking button, no cancel", () => {
     const html = render({
       kind: "bookable",
+      source: "entitlement",
       productName: "כרטיסייה",
       availableAfter: 3,
       expiresOn: "2026-11-24",

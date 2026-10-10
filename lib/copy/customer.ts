@@ -48,7 +48,7 @@ export const customerCopy = {
   bookingState: {
     booked: "נרשמת",
     used: "השתתפת",
-    cancelled: "בוטלה",
+    cancelled: "ביטלת",
   },
   // A returned non-card entry on home that funds no booking yet (user
   // decision 2026-10-08).
@@ -176,12 +176,28 @@ export const customerCopy = {
     linksLabel: "עוד באזור האישי",
     installGuide: "התקנת האפליקציה",
   },
-  // A returned pinned entry that waits for the next sessions to be
-  // published, in place of its validity (story 3.6, user decision
-  // 2026-10-06).
-  awaitingSessions: "ממתינה למפגשים הבאים",
-  // Home: an entry that returned to her after a cancelled pinned booking.
-  returnedTitle: "כניסה שחזרה אלייך",
+  // Cancellation credits and refund requests (story 3.7, wording from the
+  // spec). Home: one line to /me/bookings while she has a credit to book
+  // with. Purchase history: the chip of a pinned purchase that became a
+  // credit or a refund request.
+  homeCredit: "יש לך זיכוי להרשמה",
+  // Home: an open refund request (user decision 2026-10-10), the same look.
+  homeRefund: "בקשת ההחזר שלך התקבלה",
+  creditChip: {
+    credit: "הומרה לזיכוי",
+    refund: "בקשת החזר",
+  },
+  // /me/bookings: a credit's card ({date}: DD.MM of the cancelled session)
+  // with its active options, or the line while it waits; a refund's card.
+  // The booking sheet's "מה ינוצל" shows creditTitle too.
+  creditTitle: (date: string) => `זיכוי מהמפגש ב-${date}`,
+  creditOptions: "אפשר להירשם לאחד מהמפגשים האלה:",
+  creditWaiting: "המפגשים המתאימים הבאים יופיעו כאן כשיתפרסמו",
+  // Every one of the N options went by unused (user decision 2026-10-10),
+  // followed by contactPhrase.
+  creditExhausted: "המפגשים החלופיים עברו בלי הרשמה. אפשר לפנות אלינו",
+  refundTitle: (amount: string) => `בקשת החזר של ${amount} התקבלה`,
+  refundNote: "נעדכן אותך כשההחזר יבוצע",
   // Cancelling a booking (story 3.6). No self-cancel deadline and no "Tal"
   // anywhere (user decision 2026-10-05); the contact phrase is
   // contactPhrase.
@@ -189,14 +205,15 @@ export const customerCopy = {
     button: "ביטול ההרשמה",
     returns: "מה יחזור",
     returnsCard: (product: string) => `כניסה אחת ל${product}`,
-    returnsReturned: "הכניסה תחזור אלייך, באותו תוקף",
-    // n: the number of next sessions (business_settings).
-    returnsPinned: (n: number) =>
-      n <= 1
-        ? "כניסה למפגש המתאים הבא"
-        : n === 2
-          ? "כניסה לאחד משני המפגשים המתאימים הבאים"
-          : `כניסה לאחד מ-${n} המפגשים המתאימים הבאים`,
+    // A pinned booking (story 3.7): she chooses; "כן, לבטל" waits for it.
+    // n: the credit's number of next sessions (business_settings).
+    choiceCredit: "זיכוי למפגש אחר",
+    choiceCreditNote: (n: number) =>
+      `אפשר להירשם לאחד מ-${n} המפגשים המתאימים הבאים`,
+    choiceRefund: "החזר כספי",
+    choiceRefundNote: "בקשת ההחזר תגיע אלינו, ונעדכן כשההחזר יבוצע",
+    // A booking funded by a credit: the same credit comes back.
+    returnsCredit: "הזיכוי יחזור אלייך עם אותן חלופות",
     confirm: "כן, לבטל",
     // Past the self-cancel boundary, on the session page only, followed by
     // the contact phrase (user decision 2026-10-06). hours: the booking's
@@ -207,10 +224,8 @@ export const customerCopy = {
         : `לא ניתן לבטל עצמאית פחות מ-${hours} שעות לפני המפגש.`,
     // The result (inline-notice, success).
     doneCard: "ההרשמה בוטלה. הכניסה חזרה ליתרה שלך",
-    donePinned: (until: string) =>
-      `ההרשמה בוטלה. הכניסה חזרה אלייך, ואפשר להירשם איתה עד ${until}`,
-    doneAwaiting:
-      "ההרשמה בוטלה. הכניסה חזרה אלייך, ואפשר יהיה להירשם איתה לאחד המפגשים הבאים כשיתפרסמו",
+    doneCredit: "ההרשמה בוטלה. הזיכוי מחכה לך בהרשמות שלך",
+    doneRefund: "ההרשמה בוטלה. בקשת ההחזר התקבלה",
   },
   // /me/bookings (story 3.6), opened from home.
   bookingsTitle: "ההרשמות שלי",

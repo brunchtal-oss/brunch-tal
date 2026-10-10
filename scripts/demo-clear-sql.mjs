@@ -18,6 +18,9 @@ const del = (table, ids) =>
     ? `-- ${table}: nothing`
     : `delete from ${table} where id = any(${literal(ids)});`
 
+// Story 3.7, optional: refund_requests, credit_options, cancellation_credits.
+const CREDIT_LISTS = ["refunds", "options", "credits"]
+
 // The delete lists, by the key of ids (admins is not one of them).
 const DELETE_LISTS = [
   "jobs",
@@ -68,6 +71,20 @@ export function buildClearSql(ids, mode, now) {
   const list = (name) => ids[name]
   const jobs = list("jobs")
   const audit = list("audit")
+  // Story 3.7: the credits, their options and the refund requests: refunds
+  // and options before the allocations, the credits after them and before
+  // the bookings, entitlements and payments they point at. Optional lists
+  // (no lines without them), so a run against a database without these
+  // tables writes the same SQL as before.
+  for (const name of CREDIT_LISTS) {
+    if (ids[name] !== undefined && !Array.isArray(ids[name])) {
+      throw new Error(`הרשימה ${name} אינה רשימה. לא נכתב קובץ.`)
+    }
+    if ((ids[name] ?? []).some((id) => admins.has(id))) {
+      throw new Error("מזהה של אדמין ברשימת המחיקה. לא נכתב קובץ.")
+    }
+  }
+  const hasCredits = CREDIT_LISTS.every((name) => Array.isArray(ids[name]))
 
   return [
     `-- ${mode === "dev-test-data" ? "Dev test data" : "Demo data"} removal, prepared by scripts/demo-clear.mjs`,
@@ -99,7 +116,16 @@ export function buildClearSql(ids, mode, now) {
     del("public.entitlement_movements", list("movements")),
     "set local session_replication_role = origin;",
     "",
+    ...(hasCredits
+      ? [
+          del("public.refund_requests", list("refunds")),
+          del("public.credit_options", list("options")),
+        ]
+      : []),
     del("public.booking_allocations", list("allocations")),
+    ...(hasCredits
+      ? [del("public.cancellation_credits", list("credits"))]
+      : []),
     del("public.bookings", list("bookings")),
     del("public.entitlements", list("entitlements")),
     del("public.activation_tokens", list("tokens")),

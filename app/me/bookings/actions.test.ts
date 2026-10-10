@@ -22,27 +22,33 @@ describe("cancelBookingAction", () => {
   it("cancels with the customer's session and the sheet's key, no choice", async () => {
     callRpc.mockResolvedValue({
       ok: true,
-      data: {
-        booking_id: BOOKING_ID,
-        outcome: "pinned",
-        entitlement_id: "e1",
-        expires_on: "2026-10-20",
-        awaiting_sessions: false,
-      },
+      data: { booking_id: BOOKING_ID, outcome: "card", entitlement_id: "e1" },
     })
     await expect(
       cancelBookingAction({ bookingId: BOOKING_ID, idempotencyKey: KEY })
-    ).resolves.toEqual({
-      ok: true,
-      data: {
-        outcome: "pinned",
-        expiresOn: "2026-10-20",
-        awaitingSessions: false,
-      },
-    })
+    ).resolves.toEqual({ ok: true, data: { outcome: "card" } })
     expect(callRpc).toHaveBeenCalledWith({ session: true }, "cancel_booking", {
       p_booking_id: BOOKING_ID,
       p_idempotency_key: KEY,
+    })
+  })
+
+  it("story 3.7: sends the choice of a pinned booking", async () => {
+    callRpc.mockResolvedValue({
+      ok: true,
+      data: { booking_id: BOOKING_ID, outcome: "refund", credit_id: "c1" },
+    })
+    await expect(
+      cancelBookingAction({
+        bookingId: BOOKING_ID,
+        idempotencyKey: KEY,
+        choice: "refund",
+      })
+    ).resolves.toEqual({ ok: true, data: { outcome: "refund" } })
+    expect(callRpc).toHaveBeenCalledWith({ session: true }, "cancel_booking", {
+      p_booking_id: BOOKING_ID,
+      p_idempotency_key: KEY,
+      p_choice: "refund",
     })
   })
 
@@ -51,6 +57,7 @@ describe("cancelBookingAction", () => {
       { bookingId: "nope", idempotencyKey: KEY },
       { bookingId: BOOKING_ID, idempotencyKey: "nope" },
       { bookingId: 5, idempotencyKey: KEY },
+      { bookingId: BOOKING_ID, idempotencyKey: KEY, choice: "maybe" },
       null,
     ]) {
       await expect(

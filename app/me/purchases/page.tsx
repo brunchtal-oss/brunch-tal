@@ -10,7 +10,12 @@ import { shellCopy } from "@/lib/copy/shell"
 import { createClient } from "@/lib/supabase/server"
 
 import { loadMyEntitlements, pinnedConceptNames } from "../load-entitlements"
-import { byPaidOnDesc, entitlementName, pastStatus } from "../purchase-items"
+import {
+  byPaidOnDesc,
+  creditChip,
+  entitlementName,
+  pastStatus,
+} from "../purchase-items"
 
 export const metadata: Metadata = {
   title: shellCopy.nav.purchases,
@@ -56,7 +61,7 @@ async function Purchases() {
             paidOn={e.paidOn}
             expiresOn={e.expiresOn}
             status={pastStatus(e)}
-            awaiting={e.awaitingSessions}
+            creditChip={creditChip(e)}
             expiredNote={
               e.expiredBeforeBound ? (
                 <ExpiredCardNote

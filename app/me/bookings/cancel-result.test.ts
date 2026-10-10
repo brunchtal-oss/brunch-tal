@@ -13,32 +13,37 @@ import {
 const copy = customerCopy.cancel
 
 describe("cancelDoneMessage", () => {
-  it("a card, a pinned entry with its date, and a waiting one", () => {
+  it("a card, a credit and a refund request", () => {
     expect(
       cancelDoneMessage(
-        parseCancelResult({ outcome: "card", expires_on: "2026-11-11" })
+        parseCancelResult({ outcome: "card", entitlement_id: "e1" })
       )
     ).toBe(copy.doneCard)
     expect(
       cancelDoneMessage(
-        parseCancelResult({ outcome: "pinned", expires_on: "2026-10-20" })
+        parseCancelResult({ outcome: "credit", credit_id: "c1" })
       )
-    ).toBe(copy.donePinned("20.10"))
+    ).toBe("ההרשמה בוטלה. הזיכוי מחכה לך בהרשמות שלך")
     expect(
       cancelDoneMessage(
-        parseCancelResult({
-          outcome: "pinned",
-          expires_on: "2036-10-14",
-          awaiting_sessions: true,
-        })
+        parseCancelResult({ outcome: "refund", refund_request_id: "r1" })
       )
-    ).toBe(copy.doneAwaiting)
+    ).toBe("ההרשמה בוטלה. בקשת ההחזר התקבלה")
+    expect(parseCancelResult({ outcome: "pinned" })).toEqual({
+      outcome: "card",
+    })
   })
 
   it("never names Tal or a deadline", () => {
     for (const text of [
       copy.doneCard,
-      copy.doneAwaiting,
+      copy.doneCredit,
+      copy.doneRefund,
+      copy.choiceCredit,
+      copy.choiceCreditNote(2),
+      copy.choiceRefund,
+      copy.choiceRefundNote,
+      copy.returnsCredit,
       copy.closed(48),
       copy.closed(null),
     ]) {
@@ -48,15 +53,13 @@ describe("cancelDoneMessage", () => {
 })
 
 describe("returnsText", () => {
-  it("by the funding", () => {
-    expect(returnsText("card", "כרטיסייה", 2)).toBe(
-      copy.returnsCard("כרטיסייה")
+  it("by the funding; a pinned booking shows the choice instead", () => {
+    expect(returnsText("card", "כרטיסייה")).toBe(copy.returnsCard("כרטיסייה"))
+    expect(returnsText("credit", "x")).toBe("הזיכוי יחזור אלייך עם אותן חלופות")
+    expect(returnsText("pinned", "x")).toBeNull()
+    expect(copy.choiceCreditNote(2)).toBe(
+      "אפשר להירשם לאחד מ-2 המפגשים המתאימים הבאים"
     )
-    expect(returnsText("pinned", "x", 2)).toBe(
-      "כניסה לאחד משני המפגשים המתאימים הבאים"
-    )
-    expect(returnsText("pinned", "x", 3)).toBe(copy.returnsPinned(3))
-    expect(returnsText("returned", "x", 2)).toBe(copy.returnsReturned)
   })
 })
 
@@ -83,7 +86,7 @@ describe("parseMyBookings", () => {
           status: "cancelled",
           starts_at: "2026-10-01T07:00:00+00:00",
           concept_name: "Mothers",
-          funding: "other",
+          funding: "returned",
         },
       ],
       options_count: 2,

@@ -4,6 +4,7 @@ import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { XIcon } from "lucide-react"
 
+import { RadioCardGroup } from "@/components/admin/radio-card"
 import { InlineNotice } from "@/components/shared/inline-notice"
 import { useAnnounce } from "@/components/shared/result-notice"
 import { Button } from "@/components/ui/button"
@@ -21,7 +22,12 @@ import { formatSessionDateTime } from "@/lib/time"
 import { cn } from "@/lib/utils"
 
 import { cancelBookingAction } from "./actions"
-import { cancelDoneMessage, returnsText, type Funding } from "./cancel-result"
+import {
+  cancelDoneMessage,
+  returnsText,
+  type CancelChoice,
+  type Funding,
+} from "./cancel-result"
 
 const copy = customerCopy.cancel
 const LINK = "font-semibold underline underline-offset-[3px]"
@@ -43,10 +49,13 @@ export type CancelBookingProps = {
   className?: string
 }
 
-// The cancel action of one booking (story 3.6), only on the session page
+// The cancel action of one booking (stories 3.6, 3.7), only on the session page
 // (user decision 2026-10-06: not on home and not in /me/bookings). Inside
 // the self-cancel window: "ביטול ההרשמה" opens a bottom-sheet that says
-// what returns and where, with one confirm ("כן, לבטל"). Past it the same
+// what returns and where, with one confirm ("כן, לבטל"). A pinned booking
+// (single, intro, couple) shows the choice instead, as radio-cards: a
+// credit for one of the next N sessions, or a refund; "כן, לבטל" stays
+// disabled until one is chosen (story 3.7). Past it the same
 // button is shown, and only a tap on it shows the inline-notice "לא ניתן
 // לבטל עצמאית פחות מ-{n} שעות לפני המפגש." with the contact phrase (no
 // "Tal"): no call to action in view unless she asked to cancel. The
@@ -72,6 +81,8 @@ export function CancelBooking({
   const [key, setKey] = useState("")
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<ErrorCode | null>(null)
+  // A pinned booking: refund or credit, chosen in the sheet (story 3.7).
+  const [choice, setChoice] = useState<CancelChoice | null>(null)
   const [done, setDone] = useState<string | null>(null)
   // Past the self-cancel window the same button only shows why it cannot
   // cancel, and the contact phrase (user decision 2026-10-06).
@@ -86,14 +97,18 @@ export function CancelBooking({
     )
   }
 
+  const needsChoice = funding === "pinned"
+  const returns = returnsText(funding, productName)
+
   async function confirm() {
-    if (busy) return
+    if (busy || confirmBlocked(funding, choice)) return
     setBusy(true)
     setError(null)
     try {
       const result = await cancelBookingAction({
         bookingId,
         idempotencyKey: key,
+        choice: needsChoice ? choice : null,
       })
       if (result.ok) {
         const message = cancelDoneMessage(result.data)
@@ -137,6 +152,7 @@ export function CancelBooking({
             }
             setKey(newIdempotencyKey())
             setError(null)
+            setChoice(null)
             setOpen(true)
           }}
           className={cn(
@@ -176,12 +192,25 @@ export function CancelBooking({
           <p className="mt-1 font-semibold">
             <time dateTime={startsAt}>{formatSessionDateTime(startsAt)}</time>
           </p>
-          <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 rounded-lg bg-muted px-4 py-3 text-[15px]">
-            <dt className="text-muted-foreground">{copy.returns}</dt>
-            <dd className="font-semibold">
-              <bdi>{returnsText(funding, productName, optionsCount)}</bdi>
-            </dd>
-          </dl>
+          {needsChoice ? (
+            <PinnedCancelChoice
+              bookingId={bookingId}
+              optionsCount={optionsCount}
+              choice={choice}
+              onChoose={(value) => {
+                setChoice(value)
+                // A changed request is a new request (AD-5).
+                setKey(newIdempotencyKey())
+              }}
+            />
+          ) : (
+            <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 rounded-lg bg-muted px-4 py-3 text-[15px]">
+              <dt className="text-muted-foreground">{copy.returns}</dt>
+              <dd className="font-semibold">
+                <bdi>{returns}</bdi>
+              </dd>
+            </dl>
+          )}
           {error && (
             <InlineNotice
               tone="error"
@@ -206,6 +235,8 @@ export function CancelBooking({
             type="button"
             size="lg"
             onClick={confirm}
+            // "כן, לבטל" waits for the choice of a pinned booking (3.7).
+            disabled={confirmBlocked(funding, choice)}
             aria-busy={busy || undefined}
             aria-disabled={busy || undefined}
             className="mt-6 h-12 w-full rounded-[4px] text-base font-semibold"
@@ -236,5 +267,50 @@ export function CancelBooking({
         </InlineNotice>
       )}
     </>
+  )
+}
+
+/** "כן, לבטל" waits for the choice of a pinned booking (story 3.7). */
+export function confirmBlocked(
+  funding: Funding,
+  choice: CancelChoice | null
+): boolean {
+  return funding === "pinned" && choice === null
+}
+
+// The choice of a pinned booking (story 3.7), as radio-cards: a credit for
+// one of the next N sessions, or a refund, each with its line.
+export function PinnedCancelChoice({
+  bookingId,
+  optionsCount,
+  choice,
+  onChoose,
+}: {
+  bookingId: string
+  optionsCount: number
+  choice: CancelChoice | null
+  onChoose: (choice: CancelChoice) => void
+}) {
+  return (
+    <RadioCardGroup
+      className="mt-4"
+      legend={copy.returns}
+      name={`cancel-choice-${bookingId}`}
+      required
+      value={choice ?? ""}
+      onChange={(value) => onChoose(value === "refund" ? "refund" : "credit")}
+      options={[
+        {
+          value: "credit",
+          label: copy.choiceCredit,
+          description: copy.choiceCreditNote(optionsCount),
+        },
+        {
+          value: "refund",
+          label: copy.choiceRefund,
+          description: copy.choiceRefundNote,
+        },
+      ]}
+    />
   )
 }

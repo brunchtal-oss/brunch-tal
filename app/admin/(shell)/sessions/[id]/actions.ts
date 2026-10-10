@@ -4,7 +4,11 @@ import type { ActionResult } from "@/lib/errors"
 import { callRpc } from "@/lib/rpc"
 import { createClient } from "@/lib/supabase/server"
 
-import { parseCancelPlan, type CancelPlan } from "./cancel-plan"
+import {
+  parseCancelPlan,
+  type CancelChoice,
+  type CancelPlan,
+} from "./cancel-plan"
 
 // Tal cancels a booking from "מי מגיעה" (story 3.6, a sensitive action,
 // AD-7). Both RPCs run with the admin's own session (private.is_admin()
@@ -29,13 +33,16 @@ export async function previewAdminCancelAction(input: {
   return { ok: true, data: parseCancelPlan(result.data) }
 }
 
-// The cancel itself: confirmed (the dialog's checkbox) and an optional
-// reason, at most 500 characters on the screen (the RPC allows 2000).
+// The cancel itself: confirmed (the dialog's checkbox), an optional
+// reason, at most 500 characters on the screen (the RPC allows 2000), and
+// the refund-or-credit choice when the plan required one (story 3.7; the
+// RPC checks again whether it is required).
 export async function adminCancelBookingAction(input: {
   bookingId: string
   reason: string
   confirmed: boolean
   idempotencyKey: string
+  choice?: CancelChoice | null
 }): Promise<ActionResult> {
   if (
     typeof input?.bookingId !== "string" ||
@@ -44,7 +51,10 @@ export async function adminCancelBookingAction(input: {
     !UUID.test(input.idempotencyKey) ||
     typeof input.reason !== "string" ||
     input.reason.length > 2000 ||
-    typeof input.confirmed !== "boolean"
+    typeof input.confirmed !== "boolean" ||
+    (input.choice != null &&
+      input.choice !== "credit" &&
+      input.choice !== "refund")
   ) {
     return { ok: false, code: "INVALID_INPUT" }
   }
@@ -53,6 +63,7 @@ export async function adminCancelBookingAction(input: {
     p_confirmed: input.confirmed,
     p_idempotency_key: input.idempotencyKey,
     p_reason: input.reason.trim() === "" ? undefined : input.reason,
+    ...(input.choice ? { p_choice: input.choice } : {}),
   })
   if (!result.ok) return result
   return { ok: true, data: undefined }

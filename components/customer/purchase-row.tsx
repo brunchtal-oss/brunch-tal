@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { ChevronLeftIcon } from "lucide-react"
 
+import { StatusChip } from "@/components/shared/status-chip"
 import { customerCopy } from "@/lib/copy/customer"
 import { formatAgorot } from "@/lib/money"
 import { formatDayMonth, formatLocalDate } from "@/lib/time"
@@ -22,7 +23,7 @@ export function PurchaseRow({
   expiresOn,
   status,
   expiredNote = null,
-  awaiting = false,
+  creditChip = null,
 }: {
   href: string
   productName: string
@@ -31,8 +32,9 @@ export function PurchaseRow({
   expiresOn: string
   status: string | null
   expiredNote?: React.ReactNode
-  // A returned entry that waits for the next sessions (story 3.6).
-  awaiting?: boolean
+  // Story 3.7: a pinned purchase whose booking was cancelled: "הומרה
+  // לזיכוי" or "בקשת החזר", in place of the validity or the ended word.
+  creditChip?: string | null
 }) {
   return (
     <div className="relative flex flex-col gap-1 py-4 pe-8">
@@ -52,10 +54,10 @@ export function PurchaseRow({
         </span>
         {expiredNote ? (
           <div className="relative z-10">{expiredNote}</div>
+        ) : creditChip ? (
+          <StatusChip tone="pending">{creditChip}</StatusChip>
         ) : status ? (
           <span>{status}</span>
-        ) : awaiting ? (
-          <span>{customerCopy.awaitingSessions}</span>
         ) : (
           <span>
             {customerCopy.validUntil}{" "}

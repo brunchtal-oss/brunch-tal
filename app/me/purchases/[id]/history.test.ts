@@ -27,9 +27,9 @@ const SESSIONS = [
   { id: "ev-3", starts_at: "2026-10-01T07:00:00Z", concept_name: "זוגות" },
 ]
 const BOOKINGS = [
-  { id: "b-used", event_id: "ev-1" },
-  { id: "b-booked", event_id: "ev-2" },
-  { id: "b-cancelled", event_id: "ev-3" },
+  { id: "b-used", event_id: "ev-1", status: "completed" },
+  { id: "b-booked", event_id: "ev-2", status: "confirmed" },
+  { id: "b-cancelled", event_id: "ev-3", status: "cancelled" },
 ]
 
 describe("signedUnits", () => {
@@ -50,6 +50,22 @@ describe("buildHistory", () => {
     move("m-6", "release", "b-cancelled", "2026-09-27T07:00:00+00:00", 1),
     move("m-7", "adjust", null, "2026-10-13T07:00:00+00:00", 1),
   ]
+
+  it("story 3.7: a pinned booking cancelled into a credit (reserve, then use) is cancelled, not attended", () => {
+    const [entry] = buildHistory({
+      movements: [
+        move("m-1", "reserve", "b-pinned", "2026-09-24T07:00:00+00:00", -1),
+        move("m-2", "use", "b-pinned", "2026-09-25T07:00:00+00:00"),
+      ],
+      bookings: [{ id: "b-pinned", event_id: "ev-1", status: "cancelled" }],
+      sessions: SESSIONS,
+    })
+    expect(entry).toMatchObject({
+      kind: "booking",
+      state: "cancelled",
+      label: customerCopy.bookingState.cancelled,
+    })
+  })
 
   it("no purchase row, one row per booking by its state, by date", () => {
     const history = buildHistory({
