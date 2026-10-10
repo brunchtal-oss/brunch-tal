@@ -107,6 +107,7 @@ const EXPECTED_GRANTS = [
   "function public.admin_list_customers(p_query text) authenticated EXECUTE",
   "function public.admin_list_links() authenticated EXECUTE",
   "function public.admin_list_payments() authenticated EXECUTE",
+  "function public.admin_list_session_occupancy(p_event_ids uuid[]) authenticated EXECUTE",
   "function public.admin_move_prep_day(p_event_id uuid, p_from integer, p_to integer, p_idempotency_key uuid) authenticated EXECUTE",
   "function public.admin_publish_content(p_slug text, p_idempotency_key uuid) authenticated EXECUTE",
   "function public.admin_publish_event(p_event_id uuid, p_idempotency_key uuid) authenticated EXECUTE",

@@ -1840,6 +1840,10 @@ export type Database = {
       admin_list_customers: { Args: { p_query: string }; Returns: Json }
       admin_list_links: { Args: never; Returns: Json }
       admin_list_payments: { Args: never; Returns: Json }
+      admin_list_session_occupancy: {
+        Args: { p_event_ids: string[] }
+        Returns: Json
+      }
       admin_move_prep_day: {
         Args: {
           p_event_id: string
