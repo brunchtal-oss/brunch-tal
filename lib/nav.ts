@@ -19,6 +19,7 @@ export type NavIcon =
   | "content"
   | "settings"
   | "notes"
+  | "concepts"
 
 export type NavItem = {
   href: string
@@ -59,6 +60,12 @@ export const adminMoreNav: readonly {
     href: "/admin/settings",
     label: adminCopy.settings.title,
     icon: "settings",
+  },
+  // Story 4.8: the concepts (appended, not reordered).
+  {
+    href: "/admin/concepts",
+    label: adminCopy.concepts.title,
+    icon: "concepts",
   },
 ]
 

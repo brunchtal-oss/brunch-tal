@@ -1551,6 +1551,10 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_create_concept: {
+        Args: { p_concept: Json; p_idempotency_key: string }
+        Returns: Json
+      }
       admin_create_event: {
         Args: { p_event: Json; p_idempotency_key: string }
         Returns: Json
@@ -1558,6 +1562,10 @@ export type Database = {
       admin_create_media: { Args: { p_idempotency_key: string }; Returns: Json }
       admin_create_product: {
         Args: { p_idempotency_key: string; p_product: Json }
+        Returns: Json
+      }
+      admin_delete_concept: {
+        Args: { p_concept_id: string; p_idempotency_key: string }
         Returns: Json
       }
       admin_delete_customer_note: {
@@ -1616,6 +1624,17 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_list_audit: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_customer_id?: string
+          p_event_id?: string
+          p_from?: string
+          p_to?: string
+        }
+        Returns: Json
+      }
       admin_list_bookable_events: { Args: never; Returns: Json }
       admin_list_customers: { Args: { p_query: string }; Returns: Json }
       admin_list_links: { Args: never; Returns: Json }
@@ -1654,6 +1673,14 @@ export type Database = {
         Returns: Json
       }
       admin_search_customers: { Args: { p_query: string }; Returns: Json }
+      admin_set_concept_archived: {
+        Args: { p_archived: boolean; p_concept_id: string }
+        Returns: Json
+      }
+      admin_set_concept_image: {
+        Args: { p_concept_id: string; p_media_id: string }
+        Returns: Json
+      }
       admin_set_content_draft: {
         Args: { p_content: Json; p_key: string; p_slug: string }
         Returns: Json
@@ -1707,6 +1734,14 @@ export type Database = {
         Args: {
           p_changes: Json
           p_expected_version: number
+          p_idempotency_key: string
+        }
+        Returns: Json
+      }
+      admin_update_concept: {
+        Args: {
+          p_changes: Json
+          p_concept_id: string
           p_idempotency_key: string
         }
         Returns: Json

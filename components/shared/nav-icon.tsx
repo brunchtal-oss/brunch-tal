@@ -9,6 +9,7 @@ import {
   PackageIcon,
   ReceiptTextIcon,
   SettingsIcon,
+  ShapesIcon,
   StickyNoteIcon,
   UserRoundIcon,
   UsersRoundIcon,
@@ -30,6 +31,8 @@ const ICONS = {
   products: PackageIcon,
   content: FileTextIcon,
   settings: SettingsIcon,
+  // Story 4.8.
+  concepts: ShapesIcon,
   notes: StickyNoteIcon,
 } satisfies Record<NavIconKey, unknown>
 
