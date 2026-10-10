@@ -3,6 +3,7 @@
 import { useRef, useState } from "react"
 
 import {
+  asSaveResult,
   ValueChangeRow,
   type ValueSaveResult,
 } from "@/components/admin/value-change-row"
@@ -89,7 +90,7 @@ export function TemplateEditor({ row }: { row: TemplateRow }) {
         expectedVersion: row.version,
         idempotencyKey: key,
       })
-      return result.ok ? { ok: true } : { ok: false, code: result.code }
+      return asSaveResult(result)
     }
 
   // Adds "{field}" at the caret of the target field and puts the caret

@@ -11,7 +11,7 @@ import { shellCopy } from "@/lib/copy/shell"
 import { errorMessage } from "@/lib/errors"
 import { callRpc } from "@/lib/rpc"
 import { createClient } from "@/lib/supabase/server"
-import { formatDayMonth, formatLocalDate, formatWeekday } from "@/lib/time"
+import { formatLocalDate, formatSessionDate } from "@/lib/time"
 
 import { toBookableEvents } from "../../payments/new/event-options"
 import { loadBookingCustomer } from "./load-customer"
@@ -104,7 +104,7 @@ async function BookCustomerContent({
           {events.map((event) => {
             const party = event.kind === "couple" ? 2 : 1
             const full = event.occupied + party > event.capacity
-            const day = `${formatWeekday(event.startsAt)} ${formatDayMonth(event.startsAt)}`
+            const day = formatSessionDate(event.startsAt)
             return (
               <li key={event.id} className="border-b border-border">
                 <Link

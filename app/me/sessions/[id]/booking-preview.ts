@@ -1,4 +1,5 @@
 import { isErrorCode, type ErrorCode } from "@/lib/errors"
+import { nonEmptyText } from "@/lib/form-values"
 
 import { parseFunding, type Funding } from "../../bookings/cancel-result"
 
@@ -30,10 +31,6 @@ export type BookingPreview =
   | { kind: "completed" }
   | { kind: "blocked"; code: ErrorCode }
 
-function text(value: unknown): string | null {
-  return typeof value === "string" && value !== "" ? value : null
-}
-
 export function parsePreview(data: unknown): BookingPreview {
   const row =
     typeof data === "object" && data !== null && !Array.isArray(data)
@@ -47,23 +44,23 @@ export function parsePreview(data: unknown): BookingPreview {
   if (row.booked === true) {
     return {
       kind: "booked",
-      bookingId: text(row.booking_id),
+      bookingId: nonEmptyText(row.booking_id),
       funding: parseFunding(row.funding),
-      productName: text(row.product_name) ?? "",
+      productName: nonEmptyText(row.product_name) ?? "",
       optionsCount:
         Number.isSafeInteger(row.options_count) &&
         (row.options_count as number) > 0
           ? (row.options_count as number)
           : 1,
-      cancelDeadline: text(row.cancel_deadline),
+      cancelDeadline: nonEmptyText(row.cancel_deadline),
       canSelfCancel: row.can_self_cancel === true,
     }
   }
 
   if (row.ok === true) {
-    const productName = text(row.product_name)
-    const expiresOn = text(row.expires_on)
-    const cancelDeadline = text(row.cancel_deadline)
+    const productName = nonEmptyText(row.product_name)
+    const expiresOn = nonEmptyText(row.expires_on)
+    const cancelDeadline = nonEmptyText(row.cancel_deadline)
     if (
       productName &&
       expiresOn &&

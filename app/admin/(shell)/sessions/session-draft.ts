@@ -5,18 +5,17 @@
 // agorot (AD-9).
 
 import { adminCopy } from "@/lib/copy/admin"
+import { parsePositiveInt } from "@/lib/form-values"
 import {
   formatAgorot,
   formatAgorotInput,
   parseShekelsToAgorot,
 } from "@/lib/money"
 import {
-  formatDayMonth,
   formatLocalDate,
   formatSessionDate,
   formatSessionDateTime,
   formatTime,
-  formatWeekday,
 } from "@/lib/time"
 
 const copy = adminCopy.sessions
@@ -115,7 +114,7 @@ export function localDateTime(instant: string): string {
 // "יום שני 15.12" of a plain local date (also the work sheet and the work
 // list: no time there, design round 2026-10-08).
 export function dayText(date: string): string {
-  return `${formatWeekday(date)} ${formatDayMonth(date)}`
+  return formatSessionDate(date)
 }
 
 // "יום שני 15.12 · 10:00–12:00"
@@ -175,14 +174,6 @@ export function draftFromRow(row: SessionRow): SessionDraft {
         : formatAgorotInput(row.display_price_agorot),
     closesLocal: localDateTime(row.registration_closes_at),
   }
-}
-
-// A positive whole number typed in a field, or null.
-export function parsePositiveInt(text: string): number | null {
-  const trimmed = text.trim()
-  if (!/^\d{1,9}$/.test(trimmed)) return null
-  const value = Number(trimmed)
-  return value > 0 ? value : null
 }
 
 // Field rules shown on the screen before any request. The optional price

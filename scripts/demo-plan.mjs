@@ -156,3 +156,43 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 export function isUuid(value) {
   return typeof value === "string" && UUID.test(value)
 }
+
+/**
+ * The step of demo-seed (story 5.19): one demo item, skipped when the state
+ * already has it (its stored value is returned and it counts as existing);
+ * otherwise fn runs with the item's idempotency key and the result is
+ * recorded and saved right away. fn may return undefined to skip the item
+ * without recording it (it is tried again next time).
+ *
+ * @param {{
+ *   state: { items: Record<string, unknown> },
+ *   save: () => void,
+ *   keyOf: (itemKey: string) => string,
+ *   log: (message: string) => void,
+ * }} deps
+ */
+export function createStep({ state, save, keyOf, log }) {
+  const counts = { created: 0, existing: 0 }
+  /**
+   * @template T
+   * @param {string} itemKey
+   * @param {string} label
+   * @param {(key: string) => Promise<T | undefined> | T | undefined} fn
+   * @returns {Promise<T | undefined>}
+   */
+  async function step(itemKey, label, fn) {
+    if (state.items[itemKey] !== undefined) {
+      counts.existing++
+      log(`כבר קיים: ${label}`)
+      return /** @type {T} */ (state.items[itemKey])
+    }
+    const result = await fn(keyOf(itemKey))
+    if (result === undefined) return undefined
+    state.items[itemKey] = result
+    save()
+    counts.created++
+    log(`נוצר: ${label}`)
+    return result
+  }
+  return { step, counts }
+}

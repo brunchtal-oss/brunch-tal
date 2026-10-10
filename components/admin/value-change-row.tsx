@@ -7,7 +7,7 @@ import { InlineNotice } from "@/components/shared/inline-notice"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { adminCopy } from "@/lib/copy/admin"
-import { errorMessage, type ErrorCode } from "@/lib/errors"
+import { errorMessage, type ActionResult, type ErrorCode } from "@/lib/errors"
 import { newIdempotencyKey } from "@/lib/idempotency"
 
 const copy = adminCopy.valueChange
@@ -15,6 +15,11 @@ const copy = adminCopy.valueChange
 // What a save answers. null: nothing was sent (for example a confirmation
 // dialog that was closed), so the row simply returns to its change box.
 export type ValueSaveResult = { ok: true } | { ok: false; code: ErrorCode }
+
+// A Server Action's result as a row's save result.
+export function asSaveResult(result: ActionResult<unknown>): ValueSaveResult {
+  return result.ok ? { ok: true } : { ok: false, code: result.code }
+}
 
 // One non-sensitive business value, "old ← new" before it is saved
 // (DESIGN.md › value-change-row, EXPERIENCE › Component Patterns; story 2.6,

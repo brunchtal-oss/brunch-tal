@@ -5,6 +5,7 @@ import {
   babyAge,
   formatAccessibleDate,
   formatAccessibleDateTime,
+  formatClockTime,
   formatDayMonth,
   formatFullDate,
   formatLocalDate,
@@ -231,5 +232,14 @@ describe("formatNotificationTime", () => {
     expect(formatNotificationTime("2026-10-23T19:00:00Z", lateOnLongDay)).toBe(
       "23.10"
     )
+  })
+})
+
+// Story 5.19: the shared helpers that replaced copies in the admin screens.
+describe("formatClockTime", () => {
+  it("keeps HH:MM of a Postgres time", () => {
+    expect(formatClockTime("10:30:00")).toBe("10:30")
+    expect(formatClockTime("09:05:59")).toBe("09:05")
+    expect(formatClockTime("14:30")).toBe("14:30")
   })
 })

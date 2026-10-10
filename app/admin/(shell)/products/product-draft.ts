@@ -3,6 +3,7 @@
 // Money is agorot (AD-9); the RPCs check everything again.
 
 import { adminCopy } from "@/lib/copy/admin"
+import { parsePositiveInt } from "@/lib/form-values"
 import {
   formatAgorot,
   formatAgorotInput,
@@ -104,14 +105,6 @@ export function draftFromRow(row: ProductRow): ProductDraft {
     postJoinMessage: row.post_join_message ?? "",
     postJoinButtonLabel: row.post_join_button_label ?? "",
   }
-}
-
-// A positive whole number typed in a field, or null.
-export function parsePositiveInt(text: string): number | null {
-  const trimmed = text.trim()
-  if (!/^\d{1,9}$/.test(trimmed)) return null
-  const value = Number(trimmed)
-  return value > 0 ? value : null
 }
 
 // Weekdays as the RPC takes them: null = every day; [] stays [] (refused).

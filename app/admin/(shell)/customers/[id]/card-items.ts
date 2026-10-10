@@ -10,7 +10,6 @@ import {
   formatSessionDate,
   formatShortDate,
   formatTime,
-  formatWeekday,
 } from "@/lib/time"
 
 // What the customer card shows for admin_get_customer (pure: the RPC's
@@ -186,10 +185,6 @@ export type EntryLine = {
   title: string | null
 }
 
-function sessionDay(startsAt: string): string {
-  return `${formatWeekday(startsAt)} ${formatDayMonth(startsAt)}`
-}
-
 // The entries by session date (used "השתתפה · יום DD.MM", booked "נרשמה ·
 // יום DD.MM", each with the session's title under it, user decision
 // 2026-10-08), then one line per free entry: "פנויה, יש לשריין", or "לא
@@ -203,8 +198,8 @@ export function entryLines(row: CardEntitlement): EntryLine[] {
         key: `${i}:${entry.event_id}`,
         kind: used ? "used" : "booked",
         text: used
-          ? copy.entryUsed(sessionDay(entry.starts_at))
-          : copy.entryBooked(sessionDay(entry.starts_at)),
+          ? copy.entryUsed(formatSessionDate(entry.starts_at))
+          : copy.entryBooked(formatSessionDate(entry.starts_at)),
         title: adminCopy.sessions.sessionTitle(entry.concept_name),
       }
     })
@@ -287,7 +282,10 @@ export function toSingleItem(row: CardEntitlement): SingleItem {
     key: row.entitlement_id,
     productName: row.product_name ?? "",
     line: booked
-      ? copy.singleBooked(booked.concept_name, sessionDay(booked.starts_at))
+      ? copy.singleBooked(
+          booked.concept_name,
+          formatSessionDate(booked.starts_at)
+        )
       : copy.singleToBook(formatDayMonth(row.expires_on)),
     chip: row.is_expiring ? { tone: "warning", label: copy.expiring } : null,
   }

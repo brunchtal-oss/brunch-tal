@@ -4,14 +4,14 @@ import { startTransition, useState } from "react"
 import { useRouter } from "next/navigation"
 
 import {
+  asSaveResult,
   ValueChangeRow,
-  type ValueSaveResult,
 } from "@/components/admin/value-change-row"
 import { InlineNotice } from "@/components/shared/inline-notice"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { adminCopy } from "@/lib/copy/admin"
-import { errorMessage, type ActionResult, type ErrorCode } from "@/lib/errors"
+import { errorMessage, type ErrorCode } from "@/lib/errors"
 import { newIdempotencyKey } from "@/lib/idempotency"
 
 import {
@@ -46,10 +46,6 @@ const DRAFT_KEYS: Record<EditorField, readonly (keyof SessionDraft)[]> = {
   capacity: ["capacityText"],
   closes: ["closesLocal"],
   price: ["priceText"],
-}
-
-function asSaveResult(result: ActionResult<unknown>): ValueSaveResult {
-  return result.ok ? { ok: true } : { ok: false, code: result.code }
 }
 
 // The editor of one session (story 3.1): each field in its own

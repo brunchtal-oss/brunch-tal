@@ -5,6 +5,7 @@ import { PageHeading } from "@/components/shared/page-heading"
 import { adminCopy } from "@/lib/copy/admin"
 import { shellCopy } from "@/lib/copy/shell"
 import { createClient } from "@/lib/supabase/server"
+import { formatClockTime } from "@/lib/time"
 
 import { SettingsEditor } from "./settings-editor"
 import type { SettingsRow } from "./settings-draft"
@@ -33,11 +34,6 @@ export default function SettingsPage() {
   )
 }
 
-// Postgres time arrives as "HH:MM:SS"; the screen uses "HH:MM".
-function hhmm(time: string): string {
-  return time.slice(0, 5)
-}
-
 async function SettingsContent() {
   const supabase = await createClient()
   const { data, error } = await supabase
@@ -47,9 +43,13 @@ async function SettingsContent() {
   if (error) throw new Error("settings read failed")
   const row: SettingsRow = {
     ...data,
-    registration_close_local_time: hhmm(data.registration_close_local_time),
-    default_session_start_time: hhmm(data.default_session_start_time),
-    default_session_end_time: hhmm(data.default_session_end_time),
+    registration_close_local_time: formatClockTime(
+      data.registration_close_local_time
+    ),
+    default_session_start_time: formatClockTime(
+      data.default_session_start_time
+    ),
+    default_session_end_time: formatClockTime(data.default_session_end_time),
   }
   return <SettingsEditor row={row} />
 }

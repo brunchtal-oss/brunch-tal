@@ -5,6 +5,7 @@ import Link from "next/link"
 import { ChevronLeftIcon } from "lucide-react"
 
 import {
+  asSaveResult,
   ValueChangeRow,
   type ValueSaveResult,
 } from "@/components/admin/value-change-row"
@@ -89,7 +90,7 @@ export function SettingsEditor({ row }: { row: SettingsRow }) {
         expectedVersion: row.version,
         idempotencyKey: key,
       })
-      return result.ok ? { ok: true } : { ok: false, code: result.code }
+      return asSaveResult(result)
     }
 
   const settingRow = (field: EditorField, children: React.ReactNode) => {

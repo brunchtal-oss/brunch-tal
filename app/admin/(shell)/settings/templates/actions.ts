@@ -1,6 +1,7 @@
 "use server"
 
 import type { ActionResult } from "@/lib/errors"
+import { validVersion } from "@/lib/form-values"
 import { callRpc } from "@/lib/rpc"
 import { createClient } from "@/lib/supabase/server"
 
@@ -14,10 +15,6 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const TYPE = /^[a-z_]{1,40}$/
 // A generous cap on text sent to the RPC (it allows 200 / 1000).
 const MAX_TEXT = 2000
-
-function validVersion(version: unknown): version is number {
-  return Number.isSafeInteger(version) && (version as number) > 0
-}
 
 // The generated Args type marks every parameter as non-null; the body of an
 // override type is sent as null.

@@ -20,7 +20,8 @@
 // that delete (set local session_replication_role), deletes in foreign-key
 // order, and keeps audit_log and idempotency_results (audit_log rows of a
 // removed customer lose only their customer_id, which points at the removed
-// profile). Every id in it is a validated uuid literal.
+// profile). Every id in it is a validated uuid literal, and no admin is in
+// it. The SQL itself is built in scripts/demo-clear-sql.mjs (pure, tested).
 //
 // This script only reads: through DEV_DATABASE_URL (checked against the
 // project ref of NEXT_PUBLIC_SUPABASE_URL first) in a read-only transaction.
@@ -31,13 +32,13 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs"
 import pg from "pg"
 
 import { DEMO_DOMAIN } from "./demo-cast.mjs"
+import { ADMIN_EMAIL, buildClearSql } from "./demo-clear-sql.mjs"
 import { devRef } from "./dev-guard.mjs"
 import { isUuid } from "./demo-plan.mjs"
 
 if (existsSync(".env.local")) process.loadEnvFile(".env.local")
 
 const STATE_FILE = ".demo-data.local.json"
-const ADMIN_EMAIL = "dev-admin@example.com"
 const devTestData = process.argv.includes("--dev-test-data")
 const OUT_FILE = devTestData ? ".dev-test-clear.local.sql" : ".demo-clear.local.sql"
 
@@ -98,13 +99,6 @@ const uuids = (rows, column = "id") => {
     if (!isUuid(id)) throw new Error("unexpected id")
   }
   return [...new Set(ids)]
-}
-
-const literal = (ids) => {
-  for (const id of ids) {
-    if (!isUuid(id)) throw new Error("unexpected id")
-  }
-  return `'{${ids.join(",")}}'::uuid[]`
 }
 
 async function main() {
@@ -345,64 +339,32 @@ async function main() {
       ["auth.users", users.length],
     ]
 
-    const del = (table, ids) =>
-      ids.length === 0
-        ? `-- ${table}: nothing`
-        : `delete from ${table} where id = any(${literal(ids)});`
-
-    const sql = [
-      `-- ${devTestData ? "Dev test data" : "Demo data"} removal, prepared by scripts/demo-clear.mjs`,
-      `-- on ${new Date().toISOString()}. Review it, then run it in the SQL Editor`,
-      "-- of the DEV project (a new, empty query). One transaction.",
-      "",
-      "begin;",
-      "",
-      "-- Guard: only the dev project has the dev admin.",
-      "do $guard$",
-      "begin",
-      "  if not exists (",
-      `    select 1 from auth.users where lower(email) = '${ADMIN_EMAIL}'`,
-      "  ) then",
-      `    raise exception 'not the dev project: ${ADMIN_EMAIL} is missing';`,
-      "  end if;",
-      "end",
-      "$guard$;",
-      "",
-      jobs.length === 0
-        ? "-- public.notification_deliveries: nothing"
-        : `delete from public.notification_deliveries where job_id = any(${literal(jobs)});`,
-      del("public.notification_jobs", jobs),
-      del("public.notifications", notifications),
-      del("public.push_subscriptions", subscriptions),
-      "",
-      "-- entitlement_movements is append-only (a trigger); off for this delete only.",
-      "set local session_replication_role = replica;",
-      del("public.entitlement_movements", movements),
-      "set local session_replication_role = origin;",
-      "",
-      del("public.booking_allocations", allocations),
-      del("public.bookings", bookings),
-      del("public.entitlements", entitlements),
-      del("public.activation_tokens", tokens),
-      del("public.payments", payments),
-      del("public.shopping_items", shopping),
-      del("public.work_tasks", tasks),
-      del("public.work_dishes", dishes),
-      del("public.work_sheets", sheets),
-      del("public.events", events),
-      del("public.customer_notes", notes),
-      del("public.babies", babies),
-      "",
-      "-- audit_log stays; its rows only stop pointing at the removed profiles.",
-      audit.length === 0
-        ? "-- public.audit_log: nothing"
-        : `update public.audit_log set customer_id = null where id = any(${literal(audit)});`,
-      del("public.profiles", customers),
-      del("auth.users", users),
-      "",
-      "commit;",
-      "",
-    ].join("\n")
+    const sql = buildClearSql(
+      {
+        jobs,
+        notifications,
+        subscriptions,
+        movements,
+        allocations,
+        bookings,
+        entitlements,
+        tokens,
+        payments,
+        shopping,
+        tasks,
+        dishes,
+        sheets,
+        events,
+        notes,
+        babies,
+        audit,
+        customers,
+        users,
+        admins,
+      },
+      devTestData ? "dev-test-data" : "demo",
+      new Date().toISOString()
+    )
 
     writeFileSync(OUT_FILE, sql)
 

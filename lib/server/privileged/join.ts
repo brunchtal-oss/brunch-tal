@@ -11,7 +11,7 @@ import { joinCopy } from "@/lib/copy/join"
 import type { ActionResult, ErrorCode } from "@/lib/errors"
 import { callRpc } from "@/lib/rpc"
 import { createServiceClient } from "@/lib/server/privileged/service-client"
-import { formatDayMonth, formatWeekday } from "@/lib/time"
+import { formatSessionDate } from "@/lib/time"
 
 // Joining through a one-time link (AD-10, AD-21):
 // join_begin (intent: claiming + pending_user_id) -> Auth Admin
@@ -62,7 +62,7 @@ function purchaseName(view: TokenViewResult): string | null {
   if (view.session_starts_at && view.concept_name) {
     return joinCopy.pinnedPurchase(
       view.concept_name,
-      `${formatWeekday(view.session_starts_at)} ${formatDayMonth(view.session_starts_at)}`
+      formatSessionDate(view.session_starts_at)
     )
   }
   return view.product_name

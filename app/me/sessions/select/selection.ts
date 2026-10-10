@@ -1,6 +1,7 @@
 import type { StatusTone } from "@/components/shared/status-chip"
 import { customerCopy } from "@/lib/copy/customer"
 import { isErrorCode, type ErrorCode } from "@/lib/errors"
+import { nonEmptyText } from "@/lib/form-values"
 
 import { sessionStatus, type Availability } from "../session-status"
 
@@ -34,10 +35,6 @@ function record(value: unknown): Record<string, unknown> {
     : {}
 }
 
-function text(value: unknown): string | null {
-  return typeof value === "string" && value !== "" ? value : null
-}
-
 function code(value: unknown, ok: boolean): ErrorCode | null {
   if (ok) return null
   return isErrorCode(value) ? value : "SERVER_ERROR"
@@ -57,15 +54,15 @@ export function parseSelectionPreview(data: unknown): SelectionPreview {
   if (Array.isArray(row.results)) {
     for (const item of row.results) {
       const r = record(item)
-      const eventId = text(r.event_id)
+      const eventId = nonEmptyText(r.event_id)
       if (!eventId || typeof r.ok !== "boolean") continue
-      const productName = text(r.product_name)
+      const productName = nonEmptyText(r.product_name)
       const ok = r.ok && productName !== null
       dates.set(eventId, {
         ok,
         code: ok ? null : code(r.code, false),
         productName,
-        cancelDeadline: text(r.cancel_deadline),
+        cancelDeadline: nonEmptyText(r.cancel_deadline),
       })
     }
   }
@@ -82,9 +79,9 @@ export function parseBookResults(data: unknown): DateResult[] | null {
   const parsed: DateResult[] = []
   for (const item of results) {
     const r = record(item)
-    const eventId = text(r.event_id)
+    const eventId = nonEmptyText(r.event_id)
     if (!eventId || typeof r.ok !== "boolean") return null
-    const bookingId = text(r.booking_id)
+    const bookingId = nonEmptyText(r.booking_id)
     if (r.ok && !bookingId) return null
     parsed.push({
       eventId,

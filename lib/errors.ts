@@ -17,7 +17,6 @@ export const ERROR_MESSAGES = {
     "הפעולה כבר נשלחה עם פרטים אחרים. כדאי לרענן את הדף ולנסות שוב",
   // Payment approval (story 2.1).
   PRODUCT_NOT_AVAILABLE: "המוצר הזה לא זמין כרגע. בחרי מוצר אחר",
-  PINNED_NOT_AVAILABLE: "אישור מוצר למפגש מסוים עוד לא זמין",
   PINNED_EVENT_REQUIRED: "צריך לבחור מפגש למוצר הזה",
   EVENT_NOT_ALLOWED: "למוצר הזה לא בוחרים מפגש",
   PAYMENT_METHOD_NOT_SELECTABLE: "אמצעי התשלום הזה הוסתר. בחרי אחר",
