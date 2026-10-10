@@ -526,6 +526,11 @@
   evidence: ביקורת 3.7 (blind-hunter). ‏`admin_update_event` מרענן זיכויים רק בשינוי מכסה. שינוי מפגש (`event_changed`) נבנה ב-3.8, ושם צריך לרענן חלופות ולהחליף חלופה שזזה לפני `origin_starts_at`.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-7-cancellation-credits-and-refund-requests.md`
+  target: 5.20
+  summary: הרכיב `BalanceCard` ב-`components/customer/balance-card.tsx` לא בשימוש מאז 3.7 (הוא הציג את הכניסה ש"חזרה" ב-3.6). הקובץ נשאר, כי `EntryMeter` ו-`METER_MAX` שבו משמשים את פירוט הרכישה ואת כרטיס הלקוחה באדמין. להסיר את `BalanceCard` ואת הבדיקות שלו בניקוי המאוחד.
+  evidence: בדיקת הטלפון של 3.7 (2026-10-10). המשתמשת אישרה להסיר אותו; הוא נשאר כי הסרה דורשת לכתוב מחדש את בדיקות `EntryMeter`.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-7-cancellation-credits-and-refund-requests.md`
   target: 5.10
   summary: למסלול `CREDIT_LOCKED` ב-`private.job_complete_events` אין בדיקה: זיכוי שנעול בעסקה אחרת מכשיל את הסיום של אותו מפגש, והמפגש נסגר בהרצה הבאה.
   evidence: ביקורת 3.7 (verification-gap). צריך שני חיבורים שעושים commit, כמו בדיקות המקביליות של ההרשמה.

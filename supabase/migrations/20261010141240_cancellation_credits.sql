@@ -1,14 +1,9 @@
 -- Story 3.7: cancellation credits, alternative sessions and refund requests
 -- (CAP-17, CAP-18, CAP-19, AD-14, AD-18, AD-20).
 --
--- DRAFT. Not applied before Tuesday 2026-10-13 (the reviewers use the dev
--- project on Monday). On Tuesday the main session: runs
--- supabase/drafts/3-7-type-and-drops.sql in the SQL Editor first (it drops,
--- so it does not go through the MCP), then `npx supabase migration new
--- cancellation_credits`, re-bases every redefinition below on
--- pg_get_functiondef of the live database, applies it with apply_migration,
--- runs get_advisors, regenerates database.types.ts, the full test:db and
--- demo:seed, and deletes this draft.
+-- Runs right after 20261010141237_cancellation_credits_type_and_drops.sql,
+-- in the same SQL Editor transaction (user decision 2026-10-10: applied and
+-- merged on 2026-10-10, not on Tuesday).
 --
 -- Replaces the 3.6 stopgap (a cancelled pinned booking became a regular
 -- entitlement): a cancelled pinned booking (single, intro, couple) always

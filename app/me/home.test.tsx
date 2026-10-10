@@ -82,13 +82,27 @@ const CREDIT = {
 
 function bookings(
   upcoming: ReturnType<typeof booking>[],
-  credits: unknown[] = []
+  credits: unknown[] = [],
+  past: unknown[] = []
 ) {
   callRpc.mockImplementation(async (_client: unknown, name: string) =>
     name === "get_my_credits"
       ? { ok: true, data: credits }
-      : { ok: true, data: { upcoming, past: [] } }
+      : { ok: true, data: { upcoming, past } }
   )
+}
+
+// An open refund request (get_my_credits).
+const REFUND = {
+  ...CREDIT,
+  credit_id: "c9",
+  status: "refund_requested",
+  waiting: false,
+  refund: {
+    amount_agorot: 12800,
+    status: "requested",
+    requested_at: "2026-10-09T07:00:00Z",
+  },
 }
 
 function text(html: string): string {
@@ -164,7 +178,7 @@ describe("customer home", () => {
     )
   })
 
-  it("only a card: its section, no empty session section and no link to all bookings", async () => {
+  it("only a card: its section, no empty session section, and the link to all bookings (2026-10-10)", async () => {
     bookings([])
     loadMyEntitlements.mockResolvedValue([CARD])
     const html = renderToStaticMarkup(await Home())
@@ -173,7 +187,7 @@ describe("customer home", () => {
     expect(html).toContain(customerCopy.availableEntriesLabel)
     expect(html).not.toContain(customerCopy.upcomingTitle)
     expect(html).not.toContain(customerCopy.moreUpcomingTitle)
-    expect(html).not.toContain(customerCopy.allMyBookings)
+    expect(html).toContain(customerCopy.allMyBookings)
     expect(html).not.toContain(customerCopy.emptyHomeTitle)
     expect(html.match(/<section/g)).toHaveLength(1)
     expect(getPublicSession).not.toHaveBeenCalled()
@@ -215,5 +229,47 @@ describe("customer home: credits (story 3.7)", () => {
     const html = renderToStaticMarkup(await Home())
     expect(html).not.toContain(customerCopy.homeCredit)
     expect(html).toContain(customerCopy.emptyHomeTitle)
+  })
+})
+
+describe("customer home: all bookings and the refund line (2026-10-10)", () => {
+  function lastLink(html: string): boolean {
+    const at = html.lastIndexOf(customerCopy.allMyBookings)
+    return at > -1 && html.indexOf("href=", at) === -1
+  }
+
+  it("a card without an upcoming session: all bookings is the last element", async () => {
+    bookings([])
+    loadMyEntitlements.mockResolvedValue([CARD])
+    const html = renderToStaticMarkup(await Home())
+    expect(html.split(customerCopy.allMyBookings).length - 1).toBe(1)
+    expect(lastLink(html)).toBe(true)
+  })
+
+  it("an open refund request: its line to her bookings, and all bookings last", async () => {
+    bookings([], [REFUND])
+    loadMyEntitlements.mockResolvedValue([])
+    const html = renderToStaticMarkup(await Home())
+    expect(customerCopy.homeRefund).toBe("בקשת ההחזר שלך התקבלה")
+    expect(html).toContain(customerCopy.homeRefund)
+    expect(html).not.toContain(customerCopy.homeCredit)
+    expect(html).not.toContain(customerCopy.emptyHomeTitle)
+    expect(html.indexOf(customerCopy.homeRefund)).toBeLessThan(
+      html.indexOf(customerCopy.allMyBookings)
+    )
+    expect(lastLink(html)).toBe(true)
+  })
+
+  it("the empty home: all bookings only with past bookings", async () => {
+    bookings([], [], [booking("p1", NEXT, "2026-10-01T07:30:00Z")])
+    loadMyEntitlements.mockResolvedValue([])
+    let html = renderToStaticMarkup(await Home())
+    expect(html).toContain(customerCopy.emptyHomeTitle)
+    expect(html).toContain(customerCopy.allMyBookings)
+
+    bookings([])
+    html = renderToStaticMarkup(await Home())
+    expect(html).toContain(customerCopy.emptyHomeTitle)
+    expect(html).not.toContain(customerCopy.allMyBookings)
   })
 })

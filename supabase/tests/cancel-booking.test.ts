@@ -699,12 +699,22 @@ describe(
           pinned_event_id: event.id,
         })
         expect(await releases(db, rows[0].id)).toBe(0)
-        // Not the cancelled session again.
+        // The cancelled session again, funded by the credit (user decision
+        // 2026-10-10, overrides source section 6), never by the entitlement.
         expect(
           await as(db, f.customerA, () =>
             queryError(db, BOOK, [event.id, randomUUID()])
           )
-        ).toEqual({ code: "P0001", message: "NO_MATCHING_ENTITLEMENT" })
+        ).toBeNull()
+        const funding = await db.query<{ credit_id: string | null }>(
+          `select a.credit_id
+           from public.booking_allocations a
+           join public.bookings b on b.id = a.booking_id
+           where b.event_id = $1 and b.customer_id = $2 and b.status = 'confirmed'`,
+          [event.id, f.customerA]
+        )
+        expect(funding.rows).toHaveLength(1)
+        expect(funding.rows[0].credit_id).not.toBeNull()
       })
     })
 

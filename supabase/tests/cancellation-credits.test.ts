@@ -1077,7 +1077,7 @@ describe("review fixes", { timeout: 30_000 }, () => {
     })
   })
 
-  it("two credits share option X: booked with A, B's X is replaced (booked) and B gets the next session", async () => {
+  it("two credits share option X: booked with one, the other's X is replaced (booked) and it gets the next session", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)
       const x = await insertEvent(db, f, { dayOffset: 6 })
@@ -1092,9 +1092,12 @@ describe("review fixes", { timeout: 30_000 }, () => {
         "select a.credit_id from public.booking_allocations a join public.bookings b on b.id = a.booking_id where b.event_id = $1 and b.status = 'confirmed'",
         [x.id]
       )
-      expect(rows).toEqual([{ credit_id: first }])
+      // Both credits were made in one transaction (the same created_at), so
+      // either may fund X; the other one's X is replaced.
+      expect([first, second]).toContain(rows[0].credit_id)
+      const other = rows[0].credit_id === first ? second : first
       await refreshAs(db, f.customerA)
-      expect(await options(db, second)).toEqual([
+      expect(await options(db, other)).toEqual([
         [x.id, "replaced", "booked"],
         [y.id, "active", null],
         [z.id, "active", null],
@@ -1219,6 +1222,67 @@ describe("review fixes", { timeout: 30_000 }, () => {
           title: PINNED_TITLE(origin.day),
         },
       ])
+    })
+  })
+})
+
+// User decision 2026-10-10 (20261010184900): a credit also funds a booking
+// of its origin session, besides its options and without counting toward
+// them.
+describe("the origin session", { timeout: 30_000 }, () => {
+  it("cancel with a credit, book the same session again with it, cancel again: the same credit and options", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const origin = await insertEvent(db, f, { dayOffset: 5 })
+      const a = await insertEvent(db, f, { dayOffset: 6 })
+      const b = await insertEvent(db, f, { dayOffset: 7 })
+      const p = await pinned(db, f, origin.id)
+      const r = await cancel(db, f.customerA, p.booking, "credit")
+      const creditId = r.credit_id as string
+      const before = await options(db, creditId)
+      expect(before).toEqual([
+        [a.id, "active", null],
+        [b.id, "active", null],
+      ])
+
+      // The sheet: funded by the credit.
+      const preview = await as(db, f.customerA, async () => {
+        const { rows } = await db.query(PREVIEW_BOOK, [origin.id])
+        return rows[0].r
+      })
+      expect(preview).toMatchObject({
+        ok: true,
+        source: "credit",
+        credit_id: creditId,
+      })
+      const many = await as(db, f.customerA, async () => {
+        const { rows } = await db.query(PREVIEW_BOOKS, [[origin.id]])
+        return rows[0].r
+      })
+      expect(many.available).toBe(1)
+
+      const again = await book(db, f.customerA, origin.id)
+      const { rows } = await db.query(
+        "select credit_id, entitlement_id from public.booking_allocations where booking_id = $1",
+        [again]
+      )
+      expect(rows).toEqual([{ credit_id: creditId, entitlement_id: null }])
+      expect(await options(db, creditId)).toEqual(before)
+      const mine = await refreshAs(db, f.customerA)
+      expect(mine[0].reserved_booking).toMatchObject({
+        booking_id: again,
+        event_id: origin.id,
+      })
+
+      const second = await cancel(db, f.customerA, again, null)
+      expect(second).toEqual({
+        booking_id: again,
+        outcome: "credit",
+        credit_id: creditId,
+      })
+      expect(await creditsOf(db, again)).toEqual([])
+      expect((await credit(db, creditId)).status).toBe("active")
+      expect(await options(db, creditId)).toEqual(before)
     })
   })
 })

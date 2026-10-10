@@ -74,7 +74,7 @@ async function EntitlementContent({
   const bookingsResult = bookingIds.length
     ? await supabase
         .from("bookings")
-        .select("id, event_id")
+        .select("id, event_id, status")
         .in("id", bookingIds)
     : { data: [], error: null }
   if (bookingsResult.error) throw new Error("bookings failed")

@@ -48,7 +48,7 @@ export const customerCopy = {
   bookingState: {
     booked: "נרשמת",
     used: "השתתפת",
-    cancelled: "בוטלה",
+    cancelled: "ביטלת",
   },
   // A returned non-card entry on home that funds no booking yet (user
   // decision 2026-10-08).
@@ -181,6 +181,8 @@ export const customerCopy = {
   // with. Purchase history: the chip of a pinned purchase that became a
   // credit or a refund request.
   homeCredit: "יש לך זיכוי להרשמה",
+  // Home: an open refund request (user decision 2026-10-10), the same look.
+  homeRefund: "בקשת ההחזר שלך התקבלה",
   creditChip: {
     credit: "הומרה לזיכוי",
     refund: "בקשת החזר",

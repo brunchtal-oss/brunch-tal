@@ -15,7 +15,11 @@ import { createClient } from "@/lib/supabase/server"
 import { formatAccessibleDate, formatDayMonth, formatWeekday } from "@/lib/time"
 
 import { parseMyBookings } from "./bookings/cancel-result"
-import { isBookableCredit, parseMyCredits } from "./bookings/credits"
+import {
+  isBookableCredit,
+  isOpenRefund,
+  parseMyCredits,
+} from "./bookings/credits"
 import { loadMyEntitlements } from "./load-entitlements"
 import { isEmptyHome, isHomeCard, type SessionRow } from "./purchase-items"
 
@@ -54,20 +58,11 @@ export async function Home() {
     concept_name: b.conceptName,
   }))
   const cards = entitlements.filter(isHomeCard)
-  const hasCredit = parseMyCredits(creditsResult.data).some(isBookableCredit)
+  const credits = parseMyCredits(creditsResult.data)
+  const hasCredit = credits.some(isBookableCredit)
+  // An open refund request (user decision 2026-10-10): its own line.
+  const hasRefund = credits.some(isOpenRefund)
 
-  // One host around both states, so a cancel's result stays after the
-  // page is read again, also when home becomes empty (story 3.6).
-  if (isEmptyHome(upcoming.length, cards.length, hasCredit ? 1 : 0)) {
-    return (
-      <ResultNoticeHost>
-        <EmptyHome contactHref={contactHref} />
-      </ResultNoticeHost>
-    )
-  }
-
-  const [next, ...later] = upcoming
-  const nextPhoto = next ? await nextSessionPhoto(supabase, next.id) : null
   const allBookingsLink = (
     <Link
       href="/me/bookings"
@@ -76,6 +71,26 @@ export async function Home() {
       {customerCopy.allMyBookings}
     </Link>
   )
+
+  // One host around both states, so a cancel's result stays after the
+  // page is read again, also when home becomes empty (story 3.6).
+  if (
+    isEmptyHome(upcoming.length, cards.length, hasCredit || hasRefund ? 1 : 0)
+  ) {
+    // "לכל ההרשמות שלי" also on the empty home when she has past bookings
+    // (user decision 2026-10-10).
+    return (
+      <ResultNoticeHost>
+        <EmptyHome
+          contactHref={contactHref}
+          bookingsLink={myBookings.past.length > 0 ? allBookingsLink : null}
+        />
+      </ResultNoticeHost>
+    )
+  }
+
+  const [next, ...later] = upcoming
+  const nextPhoto = next ? await nextSessionPhoto(supabase, next.id) : null
   // The design round's order (user decision 2026-10-07, EXPERIENCE ›
   // Information Architecture): her next session, her card, the credit
   // line (3.7), the later sessions and then "לכל ההרשמות שלי". A thin rule
@@ -124,21 +139,8 @@ export async function Home() {
         </HomeSection>
       )}
 
-      {hasCredit && (
-        <section aria-label={customerCopy.homeCredit}>
-          <Link
-            href="/me/bookings"
-            className="flex min-h-12 items-center justify-between gap-3 py-1 text-[17px] font-semibold"
-          >
-            {customerCopy.homeCredit}
-            <ChevronLeftIcon
-              aria-hidden
-              strokeWidth={1.5}
-              className="size-5 shrink-0 text-muted-foreground"
-            />
-          </Link>
-        </section>
-      )}
+      {hasCredit && <BookingsLine text={customerCopy.homeCredit} />}
+      {hasRefund && <BookingsLine text={customerCopy.homeRefund} />}
 
       {later.length > 0 && (
         <HomeSection id="later" title={customerCopy.moreUpcomingTitle}>
@@ -172,8 +174,9 @@ export async function Home() {
         </HomeSection>
       )}
 
-      {/* Without later sessions, the link is still the home's last element. */}
-      {next && later.length === 0 && allBookingsLink}
+      {/* Without later sessions, the link is still the home's last element
+          (always on a non-empty home, user decision 2026-10-10). */}
+      {later.length === 0 && allBookingsLink}
     </ResultNoticeHost>
   )
 }
@@ -220,7 +223,14 @@ function HomeSection({
 // EXPERIENCE.md › State Patterns: no session ahead and no active card. The
 // contact button opens WhatsApp (to buy again); without published business
 // details it is left out. The purchases stay in their tab.
-function EmptyHome({ contactHref }: { contactHref: string | null }) {
+function EmptyHome({
+  contactHref,
+  bookingsLink,
+}: {
+  contactHref: string | null
+  // "לכל ההרשמות שלי" when she has past bookings; null otherwise.
+  bookingsLink: React.ReactNode
+}) {
   return (
     <section
       aria-labelledby="empty-title"
@@ -245,6 +255,27 @@ function EmptyHome({ contactHref }: { contactHref: string | null }) {
           {customerCopy.contactPhrase}
         </a>
       )}
+      {bookingsLink}
+    </section>
+  )
+}
+
+// One line to her bookings (story 3.7): a credit to book with, or an open
+// refund request. Its own section, so the thin rule sets it apart.
+function BookingsLine({ text }: { text: string }) {
+  return (
+    <section aria-label={text}>
+      <Link
+        href="/me/bookings"
+        className="flex min-h-12 items-center justify-between gap-3 py-1 text-[17px] font-semibold"
+      >
+        {text}
+        <ChevronLeftIcon
+          aria-hidden
+          strokeWidth={1.5}
+          className="size-5 shrink-0 text-muted-foreground"
+        />
+      </Link>
     </section>
   )
 }

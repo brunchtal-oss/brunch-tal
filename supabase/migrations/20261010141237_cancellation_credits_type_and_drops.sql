@@ -1,12 +1,10 @@
 -- Story 3.7, part 1 of 2: the type check and the drops.
 --
--- MAIN SESSION ONLY. Not before Tuesday 2026-10-13. The user runs this file
--- in the Supabase SQL Editor (a new, empty query), because it drops and
--- apply_migration through the MCP refuses that. Right after it, the main
--- session applies 3-7-cancellation-credits.sql (as a new migration) and
--- registers this file in supabase_migrations.schema_migrations (version and
--- name). Between the two, a cancel does not work: run them one after the
--- other.
+-- The user runs this file and 20261010141240_cancellation_credits.sql in
+-- the Supabase SQL Editor in one transaction (it drops, and apply_migration
+-- through the MCP refuses that); the main session registers both in
+-- supabase_migrations.schema_migrations. Between the two, a cancel does not
+-- work, hence the single transaction.
 --
 -- 1. notification_templates.type: booking_cancelled_refund is added (a
 --    pinned booking cancelled with a refund request), and credit_expiring
@@ -18,7 +16,7 @@
 --    three returned helpers and the index of waiting entitlements. The 3.6
 --    "returned" entitlements stay regular entitlements (user decision
 --    2026-10-10).
--- 3. Functions whose signature changes (AD-10: drop then create):
+-- 3. Functions whose signature changes (AD-5: drop then create):
 --    admin_cancel_booking (p_choice is added) and private.cancel_core
 --    (p_choice is added). The new ones are created by the main migration.
 
