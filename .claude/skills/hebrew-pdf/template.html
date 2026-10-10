@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>כותרת המסמך</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@200;300;400;500;700&display=block" rel="stylesheet">
+<style>
+  /* Palette "קרם וזית" from DESIGN.md. Accent is decorative only, never text. */
+  :root {
+    --background: #FAF6EE;
+    --card: #FFFDF8;
+    --muted: #F2ECDF;
+    --ink: #2E2A1F;
+    --ink-muted: #6B6450;
+    --border: #E6DFCF;
+    --accent: #8A875A;
+    --primary: #4A4A2A;
+    --on-primary: #FAF6EE;
+    --link: #4A4A2A;
+  }
+
+  @page {
+    size: A4;
+    margin: 20mm 18mm 22mm 18mm;
+    @bottom-center {
+      content: "עמוד " counter(page) " מתוך " counter(pages);
+      font-family: "Heebo", Arial, sans-serif;
+      font-size: 9pt;
+      color: #6B6450;
+    }
+  }
+  /* Cover page: no page number. */
+  @page cover {
+    margin: 0;
+    @bottom-center { content: none; }
+  }
+
+  * { box-sizing: border-box; }
+  html {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  body {
+    margin: 0;
+    font-family: "Heebo", Arial, sans-serif;
+    font-size: 11pt;
+    line-height: 1.65;
+    color: var(--ink);
+    background: #FFFFFF;
+    text-align: start;
+  }
+
+  /* ---------- cover ---------- */
+  .cover {
+    page: cover;
+    break-after: page;
+    height: 297mm;
+    padding: 48mm 24mm 24mm;
+    background: var(--background);
+    display: flex;
+    flex-direction: column;
+  }
+  .cover .eyebrow {
+    font-size: 11pt;
+    font-weight: 500;
+    color: var(--ink-muted);
+    letter-spacing: 0.02em;
+  }
+  .cover h1 {
+    margin: 6mm 0 4mm;
+    font-size: 40pt;
+    font-weight: 300;
+    line-height: 1.15;
+    color: var(--primary);
+  }
+  .cover .subtitle {
+    font-size: 15pt;
+    font-weight: 300;
+    color: var(--ink-muted);
+    max-width: 140mm;
+  }
+  .cover .rule {
+    width: 28mm;
+    height: 3px;
+    margin: 10mm 0;
+    background: var(--accent);
+  }
+  .cover .meta {
+    margin-top: auto;
+    font-size: 10.5pt;
+    color: var(--ink-muted);
+  }
+  .cover .meta strong { color: var(--ink); font-weight: 500; }
+
+  /* ---------- table of contents ---------- */
+  .toc { break-after: page; }
+  .toc ol { list-style: none; margin: 0; padding: 0; }
+  .toc li { border-bottom: 1px solid var(--border); }
+  .toc a {
+    display: flex;
+    justify-content: space-between;
+    gap: 6mm;
+    padding: 3mm 0;
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .toc a::after { content: "\2190"; color: var(--ink-muted); }
+
+  /* ---------- headings and text ---------- */
+  h2 {
+    margin: 10mm 0 4mm;
+    padding-bottom: 2mm;
+    font-size: 20pt;
+    font-weight: 300;
+    color: var(--primary);
+    border-bottom: 1px solid var(--border);
+    break-after: avoid;
+  }
+  h2:first-child { margin-top: 0; }
+  /* Add class "new-page" to a chapter that should start on a fresh page. */
+  section.new-page { break-before: page; }
+  h3 {
+    margin: 7mm 0 2mm;
+    font-size: 13.5pt;
+    font-weight: 500;
+    color: var(--ink);
+    break-after: avoid;
+  }
+  p { margin: 0 0 3mm; orphans: 3; widows: 3; }
+  ul, ol { margin: 0 0 3mm; padding-inline-start: 6mm; }
+  li { margin-bottom: 1mm; }
+  strong { font-weight: 500; }
+
+  a {
+    color: var(--link);
+    text-decoration: underline;
+    text-decoration-color: var(--accent);
+    text-underline-offset: 2px;
+  }
+  /* A URL shown as text always reads left to right. */
+  .url { direction: ltr; unicode-bidi: isolate; font-size: 0.92em; }
+
+  /* ---------- blocks ---------- */
+  .callout {
+    margin: 4mm 0;
+    padding: 4mm 5mm;
+    background: var(--muted);
+    border-inline-start: 3px solid var(--accent);
+    border-radius: 2mm;
+    break-inside: avoid;
+  }
+  .callout p:last-child { margin-bottom: 0; }
+
+  .links {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3mm;
+    margin: 4mm 0;
+    break-inside: avoid;
+  }
+  .links a {
+    display: block;
+    padding: 3.5mm 4mm;
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 2mm;
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .links a .label { display: block; font-weight: 500; }
+  /* LTR text, but placed on the right like the label above it. */
+  .links a .url { display: block; color: var(--ink-muted); text-align: right; }
+
+  table {
+    width: 100%;
+    margin: 4mm 0;
+    border-collapse: collapse;
+    font-size: 10pt;
+    break-inside: auto;
+  }
+  thead { display: table-header-group; }
+  tr { break-inside: avoid; }
+  th, td {
+    padding: 2mm 3mm;
+    text-align: start;
+    vertical-align: top;
+    border-bottom: 1px solid var(--border);
+  }
+  th { background: var(--muted); font-weight: 500; }
+
+  code, pre {
+    font-family: Consolas, "Courier New", monospace;
+    direction: ltr;
+    unicode-bidi: isolate;
+  }
+  code { font-size: 0.9em; padding: 0 1mm; background: var(--muted); border-radius: 1mm; }
+  pre {
+    margin: 4mm 0;
+    padding: 4mm;
+    background: var(--muted);
+    border-radius: 2mm;
+    font-size: 9pt;
+    text-align: left;
+    white-space: pre-wrap;
+    break-inside: avoid;
+  }
+
+  figure { margin: 5mm 0; break-inside: avoid; }
+  figure img {
+    display: block;
+    max-width: 100%;
+    max-height: 180mm;
+    margin: 0 auto;
+    border: 1px solid var(--border);
+    border-radius: 2mm;
+  }
+  figcaption { margin-top: 2mm; font-size: 9.5pt; color: var(--ink-muted); text-align: center; }
+</style>
+</head>
+<body>
+
+<!-- Cover -->
+<header class="cover">
+  <div class="eyebrow">תת-כותרת קטנה, למשל שם הקורס</div>
+  <h1>כותרת המסמך</h1>
+  <div class="subtitle">משפט אחד שמסביר על מה המסמך.</div>
+  <div class="rule"></div>
+  <div class="meta">
+    <div><strong>מגישה:</strong> שם</div>
+    <div><strong>תאריך:</strong> 2026-10-09</div>
+  </div>
+</header>
+
+<!-- Table of contents: internal links stay clickable in the PDF -->
+<nav class="toc">
+  <h2>תוכן העניינים</h2>
+  <ol>
+    <li><a href="#intro"><span>פתיחה</span></a></li>
+    <li><a href="#links"><span>קישורים</span></a></li>
+  </ol>
+</nav>
+
+<main>
+  <section class="chapter" id="intro">
+    <h2>פתיחה</h2>
+    <p>פסקה רגילה. מונח באנגלית כמו <bdi>Next.js</bdi> או <bdi>Supabase</bdi> נעטף ב-<code>bdi</code> כדי שהפיסוק סביבו לא יקפוץ.</p>
+    <div class="callout"><p><strong>שימו לב:</strong> קופסת הדגשה.</p></div>
+  </section>
+
+  <section class="chapter" id="links">
+    <h2>קישורים</h2>
+    <p>קישור בתוך טקסט: <a href="https://example.com">האתר</a>.</p>
+    <div class="links">
+      <a href="https://example.com"><span class="label">האתר החי</span><span class="url">example.com</span></a>
+      <a href="https://github.com/"><span class="label">הקוד</span><span class="url">github.com</span></a>
+    </div>
+  </section>
+</main>
+
+</body>
+</html>

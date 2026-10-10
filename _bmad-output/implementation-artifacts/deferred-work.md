@@ -122,7 +122,7 @@
   evidence: שם פרטי הוא מידע מזהה (AD-19); העמודה נוספה ב-2.5 אחרי הביקורת.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-6-product-catalog-admin.md`
-  target: 2.11
+  target: 5.20 (במקום 2.11, החלטת המשתמשת 2026-10-10)
   summary: הבדיקה שמוצר מוסתר לא מוצע ב"הוספת תשלום" מריצה עותק של השאילתה ב-`form-data.ts` ולא אותה עצמה. להוציא את הסינון לפונקציה שבדיקה מריצה.
   evidence: ביקורת 2.6, ממצא 7. הסינון (`.eq("active", true)`) קודם ל-2.6 ולא השתנה, והאישור דוחה מוצר מוסתר (`PRODUCT_NOT_AVAILABLE`).
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-1-publish-hero-to-home-tracer.md`
@@ -131,7 +131,7 @@
   evidence: ‏EXPERIENCE (Flow 7 וההגדרות): פרטי העסק נערכים "מהגדרות › פרטי העסק או מתוכן האתר › קשר". העורך נבנה ב-5.1, ו-`/admin/settings` עוד לא קיים.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-1-concepts-and-session-management.md`
-  target: אחרי ההדגמה (סיפור חדש)
+  target: 3.18 (החלטת המשתמשת 2026-10-10)
   summary: "מוצרים תקפים" למפגש (מקור §7): הטבלה `event_products`, שדה סימון במסך המפגש ובדיקה ב-`private.plan_funding` שמוצר שלא סומן לא מממן את המפגש. הבדיקה חלה רק על זכויות חדשות.
   evidence: data-model מגדיר את הטבלה, אבל אף סיפור לא בונה אותה, ו-AD-18 בוחר מימון רק לפי סוג, יום בשבוע והיכרות. נדחה בהחלטת המשתמשת 2026-10-04 (3.1, שאלה 1).
 
@@ -228,7 +228,7 @@
   target: 3.8
   summary: ‏`preview_book_session` מחזיר `EVENT_NOT_BOOKABLE` עם `booked: false` למפגש שאינו `published`, לפני שהוא מחפש את ההרשמה שלה. במפגש שבוטל (3.8) או הסתיים (3.12) עמוד המפגש לא יציג את ההרשמה שלה. צריך לחפש את ההרשמה לפני בדיקת הסטטוס.
   evidence: ביקורת 3.2 (blind, edge). לא בודק עכשיו: עד 3.8 ו-3.12 אין מפגש מבוטל או שהסתיים.
-  status: נסגר למפגש שהסתיים ב-3.12 (2026-10-06): ‏`preview_book_session` מחפש את ההרשמה שלה (`confirmed` או `completed`) לפני בדיקת הסטטוס, ובמפגש `completed` עם הרשמה שלה מחזיר `booked: true` עם `EVENT_COMPLETED`, והעמוד מציג "המפגש הסתיים" ו"השתתפת במפגש". נשאר ל-3.8 למפגש שבוטל (היום עדיין `EVENT_NOT_BOOKABLE` עם `booked: false`).
+  status: נסגר למפגש שהסתיים ב-3.12 (2026-10-06): ‏`preview_book_session` מחפש את ההרשמה שלה (`confirmed` או `completed`) לפני בדיקת הסטטוס, ובמפגש `completed` עם הרשמה שלה מחזיר `booked: true` עם `EVENT_COMPLETED`, והעמוד מציג "המפגש הסתיים" ו"השתתפת במפגש". נשאר ל-3.8 למפגש שבוטל (היום עדיין `EVENT_NOT_BOOKABLE` עם `booked: false`). הועבר ל-3.5 (תוכנית ההשלמה 2026-10-10), כי 3.5 משנה את `preview_book_session` באותו סבב עם 3.8.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-2-self-booking-tracer-with-a-card.md`
   target: 3.6
@@ -237,7 +237,7 @@
   status: נסגר ב-3.6 (2026-10-06). אחרי מועד הביטול העצמי מוצג "כבר אי אפשר לבטל את ההרשמה הזו בעצמך" עם "צרי קשר", ולפניו כפתור הביטול. בדיקת רכיב ב-`app/me/sessions/[id]/booking-panel.test.tsx` מרנדרת רק את הפאנל הסגור: רשומה בתוך החלון (כפתור הביטול), אחרי החלון ("צרי קשר", בלי מועד), ומצב שאפשר להירשם (כפתור ההרשמה). הגיליונות הפתוחים עצמם (הרשמה וביטול, מפתח לכל פתיחה, busy) עוד בלי בדיקת רכיב, כי אין testing-library.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-9-pwa-install-and-offline.md`
-  target: אחרי ההגשה
+  target: 5.21 (החלטת המשתמשת 2026-10-10)
   summary: השבתת כל הכפתורים שמשנים נתונים כשאין חיבור, כולל באדמין (UX memlog, review fixes). בהדגמה רק `/offline`, ופעולה שנשלחת בלי רשת נכשלת בשגיאה הקיימת.
   evidence: מסמך ההיקף 2026-10-04: אופליין מלא ומצב קריאה בלבד לא נכנסים ל-5.9.
 
@@ -252,7 +252,7 @@
   evidence: ‏`handleSiteLockPost` ב-`lib/site-lock.ts`.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-9-pwa-install-and-offline.md`
-  target: אחרי ההגשה
+  target: לא נבנה (החלטת המשתמשת 2026-10-10)
   summary: לאתר אין דף שגיאה כללי (`app/error.tsx`). פעולה שנשלחת בלי רשת (התחברות, הרשמה, ביטול) מציגה את דף ברירת המחדל של Next באנגלית ("This page couldn't load"). צריך דף שגיאה בעברית, בעיצוב האתר, עם "לנסות שוב" (מתחיל ב-frontend-design, נוסח לאישור).
   evidence: בדיקת האופליין בדפדפן אחרי 5.9 (2026-10-04): שליחת טופס ההתחברות בלי רשת. לא הוצג אישור, אבל הדף באנגלית. החלטת המשתמשת: לדחות.
 
@@ -268,7 +268,7 @@
   evidence: ‏3.11 יוצר את ההרשמות האלה; רשימת הנרשמות נבנית ב-3.4.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-11-pinned-product-approval-and-placement.md`
-  target: 2.9
+  target: 6.2 (2.9 יצא, החלטת המשתמשת 2026-10-10)
   summary: ‏`private.has_participated` קורא רק הרשמות שהסתיימו. כש-2.9 מוסיף השתתפות מיבוא או מתיקון של טל (`profiles.prior_participation_override`), הפונקציה צריכה לקרוא גם אותה, כדי שלקוחה מיובאת לא תקבל היכרות שוב (מקור §2).
   evidence: ביקורת 3.11 (blind). העמודה עוד לא קיימת, ולכן לא נבדק עכשיו.
 
@@ -289,7 +289,7 @@
   summary: טקסט ברירת מחדל לפרטי בראנץ׳ שטל יכולה לערוך (למשל טקסט כללי כשאין תיאור למפגש ולקונספט, ועריכת תיאור הקונספט). החלטת המשתמשת 2026-10-05: בהמשך, כסיפור נפרד.
   evidence: בדיקת הטלפון של 3.11.
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-16-public-session-pages.md`
-  target: עם `event_products`
+  target: 3.18 (החלטת המשתמשת 2026-10-10)
   summary: מחיר ברירת מחדל ממחיר המוצר בעמוד המפגש הציבורי. ב-5.16 מוצג רק `display_price_agorot`, ובלעדיו אין שורת מחיר.
   evidence: החלטת המשתמשת 2026-10-05 (spec 5.16, Intent).
 
@@ -299,7 +299,7 @@
   evidence: ‏RLS ‏`events_anon_select` והרשאות העמודות של anon; ‏`lib/sessions/public.ts`.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-16-public-session-pages.md`
-  target: אחרי ההגשה
+  target: 4.8 (תוכנית ההשלמה 2026-10-10)
   summary: עריכת תיאור הקונספט (`concepts.description`) באדמין. אין היום מסך קונספטים, והתיאורים של חמשת הקונספטים נכתבו ישירות במסד הפיתוח.
   evidence: ‏spec 5.16, Design Notes.
 
@@ -418,7 +418,7 @@
   status: נסגר ב-4.9 (2026-10-06). הכפתור פותח את `/admin/sessions/[id]/work`, ו-`/day` מפנה לשם.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-7-in-app-notification-centers.md`
-  target: אחרי ההגשה
+  target: 5.21 (החלטת המשתמשת 2026-10-10)
   summary: לקוחה מחוברת ב-`/sessions` (הרשימה הציבורית) רואה `status-chip` על מפגש שהיא רשומה אליו, כמו ב-`/me/sessions`. צריך לקרוא את ההרשמות שלה ברכיב דינמי בתוך `Suspense`, בלי לשבור את המטמון של הרשימה.
   evidence: ‏spec 5.16 (Always) השאיר את ה-chips ל-5.7, ו-5.7 הוציא אותם (Never). היום הרשימה הציבורית זהה לאורחת וללקוחה.
 
@@ -428,12 +428,12 @@
   evidence: ביקורת 5.5 (2026-10-06). ההתנהגות קיימת מ-2.2, ו-5.5 לא שינה את `join_complete` לפי הכוונה.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-5-privacy-and-accessibility.md`
-  target: 5.14
+  target: 5.20 (במקום 5.14, החלטת המשתמשת 2026-10-10)
   summary: אין בדיקה שעמוד העורך ועמוד התצוגה המקדימה מעבירים את חסימת הפרסום של הצהרת הנגישות (`editor-page.tsx`, ‏`statementBlocked` ב-preview). החלקים הטהורים והרכיבים עצמם נבדקים.
   evidence: ביקורת 5.5 (2026-10-06). רכיבי שרת שדורשים RSC harness; פעולת הפרסום כבר בודקת את הסכמה בשרת.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-4-9-work-tab-dishes-tasks-prep-days.md`
-  target: 4.13
+  target: 5.20 (במקום 4.13, החלטת המשתמשת 2026-10-10)
   summary: אין בדיקה אוטומטית ל-redirect של `/admin/sessions/[id]/day` אל `/work`, לקישור "ללשונית העבודה" בעמוד המפגש וללשונית `/admin/work` (עד שלושה בראנצ׳ים, קישור לכל דף).
   evidence: ביקורת 4.9 (2026-10-06, ‏verification-gap). מסכים דקים בלי לוגיקה משלהם; הבדיקה בטלפון מכסה אותם.
 
@@ -453,7 +453,7 @@
   evidence: ‏spec 5.8 (Always, ‏`push_subscriptions`): ההרחבה של הסרת הפרטים נשארת ל-4.6.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-8-push-pipeline-and-permission.md`
-  target: סבב העיצוב
+  target: 5.21 (לא נבנה בסבב העיצוב; החלטת המשתמשת 2026-10-10)
   summary: הגדרות ההתראות בפרופיל (שורה עם קישור לכרטיס הפוש) והצעת הפוש אחרי הרשמה ראשונה מוצלחת ("המקום שלך שמור", EXPERIENCE). ב-5.8 הכרטיס במרכזי ההתראות של `/me` ו-`/admin` הוא המקום היחיד.
   evidence: החלטת המשתמשת 2026-10-06 באישור spec 5.8 (החלטה 2).
 
@@ -463,7 +463,7 @@
   evidence: ביקורת 5.8 (blind-hunter). ‏AD-22 מונה ב"לטיפול" ערכי Vault חסרים ו-`private.job_*` שנכשל או לא הצליח בזמן; אפשר לגזור גם `queued` ותיקות או `net._http_response` עם 401/5xx.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-8-push-pipeline-and-permission.md`
-  target: לפני ההדגמה (בדיקה בלבד)
+  target: 6.7 (בדיקה בלבד; החלטת המשתמשת 2026-10-10: אולי רק אחרי ההשקה)
   summary: בדיקת פוש באייפון עם האפליקציה מותקנת במסך הבית (iOS 16.4 ומעלה), כלקוחה וכאדמין: הפעלה מהכרטיס במרכז ההתראות, פוש תוך דקה כשהאפליקציה סגורה, ולחיצה שפותחת את `target_path`. אם משהו נכשל, תיקון ב-PR קצר.
   evidence: ב-2026-10-06 נבדק רק Android (לקוחה ואדמין); לא היה אייפון זמין (החלטת המשתמשת). באייפון פוש עובד רק מהאפליקציה המותקנת.
 
@@ -483,7 +483,7 @@
   evidence: ביקורת 2.13 (blind-hunter). עוד אין פונקציית הסרה. בלי זה, לקוחה שפרטיה הוסרו נשארת "אישרה תמונות אישיות".
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-design-testimonials-carousel.md`
-  target: סבב העיצוב (הגלריה)
+  target: לא נבנה (החלטת המשתמשת 2026-10-10)
   summary: ב-/gallery בלי תמונות, כשכל המלצות התמונה בלי קובץ מפורסם, ‏`TestimonialsSection` מחזיר null אבל `GalleryView` לא מציג את הדף הריק, כי הוא מחליט לפי התוכן לפני סינון התמונות. התיקון ב-`components/public/page-views.tsx`.
   evidence: ביקורת הקרוסלה (סבב 1). המצב היה קיים גם לפני השינוי (`ul` ריק). נדיר: המלצת תמונה שהקובץ שלה לא פורסם.
 
@@ -506,11 +506,11 @@
   status: נסגר ב-5.19 (2026-10-10). ‏`signOut({ scope: "local" })`, ובדיקת פרויקט הפיתוח היא עכשיו `devRef` המשותף מ-`scripts/dev-guard.mjs` (נבדק ב-`test/dev-guard.test.ts`).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-design-round-ui-consistency.md`
-  target: סיפור חדש אחרי ההגשה
+  target: 4.3 (תוכנית ההשלמה 2026-10-10)
   summary: שורות הכניסות בכרטיס הלקוחה באדמין לא תואמות ליומן התנועות של הלקוחה: אין שורות "בוטלה", ואין שורה לכל הרשמה בזכות בודדת או זוגית.
   evidence: ב-memlog מ-2026-10-08 כתוב שפירוט הכרטיסייה באדמין נראה אותו דבר, בגוף שלישי. ‏`entryLines` ב-`card-items.ts` מציג רק משבצות כניסה (נוצלה, רשומה, פנויה).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-19-demo-refactor-sweep.md`
-  target: 6.1
+  target: 5.20 (יישור), 6.1 (בדיקה)
   summary: שמות חלק מקובצי המיגרציה ב-`supabase/migrations/` לא תואמים לגרסה שנרשמה ב-`supabase_migrations.schema_migrations` במסד. לא משנים שמות עכשיו (החלטת המשתמשת 2026-10-10). לפני הקמת פרויקט ה-production צריך ליישר, כדי ש-`supabase db push` או הרצה מסודרת של המיגרציות יעבדו.
   evidence: נמצא בתכנון 5.19 (spec 5.19, החלטות המשתמשת 2026-10-10).

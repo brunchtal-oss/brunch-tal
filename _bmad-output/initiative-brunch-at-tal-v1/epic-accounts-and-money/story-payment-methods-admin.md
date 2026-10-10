@@ -6,7 +6,7 @@ parent: epic-accounts-and-money
 covers: [CAP-34, CAP-2]
 after: [6]
 risk: low
-status: draft
+status: dropped
 ---
 
 # Payment methods admin — ניהול אמצעי תשלום
@@ -25,6 +25,10 @@ Verify: בדיקות: כל שינוי מוצג כישן ← חדש ונרשם ב
 - ARCHITECTURE-SPINE.md#ad-10 (אמצעי תשלום)
 - online-payments.md
 - acceptance-criteria.md, השלמות › תשלום, אמצעי תשלום ושיוך רכישה
+
+## Notes
+
+Dropped: החלטת המשתמשת 2026-10-10 (completion-plan-2026-10-10.md). אמצעי התשלום נשארים ארבעת אלה מה-seed, ושינוי בהם רק ב-SQL.
 
 ## Plan
 

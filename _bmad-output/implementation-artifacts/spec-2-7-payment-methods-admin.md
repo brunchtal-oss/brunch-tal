@@ -2,7 +2,7 @@
 title: '2.7 Payment methods admin — ניהול אמצעי תשלום'
 type: 'feature'
 created: '2026-10-04'
-status: 'draft'
+status: 'dropped'
 route: 'full'
 route_source: 'auto'
 review: 'thorough'
