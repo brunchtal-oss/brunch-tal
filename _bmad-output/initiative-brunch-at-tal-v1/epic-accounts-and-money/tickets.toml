@@ -110,18 +110,6 @@ unknown = "איפה יושב מנגנון הגבלת הקצב, ואיך חוסמ
 references = ["ARCHITECTURE-SPINE.md#ad-21", "ARCHITECTURE-SPINE.md, Deferred (מנגנון הגבלת הקצב)", "security-and-rpc-rules.md, התחברות, איפוס, טלפון ומייל"]
 
 [[entry]]
-id = 9
-type = "story"
-title = "Prior participation — סימון \"השתתפה בעבר\""
-description = "CAP-10: private.has_participated עם prior_participation_override, ו-admin_correct_prior_participation כפעולה רגישה בעמוד הלקוחה; זכות היכרות פעילה אחת ובדיקות ההיכרות בשיוך ובהרשמה ב-3.11 וב-3.5, כי מוצר ההיכרות מוצמד למפגש."
-verify = "בדיקות: תיקון \"השתתפה בעבר\" בלי צ׳קבוקס נדחה, ועם צ׳קבוקס נרשם ביומן עם ערך קודם וחדש; has_participated מחזיר true אחרי התיקון."
-covers = ["CAP-10"]
-after = [5, 8]
-hitl = false
-risk = "medium"
-references = ["ARCHITECTURE-SPINE.md#ad-14 (השתתפות קודמת)", "ARCHITECTURE-SPINE.md#ad-7"]
-
-[[entry]]
 id = 10
 type = "story"
 title = "Customer profile, babies and photo consent — פרופיל, תינוקות ואישור תמונות"
@@ -144,14 +132,3 @@ after = [2, 10, "4.2", "4.10"]
 hitl = false
 risk = "high"
 references = ["SPEC.md › CAP-40", "spec .memlog.md 2026-10-07", "ux .memlog.md 2026-10-07", "EXPERIENCE.md › קישור הצטרפות — תקף", "ARCHITECTURE-SPINE.md#ad-5", "ARCHITECTURE-SPINE.md#ad-14", "demo-scope-2026-10-04.md"]
-
-[[entry]]
-id = 11
-type = "story"
-title = "Refactor sweep — ניקוי סוף אפיק"
-description = "ניקוי בלבד, לפי רשומות הבנייה וממצאי הביקורת שנדחו במהלך האפיק; ההיקף נקבע כשהסיפור נשלף."
-verify = "lint, typecheck ו-test עוברים, grants.test.ts וה-advisor נקיים, וה-preview עולה מאחורי הנעילה."
-covers = []
-after = [3, 4, 5, 6, 7, 8, 9, 10, 12, 13]
-hitl = false
-risk = "low"

@@ -7,7 +7,7 @@ title = "Lift the site lock — הסרת נעילת האתר"
 description = "SITE_LOCKED=false ב-preview וב-production (המנגנון ב-proxy.ts נשאר), app/robots.ts ו-X-Robots-Tag: noindex לכל האתר עד הפתיחה ב-6.9, ובדיקה שהגבלת הקצב של 2.8 פעילה על /login ו-/admin/login; באתר רק נתונים בדויים."
 verify = "כתובת ה-production נפתחת בלי סיסמה, כל תשובה נושאת X-Robots-Tag: noindex, /me ו-/admin עדיין דורשים התחברות, וניסיונות התחברות רבים ל-/admin/login נחסמים."
 covers = []
-after = ["2.8", "4.13"]
+after = ["2.8", 20]
 hitl = true
 risk = "medium"
 references = ["ARCHITECTURE-SPINE.md#ad-22", "ARCHITECTURE-SPINE.md, Deferred (מנגנון הגבלת הקצב)"]
@@ -91,7 +91,7 @@ title = "Waitlist — רשימת המתנה"
 description = "CAP-15, CAP-12: waitlist_entries, join_waitlist ו-leave_waitlist ללקוחה מחוברת גם בלי יתרה, private.notify_waitlist עם waitlist_cycle לכל גודל הרשמה, ב-migration חדשה שמגדירה מחדש את פונקציות E3 שמשחררות מקום (cancel_booking, admin_cancel_booking, move_booking, העלאת מכסה, בקשת החזר) ואת אלה שמוציאות מההמתנה (book_session, book_sessions, admin_book_customer, bind_purchase), הרצה חוזרת של בדיקות E3, ממתינות בפרטי המפגש ובהרשמות שלי, הרחבת הסרת הפרטים (4.6), והתראת waitlist_spot. כולל בדיקה חוזרת של waitlist_spot לפני שליחה ב-worker של 5.8 (הועבר מ-5.8, החלטת המשתמשת 2026-10-04)."
 verify = "בדיקות: אי אפשר להיות פעמיים ברשימה או גם רשומה וגם ממתינה; הרשמה מוצלחת מוציאה מהרשימה; מקום בודד לא מזמין זוג; פינוי אחד לא שולח שתי התראות לאותה ממתינה; לקוחה בלי כניסה מצטרפת להמתנה אבל לא נרשמת; אורחת לא יכולה להצטרף."
 covers = ["CAP-15", "CAP-12"]
-after = [16, "3.14"]
+after = [16, "3.14", "3.10", "3.5"]
 hitl = false
 risk = "high"
 references = ["ARCHITECTURE-SPINE.md#ad-14 (רשימת המתנה)", "ARCHITECTURE-SPINE.md#ad-12 (waitlist_spot)", "brunch_at_tal_charecter.md, §5 רשימת המתנה"]
@@ -199,7 +199,7 @@ title = "Inactive customers — לקוחות לא פעילות"
 description = "CAP-28, CAP-25: private.customer_activity שנגזרת בזמן הקריאה (תקופה מההגדרות, ספירה ממועד יצירת החשבון למי שלא השתתפה), סינון פעילה או לא פעילה ברשימת הלקוחות, והסתרה של לא פעילות כברירת מחדל."
 verify = "בדיקות: לקוחה עם הרשמה עתידית, זכות תקפה, זיכוי פתוח או החזר ממתין לא מסומנת; לקוחה שלא השתתפה מעולם נספרת ממועד יצירת החשבון; רכישה חדשה מחזירה לפעילה; הסימון לא מוחק ולא חוסם."
 covers = ["CAP-28", "CAP-25"]
-after = [11, "4.2", "4.7"]
+after = ["4.2", "4.7"]
 hitl = false
 risk = "low"
 references = ["ARCHITECTURE-SPINE.md#ad-14 (פקיעה ופעילות)"]
@@ -217,12 +217,24 @@ risk = "low"
 references = ["ARCHITECTURE-SPINE.md#ad-7", "ARCHITECTURE-SPINE.md#ad-12 (broadcast)"]
 
 [[entry]]
-id = 14
+id = 21
 type = "story"
-title = "Refactor sweep — ניקוי סוף אפיק"
-description = "ניקוי בלבד, לפי רשומות הבנייה וממצאי הביקורת שנדחו במהלך האפיק; ההיקף נקבע כשהסיפור נשלף."
-verify = "lint, typecheck ו-test עוברים, grants.test.ts וה-advisor נקיים, וה-preview עולה מאחורי הנעילה."
+title = "Customer polish — ליטושים ללקוחה"
+description = "סיפור מסכים קטן מפריטי deferred-work (החלטת המשתמשת 2026-10-10, completion-plan-2026-10-10.md): (1) השבתה של כל הכפתורים שמשנים נתונים כשאין חיבור, גם באדמין, עם הסבר קצר (5.9); (2) הצעה להפעיל פוש אחרי הרשמה ראשונה מוצלחת (\"המקום שלך שמור\", EXPERIENCE), ושורת \"התראות\" בפרופיל שמובילה לכרטיס הפוש (5.8); (3) status-chip \"רשומה\" ב-/sessions הציבורי ללקוחה מחוברת, ברכיב דינמי בתוך Suspense בלי לשבור את המטמון (5.7, 5.16). דף שגיאה בעברית והגלריה בלי תמונות לא נכנסים (החלטת המשתמשת 2026-10-10)."
+verify = "בטלפון: במצב טיסה הכפתורים שמשנים נתונים מושבתים עם הסבר, וחוזרים כשהרשת חוזרת; אחרי הרשמה ראשונה מוצגת הצעת הפוש פעם אחת, ומי שסירבה לא נשאלת שוב; מהפרופיל מגיעים לכרטיס הפוש; ב-/sessions לקוחה מחוברת רואה \"רשומה\" על המפגש שלה ואורחת לא רואה. בדיקות: הרשימה הציבורית נשארת במטמון לאורחת."
+covers = ["CAP-22", "CAP-23", "CAP-1"]
+after = [7, 8, 9, 16]
+hitl = false
+risk = "low"
+references = ["EXPERIENCE.md (פרופיל, הצעת הפוש, status-chip)", "deferred-work.md, פריטי 5.7, 5.8 ו-5.9", "spec-5-8-push-pipeline-and-permission.md (החלטה 2)"]
+
+[[entry]]
+id = 20
+type = "story"
+title = "Unified refactor sweep after the demo — ניקוי מאוחד אחרי ההדגמה"
+description = "ניקוי אחד במקום ניקויי האפיקים 2.11, 3.15, 4.13 ו-5.14 (החלטת המשתמשת 2026-10-10, completion-plan-2026-10-10.md), על כל מה שנבנה אחרי 5.19, לפי רשומות הבנייה וממצאי הביקורת שנדחו. כולל את הפריטים מ-deferred-work שהיעד שלהם אחד מהניקויים האלה, יישור שמות קובצי המיגרציה לגרסאות ב-supabase_migrations.schema_migrations (כדי ש-6.1 יוכל להריץ את כולן מאפס), ואימות וסימון \"נסגר\" לפריטי deferred-work שהיעד שלהם סיפור שכבר נבנה."
+verify = "lint, typecheck ו-test עוברים, grants.test.ts וה-advisor נקיים, כל קובץ מיגרציה תואם לגרסה שלו במסד, ה-seed של ההדגמה רץ, וה-preview עולה מאחורי הנעילה."
 covers = []
-after = [5, 6, 12]
+after = ["2.8", "3.16", "3.17", "3.18", "3.5", "4.3", "4.4", "4.5", "4.6", "4.8", "4.11", 6, 10, 11, 12, 13, 21]
 hitl = false
 risk = "low"

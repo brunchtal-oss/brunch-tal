@@ -145,14 +145,3 @@ after = ["3.2"]
 hitl = false
 risk = "low"
 references = ["site-map.md, אזור אישי", "mockups/key-customer-home.html"]
-
-[[entry]]
-id = 13
-type = "story"
-title = "Refactor sweep — ניקוי סוף אפיק"
-description = "ניקוי בלבד, לפי רשומות הבנייה וממצאי הביקורת שנדחו במהלך האפיק; ההיקף נקבע כשהסיפור נשלף."
-verify = "lint, typecheck ו-test עוברים, grants.test.ts וה-advisor נקיים, וה-preview עולה מאחורי הנעילה."
-covers = []
-after = [4, 6, 7, 10, 11, 12]
-hitl = false
-risk = "low"
