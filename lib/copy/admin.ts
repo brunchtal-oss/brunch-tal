@@ -598,6 +598,8 @@ export const adminCopy = {
     addPayment: "הוספת תשלום",
     willUse: (product: string, expiresOn: string) =>
       `ינוצל: כניסה מ${product}, בתוקף עד ${expiresOn}`,
+    // Story 3.7: the session is an option of her cancellation credit.
+    willUseCredit: (product: string) => `ינוצל: זיכוי מביטול של ${product}`,
     bookCustomer: (name: string) => `לרשום את ${name}`,
     booked: (name: string) => `${name} נרשמה למפגש`,
     bookAnother: "רישום לקוחה נוספת",
@@ -623,10 +625,16 @@ export const adminCopy = {
       session: "מפגש",
       returns: "מה יחזור",
       returnsCard: (product: string) => `כניסה אחת ל${product}`,
-      returnsPinned: (n: number, until: string) =>
-        `כניסה לאחד מ-${n} המפגשים המתאימים הבאים, עד ${until}`,
-      returnsAwaiting: (n: number) =>
-        `כניסה לאחד מ-${n} המפגשים המתאימים הבאים (ממתינה לפרסום מפגשים)`,
+      // Story 3.7: a pinned booking becomes a credit or a refund request
+      // (Tal chooses while the customer could still cancel herself); a
+      // credit-funded booking gives the same credit back.
+      returnsCredit: (n: number) => `ייווצר ללקוחה זיכוי ל-${n} מפגשים חלופיים`,
+      returnsRefund: (amount: string) => `תיפתח בקשת החזר של ${amount}`,
+      returnsSameCredit: "הזיכוי יחזור ללקוחה עם אותן חלופות",
+      choiceCredit: "זיכוי למפגשים חלופיים",
+      choiceRefund: "החזר כספי",
+      // The confirm pressed before choosing (the checkbox's hint otherwise).
+      choiceRequired: "צריך לבחור זיכוי או החזר כספי כדי להמשיך",
       withinWindow: "ההרשמה בתוך חלון הביטול, והלקוחה לא יכולה לבטל אותה בעצמה",
       reason: "סיבה (לא חובה)",
       checkbox: (name: string) =>
@@ -810,6 +818,12 @@ export const adminCopy = {
         detail: "זה עמוד חובה באתר. צריך למלא את שדות החובה ולפרסם",
         chip: "לא פורסם",
       },
+      // An open refund request (story 3.7), until Tal completes it (3.9):
+      // to the customer's card. No chip and no "בוצע" before 3.9.
+      refund_requested: {
+        title: (name: string, amount: string, concept: string, day: string) =>
+          `${name} ביקשה החזר של ${amount} על בראנץ׳ ${concept} ${day}`,
+      },
       // Push notifications that failed in the last 7 days (story 5.8): one
       // item for all of them; the notifications themselves are in the
       // centers.
@@ -838,6 +852,17 @@ export const adminCopy = {
     // "{month} {year} · עד היום"
     totalsPeriod: (monthYear: string) => `${monthYear} · עד היום`,
     totalsApproved: (n: number) => `תשלומים שאושרו (${n})`,
+    // Story 3.7: the refunds completed in the month (3.9), always shown.
+    totalsRefunded: (n: number) => `החזרים שבוצעו (${n})`,
+    // Open refund requests: "{customer} · {amount} · בראנץ׳ {concept}
+    // {DD.MM}", each to the customer's card.
+    openRefunds: "בקשות החזר פתוחות",
+    openRefundRow: (
+      customer: string,
+      amount: string,
+      concept: string,
+      day: string
+    ) => `${customer} · ${amount} · בראנץ׳ ${concept} ${day}`,
   },
   // The work tab and a session's work sheet (story 4.9, CAP-38; wording
   // from EXPERIENCE › דף עבודה and the mockup).
@@ -1079,7 +1104,8 @@ export const adminCopy = {
         reminder: "תזכורת לפני מפגש",
         waitlist_spot: "התפנה מקום",
         booking_cancelled: "ביטול הרשמה מכרטיסייה",
-        booking_cancelled_pinned: "ביטול הרשמה של כניסה בודדת, היכרות או זוגית",
+        booking_cancelled_pinned: "ביטול הרשמה עם זיכוי",
+        booking_cancelled_refund: "ביטול הרשמה עם בקשת החזר",
         event_changed: "שינוי במפגש",
         event_cancelled: "ביטול מפגש",
         entitlement_changed: "עדכון בכרטיסייה",

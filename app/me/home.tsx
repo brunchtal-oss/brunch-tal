@@ -1,7 +1,6 @@
 import Link from "next/link"
 import { ChevronLeftIcon } from "lucide-react"
 
-import { BalanceCard } from "@/components/customer/balance-card"
 import { HomeCard } from "@/components/customer/home-card"
 import { ResultNoticeHost } from "@/components/shared/result-notice"
 import { SessionCard } from "@/components/shared/session-card"
@@ -16,20 +15,16 @@ import { createClient } from "@/lib/supabase/server"
 import { formatAccessibleDate, formatDayMonth, formatWeekday } from "@/lib/time"
 
 import { parseMyBookings } from "./bookings/cancel-result"
+import { isBookableCredit, parseMyCredits } from "./bookings/credits"
 import { loadMyEntitlements } from "./load-entitlements"
-import {
-  isEmptyHome,
-  isHomeCard,
-  isHomeReturned,
-  type SessionRow,
-} from "./purchase-items"
+import { isEmptyHome, isHomeCard, type SessionRow } from "./purchase-items"
 
 // The home (story 4.12; design round, user decisions 2026-10-07/08), each
 // section under a real heading, in this order: her next session (her
 // nearest confirmed booking, a frameless session-card with its photo and
-// time); "הכרטיסייה שלי", each active card as a home-card; an entry that
-// returned after a cancelled pinned booking (story 3.6, a balance-card);
-// "הבראנצ׳ים הקרובים שלי", the later ones, one row each with only the
+// time); "הכרטיסייה שלי", each active card as a home-card; one line "יש לך
+// זיכוי להרשמה" to /me/bookings while she has a cancellation credit to book
+// with (story 3.7, get_my_credits); "הבראנצ׳ים הקרובים שלי", the later ones, one row each with only the
 // weekday and date, linking to its page; then "לכל ההרשמות שלי" (the
 // cancel is only on the session page, user decision 2026-10-06). No
 // message blocks and no receipts (the receipts are in the purchase
@@ -40,12 +35,15 @@ import {
 // rows.
 export async function Home() {
   const supabase = await createClient()
-  const [entitlements, bookingsResult, contactHref] = await Promise.all([
-    loadMyEntitlements(supabase),
-    callRpc(supabase, "get_my_bookings"),
-    getWhatsappHref(),
-  ])
+  const [entitlements, bookingsResult, creditsResult, contactHref] =
+    await Promise.all([
+      loadMyEntitlements(supabase),
+      callRpc(supabase, "get_my_bookings"),
+      callRpc(supabase, "get_my_credits"),
+      getWhatsappHref(),
+    ])
   if (!bookingsResult.ok) throw new Error("get_my_bookings failed")
+  if (!creditsResult.ok) throw new Error("get_my_credits failed")
 
   // Her confirmed bookings whose session has not started, by starts_at
   // (get_my_bookings decides; story 3.6).
@@ -56,11 +54,11 @@ export async function Home() {
     concept_name: b.conceptName,
   }))
   const cards = entitlements.filter(isHomeCard)
-  const returned = entitlements.filter(isHomeReturned)
+  const hasCredit = parseMyCredits(creditsResult.data).some(isBookableCredit)
 
   // One host around both states, so a cancel's result stays after the
   // page is read again, also when home becomes empty (story 3.6).
-  if (isEmptyHome(upcoming.length, cards.length, returned.length)) {
+  if (isEmptyHome(upcoming.length, cards.length, hasCredit ? 1 : 0)) {
     return (
       <ResultNoticeHost>
         <EmptyHome contactHref={contactHref} />
@@ -79,8 +77,8 @@ export async function Home() {
     </Link>
   )
   // The design round's order (user decision 2026-10-07, EXPERIENCE ›
-  // Information Architecture): her next session, her card, an entry that
-  // returned, the later sessions and then "לכל ההרשמות שלי". A thin rule
+  // Information Architecture): her next session, her card, the credit
+  // line (3.7), the later sessions and then "לכל ההרשמות שלי". A thin rule
   // between the sections, 32 above and below it (user decision 2026-10-08).
   return (
     <ResultNoticeHost className="flex flex-col gap-8 pb-8 [&>section~section]:border-t [&>section~section]:border-border [&>section~section]:pt-8">
@@ -126,27 +124,20 @@ export async function Home() {
         </HomeSection>
       )}
 
-      {returned.length > 0 && (
-        <HomeSection id="returned" title={customerCopy.returnedTitle}>
-          <ul className="flex flex-col gap-3">
-            {returned.map((entry) => (
-              <li key={entry.id}>
-                <BalanceCard
-                  href={`/me/purchases/${entry.id}`}
-                  productName={entry.productName}
-                  used={entry.used}
-                  reserved={entry.reserved}
-                  total={entry.originalUnits}
-                  expiresOn={entry.expiresOn}
-                  daysLeft={entry.daysLeft}
-                  isExpiring={entry.isExpiring}
-                  awaiting={entry.awaitingSessions}
-                  counts={entry.kind === "card"}
-                />
-              </li>
-            ))}
-          </ul>
-        </HomeSection>
+      {hasCredit && (
+        <section aria-label={customerCopy.homeCredit}>
+          <Link
+            href="/me/bookings"
+            className="flex min-h-12 items-center justify-between gap-3 py-1 text-[17px] font-semibold"
+          >
+            {customerCopy.homeCredit}
+            <ChevronLeftIcon
+              aria-hidden
+              strokeWidth={1.5}
+              className="size-5 shrink-0 text-muted-foreground"
+            />
+          </Link>
+        </section>
       )}
 
       {later.length > 0 && (

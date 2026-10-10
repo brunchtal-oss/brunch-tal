@@ -1,6 +1,12 @@
 import { cn } from "@/lib/utils"
 
-export type RadioCardOption = { value: string; label: string }
+// description: an optional line under the label (body-sm, ink-muted), part
+// of the option's accessible name (story 3.7: the cancel choice).
+export type RadioCardOption = {
+  value: string
+  label: string
+  description?: string
+}
 
 // DESIGN.md › radio-card: a real radio group (fieldset + visible legend,
 // native radios, so the arrow keys move between options); the whole card is
@@ -25,7 +31,9 @@ export function RadioCardGroup({
   required?: boolean
   className?: string
 }) {
-  const twoColumns = options.every((option) => option.label.length <= 12)
+  const twoColumns = options.every(
+    (option) => option.label.length <= 12 && !option.description
+  )
   return (
     <fieldset
       aria-required={required || undefined}
@@ -57,7 +65,16 @@ export function RadioCardGroup({
             >
               <span className="size-2.5 rounded-full bg-primary opacity-0 group-has-checked:opacity-100" />
             </span>
-            <span className="min-w-0 break-words">{option.label}</span>
+            {option.description ? (
+              <span className="flex min-w-0 flex-col gap-0.5 break-words">
+                <span className="font-semibold">{option.label}</span>
+                <span className="text-[15px] text-muted-foreground">
+                  {option.description}
+                </span>
+              </span>
+            ) : (
+              <span className="min-w-0 break-words">{option.label}</span>
+            )}
           </label>
         ))}
       </div>

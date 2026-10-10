@@ -7,6 +7,7 @@ import {
   toAttentionItem,
   toAttentionItems,
   toExpiringCard,
+  toOpenRefund,
   toSessionTile,
   totalsView,
   type AttentionKind,
@@ -85,6 +86,17 @@ const ROWS: Record<AttentionKind, AttentionRow> = {
     customer_label: null,
     since: SINCE,
   },
+  refund_requested: {
+    kind: "refund_requested",
+    id: "r1",
+    customer_label: "Noa",
+    since: SINCE,
+    customer_id: "44444444-4444-4444-8444-444444444444",
+    amount_agorot: 12800,
+    event_id: EVENT,
+    concept_name: "שישי מיוחד",
+    starts_at: "2026-10-16T07:00:00Z",
+  },
   push_failed: {
     kind: "push_failed",
     id: "push_failed",
@@ -102,7 +114,8 @@ describe("toAttentionItem", () => {
         href: string
         title: string
         detail: string
-        chip: string
+        // null: no chip (refund_requested, story 3.7).
+        chip: string | null
         tone: string
       }
     > = {
@@ -159,6 +172,13 @@ describe("toAttentionItem", () => {
         chip: "לא פורסם",
         tone: "warning",
       },
+      refund_requested: {
+        href: "/admin/customers/44444444-4444-4444-8444-444444444444",
+        title: "Noa ביקשה החזר של 128 ₪ על בראנץ׳ שישי מיוחד 16.10",
+        detail: "",
+        chip: null,
+        tone: "",
+      },
       push_failed: {
         href: "/admin/notifications",
         title: "3 התראות פוש לא נשלחו השבוע",
@@ -175,9 +195,11 @@ describe("toAttentionItem", () => {
       const norm = (s: string | null | undefined) =>
         (s ?? "").replace(/\s/g, " ")
       expect(item.href, kind).toBe(want.href)
-      expect(item.title, kind).toBe(want.title)
+      expect(norm(item.title), kind).toBe(norm(want.title))
       expect(norm(item.detail), kind).toBe(norm(want.detail))
-      expect(item.chip, kind).toEqual({ tone: want.tone, label: want.chip })
+      if (want.chip === null) expect(item.chip ?? null, kind).toBeNull()
+      else
+        expect(item.chip, kind).toEqual({ tone: want.tone, label: want.chip })
       expect(item.meta, kind).toBe("מאז 12.10")
       expect(item.metaAt, kind).toBe("2026-10-12")
     }
@@ -288,11 +310,36 @@ describe("home rows", () => {
       period_end: "2026-10-06",
       approved_count: 14,
       approved_agorot: 342000,
-      net_agorot: 342000,
+      refunded_count: 1,
+      refunded_agorot: 12800,
+      net_agorot: 329200,
     })
     expect(view.period).toBe("אוקטובר 2026 · עד היום")
     expect(view.approvedLabel).toBe("תשלומים שאושרו (14)")
-    expect(view.net.replace(/\s/g, " ")).toBe("3,420 ₪")
+    expect(view.net.replace(/\s/g, " ")).toBe("3,292 ₪")
+    // Story 3.7: the refunds line, always shown.
+    expect(view.refundedLabel).toBe("החזרים שבוצעו (1)")
+    expect(view.refunded.replace(/\s/g, " ")).toBe("128 ₪")
+  })
+
+  it("an open refund: the row's text and the customer's card", () => {
+    const item = toOpenRefund({
+      refund_request_id: "r1",
+      customer_id: "44444444-4444-4444-8444-444444444444",
+      customer_label: "Noa",
+      amount_agorot: 12800,
+      requested_at: SINCE,
+      event_id: EVENT,
+      concept_name: "שישי מיוחד",
+      starts_at: "2026-10-16T07:00:00Z",
+    })
+    expect(item.key).toBe("r1")
+    expect(item.href).toBe(
+      "/admin/customers/44444444-4444-4444-8444-444444444444"
+    )
+    expect(item.text.replace(/\s/g, " ")).toBe(
+      "Noa · 128 ₪ · בראנץ׳ שישי מיוחד 16.10"
+    )
   })
 })
 

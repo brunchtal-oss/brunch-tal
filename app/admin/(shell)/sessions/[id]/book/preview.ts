@@ -7,8 +7,11 @@ import { errorMessage, isErrorCode, type ErrorCode } from "@/lib/errors"
 export type BookPreview =
   | {
       ok: true
+      // Story 3.7: a cancellation credit funds it (this session is one of
+      // its options); then there is no validity date.
+      source: "entitlement" | "credit"
       productName: string
-      expiresOn: string
+      expiresOn: string | null
       occupied: number
       capacity: number
     }
@@ -23,17 +26,20 @@ export function parseBookPreview(raw: unknown): BookPreview {
   const data = (raw ?? {}) as Record<string, unknown>
   const occupied = typeof data.occupied === "number" ? data.occupied : null
   const capacity = typeof data.capacity === "number" ? data.capacity : null
+  const credit = data.source === "credit"
   if (
     data.ok === true &&
     typeof data.product_name === "string" &&
-    typeof data.expires_on === "string" &&
+    (credit || typeof data.expires_on === "string") &&
     occupied !== null &&
     capacity !== null
   ) {
     return {
       ok: true,
+      source: credit ? "credit" : "entitlement",
       productName: data.product_name,
-      expiresOn: data.expires_on,
+      expiresOn:
+        !credit && typeof data.expires_on === "string" ? data.expires_on : null,
       occupied,
       capacity,
     }

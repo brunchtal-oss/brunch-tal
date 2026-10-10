@@ -16,11 +16,35 @@ describe("parsePreview", () => {
       })
     ).toEqual({
       kind: "bookable",
+      source: "entitlement",
       productName: "כרטיסייה אישית",
       availableAfter: 3,
       expiresOn: "2026-11-22",
       cancelDeadline: "2026-10-10T07:00:00+00:00",
     })
+  })
+
+  it("story 3.7: a session funded by a credit", () => {
+    expect(
+      parsePreview({
+        ok: true,
+        booked: false,
+        source: "credit",
+        credit_id: "c1",
+        product_name: "Single",
+        origin_starts_at: "2026-10-08T07:30:00Z",
+        units: 1,
+        cancel_deadline: "2026-10-10T07:00:00+00:00",
+      })
+    ).toEqual({
+      kind: "bookable",
+      source: "credit",
+      originStartsAt: "2026-10-08T07:30:00Z",
+      cancelDeadline: "2026-10-10T07:00:00+00:00",
+    })
+    expect(parsePreview({ ok: true, booked: false, source: "credit" })).toEqual(
+      { kind: "blocked", code: "SERVER_ERROR" }
+    )
   })
 
   it("her own booking wins over the code", () => {

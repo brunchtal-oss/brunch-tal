@@ -649,7 +649,8 @@ async function main() {
       }
     }
 
-    // 4. Maya cancels her single entry for E4 (it returns to her).
+    // 4. Maya cancels her single entry for E4 and chooses a credit for the
+    //    next matching sessions (story 3.7).
     {
       const who = castOf(SELF_CANCEL.customer)
       const index = who.purchases.findIndex((p) => p.event === SELF_CANCEL.event)
@@ -662,6 +663,7 @@ async function main() {
             rpc(await asCustomer(), "cancel_booking", {
               p_booking_id: booking,
               p_idempotency_key: key,
+              p_choice: "credit",
             })
         )
       } else {

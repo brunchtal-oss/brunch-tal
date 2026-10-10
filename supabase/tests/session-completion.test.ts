@@ -461,6 +461,50 @@ describe("job_complete_events", { timeout: 30_000 }, () => {
     })
   })
 
+  // Story 3.7: a booking funded by a cancellation credit.
+  it("credit: a credit-funded booking, the session ended -> booking completed, the credit used, no movement", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const origin = await insertEvent(db, f)
+      const optionId = await insertEvent(db, f)
+      // The alternative starts a day after the cancelled session.
+      await db.query(
+        `update public.events
+         set starts_at = starts_at + interval '1 day',
+             ends_at = ends_at + interval '1 day',
+             registration_closes_at = registration_closes_at + interval '1 day'
+         where id = $1`,
+        [optionId]
+      )
+      const single = await grant(db, f, f.single, { eventId: origin })
+      const pinnedBooking = await bookingOfPayment(db, single.payment)
+      const cancelled = await as(db, f.customerA, async () => {
+        const { rows } = await db.query(
+          "select public.cancel_booking($1, $2, 'credit') as r",
+          [pinnedBooking, randomUUID()]
+        )
+        return rows[0].r
+      })
+      const bookingId = await book(db, f.customerA, optionId)
+      await moveEnd(db, optionId)
+
+      await runJob(db)
+
+      expect((await bookingOf(db, bookingId)).status).toBe("completed")
+      const { rows: credit } = await db.query(
+        "select status from public.cancellation_credits where id = $1",
+        [cancelled.credit_id]
+      )
+      expect(credit).toEqual([{ status: "used" }])
+      expect(await uses(db, bookingId)).toBe(0)
+      const { rows: audit } = await db.query(
+        "select actor_kind from public.audit_log where entity_id = $1 and action = 'complete_event'",
+        [cancelled.credit_id]
+      )
+      expect(audit).toEqual([{ actor_kind: "system" }])
+    })
+  })
+
   it("draft or cancelled sessions that ended: nothing changes", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)

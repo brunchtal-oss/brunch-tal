@@ -1,9 +1,9 @@
 // Story 3.6: self-cancel within the window and cancellation by Tal.
 // cancel_booking, preview_admin_cancel_booking, admin_cancel_booking,
-// get_my_bookings, private.cancel_core, the return of a pinned entitlement
-// (private.return_pinned_entitlement, private.refresh_returned_entitlements
-// and the trigger on publishing) and the booked state of
-// preview_book_session. One test per row of the spec's I/O matrix; the
+// get_my_bookings, private.cancel_core and the booked state of
+// preview_book_session. Since 3.7 a pinned booking becomes a credit (the
+// credits themselves: cancellation-credits.test.ts) and a 3.6 returned
+// entitlement cancels like a card. One test per row of the spec's I/O matrix; the
 // session lock against a parallel booking of the last place is the last
 // test (it needs real commits). Each test makes many round trips to the
 // dev project, so the timeout is 30 seconds. Everything else runs in inRollback, with the
@@ -33,7 +33,6 @@ const CANCEL_CHOICE = "select public.cancel_booking($1, $2, $3) as r"
 const ADMIN_CANCEL = "select public.admin_cancel_booking($1, $2, $3, $4) as r"
 const ADMIN_PREVIEW = "select public.preview_admin_cancel_booking($1) as r"
 const MY_BOOKINGS = "select public.get_my_bookings() as r"
-const MY_ENTITLEMENTS = "select public.get_my_entitlements() as r"
 const PREVIEW_BOOK = "select public.preview_book_session($1) as r"
 const SNAPSHOT = `'{"cancel_window_hours": 48, "reminder_lead_hours": 24}'::jsonb`
 
@@ -296,8 +295,6 @@ describe("cancel_booking: the 48-hour boundary", { timeout: 30_000 }, () => {
         booking_id: bookingId,
         outcome: "card",
         entitlement_id: entitlement,
-        expires_on: expect.any(String),
-        awaiting_sessions: false,
       })
       expect(await bookingRow(db, bookingId)).toEqual({
         status: "cancelled",
@@ -424,7 +421,7 @@ describe("cancel_booking: a card", { timeout: 30_000 }, () => {
     })
   })
 
-  it("a choice before 3.7: INVALID_INPUT; an admin who is not a customer: NOT_AUTHORIZED", async () => {
+  it("a choice on a card booking: INVALID_INPUT; an admin who is not a customer: NOT_AUTHORIZED", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)
       await grant(db, f, f.anyDayCard)
@@ -574,21 +571,35 @@ describe("admin_cancel_booking", { timeout: 30_000 }, () => {
         const { rows: p } = await db.query(ADMIN_PREVIEW, [rows[0].id])
         return p[0].r
       })
+      // 3 days ahead: she could still cancel herself, so Tal chooses (3.7).
       expect(plan).toMatchObject({
         ok: true,
         pending_join: true,
-        outcome: "pinned",
+        outcome: "credit",
+        funding: "pinned",
+        choice_required: true,
       })
 
       await as(db, f.admin, () =>
-        db.query(ADMIN_CANCEL, [rows[0].id, true, randomUUID(), null])
+        db.query("select public.admin_cancel_booking($1, $2, $3, $4, $5)", [
+          rows[0].id,
+          true,
+          randomUUID(),
+          null,
+          "credit",
+        ])
       )
       expect(await occupied(db, event.id)).toBe(0)
       const { rows: notesAfter } = await db.query(
         "select count(*)::int as n from public.notifications"
       )
       expect(notesAfter[0].n).toBe(notesBefore[0].n)
-      expect((await balance(db, entitlement)).pinned_event_id).toBeNull()
+      expect((await balance(db, entitlement)).pinned_event_id).toBe(event.id)
+      const { rows: credits } = await db.query(
+        "select customer_id, status from public.cancellation_credits where origin_booking_id = $1",
+        [rows[0].id]
+      )
+      expect(credits).toEqual([{ customer_id: null, status: "active" }])
     })
   })
 
@@ -638,10 +649,10 @@ describe("admin_cancel_booking", { timeout: 30_000 }, () => {
 })
 
 describe(
-  "a pinned booking returns as a regular entitlement",
+  "story 3.7: a pinned booking becomes a credit; a 3.6 returned entry cancels like a card",
   { timeout: 30_000 },
   () => {
-    it("an intro cancelled before its session: has_participated stays false", async () => {
+    it("an intro cancelled before its session (credit): has_participated stays false", async () => {
       await inRollback(async (db) => {
         const f = await seed(db)
         const event = await insertEvent(db, f, { dayOffset: 5 })
@@ -650,8 +661,15 @@ describe(
           "select id from public.bookings where event_id = $1 and customer_id = $2",
           [event.id, f.customerA]
         )
-        const r = await cancel(db, f.customerA, rows[0].id)
-        expect(r.outcome).toBe("pinned")
+        const r = await as(db, f.customerA, async () => {
+          const { rows: c } = await db.query(CANCEL_CHOICE, [
+            rows[0].id,
+            randomUUID(),
+            "credit",
+          ])
+          return c[0].r
+        })
+        expect(r.outcome).toBe("credit")
         const { rows: p } = await db.query(
           "select private.has_participated($1) as v",
           [f.customerA]
@@ -660,18 +678,10 @@ describe(
       })
     })
 
-    it("three sessions after it, the second full: valid until the third, not for the cancelled session", async () => {
+    it("a pinned booking is funded 'pinned' on both screens; cancelled with a credit, the entitlement stays pinned and used", async () => {
       await inRollback(async (db) => {
         const f = await seed(db)
         const event = await insertEvent(db, f, { dayOffset: 5 })
-        const s1 = await insertEvent(db, f, { dayOffset: 6 })
-        const s2 = await insertEvent(db, f, { dayOffset: 7, capacity: 1 })
-        const s3 = await insertEvent(db, f, { dayOffset: 8 })
-        await grant(db, f, f.single, {
-          customerId: f.customerB,
-          eventId: s2.id,
-        })
-        expect(await occupied(db, s2.id)).toBe(1)
         const entitlement = await grant(db, f, f.single, { eventId: event.id })
         const { rows } = await db.query(
           "select id from public.bookings where event_id = $1 and customer_id = $2",
@@ -680,268 +690,101 @@ describe(
         expect(
           await fundingSeen(db, f.customerA, rows[0].id, event.id)
         ).toEqual(["pinned", "pinned"])
-
-        const r = await cancel(db, f.customerA, rows[0].id)
-        expect(r).toMatchObject({
-          outcome: "pinned",
-          entitlement_id: entitlement,
-          expires_on: s3.day,
-          awaiting_sessions: false,
-        })
-        const b = await balance(db, entitlement)
-        expect(b).toMatchObject({
-          available: 1,
+        await as(db, f.customerA, () =>
+          db.query(CANCEL_CHOICE, [rows[0].id, randomUUID(), "credit"])
+        )
+        expect(await balance(db, entitlement)).toMatchObject({
+          available: 0,
           reserved: 0,
-          expires_on: s3.day,
-          pinned_event_id: null,
+          pinned_event_id: event.id,
         })
-        expect(b.eligibility_snapshot).toMatchObject({
-          validity_mode: "days",
-          awaiting_sessions: false,
-          returned_from_event_id: event.id,
-          options_count: 2,
-        })
-        expect(b.valid_from > event.day).toBe(true)
-        expect(await cancelNotifications(db, f.customerA)).toEqual([
-          {
-            type: "booking_cancelled_pinned",
-            title: `ההרשמה ל${dayMonth(event.day)} בוטלה`,
-            body: "הכניסה חזרה אלייך, ואפשר להירשם איתה לאחד המפגשים המתאימים הבאים",
-            target_path: "/me/bookings",
-          },
-        ])
-
-        // Not the cancelled session again; the next one, yes.
+        expect(await releases(db, rows[0].id)).toBe(0)
+        // Not the cancelled session again.
         expect(
           await as(db, f.customerA, () =>
             queryError(db, BOOK, [event.id, randomUUID()])
           )
-        ).toEqual({ code: "P0001", message: "ENTITLEMENT_EXPIRED_ON_DATE" })
-        await book(db, f.customerA, s1.id)
-        expect(await balance(db, entitlement)).toMatchObject({
-          available: 0,
-          reserved: 1,
-        })
-
-        // get_my_entitlements: returned, not waiting.
-        const mine = await as(db, f.customerA, async () => {
-          const { rows: m } = await db.query(MY_ENTITLEMENTS)
-          return m[0].r
-        })
-        expect(
-          mine.find(
-            (e: { entitlement_id: string }) => e.entitlement_id === entitlement
-          )
-        ).toMatchObject({
-          returned: true,
-          awaiting_sessions: false,
-          pinned_event_id: null,
-        })
+        ).toEqual({ code: "P0001", message: "NO_MATCHING_ENTITLEMENT" })
       })
     })
 
-    it("no session after it: waiting; after a second session is published, valid until it", async () => {
+    it("a 3.6 returned entitlement (pinned_event_id null) funds a booking as 'card' and cancels with a release, no choice", async () => {
       await inRollback(async (db) => {
         const f = await seed(db)
+        const gone = await insertEvent(db, f, { dayOffset: 2 })
         const event = await insertEvent(db, f, { dayOffset: 5 })
-        const entitlement = await grant(db, f, f.single, { eventId: event.id })
-        const { rows } = await db.query(
-          "select id from public.bookings where event_id = $1 and customer_id = $2",
-          [event.id, f.customerA]
-        )
-
-        const r = await cancel(db, f.customerA, rows[0].id)
-        expect(r).toMatchObject({ outcome: "pinned", awaiting_sessions: true })
-        expect(
-          (await balance(db, entitlement)).eligibility_snapshot
-        ).toMatchObject({
-          awaiting_sessions: true,
-        })
-        expect(await cancelNotifications(db, f.customerA)).toHaveLength(1)
-        const mine = await as(db, f.customerA, async () => {
-          const { rows: m } = await db.query(MY_ENTITLEMENTS)
-          return m[0].r
-        })
-        expect(
-          mine.find(
-            (e: { entitlement_id: string }) => e.entitlement_id === entitlement
-          )
-        ).toMatchObject({
-          awaiting_sessions: true,
-          is_expiring: false,
-        })
-
-        // One published session: still waiting (N = 2).
-        await insertEvent(db, f, { dayOffset: 9 })
-        expect(
-          (await balance(db, entitlement)).eligibility_snapshot
-        ).toMatchObject({
-          awaiting_sessions: true,
-        })
-
-        // A draft does not count; publishing it settles the entitlement.
-        const second = await insertEvent(db, f, {
-          dayOffset: 12,
-          status: "draft",
-        })
-        expect(
-          (await balance(db, entitlement)).eligibility_snapshot
-        ).toMatchObject({
-          awaiting_sessions: true,
-        })
+        const entitlement = await grant(db, f, f.single, { eventId: gone.id })
+        // As 3.6 left it: a regular entitlement after the cancel.
         await db.query(
-          "update public.events set status = 'published' where id = $1",
-          [second.id]
+          "update public.bookings set status = 'cancelled', cancelled_at = now() where event_id = $1",
+          [gone.id]
         )
-        const b = await balance(db, entitlement)
-        expect(b.expires_on).toBe(second.day)
-        expect(b.eligibility_snapshot).toMatchObject({
-          awaiting_sessions: false,
+        await db.query(
+          `insert into public.entitlement_movements (entitlement_id, booking_id, action, units)
+           select $1, b.id, 'release', 1 from public.bookings b where b.event_id = $2`,
+          [entitlement, gone.id]
+        )
+        await db.query(
+          `update public.entitlements
+           set pinned_event_id = null, valid_from = $2::date + 1,
+               expires_on = $2::date + 30,
+               eligibility_snapshot = eligibility_snapshot || jsonb_build_object(
+                 'validity_mode', 'days', 'awaiting_sessions', false,
+                 'returned_from_event_id', $3::uuid, 'returned_after', $2::date,
+                 'options_count', 2)
+           where id = $1`,
+          [entitlement, gone.day, gone.id]
+        )
+        const bookingId = await book(db, f.customerA, event.id)
+        expect(await fundingSeen(db, f.customerA, bookingId, event.id)).toEqual(
+          ["card", "card"]
+        )
+        expect(
+          await as(db, f.customerA, () =>
+            queryError(db, CANCEL_CHOICE, [bookingId, randomUUID(), "credit"])
+          )
+        ).toEqual({ code: "P0001", message: "INVALID_INPUT" })
+        const r = await cancel(db, f.customerA, bookingId)
+        expect(r).toEqual({
+          booking_id: bookingId,
+          outcome: "card",
+          entitlement_id: entitlement,
         })
-        const { rows: audit } = await db.query(
-          "select actor_kind from public.audit_log where entity_id = $1 and action = 'refresh_returned_entitlements'",
-          [entitlement]
-        )
-        expect(audit).toEqual([{ actor_kind: "system" }])
-      })
-    })
-
-    it("a booking funded by a returned entitlement, cancelled again: a release only, expires_on unchanged", async () => {
-      await inRollback(async (db) => {
-        const f = await seed(db)
-        const event = await insertEvent(db, f, { dayOffset: 5 })
-        const s1 = await insertEvent(db, f, { dayOffset: 6 })
-        await insertEvent(db, f, { dayOffset: 7 })
-        const entitlement = await grant(db, f, f.single, { eventId: event.id })
-        const { rows } = await db.query(
-          "select id from public.bookings where event_id = $1 and customer_id = $2",
-          [event.id, f.customerA]
-        )
-        await cancel(db, f.customerA, rows[0].id)
-        const returned = await balance(db, entitlement)
-
-        const again = await book(db, f.customerA, s1.id)
-        expect(await fundingSeen(db, f.customerA, again, s1.id)).toEqual([
-          "returned",
-          "returned",
-        ])
-        const r = await cancel(db, f.customerA, again)
-        expect(r).toMatchObject({ outcome: "card", awaiting_sessions: false })
         expect(await balance(db, entitlement)).toMatchObject({
           available: 1,
           reserved: 0,
-          expires_on: returned.expires_on,
-          valid_from: returned.valid_from,
         })
-        // One transaction: both have the same created_at.
-        expect(
-          (await cancelNotifications(db, f.customerA)).map((n) => n.type).sort()
-        ).toEqual(["booking_cancelled", "booking_cancelled_pinned"])
-      })
-    })
-  }
-)
-
-describe(
-  "story 3.6 review: the returned entitlement",
-  { timeout: 30_000 },
-  () => {
-    // As customer A: a pinned single on a session 5 days ahead, cancelled by
-    // herself. Returns the cancelled session and the entitlement.
-    async function returnedSingle(db: Db, f: Fixture) {
-      const event = await insertEvent(db, f, { dayOffset: 5 })
-      const entitlement = await grant(db, f, f.single, { eventId: event.id })
-      const { rows } = await db.query(
-        "select id from public.bookings where event_id = $1 and customer_id = $2",
-        [event.id, f.customerA]
-      )
-      const r = await cancel(db, f.customerA, rows[0].id)
-      return { event, entitlement, r }
-    }
-
-    it("a session whose registration already closed is not counted", async () => {
-      await inRollback(async (db) => {
-        const f = await seed(db)
-        await insertEvent(db, f, { dayOffset: 6, closed: true })
-        await insertEvent(db, f, { dayOffset: 7 })
-        const s3 = await insertEvent(db, f, { dayOffset: 8 })
-        const { entitlement, r } = await returnedSingle(db, f)
-        expect(r).toMatchObject({
-          expires_on: s3.day,
-          awaiting_sessions: false,
-        })
-        expect((await balance(db, entitlement)).expires_on).toBe(s3.day)
-      })
-    })
-
-    it("waiting: it funds a self-booking of a later matching session", async () => {
-      await inRollback(async (db) => {
-        const f = await seed(db)
-        const { entitlement, r } = await returnedSingle(db, f)
-        expect(r.awaiting_sessions).toBe(true)
-        const later = await insertEvent(db, f, { dayOffset: 9 })
-        const bookingId = await book(db, f.customerA, later.id)
-        expect(await balance(db, entitlement)).toMatchObject({
-          available: 0,
-          reserved: 1,
-        })
-        expect(await fundingSeen(db, f.customerA, bookingId, later.id)).toEqual(
-          ["returned", "returned"]
+        const { rows: credits } = await db.query(
+          "select id from public.cancellation_credits where origin_booking_id = $1",
+          [bookingId]
         )
-      })
-    })
-
-    it("a session full because she took its last place with it still counts", async () => {
-      await inRollback(async (db) => {
-        const f = await seed(db)
-        const { entitlement, r } = await returnedSingle(db, f)
-        expect(r.awaiting_sessions).toBe(true)
-        const full = await insertEvent(db, f, { dayOffset: 9, capacity: 1 })
-        await book(db, f.customerA, full.id)
-        expect(await occupied(db, full.id)).toBe(1)
-        // Still one session of the two (N = 2).
+        expect(credits).toEqual([])
         expect(
-          (await balance(db, entitlement)).eligibility_snapshot
-        ).toMatchObject({ awaiting_sessions: true })
-
-        const second = await insertEvent(db, f, { dayOffset: 12 })
-        const b = await balance(db, entitlement)
-        expect(b.eligibility_snapshot).toMatchObject({
-          awaiting_sessions: false,
-        })
-        expect(b.expires_on).toBe(second.day)
+          (await cancelNotifications(db, f.customerA)).map((n) => n.type)
+        ).toEqual(["booking_cancelled"])
       })
     })
 
-    it("a couple pinned booking cancelled: two places freed, the entry returns", async () => {
+    it("a couple pinned booking cancelled with a credit: two places freed", async () => {
       await inRollback(async (db) => {
         const f = await seed(db)
         const event = await insertEvent(db, f, { dayOffset: 5, kind: "couple" })
-        const entitlement = await grant(db, f, f.couple, { eventId: event.id })
+        await grant(db, f, f.couple, { eventId: event.id })
         const { rows } = await db.query(
           "select id, party_size from public.bookings where event_id = $1 and customer_id = $2",
           [event.id, f.customerA]
         )
         expect(rows[0].party_size).toBe(2)
         expect(await occupied(db, event.id)).toBe(2)
-
-        const r = await cancel(db, f.customerA, rows[0].id)
-        expect(r).toMatchObject({
-          outcome: "pinned",
-          entitlement_id: entitlement,
-        })
+        await as(db, f.customerA, () =>
+          db.query(CANCEL_CHOICE, [rows[0].id, randomUUID(), "credit"])
+        )
         expect(await occupied(db, event.id)).toBe(0)
-        const b = await balance(db, entitlement)
-        expect(b).toMatchObject({
-          available: 1,
-          reserved: 0,
-          pinned_event_id: null,
-        })
-        expect(b.eligibility_snapshot).toMatchObject({
-          validity_mode: "days",
-          party_size: 2,
-          returned_from_event_id: event.id,
-        })
+        const { rows: credits } = await db.query(
+          "select party_size, event_kind from public.cancellation_credits where origin_booking_id = $1",
+          [rows[0].id]
+        )
+        expect(credits).toEqual([{ party_size: 2, event_kind: "couple" }])
       })
     })
 

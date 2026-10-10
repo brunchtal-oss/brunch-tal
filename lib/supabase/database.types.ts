@@ -223,6 +223,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "booking_allocations_credit_id_fkey"
+            columns: ["credit_id"]
+            isOneToOne: false
+            referencedRelation: "cancellation_credits"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "booking_allocations_entitlement_id_fkey"
             columns: ["entitlement_id"]
             isOneToOne: false
@@ -374,6 +381,83 @@ export type Database = {
         }
         Relationships: []
       }
+      cancellation_credits: {
+        Row: {
+          choice_pending: boolean
+          created_at: string
+          customer_id: string | null
+          event_kind: string
+          id: string
+          monetary_basis_agorot: number
+          options_count: number
+          origin_booking_id: string
+          origin_starts_at: string
+          original_cancelled_at: string
+          party_size: number
+          source_entitlement_id: string
+          status: string
+        }
+        Insert: {
+          choice_pending?: boolean
+          created_at?: string
+          customer_id?: string | null
+          event_kind: string
+          id?: string
+          monetary_basis_agorot: number
+          options_count: number
+          origin_booking_id: string
+          origin_starts_at: string
+          original_cancelled_at: string
+          party_size: number
+          source_entitlement_id: string
+          status?: string
+        }
+        Update: {
+          choice_pending?: boolean
+          created_at?: string
+          customer_id?: string | null
+          event_kind?: string
+          id?: string
+          monetary_basis_agorot?: number
+          options_count?: number
+          origin_booking_id?: string
+          origin_starts_at?: string
+          original_cancelled_at?: string
+          party_size?: number
+          source_entitlement_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cancellation_credits_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cancellation_credits_origin_booking_id_fkey"
+            columns: ["origin_booking_id"]
+            isOneToOne: true
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cancellation_credits_source_entitlement_id_fkey"
+            columns: ["source_entitlement_id"]
+            isOneToOne: false
+            referencedRelation: "entitlement_balances"
+            referencedColumns: ["entitlement_id"]
+          },
+          {
+            foreignKeyName: "cancellation_credits_source_entitlement_id_fkey"
+            columns: ["source_entitlement_id"]
+            isOneToOne: false
+            referencedRelation: "entitlements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       concepts: {
         Row: {
           archived_at: string | null
@@ -504,6 +588,51 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "content_pages"
             referencedColumns: ["slug"]
+          },
+        ]
+      }
+      credit_options: {
+        Row: {
+          assigned_at: string
+          credit_id: string
+          event_id: string
+          id: string
+          replaced_at: string | null
+          replaced_reason: string | null
+          state: string
+        }
+        Insert: {
+          assigned_at?: string
+          credit_id: string
+          event_id: string
+          id?: string
+          replaced_at?: string | null
+          replaced_reason?: string | null
+          state?: string
+        }
+        Update: {
+          assigned_at?: string
+          credit_id?: string
+          event_id?: string
+          id?: string
+          replaced_at?: string | null
+          replaced_reason?: string | null
+          state?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_options_credit_id_fkey"
+            columns: ["credit_id"]
+            isOneToOne: false
+            referencedRelation: "cancellation_credits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_options_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1207,6 +1336,77 @@ export type Database = {
         }
         Relationships: []
       }
+      refund_requests: {
+        Row: {
+          amount_agorot: number
+          booking_id: string
+          completed_at: string | null
+          credit_id: string
+          customer_id: string | null
+          handled_by: string | null
+          id: string
+          payment_id: string
+          reference: string | null
+          requested_at: string
+          status: string
+        }
+        Insert: {
+          amount_agorot: number
+          booking_id: string
+          completed_at?: string | null
+          credit_id: string
+          customer_id?: string | null
+          handled_by?: string | null
+          id?: string
+          payment_id: string
+          reference?: string | null
+          requested_at?: string
+          status?: string
+        }
+        Update: {
+          amount_agorot?: number
+          booking_id?: string
+          completed_at?: string | null
+          credit_id?: string
+          customer_id?: string | null
+          handled_by?: string | null
+          id?: string
+          payment_id?: string
+          reference?: string | null
+          requested_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refund_requests_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refund_requests_credit_id_fkey"
+            columns: ["credit_id"]
+            isOneToOne: true
+            referencedRelation: "cancellation_credits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refund_requests_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refund_requests_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shopping_items: {
         Row: {
           body: string
@@ -1472,6 +1672,7 @@ export type Database = {
       admin_cancel_booking: {
         Args: {
           p_booking_id: string
+          p_choice?: string
           p_confirmed: boolean
           p_idempotency_key: string
           p_reason?: string
@@ -1681,6 +1882,7 @@ export type Database = {
       }
       get_event_availability: { Args: { p_event_ids: string[] }; Returns: Json }
       get_my_bookings: { Args: never; Returns: Json }
+      get_my_credits: { Args: never; Returns: Json }
       get_my_entitlements: { Args: never; Returns: Json }
       get_my_session_role: { Args: never; Returns: string }
       issue_reset_token: { Args: { p_user_id: string }; Returns: Json }

@@ -56,6 +56,7 @@ describe("ManualBooking", () => {
   it("ok: what will be used and one book button", () => {
     const html = render({
       ok: true,
+      source: "entitlement",
       productName: "Card",
       expiresOn: "2026-11-19",
       occupied: 3,
@@ -63,6 +64,20 @@ describe("ManualBooking", () => {
     })
     expect(html).toContain(copy.willUse("Card", "19.11"))
     expect(html).toContain("<button")
+    expect(html).toContain(copy.bookCustomer("Dana"))
+  })
+
+  it("story 3.7: funded by her credit: the credit, no validity date", () => {
+    const html = render({
+      ok: true,
+      source: "credit",
+      productName: "Single",
+      expiresOn: null,
+      occupied: 3,
+      capacity: 12,
+    })
+    expect(html).toContain("ינוצל: זיכוי מביטול של Single")
+    expect(html).not.toContain("בתוקף עד")
     expect(html).toContain(copy.bookCustomer("Dana"))
   })
 })

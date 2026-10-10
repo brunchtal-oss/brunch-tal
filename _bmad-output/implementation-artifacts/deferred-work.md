@@ -34,7 +34,7 @@
   target: 3.6, ‏3.13/3.14
   summary: ב-2.12 יש תבנית אחת לכל סוג. ‏3.6 מחליט על נוסח לכל מקרה ב-`booking_cancelled` (זיכוי, החזר, ביטול בלי החזר), ו-3.13/3.14 ב-`entitlement_changed` (הארכה, החזרת כניסה, תיקון). אפשרות: שדה `{outcome}` שהקורא מעצב, או תבניות נוספות בטבלה.
   evidence: החלטת המשתמשת ב-2.12: תבנית אחת לסוג, ונוסח לכל מקרה נדחה לסיפורים שיוצרים את ההתראות.
-  status: החלק של 3.6 נסגר ב-3.6 (2026-10-06, החלטת המשתמשת): תבנית לכל מקרה. ‏`booking_cancelled` (כרטיסייה) בנוסח קבוע, ו-`booking_cancelled_pinned` חדשה למוצמדת, עם המשתנים `{date}` ו-`{expires_on}`. ‏3.7 מוסיף את מקרי הזיכוי וההחזר, ו-3.13/3.14 את `entitlement_changed`.
+  status: החלק של 3.6 נסגר ב-3.6 (2026-10-06, החלטת המשתמשת): תבנית לכל מקרה. ‏`booking_cancelled` (כרטיסייה) בנוסח קבוע, ו-`booking_cancelled_pinned` חדשה למוצמדת, עם המשתנים `{date}` ו-`{expires_on}`. ‏3.7 מוסיף את מקרי הזיכוי וההחזר, ו-3.13/3.14 את `entitlement_changed`. החלק של 3.7 נסגר ב-3.7 (2026-10-10, החלטת המשתמשת): `booking_cancelled_pinned` היא עכשיו "זיכוי" (גם ביטול חוזר של הרשמה ממומנת מזיכוי), ו-`booking_cancelled_refund` חדשה לבקשת החזר; שתיהן רק עם `{date}`.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-12-notification-core.md`
   target: 5.8
@@ -394,6 +394,7 @@
   target: 3.7
   summary: בסכום של בית האדמין להוסיף את שורת "החזרים שבוצעו ({n})" ולחשב את `net_agorot` פחות ההחזרים ב-`admin_get_home`, ולהוסיף את חלק "בקשות החזר פתוחות" ואת פריט בקשת ההחזר ב-`admin_get_attention_items`.
   evidence: ב-4.1 אין טבלת החזרים, ולכן `net_agorot = approved_agorot` ואין שורת החזרים (spec 4.1, Always ו-Never).
+  status: נסגר ב-3.7 (2026-10-10). ‏`admin_get_home.totals` מחזיר `refunded_count` ו-`refunded_agorot` (החזרים שהושלמו בחודש המקומי) ו-`net_agorot` פחות ההחזרים, ושורת "החזרים שבוצעו ({n})" מוצגת תמיד; ‏`open_refunds` והחלק "בקשות החזר פתוחות" בבית; פריט `refund_requested` ב"לטיפול". נבדק ב-`supabase/tests/admin-home.test.ts`.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-4-1-admin-home-and-attention-items.md`
   target: 4.2
@@ -410,6 +411,7 @@
   target: 3.7
   summary: ‏`private.job_complete_events` מדלגת על הקצאה מזיכוי (`booking_allocations.credit_id`). כשזיכויים נבנים, סיום מפגש צריך לסמן את הזיכוי שמימן את ההרשמה כמנוצל (`used`), עם בדיקה.
   evidence: ביקורת 3.12 (blind). היום אין זיכויים, ולכן אין הקצאה כזו.
+  status: נסגר ב-3.7 (2026-10-10). ‏`private.job_complete_events` נועלת את הזיכויים של ההרשמות (אחרי הזכויות, `skip locked`; זיכוי נעול מכשיל רק את המפגש הזה, שנסגר בהרצה הבאה) ומסמנת זיכוי שמימן הרשמה שהסתיימה כ-`used`, עם יומן. נבדק ב-`supabase/tests/session-completion.test.ts` וב-`supabase/tests/cancellation-credits.test.ts`.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-12-session-completion-job.md`
   target: 4.9
@@ -514,3 +516,13 @@
   target: 5.20 (יישור), 6.1 (בדיקה)
   summary: שמות חלק מקובצי המיגרציה ב-`supabase/migrations/` לא תואמים לגרסה שנרשמה ב-`supabase_migrations.schema_migrations` במסד. לא משנים שמות עכשיו (החלטת המשתמשת 2026-10-10). לפני הקמת פרויקט ה-production צריך ליישר, כדי ש-`supabase db push` או הרצה מסודרת של המיגרציות יעבדו.
   evidence: נמצא בתכנון 5.19 (spec 5.19, החלטות המשתמשת 2026-10-10).
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-7-cancellation-credits-and-refund-requests.md`
+  target: 3.8
+  summary: שינוי תאריך, שעה או סגירת הרשמה של מפגש (`admin_update_event`, מותר כשאין בו הרשמות) לא מרענן את הזיכויים שהמפגש הוא חלופה פעילה שלהם. חלופה יכולה לזוז לפני המפגש שבוטל, או להיסגר בלי שהזיכוי יתקדם.
+  evidence: ביקורת 3.7 (blind-hunter). ‏`admin_update_event` מרענן זיכויים רק בשינוי מכסה. שינוי מפגש (`event_changed`) נבנה ב-3.8, ושם צריך לרענן חלופות ולהחליף חלופה שזזה לפני `origin_starts_at`.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-7-cancellation-credits-and-refund-requests.md`
+  target: 5.10
+  summary: למסלול `CREDIT_LOCKED` ב-`private.job_complete_events` אין בדיקה: זיכוי שנעול בעסקה אחרת מכשיל את הסיום של אותו מפגש, והמפגש נסגר בהרצה הבאה.
+  evidence: ביקורת 3.7 (verification-gap). צריך שני חיבורים שעושים commit, כמו בדיקות המקביליות של ההרשמה.

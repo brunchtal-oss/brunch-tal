@@ -162,7 +162,12 @@ export function ManualBooking({
     <div className="flex flex-col gap-4">
       <p className="rounded-xl bg-muted px-4 py-3 text-[15px] font-semibold">
         <bdi>
-          {copy.willUse(preview.productName, formatDayMonth(preview.expiresOn))}
+          {preview.source === "credit" || preview.expiresOn === null
+            ? copy.willUseCredit(preview.productName)
+            : copy.willUse(
+                preview.productName,
+                formatDayMonth(preview.expiresOn)
+              )}
         </bdi>
       </p>
       {error && (

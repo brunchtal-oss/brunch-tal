@@ -32,8 +32,11 @@ const EMPTY_HOME: HomeData = {
     period_end: "2026-10-06",
     approved_count: 0,
     approved_agorot: 0,
+    refunded_count: 0,
+    refunded_agorot: 0,
     net_agorot: 0,
   },
+  open_refunds: [],
 }
 
 beforeEach(() => {

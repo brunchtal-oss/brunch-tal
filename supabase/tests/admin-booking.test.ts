@@ -259,6 +259,7 @@ describe("Tal books a customer", () => {
         ok: true,
         product_name: expect.stringContaining("card"),
         expires_on: f.expiresOn,
+        source: "entitlement",
         occupied: 0,
         capacity: 12,
       })
@@ -359,6 +360,7 @@ describe("Tal books a customer", () => {
         ok: true,
         product_name: entitlement.product,
         expires_on: entitlement.expiresOn,
+        source: "entitlement",
         occupied: 0,
         capacity: 14,
       })

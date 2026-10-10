@@ -32,11 +32,9 @@ export type MyEntitlement = {
   validityDays: number | null
   pinnedEventId: string | null
   paymentId: string
-  // Story 3.6: a pinned entry that returned after a cancelled booking, and
-  // whether it still waits for the next sessions (then expiresOn is
-  // provisional and is never shown).
-  returned: boolean
-  awaitingSessions: boolean
+  // Story 3.7: the status of the credit a cancelled pinned booking of this
+  // purchase became (active, used, refund_requested, refunded), or null.
+  creditStatus: string | null
 }
 
 const KINDS: readonly EntitlementKind[] = ["card", "single", "intro", "couple"]
@@ -91,8 +89,7 @@ export function parseMyEntitlements(data: unknown): MyEntitlement[] {
         validityDays: validity !== null && validity > 0 ? validity : null,
         pinnedEventId: str(r.pinned_event_id),
         paymentId,
-        returned: r.returned === true,
-        awaitingSessions: r.awaiting_sessions === true,
+        creditStatus: str(r.credit_status),
       },
     ]
   })
@@ -152,27 +149,29 @@ export function isHomeCard(e: MyEntitlement): boolean {
 }
 
 /**
- * Story 3.6: a pinned entry that returned to her after a cancelled booking
- * and still has a free entry (available > 0), shown on home under its own
- * heading; once that entry is booked again it shows as the booking only.
+ * Story 3.7: the chip of a pinned purchase whose booking was cancelled (in
+ * the purchase history): a credit, or a refund request (also once
+ * refunded, until 3.9 adds its own word); null otherwise.
  */
-export function isHomeReturned(e: MyEntitlement): boolean {
-  return (
-    e.kind !== "card" &&
-    e.returned &&
-    e.pinnedEventId === null &&
-    e.available > 0 &&
-    isOpen(e)
-  )
+export function creditChip(
+  e: Pick<MyEntitlement, "creditStatus">
+): string | null {
+  if (e.creditStatus === null) return null
+  return e.creditStatus === "refund_requested" || e.creditStatus === "refunded"
+    ? customerCopy.creditChip.refund
+    : customerCopy.creditChip.credit
 }
 
-/** No session ahead, no active card and no returned entry: the empty-state. */
+/**
+ * No session ahead, no active card and no credit to book with: the
+ * empty-state.
+ */
 export function isEmptyHome(
   upcomingCount: number,
   cardCount: number,
-  returnedCount = 0
+  creditCount = 0
 ): boolean {
-  return upcomingCount === 0 && cardCount === 0 && returnedCount === 0
+  return upcomingCount === 0 && cardCount === 0 && creditCount === 0
 }
 
 /** The purchase history's order: newest purchase first (display only). */

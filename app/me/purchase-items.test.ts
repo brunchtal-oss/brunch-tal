@@ -4,10 +4,10 @@ import { customerCopy } from "@/lib/copy/customer"
 
 import {
   byPaidOnDesc,
+  creditChip,
   entitlementName,
   isEmptyHome,
   isHomeCard,
-  isHomeReturned,
   isOpen,
   parseMyEntitlements,
   pastStatus,
@@ -64,8 +64,7 @@ describe("parseMyEntitlements", () => {
         validityDays: 49,
         pinnedEventId: null,
         paymentId: "pay-1",
-        returned: false,
-        awaitingSessions: false,
+        creditStatus: null,
       },
     ])
   })
@@ -175,38 +174,25 @@ describe("isEmptyHome", () => {
   })
 })
 
-describe("isHomeReturned (story 3.6)", () => {
-  const returned = {
-    kind: "single",
-    original_units: 1,
-    available: 1,
-    returned: true,
-  }
+describe("creditChip (story 3.7)", () => {
   it.each([
-    ["a returned single with its entry", returned, true],
-    ["a waiting one", { ...returned, awaiting_sessions: true }, true],
-    [
-      "booked again (no free entry)",
-      { ...returned, available: 0, reserved: 1 },
-      false,
-    ],
-    [
-      "a pinned single not cancelled",
-      { kind: "single", pinned_event_id: "ev-1", available: 0, reserved: 1 },
-      false,
-    ],
-    ["a card", { returned: true }, false],
-  ] as const)("%s", (_label, change, expected) => {
-    expect(isHomeReturned(entitlement(change))).toBe(expected)
+    ["no credit", null, null],
+    ["a credit", "active", customerCopy.creditChip.credit],
+    ["a used credit", "used", customerCopy.creditChip.credit],
+    ["a refund request", "refund_requested", customerCopy.creditChip.refund],
+    ["a refunded one", "refunded", customerCopy.creditChip.refund],
+  ] as const)("%s", (_label, status, expected) => {
+    expect(creditChip({ creditStatus: status })).toBe(expected)
   })
 
-  it("parses returned and awaiting_sessions", () => {
-    expect(entitlement({ ...returned, awaiting_sessions: true })).toMatchObject(
-      {
-        returned: true,
-        awaitingSessions: true,
-      }
-    )
+  it("parses credit_status", () => {
+    expect(entitlement({ credit_status: "active" })).toMatchObject({
+      creditStatus: "active",
+    })
+    expect(customerCopy.creditChip).toEqual({
+      credit: "הומרה לזיכוי",
+      refund: "בקשת החזר",
+    })
   })
 })
 
