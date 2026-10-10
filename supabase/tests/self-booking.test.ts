@@ -204,7 +204,7 @@ describe("booking a session with a card", () => {
   it("a card with 4, a Monday in its validity: one booking, reserve -1, 3 available and 1 reserved, an audit row and one notification", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)
-      const day = await localDay(db, 1, 2)
+      const day = await localDay(db, 1, 3)
       const eventId = await insertEvent(db, f, { day })
 
       const preview = await as<Record<string, unknown>>(
@@ -340,7 +340,7 @@ describe("refusals keep no place and take no entry", () => {
       const f = await seed(db)
       // allowed_weekdays null, like the seeded card after card_every_weekday.
       const card = await insertEntitlement(db, f, { customer: f.customerB })
-      const sunday = await insertEvent(db, f, { day: await localDay(db, 0, 2) })
+      const sunday = await insertEvent(db, f, { day: await localDay(db, 0, 3) })
       await as(db, f.customerB, BOOK, [sunday, randomUUID()])
       expect(await bookingsOf(db, sunday)).toHaveLength(1)
       expect(await movementsOf(db, card.id)).toHaveLength(2)
@@ -356,13 +356,13 @@ describe("refusals keep no place and take no entry", () => {
         "update public.entitlements set allowed_weekdays = '{1,4}' where id = $1",
         [f.entitlement]
       )
-      const sunday = await insertEvent(db, f, { day: await localDay(db, 0, 2) })
+      const sunday = await insertEvent(db, f, { day: await localDay(db, 0, 3) })
       const couple = await insertEvent(db, f, {
-        day: await localDay(db, 1, 2),
+        day: await localDay(db, 1, 3),
         kind: "couple",
         capacity: 14,
       })
-      const monday = await insertEvent(db, f, { day: await localDay(db, 1, 2) })
+      const monday = await insertEvent(db, f, { day: await localDay(db, 1, 3) })
 
       for (const [customer, eventId] of [
         [f.customerA, sunday],
@@ -383,7 +383,7 @@ describe("refusals keep no place and take no entry", () => {
     await inRollback(async (db) => {
       const f = await seed(db)
       const eventId = await insertEvent(db, f, {
-        day: await localDay(db, 1, 2),
+        day: await localDay(db, 1, 3),
       })
       await as(db, f.customerA, BOOK, [eventId, randomUUID()])
 
@@ -401,7 +401,7 @@ describe("refusals keep no place and take no entry", () => {
   it("closed or draft -> REGISTRATION_CLOSED / EVENT_NOT_BOOKABLE", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)
-      const day = await localDay(db, 1, 2)
+      const day = await localDay(db, 1, 3)
       const closed = await insertEvent(db, f, { day, closed: true })
       const draft = await insertEvent(db, f, { day, status: "draft" })
 
@@ -428,7 +428,7 @@ describe("refusals keep no place and take no entry", () => {
     await inRollback(async (db) => {
       const f = await seed(db)
       const eventId = await insertEvent(db, f, {
-        day: await localDay(db, 1, 2),
+        day: await localDay(db, 1, 3),
         capacity: 3,
       })
       await fill(db, f, eventId, 3)
@@ -512,7 +512,7 @@ describe("funding rules (plan_funding)", () => {
         eligibleKind: "couple",
       })
       const couple = await insertEvent(db, f, {
-        day: await localDay(db, 1, 2),
+        day: await localDay(db, 1, 3),
         kind: "couple",
         capacity: 14,
       })
@@ -530,7 +530,7 @@ describe("funding rules (plan_funding)", () => {
   it("a pinned entitlement is never chosen in self mode, for its own session or another", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)
-      const day = await localDay(db, 1, 2)
+      const day = await localDay(db, 1, 3)
       const pinnedEvent = await insertEvent(db, f, { day })
       const other = await insertEvent(db, f, { day })
       const pinned = await insertEntitlement(db, f, {
@@ -557,7 +557,7 @@ describe("funding rules (plan_funding)", () => {
     await inRollback(async (db) => {
       const f = await seed(db)
       const couple = await insertEvent(db, f, {
-        day: await localDay(db, 1, 2),
+        day: await localDay(db, 1, 3),
         kind: "couple",
         capacity: 14,
       })
@@ -591,7 +591,7 @@ describe("funding rules (plan_funding)", () => {
         days: 30,
       })
       const eventId = await insertEvent(db, f, {
-        day: await localDay(db, 1, 2),
+        day: await localDay(db, 1, 3),
       })
 
       expect(
@@ -616,7 +616,7 @@ describe("the booking's own cancel window (AD-15, AD-20)", () => {
     await inRollback(async (db) => {
       const f = await seed(db)
       const eventId = await insertEvent(db, f, {
-        day: await localDay(db, 1, 2),
+        day: await localDay(db, 1, 3),
       })
       await as(db, f.customerA, BOOK, [eventId, randomUUID()])
       await db.query(
@@ -668,7 +668,7 @@ describe("book_core input", () => {
     await inRollback(async (db) => {
       const f = await seed(db)
       const eventId = await insertEvent(db, f, {
-        day: await localDay(db, 1, 2),
+        day: await localDay(db, 1, 3),
       })
       for (const sources of [
         [{ kind: "entitlement", id: f.entitlement }],
@@ -694,7 +694,7 @@ describe("idempotency", () => {
     await inRollback(async (db) => {
       const f = await seed(db)
       const eventId = await insertEvent(db, f, {
-        day: await localDay(db, 1, 2),
+        day: await localDay(db, 1, 3),
       })
       const key = randomUUID()
       const first = await as(db, f.customerA, BOOK, [eventId, key])
@@ -715,7 +715,7 @@ describe("availability labels", () => {
   it("5 / 4 / 0 free -> available / last_places / full; a couple session with 1 free -> full; never a number", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)
-      const day = await localDay(db, 1, 2)
+      const day = await localDay(db, 1, 3)
       const five = await insertEvent(db, f, { day })
       const four = await insertEvent(db, f, { day })
       const none = await insertEvent(db, f, { day })
@@ -778,7 +778,7 @@ describe("permissions", () => {
     await inRollback(async (db) => {
       const f = await seed(db)
       const eventId = await insertEvent(db, f, {
-        day: await localDay(db, 1, 2),
+        day: await localDay(db, 1, 3),
       })
       for (const user of [f.admin, randomUUID()]) {
         expect(
@@ -796,7 +796,7 @@ describe("permissions", () => {
     await inRollback(async (db) => {
       const f = await seed(db)
       const eventId = await insertEvent(db, f, {
-        day: await localDay(db, 1, 2),
+        day: await localDay(db, 1, 3),
       })
       await as(db, f.customerA, BOOK, [eventId, randomUUID()])
       await fill(db, f, eventId, 1)

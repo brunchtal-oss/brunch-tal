@@ -97,6 +97,8 @@ context:
 
 ## Implementation Notes
 
+- 2026-10-10, ‏`test:db` (באישור המשתמשת): 772 עברו, 2 נכשלו ב-`self-booking.test.ts`. הבדיקה קבעה מפגש ב"יום שני הראשון מהיום + 2" ב-10:00, ובשבת אחרי 10:00 הוא פחות מ-48 שעות קדימה (‏`can_self_cancel` ‏false). תלוי בשעה, לא בשינוי הזה. תוקן באישור המשתמשת: ‏`localDay(db, d, 3)` בכל הקובץ (לפחות 58 שעות קדימה). הקובץ עובר (21).
+
 ## Spec Change Log
 
 - 2026-10-10, ביקורת סבב 1 (ממצא R1): ה-Code Map ביקש `formatWeekdayDayMonth` חדש, אבל `formatSessionDate` ב-`lib/time.ts` זהה לו ונבדק. תוקן: `sessionDay` מוחלף ב-`formatSessionDate` הקיים (`hhmm` נשאר `formatClockTime`) (ובעותקים נוספים: `sessions/book/page.tsx`, ‏`lib/server/privileged/join.ts`, הגוף של `dayText`), ו-`formatWeekdayDayMonth` נמחק. המצב הרע שנמנע: עותק מיוצא נוסף בתוך ניקוי כפילויות. KEEP: כל שאר המימוש. חריגה מה-workflow: תיקון ממוקד במקום revert ובנייה מחדש, כי הטעות היא פונקציה אחת שמוחלפת בקיימת.
