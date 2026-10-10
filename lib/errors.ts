@@ -100,6 +100,11 @@ export const ERROR_MESSAGES = {
   // close; detail.field is title | body.
   TEMPLATE_INVALID:
     "בנוסח יש שדה שלא קיים בהתראה הזו או סוגריים שלא נסגרו. אפשר להוסיף שדות רק מהרשימה",
+  // Concepts (story 4.8): deleting a concept that has sessions (archiving is
+  // the way out), and a name another concept already has (archived too).
+  CONCEPT_IN_USE:
+    "יש לקונספט מפגשים, ולכן אי אפשר למחוק אותו. אפשר להעביר אותו לארכיון.",
+  CONCEPT_NAME_TAKEN: "כבר יש קונספט בשם הזה",
   // Raised by the adapter (never by SQL).
   INVALID_CREDENTIALS: "המייל או הסיסמה לא תואמים",
   // Correct password, but no active customer profile and not an admin.

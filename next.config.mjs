@@ -72,6 +72,13 @@ const nextConfig = {
 
   async headers() {
     return [
+      // Story 5.15 (moved forward, user decision 2026-10-10): the site is
+      // open without the lock but kept out of search engines until the
+      // launch (6.9), with app/robots.ts.
+      {
+        source: "/:path*",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
       // Token routes (AD-16): no referrer leaks the token, nothing is cached.
       {
         source: "/reset/:path*",

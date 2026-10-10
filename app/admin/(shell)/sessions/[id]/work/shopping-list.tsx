@@ -3,7 +3,15 @@
 import { useId, useState } from "react"
 import { PencilIcon } from "lucide-react"
 
+import {
+  DeleteStep,
+  ErrorNotice,
+  MoveButtons,
+  TextForm,
+  WorkPanel,
+} from "@/components/admin/edit-kit"
 import { whatsappShareHref } from "@/components/admin/link-share"
+import { useAnnounce, useWorkAction } from "@/components/admin/use-work-action"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
@@ -21,14 +29,6 @@ import {
   updateShoppingItemAction,
 } from "./actions"
 import { shoppingMessage, whatsappBlockedReason } from "./shopping-message"
-import { useAnnounce, useWorkAction } from "./use-work-action"
-import {
-  DeleteStep,
-  ErrorNotice,
-  MoveButtons,
-  TextForm,
-  WorkPanel,
-} from "./work-parts"
 import {
   itemLines,
   itemLinesProblem,
