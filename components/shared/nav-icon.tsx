@@ -9,6 +9,7 @@ import {
   PackageIcon,
   ReceiptTextIcon,
   SettingsIcon,
+  StickyNoteIcon,
   UserRoundIcon,
   UsersRoundIcon,
 } from "lucide-react"
@@ -29,6 +30,7 @@ const ICONS = {
   products: PackageIcon,
   content: FileTextIcon,
   settings: SettingsIcon,
+  notes: StickyNoteIcon,
 } satisfies Record<NavIconKey, unknown>
 
 // Decorative: the item's label is always visible next to it.
