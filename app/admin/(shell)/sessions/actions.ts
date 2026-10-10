@@ -1,10 +1,10 @@
 "use server"
 
 import type { ActionResult } from "@/lib/errors"
+import { isPlainObject } from "@/lib/form-values"
 import { callRpc } from "@/lib/rpc"
 import { deletePublicMedia, publishMedia } from "@/lib/server/privileged/media"
 import { createClient } from "@/lib/supabase/server"
-import type { Json } from "@/lib/supabase/database.types"
 
 import { parseBookPreview, type BookPreview } from "./[id]/book/preview"
 
@@ -16,15 +16,6 @@ import { parseBookPreview, type BookPreview } from "./[id]/book/preview"
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const DATE = /^\d{4}-\d{2}-\d{2}$/
 const TIME = /^([01]\d|2[0-3]):[0-5]\d$/
-
-function isPlainObject(value: unknown): value is Record<string, Json> {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    !Array.isArray(value) &&
-    Object.keys(value).length > 0
-  )
-}
 
 export async function createEventAction(input: {
   event: Record<string, unknown>

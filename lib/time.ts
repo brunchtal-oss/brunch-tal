@@ -94,6 +94,14 @@ export function formatWeekday(value: DateInput): string {
   return parts(value, "he-IL", { weekday: "long" }).weekday
 }
 
+/**
+ * "10:30": a Postgres `time` column ("HH:MM:SS") as the forms and screens
+ * use it. Not an instant: for an instant use formatTime.
+ */
+export function formatClockTime(time: string): string {
+  return time.slice(0, 5)
+}
+
 /** "ב׳ 12.10": the weekday letter and DD.MM (the work sheet's days). */
 export function formatShortDay(value: DateInput): string {
   const { weekday } = parts(value, "he-IL", { weekday: "narrow" })
@@ -108,7 +116,8 @@ export function formatSessionDateTime(value: DateInput): string {
 /**
  * "יום שני 12.10": a session's weekday and date without the time (design
  * round, user decision 2026-10-08: the brunch time shows only where it
- * serves the customer).
+ * serves the customer). The admin's brunch details never show the time
+ * either (user decision 2026-10-05).
  */
 export function formatSessionDate(value: DateInput): string {
   return `${formatWeekday(value)} ${formatDayMonth(value)}`

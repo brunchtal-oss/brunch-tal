@@ -15,7 +15,7 @@ import { errorMessage } from "@/lib/errors"
 import { callRpc } from "@/lib/rpc"
 import { getJoinTokenView } from "@/lib/server/privileged/join"
 import { createClient } from "@/lib/supabase/server"
-import { formatLocalDate } from "@/lib/time"
+import { localToday } from "@/lib/time"
 
 import { ClaimJoin, ClaimScreen, ExistingAccountLogin } from "./claim-join"
 import { JoinForm } from "./join-form"
@@ -176,7 +176,7 @@ async function JoinFormContent({
   // One idempotency key per page load (AD-5), sent with every attempt.
   const idempotencyKey = randomUUID()
   // Only the date picker's upper bound; join_complete checks the local today.
-  const today = formatLocalDate(new Date())
+  const today = localToday()
 
   return (
     <JoinForm

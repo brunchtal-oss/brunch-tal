@@ -1,9 +1,9 @@
 "use server"
 
 import type { ActionResult } from "@/lib/errors"
+import { isPlainObject } from "@/lib/form-values"
 import { callRpc } from "@/lib/rpc"
 import { createClient } from "@/lib/supabase/server"
-import type { Json } from "@/lib/supabase/database.types"
 
 // The product catalog (story 2.6). Every RPC runs with the admin's own
 // session (private.is_admin() inside, AD-4) and checks every value again;
@@ -15,15 +15,6 @@ const MAX_REASON = 500
 // The generated Args type marks every parameter as non-null; an empty
 // reason is sent as null.
 const NONE = null as unknown as string
-
-function isPlainObject(value: unknown): value is Record<string, Json> {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    !Array.isArray(value) &&
-    Object.keys(value).length > 0
-  )
-}
 
 export async function createProductAction(input: {
   product: Record<string, unknown>

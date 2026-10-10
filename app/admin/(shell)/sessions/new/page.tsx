@@ -5,6 +5,7 @@ import { PageHeading } from "@/components/shared/page-heading"
 import { adminCopy } from "@/lib/copy/admin"
 import { shellCopy } from "@/lib/copy/shell"
 import { createClient } from "@/lib/supabase/server"
+import { formatClockTime } from "@/lib/time"
 
 import type { ConceptOption } from "../session-draft"
 import { SessionCreateForm } from "./session-create-form"
@@ -65,8 +66,8 @@ async function NewSessionContent() {
       timeDefaults={
         settings.data
           ? {
-              start: hhmm(settings.data.default_session_start_time),
-              end: hhmm(settings.data.default_session_end_time),
+              start: formatClockTime(settings.data.default_session_start_time),
+              end: formatClockTime(settings.data.default_session_end_time),
             }
           : null
       }
@@ -74,15 +75,12 @@ async function NewSessionContent() {
         settings.data
           ? {
               daysBefore: settings.data.registration_close_days_before,
-              time: hhmm(settings.data.registration_close_local_time),
+              time: formatClockTime(
+                settings.data.registration_close_local_time
+              ),
             }
           : null
       }
     />
   )
-}
-
-// Postgres time arrives as "HH:MM:SS"; the form and the rule use "HH:MM".
-function hhmm(time: string): string {
-  return time.slice(0, 5)
 }
