@@ -1616,6 +1616,17 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_list_audit: {
+        Args: {
+          p_before_created_at?: string
+          p_before_id?: string
+          p_customer_id?: string
+          p_event_id?: string
+          p_from?: string
+          p_to?: string
+        }
+        Returns: Json
+      }
       admin_list_bookable_events: { Args: never; Returns: Json }
       admin_list_customers: { Args: { p_query: string }; Returns: Json }
       admin_list_links: { Args: never; Returns: Json }

@@ -514,3 +514,7 @@
   target: 5.20 (יישור), 6.1 (בדיקה)
   summary: שמות חלק מקובצי המיגרציה ב-`supabase/migrations/` לא תואמים לגרסה שנרשמה ב-`supabase_migrations.schema_migrations` במסד. לא משנים שמות עכשיו (החלטת המשתמשת 2026-10-10). לפני הקמת פרויקט ה-production צריך ליישר, כדי ש-`supabase db push` או הרצה מסודרת של המיגרציות יעבדו.
   evidence: נמצא בתכנון 5.19 (spec 5.19, החלטות המשתמשת 2026-10-10).
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-4-5-audit-log-viewer.md`
+  summary: The audit log cannot answer Flow 9 ("why did a customer's balance change") directly: `book_session`/`cancel_booking` audit the bookings row without units or the charged entitlement, and `entitlement_movements` are not audited, so the viewer shows that a booking or cancel happened but not which card or how many units moved.
+  evidence: Intent-alignment review of story 4.5; 4.5 forbids changing `private.audit` or any writer. Settle by deciding whether writers record the movement (units, entitlement) in `after`.

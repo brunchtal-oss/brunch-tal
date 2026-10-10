@@ -4,6 +4,7 @@ import {
   CreditCardIcon,
   EllipsisIcon,
   FileTextIcon,
+  HistoryIcon,
   HouseIcon,
   Link2Icon,
   PackageIcon,
@@ -31,6 +32,7 @@ const ICONS = {
   content: FileTextIcon,
   settings: SettingsIcon,
   notes: StickyNoteIcon,
+  audit: HistoryIcon,
 } satisfies Record<NavIconKey, unknown>
 
 // Decorative: the item's label is always visible next to it.
