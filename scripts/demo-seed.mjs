@@ -38,7 +38,13 @@ import {
   SESSIONS,
   WORK_SHEET,
 } from "./demo-cast.mjs"
-import { addDays, demoKey, isUuid, planDates } from "./demo-plan.mjs"
+import {
+  addDays,
+  createStep,
+  demoKey,
+  isUuid,
+  planDates,
+} from "./demo-plan.mjs"
 import { devRef } from "./dev-guard.mjs"
 
 if (existsSync(".env.local")) process.loadEnvFile(".env.local")
@@ -170,8 +176,6 @@ function newState() {
   return { generation: randomUUID(), anchor, items: {} }
 }
 
-let created = 0
-let existing = 0
 const warnings = []
 
 function warn(message) {
@@ -179,23 +183,20 @@ function warn(message) {
   console.log(`אזהרה: ${message}`)
 }
 
-// One demo item: skipped when the state file already has it; otherwise run
-// with its idempotency key and recorded right away. fn may return undefined
-// to skip the item without recording it (it is tried again next time).
-async function step(itemKey, label, fn) {
-  if (state.items[itemKey] !== undefined) {
-    existing++
-    console.log(`כבר קיים: ${label}`)
-    return state.items[itemKey]
-  }
-  const result = await fn(demoKey(state.generation, itemKey))
-  if (result === undefined) return undefined
-  state.items[itemKey] = result
-  saveState()
-  created++
-  console.log(`נוצר: ${label}`)
-  return result
+// One demo item (createStep in demo-plan.mjs), bound to the state once main
+// has settled it (the state is not replaced after that).
+let stepper = null
+
+function bindStep() {
+  stepper = createStep({
+    state,
+    save: saveState,
+    keyOf: (itemKey) => demoKey(state.generation, itemKey),
+    log: (message) => console.log(message),
+  })
 }
+
+const step = (itemKey, label, fn) => stepper.step(itemKey, label, fn)
 
 const eventId = (key) => state.items[`event:${key}`]?.event_id ?? null
 const customerId = (key) => state.items[`join:${key}`]?.customer_id ?? null
@@ -389,6 +390,7 @@ async function main() {
       }
     }
 
+    bindStep()
     const plan = planDates(state.anchor)
     if (!plan.ok) fail(`${PLAN_REFUSALS[plan.reason]} לא בוצע שום שינוי.`)
     const today = plan.today
@@ -773,7 +775,9 @@ async function main() {
     const joined = CUSTOMERS.filter((c) => customerId(c.key))
 
     console.log("")
-    console.log(`סיכום: ${created} נוצרו עכשיו, ${existing} כבר היו.`)
+    console.log(
+      `סיכום: ${stepper.counts.created} נוצרו עכשיו, ${stepper.counts.existing} כבר היו.`
+    )
     const cancelled = Object.keys(items).filter((k) => k.startsWith("cancel:")).length
     console.log(
       `מפגשים: ${sessionsCount}. הרשמות: ${pinned + adminBooked + selfBooked}, מהן ${cancelled} בוטלו.`

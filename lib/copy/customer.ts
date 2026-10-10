@@ -73,7 +73,6 @@ export const customerCopy = {
   // Also the tab's label (shellCopy.nav.customerSessions, user decision
   // 2026-10-06).
   sessionsTitle: "לו״ז בראנצ׳ים",
-  sessionsSoon: "המפגשים יופיעו כאן בקרוב",
   // Self-booking (story 3.2, wording approved by the user on 2026-10-04).
   // The session title; never a regular/couple label for the customer.
   brunch: "בראנץ׳",
@@ -88,7 +87,8 @@ export const customerCopy = {
   booked: "נרשמת",
   withBabies: { regular: "מגיעות עם התינוקות", couple: "מגיעים עם התינוקות" },
   // Also the confirm button of both booking sheets; no self-cancel deadline
-  // is shown (user decision 2026-10-05, the cancel button comes in 3.6).
+  // is shown (user decision 2026-10-05; the self-cancel came in 3.6, see
+  // cancel below).
   book: "להרשמה",
   registered: "את רשומה למפגש הזה.",
   // A completed session with her booking (story 3.12), after EVENT_COMPLETED.

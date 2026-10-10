@@ -144,6 +144,7 @@
   target: 3.4
   summary: הסינון של רשימת `/admin/sessions` (טיוטות ומפגשים שפורסמו ועוד לא התחילו) לא נבדק בבדיקה. בנוסף, מפגש שבוטל או הסתיים נפתח ב-`/[id]/edit` עם שדות עריכה שכל שמירה בהם נכשלת. ‏3.4 (פרטי מפגש) מחליט מה מוצג למפגש עבר, מבוטל או שהסתיים, ומוסיף בדיקה לסינון.
   evidence: ביקורת 3.1, verification-gap ו-blind-hunter. היום אין מפגש מבוטל או שהסתיים (3.8, ‏3.12), ואין בפרויקט בדיקות של שאילתות בעמודים.
+  status: נסגר, אומת ב-5.19 (2026-10-10). הסינון הוא `sessionsListFilter` ונבדק ב-`app/admin/(shell)/sessions/load-session.test.ts`. מפגש שבוטל, הסתיים או שעבר זמנו לא נפתח לעריכה: `/[id]/edit` מפנה לעמוד המפגש לפי `isReadOnlySession`, שנבדק באותו קובץ.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-2-public-pages-static.md`
   target: 5.16
@@ -306,6 +307,7 @@
   target: 5.19
   summary: ‏`npm run build` בלי `.env*` נכשל ב-prerender של `/contact` ("Supabase public client is not configured"), כי קוראי התוכן במטמון (5.2) יוצרים את הלקוח הציבורי בזמן הבנייה. ה-CI לא מריץ build, וב-Vercel יש משתנים, ולכן זה לא חוסם פריסה. צריך להחליט: לקרוא בלי לזרוק כשאין הגדרה, או לוותר על ה-AC הזה.
   evidence: ‏build ב-worktree של 5.16 אחרי הסרה זמנית של `.env.local` (2026-10-05). העמודים של 5.16 דינמיים ולא נכשלו.
+  status: נסגר ב-5.19 (2026-10-10, החלטת המשתמשת): מוותרים על הדרישה של 1.2, בלי שינוי קוד. הגדרה חסרה בפרודקשן צריכה להיכשל בקול ולא להציג אתר ריק. ה-README מציין ש-`npm run build` צריך `.env.local`.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-16-public-session-pages.md`
   target: 5.4
@@ -489,22 +491,26 @@
   target: 5.19
   summary: אין בדיקת unit לבניית ה-SQL של `demo-clear` (סדר המחיקה, `replica` רק סביב `entitlement_movements`, בדיקת השמירה לפני כל מחיקה, ואדמינים שלא נכנסים לקובץ) ולדילוג של `step()` בהרצה חוזרת. כדאי להוציא `buildClearSql(ids, mode)` לפונקציה טהורה ולבדוק אותה.
   evidence: ביקורת 5.18 (verification-gap ו-blind). כרגע זה נבדק רק בהרצה ידנית מול הפיתוח. העסקה האחת מגבילה את הנזק.
+  status: נסגר ב-5.19 (2026-10-10). ‏`buildClearSql(ids, mode, now)` ב-`scripts/demo-clear-sql.mjs` (טהורה) נבדקת ב-`test/demo-clear.test.ts`: פלט זהה מילה במילה לקוד הקודם, סדר, `replica`, רשימה ריקה, מזהה לא חוקי, ושגיאה כשאדמין ברשימת מחיקה. ‏`createStep` ב-`scripts/demo-plan.mjs` נבדקת ב-`test/demo-plan.test.ts`.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-18-demo-data.md`
   target: 5.18 חלק ב׳
   summary: אין בדיקה שהקאסט ב-`scripts/demo-cast.mjs` תואם לתסריט: שכל מפתח ב-`ADMIN_BOOKINGS`, ‏`NOTES`, ‏`CONFLICT` ו-`SELF_*` קיים, ש-E5 יוצא 10 מתוך 12, ושלמאיה נשארת כניסה פנויה.
   evidence: ביקורת 5.18 (verification-gap). שינוי בקאסט עובר את כל הבדיקות ומשנה את מה שהמבקרים יראו. הבדיקה בטלפון מכסה עד אז.
+  status: נסגר ב-5.19 (2026-10-10, החלטת המשתמשת: נכנס ל-5.19, וחלק ב׳ נשאר בלי קוד). ‏`test/demo-cast.test.ts`.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-18-demo-data.md`
   target: 5.19
   summary: ‏`scripts/dev-seed-media.mjs` קורא `admin.auth.signOut()` עם ברירת המחדל `scope: 'global'`, ולכן כל הרצה שלו מנתקת את אדמין הפיתוח בכל המכשירים. התיקון: `signOut({ scope: "local" })`, כמו ב-`demo-seed.mjs`.
   evidence: ביקורת 5.18 מצאה את זה ב-`demo-seed.mjs`. אותה שורה קיימת ב-`dev-seed-media.mjs:369`, וה-spec של 5.18 אוסר לערוך אותו.
-- source_spec: `_bmad-output/implementation-artifacts/spec-design-round-ui-consistency.md`
-  summary: The admin customer card's entry lines do not match the customer's movement log (no "בוטלה" rows, no per-booking rows for single and couple entitlements).
-  evidence: Memlog 2026-10-08 says the admin card detail looks the same in third person; card-items.ts entryLines shows entry slots (used/booked/free) only.
-  target: 4.3 (תוכנית ההשלמה 2026-10-10)
+  status: נסגר ב-5.19 (2026-10-10). ‏`signOut({ scope: "local" })`, ובדיקת פרויקט הפיתוח היא עכשיו `devRef` המשותף מ-`scripts/dev-guard.mjs` (נבדק ב-`test/dev-guard.test.ts`).
 
-- source_spec: `_bmad-output/implementation-artifacts/completion-plan-2026-10-10.md`
+- source_spec: `_bmad-output/implementation-artifacts/spec-design-round-ui-consistency.md`
+  target: 4.3 (תוכנית ההשלמה 2026-10-10)
+  summary: שורות הכניסות בכרטיס הלקוחה באדמין לא תואמות ליומן התנועות של הלקוחה: אין שורות "בוטלה", ואין שורה לכל הרשמה בזכות בודדת או זוגית.
+  evidence: ב-memlog מ-2026-10-08 כתוב שפירוט הכרטיסייה באדמין נראה אותו דבר, בגוף שלישי. ‏`entryLines` ב-`card-items.ts` מציג רק משבצות כניסה (נוצלה, רשומה, פנויה).
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-19-demo-refactor-sweep.md`
   target: 5.20 (יישור), 6.1 (בדיקה)
-  summary: הרבה קבצים ב-`supabase/migrations` נקראים בגרסה שונה מזו שרשומה ב-`supabase_migrations.schema_migrations`, כי `apply_migration` של ה-MCP נותן גרסה משלו. ‏5.20 מיישר את שמות הקבצים לגרסאות שבמסד (בלי לשנות תוכן), ו-6.1 מוודא ש-`supabase db push` על פרויקט חדש מריץ את כולן מאפס בסדר הנכון.
-  evidence: למשל spec 2.12 (קובץ `20261001184225`, גרסה `20261001184827`) ו-spec 5.7 (קובץ `20261006104423`, גרסה `20261006111809`). היום זה לא מפריע, כי כל המיגרציות כבר הוחלו על הפיתוח.
+  summary: שמות חלק מקובצי המיגרציה ב-`supabase/migrations/` לא תואמים לגרסה שנרשמה ב-`supabase_migrations.schema_migrations` במסד. לא משנים שמות עכשיו (החלטת המשתמשת 2026-10-10). לפני הקמת פרויקט ה-production צריך ליישר, כדי ש-`supabase db push` או הרצה מסודרת של המיגרציות יעבדו.
+  evidence: נמצא בתכנון 5.19 (spec 5.19, החלטות המשתמשת 2026-10-10).

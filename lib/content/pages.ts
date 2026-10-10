@@ -140,7 +140,7 @@ export function toSections(
 // Which of these public pages are published (RLS shows anon only published
 // pages), cached and tagged content:<slug> for each. The footer links to a
 // legal page only once it is published (user decision 2026-10-04; the pages
-// arrive in 5.5). A read error is logged and gives [].
+// came in 5.5). A read error is logged and gives [].
 export async function getPublishedPageSlugs(
   slugs: readonly string[]
 ): Promise<string[]> {

@@ -29,6 +29,8 @@ import { join } from "node:path"
 
 import { createClient } from "@supabase/supabase-js"
 
+import { devRef } from "./dev-guard.mjs"
+
 if (existsSync(".env.local")) process.loadEnvFile(".env.local")
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -42,28 +44,9 @@ if (!url || !secretKey || !publishableKey) {
 }
 
 // The DEV project only (the same check as supabase/tests/support/db.ts).
-function devRef() {
-  let ref
-  try {
-    ref = /^([a-z0-9]{20})[.]supabase[.]co$/.exec(new URL(url).hostname)?.[1]
-  } catch {
-    ref = undefined
-  }
-  const dbUrl = process.env.DEV_DATABASE_URL
-  if (!ref || !dbUrl) return null
-  let parsed
-  try {
-    parsed = new URL(dbUrl)
-  } catch {
-    return null
-  }
-  const matches =
-    parsed.username === `postgres.${ref}` ||
-    parsed.hostname === `db.${ref}.supabase.co`
-  return matches ? ref : null
-}
-
-if (!devRef()) {
+if (
+  !devRef({ supabaseUrl: url, databaseUrl: process.env.DEV_DATABASE_URL })
+) {
   console.error(
     "הסקריפט רץ רק מול פרויקט הפיתוח: DEV_DATABASE_URL ב-.env.local חייב להכיל את ה-ref של NEXT_PUBLIC_SUPABASE_URL. לא בוצע שום שינוי."
   )
@@ -366,7 +349,9 @@ async function main() {
       console.log(`הגלריה פורסמה עם ${items.length} תמונות`)
     }
   } finally {
-    await admin.auth.signOut()
+    // Local only: the default (global) would end every session of the dev
+    // admin on all devices.
+    await admin.auth.signOut({ scope: "local" })
   }
   console.log("")
   console.log("האתר יציג את השינוי כשהמטמון שלו יתחדש (כמה דקות).")

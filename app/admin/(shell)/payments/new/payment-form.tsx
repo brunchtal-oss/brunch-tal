@@ -38,8 +38,8 @@ import {
 import {
   formatDayMonth,
   formatLocalDate,
+  formatSessionDate,
   formatSessionDateTime,
-  formatWeekday,
 } from "@/lib/time"
 
 import {
@@ -751,7 +751,7 @@ function PreviewBox({
               <bdi>
                 {copy.previewEvent(
                   preview.event.conceptName,
-                  sessionDay(preview.event.startsAt)
+                  formatSessionDate(preview.event.startsAt)
                 )}
               </bdi>
             </time>
@@ -981,12 +981,6 @@ export function ApprovedLink({
   )
 }
 
-// "{יום} DD.MM": the admin's brunch details never show the time (user
-// decision 2026-10-05).
-function sessionDay(value: string): string {
-  return `${formatWeekday(value)} ${formatDayMonth(value)}`
-}
-
 // "{product} · המקום נשמר:" and, on a new line, the session.
 function placedLines(placed: PlacedSession) {
   return (
@@ -996,7 +990,7 @@ function placedLines(placed: PlacedSession) {
       <bdi>
         {copy.successPlacedSession(
           placed.conceptName,
-          sessionDay(placed.startsAt)
+          formatSessionDate(placed.startsAt)
         )}
       </bdi>
     </>
@@ -1062,7 +1056,7 @@ function EventRadioGroup({
             </span>
             <bdi className="text-[15px]">
               {copy.eventOptionDetails(
-                sessionDay(option.startsAt),
+                formatSessionDate(option.startsAt),
                 option.occupied,
                 option.capacity,
                 option.full

@@ -4,13 +4,13 @@ import { useRef, useState } from "react"
 
 import { SensitiveConfirmDialog } from "@/components/admin/sensitive-confirm-dialog"
 import {
+  asSaveResult,
   ValueChangeRow,
   type ValueSaveResult,
 } from "@/components/admin/value-change-row"
 import { InlineNotice } from "@/components/shared/inline-notice"
 import { Button } from "@/components/ui/button"
 import { adminCopy } from "@/lib/copy/admin"
-import type { ActionResult } from "@/lib/errors"
 import { formatAgorot } from "@/lib/money"
 
 import {
@@ -53,10 +53,6 @@ const DRAFT_KEYS: Record<EditorField, readonly (keyof ProductDraft)[]> = {
   introOnly: ["introOnly"],
   postJoinMessage: ["postJoinMessage"],
   postJoinButtonLabel: ["postJoinButtonLabel"],
-}
-
-function asSaveResult(result: ActionResult<unknown>): ValueSaveResult {
-  return result.ok ? { ok: true } : { ok: false, code: result.code }
 }
 
 // The editor of one product (story 2.6): each field in its own

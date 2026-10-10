@@ -1,6 +1,7 @@
 "use server"
 
 import type { ActionResult } from "@/lib/errors"
+import { validVersion } from "@/lib/form-values"
 import { callRpc } from "@/lib/rpc"
 import { createClient } from "@/lib/supabase/server"
 
@@ -30,10 +31,6 @@ const SETTING_KEYS = new Set([
   "default_session_start_time",
   "default_session_end_time",
 ])
-
-function validVersion(version: unknown): version is number {
-  return Number.isSafeInteger(version) && (version as number) > 0
-}
 
 function validChanges(changes: unknown): changes is Record<string, unknown> {
   if (typeof changes !== "object" || changes === null || Array.isArray(changes))

@@ -1,7 +1,8 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 
 import {
   addDays,
+  createStep,
   demoKey,
   isUuid,
   localParts,
@@ -106,5 +107,57 @@ describe("demoKey", () => {
     expect(key).not.toBe(demoKey("gen-2", "pay:maya:card"))
     expect(key).not.toBe(demoKey("gen-1", "pay:noa:card"))
     expect(key[14]).toBe("5")
+  })
+})
+
+describe("createStep", () => {
+  function setup(items: Record<string, unknown> = {}) {
+    const state = { items }
+    const save = vi.fn()
+    const log = vi.fn()
+    const { step, counts } = createStep({
+      state,
+      save,
+      keyOf: (itemKey: string) => `key:${itemKey}`,
+      log,
+    })
+    return { state, save, log, step, counts }
+  }
+
+  it("runs a new item with its key, records and saves it", async () => {
+    const { state, save, log, step, counts } = setup()
+    const fn = vi.fn(async (key: string) => ({ id: key }))
+    await expect(step("event:E1", "E1", fn)).resolves.toEqual({
+      id: "key:event:E1",
+    })
+    expect(fn).toHaveBeenCalledWith("key:event:E1")
+    expect(state.items["event:E1"]).toEqual({ id: "key:event:E1" })
+    expect(save).toHaveBeenCalledTimes(1)
+    expect(log).toHaveBeenCalledWith("נוצר: E1")
+    expect(counts).toEqual({ created: 1, existing: 0 })
+  })
+
+  it("returns the stored value on a second run without calling fn", async () => {
+    const { save, log, step, counts } = setup({ "event:E1": { id: "old" } })
+    const fn = vi.fn()
+    await expect(step("event:E1", "E1", fn)).resolves.toEqual({ id: "old" })
+    expect(fn).not.toHaveBeenCalled()
+    expect(save).not.toHaveBeenCalled()
+    expect(log).toHaveBeenCalledWith("כבר קיים: E1")
+    expect(counts).toEqual({ created: 0, existing: 1 })
+  })
+
+  it("does not record an undefined result, and tries it again", async () => {
+    const { state, save, step, counts } = setup()
+    await expect(step("note:0", "note", async () => undefined)).resolves.toBe(
+      undefined
+    )
+    expect("note:0" in state.items).toBe(false)
+    expect(save).not.toHaveBeenCalled()
+    expect(counts).toEqual({ created: 0, existing: 0 })
+    const fn = vi.fn(async () => ({ ok: true }))
+    await step("note:0", "note", fn)
+    expect(fn).toHaveBeenCalledTimes(1)
+    expect(counts).toEqual({ created: 1, existing: 0 })
   })
 })

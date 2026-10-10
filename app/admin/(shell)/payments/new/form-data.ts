@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto"
 
 import { callRpc } from "@/lib/rpc"
 import { createClient } from "@/lib/supabase/server"
-import { formatLocalDate } from "@/lib/time"
+import { localToday } from "@/lib/time"
 
 import { toBookableEvents, type BookableEvent } from "./event-options"
 import type { MethodOption, ProductOption } from "./payment-form"
@@ -63,7 +63,7 @@ export async function loadPaymentFormData(): Promise<PaymentFormData> {
     methods: methods.data,
     events: toBookableEvents(events.data),
     // The default purchase date; plan_approve_payment checks the local today.
-    today: formatLocalDate(new Date()),
+    today: localToday(),
     // One idempotency key per page load (AD-5), sent with every attempt.
     idempotencyKey: randomUUID(),
   }
