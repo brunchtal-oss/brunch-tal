@@ -16,6 +16,11 @@ async function headersFor(source: string) {
 }
 
 describe("next.config", () => {
+  it("keeps every page out of search engines until the launch (story 5.15)", async () => {
+    const headers = await headersFor("/:path*")
+    expect(headers["X-Robots-Tag"]).toBe("noindex, nofollow")
+  })
+
   it.each(["/reset/:path*", "/join/:path*"])(
     "sends no-referrer and no-store on the token route %s (AD-16)",
     async (source) => {
@@ -40,6 +45,7 @@ describe("next.config", () => {
     const matching = rules.filter(
       (r) =>
         !r.has &&
+        r.headers.some((h) => h.key === "Cache-Control") &&
         new RegExp(
           `^${r.source.replace(/[.]/g, "\\.").replace("/:path*", "(?:/.*)?")}$`
         ).test(path)
