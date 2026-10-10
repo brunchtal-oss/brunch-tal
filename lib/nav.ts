@@ -57,18 +57,19 @@ export const adminMoreNav: readonly {
   },
   { href: "/admin/content", label: adminCopy.content.title, icon: "content" },
   { href: "/admin/notes", label: adminCopy.notes.title, icon: "notes" },
-  // The audit log (story 4.5), just before the settings.
+  // The audit log (story 4.5).
   { href: "/admin/audit", label: adminCopy.audit.title, icon: "audit" },
-  {
-    href: "/admin/settings",
-    label: adminCopy.settings.title,
-    icon: "settings",
-  },
-  // Story 4.8: the concepts (appended, not reordered).
+  // Story 4.8: the concepts.
   {
     href: "/admin/concepts",
     label: adminCopy.concepts.title,
     icon: "concepts",
+  },
+  // Settings stay last (user decision 2026-10-10).
+  {
+    href: "/admin/settings",
+    label: adminCopy.settings.title,
+    icon: "settings",
   },
 ]
 

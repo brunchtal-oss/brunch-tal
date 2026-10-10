@@ -138,10 +138,10 @@ describe("navigation", () => {
     expect(isCurrent(adminNav, home, "/admin/links")).toBe(false)
     expect(isCurrent(adminNav, more, "/admin/content/home/preview")).toBe(true)
     expect(isCurrent(adminNav, home, "/admin/content")).toBe(false)
-    // Settings (story 4.7) and its templates; the concepts (story 4.8) are
-    // appended after it.
-    expect(adminMoreNav.at(-2)?.href).toBe("/admin/settings")
-    expect(adminMoreNav.at(-1)).toMatchObject({
+    // Settings (story 4.7) and its templates stay last (user decision
+    // 2026-10-10); the concepts (story 4.8) just before them.
+    expect(adminMoreNav.at(-1)?.href).toBe("/admin/settings")
+    expect(adminMoreNav.at(-2)).toMatchObject({
       href: "/admin/concepts",
       label: "קונספטים",
       icon: "concepts",
@@ -151,7 +151,7 @@ describe("navigation", () => {
       isCurrent(adminNav, more, "/admin/settings/templates/reminder")
     ).toBe(true)
     expect(isCurrent(adminNav, home, "/admin/settings")).toBe(false)
-    // The audit log (story 4.5), just before the settings.
+    // The audit log (story 4.5), just before the concepts.
     expect(adminMoreNav.at(-3)?.href).toBe("/admin/audit")
     expect(isCurrent(adminNav, more, "/admin/audit")).toBe(true)
   })
@@ -176,8 +176,8 @@ describe("navigation", () => {
       "content",
       "notes",
       "audit",
-      "settings",
       "concepts",
+      "settings",
     ])
     expect(adminMoreNav.some((row) => row.href === "/accessibility")).toBe(
       false
