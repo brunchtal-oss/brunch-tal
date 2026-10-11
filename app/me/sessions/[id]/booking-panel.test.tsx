@@ -78,6 +78,7 @@ describe("BookingPanel (story 3.6)", () => {
       source: "entitlement",
       productName: "כרטיסייה",
       availableAfter: 3,
+      isSingle: false,
       expiresOn: "2026-11-24",
       cancelDeadline: "2026-10-10T07:00:00+00:00",
     })

@@ -8,6 +8,7 @@ import {
   entitlementName,
   isEmptyHome,
   isHomeCard,
+  isHomeSingle,
   isOpen,
   parseMyEntitlements,
   pastStatus,
@@ -162,6 +163,37 @@ describe("isHomeCard", () => {
     ["a pinned couple", { kind: "couple", pinned_event_id: "ev-1" }, false],
   ] as const)("%s", (_label, change, expected) => {
     expect(isHomeCard(entitlement(change))).toBe(expected)
+  })
+})
+
+describe("isHomeSingle (2026-10-11)", () => {
+  it.each([
+    [
+      "an open single",
+      { kind: "single", original_units: 1, available: 1 },
+      true,
+    ],
+    [
+      "a booked single",
+      { kind: "single", original_units: 1, available: 0, reserved: 1 },
+      true,
+    ],
+    [
+      "a used single",
+      {
+        kind: "single",
+        original_units: 1,
+        available: 0,
+        used: 1,
+        is_used_up: true,
+      },
+      false,
+    ],
+    ["an expired single", { kind: "single", is_expired: true }, false],
+    ["a pinned single", { kind: "single", pinned_event_id: "ev-1" }, false],
+    ["a card", {}, false],
+  ] as const)("%s", (_label, change, expected) => {
+    expect(isHomeSingle(entitlement(change))).toBe(expected)
   })
 })
 

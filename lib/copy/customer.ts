@@ -26,6 +26,8 @@ export const customerCopy = {
   moreUpcomingTitle: "הבראנצ׳ים הקרובים שלי",
   // The active card: entries used and booked, out of all its entries.
   cardTitle: "הכרטיסייה שלי",
+  // The same section with only single entries, no card (2026-10-11).
+  entriesTitle: "הכניסות שלי",
   usedOf: (used: number, total: number) => `ניצלת ${used}/${total}`,
   bookedOf: (booked: number, total: number) => `נרשמת ${booked}/${total}`,
   // Beside the number of free entries on home's home-card (design round,

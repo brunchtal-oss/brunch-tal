@@ -19,9 +19,26 @@ describe("parsePreview", () => {
       source: "entitlement",
       productName: "כרטיסייה אישית",
       availableAfter: 3,
+      isSingle: false,
       expiresOn: "2026-11-22",
       cancelDeadline: "2026-10-10T07:00:00+00:00",
     })
+  })
+
+  it("a single entry: isSingle, so the sheet has no remaining row (2026-10-11)", () => {
+    expect(
+      parsePreview({
+        ok: true,
+        booked: false,
+        source: "entitlement",
+        entitlement_kind: "single",
+        product_name: "Single",
+        units: 1,
+        available_after: 0,
+        expires_on: "2026-10-18",
+        cancel_deadline: "2026-10-13T07:30:00+00:00",
+      })
+    ).toMatchObject({ kind: "bookable", source: "entitlement", isSingle: true })
   })
 
   it("story 3.7: a session funded by a credit", () => {

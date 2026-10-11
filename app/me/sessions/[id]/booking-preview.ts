@@ -13,6 +13,9 @@ export type BookingPreview =
       source: "entitlement"
       productName: string
       availableAfter: number
+      // A single entry: the sheet has no "יישארו" row (user decision
+      // 2026-10-11).
+      isSingle: boolean
       expiresOn: string
       cancelDeadline: string
     }
@@ -95,6 +98,7 @@ export function parsePreview(data: unknown): BookingPreview {
         source: "entitlement",
         productName,
         availableAfter: row.available_after as number,
+        isSingle: row.entitlement_kind === "single",
         expiresOn,
         cancelDeadline,
       }

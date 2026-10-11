@@ -21,12 +21,18 @@ import {
   parseMyCredits,
 } from "./bookings/credits"
 import { loadMyEntitlements } from "./load-entitlements"
-import { isEmptyHome, isHomeCard, type SessionRow } from "./purchase-items"
+import {
+  isEmptyHome,
+  isHomeCard,
+  isHomeSingle,
+  type SessionRow,
+} from "./purchase-items"
 
 // The home (story 4.12; design round, user decisions 2026-10-07/08), each
 // section under a real heading, in this order: her next session (her
 // nearest confirmed booking, a frameless session-card with its photo and
-// time); "הכרטיסייה שלי", each active card as a home-card; one line "יש לך
+// time); "הכרטיסייה שלי", each active card as a home-card and under them
+// each open single entry (2026-10-11; "הכניסות שלי" without a card); one line "יש לך
 // זיכוי להרשמה" to /me/bookings while she has a cancellation credit to book
 // with (story 3.7, get_my_credits); "הבראנצ׳ים הקרובים שלי", the later ones, one row each with only the
 // weekday and date, linking to its page; then "לכל ההרשמות שלי" (the
@@ -57,7 +63,13 @@ export async function Home() {
     starts_at: b.startsAt,
     concept_name: b.conceptName,
   }))
-  const cards = entitlements.filter(isHomeCard)
+  // Her open cards, then her open single entries under them (user decision
+  // 2026-10-11: always after the cards, whatever their dates).
+  const cards = [
+    ...entitlements.filter(isHomeCard),
+    ...entitlements.filter(isHomeSingle),
+  ]
+  const hasCard = cards.some((c) => c.kind === "card")
   const credits = parseMyCredits(creditsResult.data)
   const hasCredit = credits.some(isBookableCredit)
   // An open refund request (user decision 2026-10-10): its own line.
@@ -117,7 +129,10 @@ export async function Home() {
       )}
 
       {cards.length > 0 && (
-        <HomeSection id="card" title={customerCopy.cardTitle}>
+        <HomeSection
+          id="card"
+          title={hasCard ? customerCopy.cardTitle : customerCopy.entriesTitle}
+        >
           <ul className="flex flex-col gap-6">
             {cards.map((card, i) => (
               <li key={card.id}>

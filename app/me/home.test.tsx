@@ -194,6 +194,57 @@ describe("customer home", () => {
   })
 })
 
+// User decision 2026-10-11: her open single entries under the cards.
+describe("customer home: single entries", () => {
+  const SINGLE = entitlement({
+    id: "ent-single",
+    kind: "single",
+    productName: "Single brunch",
+    originalUnits: 1,
+    available: 1,
+    reserved: 0,
+    used: 0,
+    // Bought before the card and ends before it: still under it.
+    paidOn: "2026-09-20",
+    expiresOn: "2026-10-18",
+  })
+
+  it("a card and a single: the single under the card, in the same section", async () => {
+    bookings([])
+    loadMyEntitlements.mockResolvedValue([SINGLE, CARD])
+    const html = renderToStaticMarkup(await Home())
+
+    expect(html).toContain(customerCopy.cardTitle)
+    expect(html).not.toContain(customerCopy.entriesTitle)
+    expect(html.indexOf("Personal card")).toBeLessThan(
+      html.indexOf("Single brunch")
+    )
+    expect(html.match(/<section/g)).toHaveLength(1)
+  })
+
+  it("only a single: its own heading, not the empty-state", async () => {
+    bookings([])
+    loadMyEntitlements.mockResolvedValue([SINGLE])
+    const html = renderToStaticMarkup(await Home())
+
+    expect(html).toContain(customerCopy.entriesTitle)
+    expect(html).not.toContain(customerCopy.cardTitle)
+    expect(html).toContain("Single brunch")
+    expect(html).not.toContain(customerCopy.emptyHomeTitle)
+  })
+
+  it("a pinned single stays off the card section", async () => {
+    bookings([])
+    loadMyEntitlements.mockResolvedValue([
+      CARD,
+      { ...SINGLE, pinnedEventId: NEXT },
+    ])
+    const html = renderToStaticMarkup(await Home())
+
+    expect(html).not.toContain("Single brunch")
+  })
+})
+
 describe("customer home: credits (story 3.7)", () => {
   it("only a credit she can book with: no empty-state, the line to her bookings", async () => {
     bookings([], [CREDIT])

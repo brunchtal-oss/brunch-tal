@@ -149,6 +149,20 @@ export function isHomeCard(e: MyEntitlement): boolean {
 }
 
 /**
+ * A single entry on home (user decision 2026-10-11): an open, unpinned
+ * single, shown under the cards (always after them, whatever its dates).
+ * Ended or pinned, it is not on home, like a card.
+ */
+export function isHomeSingle(e: MyEntitlement): boolean {
+  return (
+    e.kind === "single" &&
+    e.pinnedEventId === null &&
+    !e.expiredBeforeBound &&
+    isOpen(e)
+  )
+}
+
+/**
  * Story 3.7: the chip of a pinned purchase whose booking was cancelled (in
  * the purchase history): a credit, or a refund request (also once
  * refunded, until 3.9 adds its own word); null otherwise.

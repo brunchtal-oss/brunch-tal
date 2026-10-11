@@ -239,10 +239,14 @@ export function BookingPanel({
                 {copy.usesValue("")}
                 <bdi>{preview.productName}</bdi>
               </dd>
-              <dt className="text-muted-foreground">{copy.remaining}</dt>
-              <dd className="font-semibold">
-                {copy.remainingValue(preview.availableAfter)}
-              </dd>
+              {!preview.isSingle && (
+                <>
+                  <dt className="text-muted-foreground">{copy.remaining}</dt>
+                  <dd className="font-semibold">
+                    {copy.remainingValue(preview.availableAfter)}
+                  </dd>
+                </>
+              )}
               <dt className="text-muted-foreground">{copy.validUntilLabel}</dt>
               <dd className="font-semibold">
                 <time dateTime={formatLocalDate(preview.expiresOn)}>
