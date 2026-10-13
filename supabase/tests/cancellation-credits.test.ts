@@ -1097,11 +1097,28 @@ describe("review fixes", { timeout: 30_000 }, () => {
       expect([first, second]).toContain(rows[0].credit_id)
       const other = rows[0].credit_id === first ? second : first
       await refreshAs(db, f.customerA)
-      expect(await options(db, other)).toEqual([
-        [x.id, "replaced", "booked"],
-        [y.id, "active", null],
-        [z.id, "active", null],
-      ])
+      // The next session after X: z for the second credit; for the first
+      // (origin day 4) the second's origin (day 5), freed by its cancel,
+      // comes before X.
+      const { rows: origins } = await db.query(
+        `select b.event_id from public.cancellation_credits c
+         join public.bookings b on b.id = c.origin_booking_id
+         where c.id = $1`,
+        [second]
+      )
+      expect(await options(db, other)).toEqual(
+        other === second
+          ? [
+              [x.id, "replaced", "booked"],
+              [y.id, "active", null],
+              [z.id, "active", null],
+            ]
+          : [
+              [origins[0].event_id, "active", null],
+              [x.id, "replaced", "booked"],
+              [y.id, "active", null],
+            ]
+      )
     })
   })
 
@@ -1286,3 +1303,51 @@ describe("the origin session", { timeout: 30_000 }, () => {
     })
   })
 })
+
+describe(
+  "story 3.8: the business mode of cancel_core",
+  { timeout: 30_000 },
+  () => {
+    it("'pending' only for admin_cancel_event: from another action INVALID_INPUT and nothing changes", async () => {
+      await inRollback(async (db) => {
+        const f = await seed(db)
+        const origin = await insertEvent(db, f, { dayOffset: 5 })
+        const p = await pinned(db, f, origin.id)
+        for (const action of ["admin_cancel_booking", "cancel_booking"]) {
+          expect(
+            await queryError(
+              db,
+              "select private.cancel_core($1, $2, 'admin', $3, null, 'pending')",
+              [p.booking, f.admin, action]
+            )
+          ).toEqual({ code: "P0001", message: "INVALID_INPUT" })
+        }
+        const { rows } = await db.query(
+          "select status from public.bookings where id = $1",
+          [p.booking]
+        )
+        expect(rows[0].status).toBe("confirmed")
+        expect(await creditsOf(db, p.booking)).toEqual([])
+      })
+    })
+
+    it("a choice_pending credit gets no options and is never refreshed until she chooses", async () => {
+      await inRollback(async (db) => {
+        const f = await seed(db)
+        const origin = await insertEvent(db, f, { dayOffset: 5 })
+        await insertEvent(db, f, { dayOffset: 6 })
+        const p = await pinned(db, f, origin.id)
+        const r = (
+          await db.query(
+            "select private.cancel_core($1, $2, 'admin', 'admin_cancel_event', null, 'pending') as r",
+            [p.booking, f.admin]
+          )
+        ).rows[0].r
+        expect(r).toMatchObject({ outcome: "choice_pending" })
+        await refreshAs(db, f.customerA)
+        expect(await options(db, r.credit_id)).toEqual([])
+        expect(await cancelNotifications(db, f.customerA)).toEqual([])
+      })
+    })
+  }
+)

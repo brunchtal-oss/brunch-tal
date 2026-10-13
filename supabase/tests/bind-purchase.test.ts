@@ -291,6 +291,83 @@ describe("bind_purchase coverage", () => {
     })
   })
 
+  it("story 3.8: a held place of a session the business cancelled: the credit moves still choice_pending, one event_cancelled (template body), no booking_cancelled*", async () => {
+    await inRollback(async (db) => {
+      const f = await seedMoney(db)
+      const { rows: products } = await db.query(
+        `insert into public.products (
+           name, type, price_agorot, units, validity_mode, validity_days,
+           allowed_weekdays, eligible_event_kind, party_size)
+         values ($1, 'single', 12800, 1, 'session', null, null, 'regular', 1)
+         returning id`,
+        [testName("single")]
+      )
+      const { rows: events } = await db.query(
+        `insert into public.events (
+           concept_id, kind, starts_at, ends_at, capacity_adults,
+           registration_closes_at, status)
+         select c.id, 'regular', now() + interval '5 days',
+           now() + interval '5 days 2 hours', 12, now() + interval '5 days',
+           'published'
+         from public.concepts c where c.theme_key = 'mothers' limit 1
+         returning id`
+      )
+      const eventId = events[0].id as string
+      await asAuthenticated(db, f.admin)
+      const r = await approve(db, {
+        productId: products[0].id,
+        eventId,
+        amount: 12800,
+        paidOn: f.today,
+        methodId: f.method,
+        duplicateConfirmed: true,
+        key: randomUUID(),
+      })
+      await db.query("select public.admin_cancel_event($1, true, $2, $3)", [
+        eventId,
+        testName("message"),
+        randomUUID(),
+      ])
+      await db.query("reset role")
+
+      await db.query("select private.bind_purchase($1, $2)", [
+        r.payment_id,
+        f.customerA,
+      ])
+      const { rows: credits } = await db.query(
+        `select c.customer_id, c.status, c.choice_pending
+         from public.cancellation_credits c
+         join public.entitlements e on e.id = c.source_entitlement_id
+         where e.payment_id = $1`,
+        [r.payment_id]
+      )
+      expect(credits).toEqual([
+        { customer_id: f.customerA, status: "active", choice_pending: true },
+      ])
+      const { rows: sent } = await db.query(
+        `select type, dedupe_key, payload ->> 'body' as body
+         from public.notifications
+         where recipient_id = $1
+           and (type like 'booking_cancelled%' or type = 'event_cancelled')`,
+        [f.customerA]
+      )
+      const { rows: ev } = await db.query(
+        "select revision from public.events where id = $1",
+        [eventId]
+      )
+      const { rows: template } = await db.query(
+        "select body from public.notification_templates where type = 'event_cancelled'"
+      )
+      expect(sent).toEqual([
+        {
+          type: "event_cancelled",
+          dedupe_key: `event_cancelled:${f.customerA}:${eventId}:${ev[0].revision}`,
+          body: template[0].body,
+        },
+      ])
+    })
+  })
+
   it("a customer already booked to that session -> BIND_CONFLICT, nothing bound", async () => {
     await inRollback(async (db) => {
       const f = await seedMoney(db)

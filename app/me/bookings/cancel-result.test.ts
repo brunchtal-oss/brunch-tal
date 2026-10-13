@@ -189,6 +189,9 @@ describe("parseMyBookings", () => {
       waiting: false,
       exhausted,
       refund: null,
+      choicePending: false,
+      cancelledStartsAt: null,
+      optionsCount: 2,
     })
     // A read-only couple note, no exhausted credit: needs contact.
     expect(needsContact([], [booking(2, false)])).toBe(true)

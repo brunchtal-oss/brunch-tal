@@ -1752,6 +1752,16 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_cancel_event: {
+        Args: {
+          p_confirmed: boolean
+          p_event_id: string
+          p_idempotency_key: string
+          p_message: string
+          p_parked_acknowledged?: boolean
+        }
+        Returns: Json
+      }
       admin_create_concept: {
         Args: { p_concept: Json; p_idempotency_key: string }
         Returns: Json
@@ -1872,6 +1882,17 @@ export type Database = {
       }
       admin_rename_note_topic: {
         Args: { p_idempotency_key: string; p_name: string; p_topic_id: string }
+        Returns: Json
+      }
+      admin_reschedule_event: {
+        Args: {
+          p_confirmed: boolean
+          p_ends_at: string
+          p_event_id: string
+          p_idempotency_key: string
+          p_message: string
+          p_starts_at: string
+        }
         Returns: Json
       }
       admin_revoke_link: {
@@ -2021,6 +2042,14 @@ export type Database = {
         }
         Returns: Json
       }
+      choose_credit_outcome: {
+        Args: {
+          p_choice: string
+          p_credit_id: string
+          p_idempotency_key: string
+        }
+        Returns: Json
+      }
       claim_join: {
         Args: { p_idempotency_key: string; p_token: string }
         Returns: Json
@@ -2076,8 +2105,16 @@ export type Database = {
         Args: { p_booking_id: string }
         Returns: Json
       }
+      preview_admin_cancel_event: {
+        Args: { p_event_id: string }
+        Returns: Json
+      }
       preview_admin_delete_note_topic: {
         Args: { p_topic_id: string }
+        Returns: Json
+      }
+      preview_admin_reschedule_event: {
+        Args: { p_ends_at: string; p_event_id: string; p_starts_at: string }
         Returns: Json
       }
       preview_admin_set_product_price: {

@@ -20,6 +20,33 @@ import {
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
+// Story 3.8: her refund-or-credit choice after the business cancelled the
+// session. choose_credit_outcome checks again that the credit is hers and
+// still waiting; this action checks only the shape. One key per opening of
+// the sheet and per change of choice (AD-5).
+export async function chooseCreditOutcomeAction(input: {
+  creditId: string
+  choice: CancelChoice
+  idempotencyKey: string
+}): Promise<ActionResult<{ outcome: CancelChoice }>> {
+  if (
+    typeof input?.creditId !== "string" ||
+    typeof input.idempotencyKey !== "string" ||
+    !UUID.test(input.creditId) ||
+    !UUID.test(input.idempotencyKey) ||
+    (input.choice !== "credit" && input.choice !== "refund")
+  ) {
+    return { ok: false, code: "INVALID_INPUT" }
+  }
+  const result = await callRpc(await createClient(), "choose_credit_outcome", {
+    p_credit_id: input.creditId,
+    p_choice: input.choice,
+    p_idempotency_key: input.idempotencyKey,
+  })
+  if (!result.ok) return result
+  return { ok: true, data: { outcome: input.choice } }
+}
+
 export async function cancelBookingAction(input: {
   bookingId: string
   idempotencyKey: string

@@ -9,6 +9,13 @@ import {
   type CancelChoice,
   type CancelPlan,
 } from "./cancel-plan"
+import {
+  parseCancelEventPlan,
+  parseNotified,
+  parseRescheduleEventPlan,
+  type CancelEventPlan,
+  type RescheduleEventPlan,
+} from "./event-plan"
 
 // Tal cancels a booking from "מי מגיעה" (story 3.6, a sensitive action,
 // AD-7). Both RPCs run with the admin's own session (private.is_admin()
@@ -67,4 +74,142 @@ export async function adminCancelBookingAction(input: {
   })
   if (!result.ok) return result
   return { ok: true, data: undefined }
+}
+
+// Story 3.8: Tal cancels or moves the whole session (sensitive, AD-7). The
+// message is the notice's body Tal edited (1-1000 characters after
+// trimming; the RPC checks again).
+const MESSAGE_MAX = 1000
+const DATE = /^\d{4}-\d{2}-\d{2}$/
+const TIME = /^([01]\d|2[0-3]):[0-5]\d$/
+
+function validMessage(message: unknown): message is string {
+  return (
+    typeof message === "string" &&
+    message.trim().length >= 1 &&
+    message.trim().length <= MESSAGE_MAX
+  )
+}
+
+// The new local date and times as instants for the RPC. Postgres reads the
+// zone name (AD-8: the conversion, daylight saving included, is the
+// database's, never the browser's).
+type When = { date: string; startTime: string; endTime: string }
+
+function validWhen(when: unknown): when is When {
+  const w = when as When | null
+  return (
+    typeof w === "object" &&
+    w !== null &&
+    typeof w.date === "string" &&
+    DATE.test(w.date) &&
+    typeof w.startTime === "string" &&
+    TIME.test(w.startTime) &&
+    typeof w.endTime === "string" &&
+    TIME.test(w.endTime)
+  )
+}
+
+function jerusalem(date: string, time: string): string {
+  return `${date} ${time}:00 Asia/Jerusalem`
+}
+
+export async function previewCancelEventAction(input: {
+  eventId: string
+}): Promise<ActionResult<CancelEventPlan>> {
+  if (typeof input?.eventId !== "string" || !UUID.test(input.eventId)) {
+    return { ok: false, code: "INVALID_INPUT" }
+  }
+  const result = await callRpc(
+    await createClient(),
+    "preview_admin_cancel_event",
+    { p_event_id: input.eventId }
+  )
+  if (!result.ok) return result
+  return { ok: true, data: parseCancelEventPlan(result.data) }
+}
+
+export async function adminCancelEventAction(input: {
+  eventId: string
+  message: string
+  confirmed: boolean
+  // The second checkbox: purchases paid without a place (3.8).
+  parkedAcknowledged?: boolean
+  idempotencyKey: string
+}): Promise<ActionResult<{ notified: number }>> {
+  if (
+    typeof input?.eventId !== "string" ||
+    !UUID.test(input.eventId) ||
+    typeof input.idempotencyKey !== "string" ||
+    !UUID.test(input.idempotencyKey) ||
+    !validMessage(input.message) ||
+    typeof input.confirmed !== "boolean" ||
+    (input.parkedAcknowledged !== undefined &&
+      typeof input.parkedAcknowledged !== "boolean")
+  ) {
+    return { ok: false, code: "INVALID_INPUT" }
+  }
+  const result = await callRpc(await createClient(), "admin_cancel_event", {
+    p_event_id: input.eventId,
+    p_confirmed: input.confirmed,
+    p_message: input.message,
+    p_idempotency_key: input.idempotencyKey,
+    p_parked_acknowledged: input.parkedAcknowledged === true,
+  })
+  if (!result.ok) return result
+  return { ok: true, data: { notified: parseNotified(result.data) } }
+}
+
+export async function previewRescheduleEventAction(
+  input: { eventId: string } & When
+): Promise<ActionResult<RescheduleEventPlan>> {
+  if (
+    typeof input?.eventId !== "string" ||
+    !UUID.test(input.eventId) ||
+    !validWhen(input)
+  ) {
+    return { ok: false, code: "INVALID_INPUT" }
+  }
+  const result = await callRpc(
+    await createClient(),
+    "preview_admin_reschedule_event",
+    {
+      p_event_id: input.eventId,
+      p_starts_at: jerusalem(input.date, input.startTime),
+      p_ends_at: jerusalem(input.date, input.endTime),
+    }
+  )
+  if (!result.ok) return result
+  return { ok: true, data: parseRescheduleEventPlan(result.data) }
+}
+
+export async function adminRescheduleEventAction(
+  input: {
+    eventId: string
+    message: string
+    confirmed: boolean
+    idempotencyKey: string
+  } & When
+): Promise<ActionResult<{ notified: number }>> {
+  if (
+    typeof input?.eventId !== "string" ||
+    !UUID.test(input.eventId) ||
+    !validWhen(input) ||
+    typeof input.idempotencyKey !== "string" ||
+    !UUID.test(input.idempotencyKey) ||
+    !validMessage(input.message) ||
+    typeof input.confirmed !== "boolean"
+  ) {
+    return { ok: false, code: "INVALID_INPUT" }
+  }
+  const result = await callRpc(await createClient(), "admin_reschedule_event", {
+    p_event_id: input.eventId,
+    p_starts_at: jerusalem(input.date, input.startTime),
+    p_ends_at: jerusalem(input.date, input.endTime),
+    p_confirmed: input.confirmed,
+    p_message: input.message,
+    p_idempotency_key: input.idempotencyKey,
+  })
+  if (!result.ok) return result
+  return { ok: true, data: { notified: parseNotified(result.data) } }
 }

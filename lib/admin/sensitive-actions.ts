@@ -14,6 +14,9 @@ export const SENSITIVE_ACTIONS = {
   delete_note_topic: "האם למחוק את הנושא?",
   // Deleting a concept that no session uses (4.8).
   concept_delete: "האם למחוק את הקונספט?",
+  // Cancelling a whole session, and changing its time with bookings (3.8).
+  event_cancel: "האם לבטל את המפגש?",
+  event_reschedule: "האם לשנות את מועד המפגש?",
 } as const
 
 export type SensitiveAction = keyof typeof SENSITIVE_ACTIONS
