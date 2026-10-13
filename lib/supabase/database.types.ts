@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.17"
   }
   public: {
     Tables: {
@@ -1752,6 +1752,16 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_cancel_event: {
+        Args: {
+          p_confirmed: boolean
+          p_event_id: string
+          p_idempotency_key: string
+          p_message: string
+          p_parked_acknowledged?: boolean
+        }
+        Returns: Json
+      }
       admin_create_concept: {
         Args: { p_concept: Json; p_idempotency_key: string }
         Returns: Json
@@ -1839,6 +1849,7 @@ export type Database = {
       admin_list_bookable_events: { Args: never; Returns: Json }
       admin_list_customers: { Args: { p_query: string }; Returns: Json }
       admin_list_links: { Args: never; Returns: Json }
+      admin_list_open_cards: { Args: { p_filter: string }; Returns: Json }
       admin_list_payments: { Args: never; Returns: Json }
       admin_list_session_occupancy: {
         Args: { p_event_ids: string[] }
@@ -1871,6 +1882,17 @@ export type Database = {
       }
       admin_rename_note_topic: {
         Args: { p_idempotency_key: string; p_name: string; p_topic_id: string }
+        Returns: Json
+      }
+      admin_reschedule_event: {
+        Args: {
+          p_confirmed: boolean
+          p_ends_at: string
+          p_event_id: string
+          p_idempotency_key: string
+          p_message: string
+          p_starts_at: string
+        }
         Returns: Json
       }
       admin_revoke_link: {
@@ -2020,6 +2042,14 @@ export type Database = {
         }
         Returns: Json
       }
+      choose_credit_outcome: {
+        Args: {
+          p_choice: string
+          p_credit_id: string
+          p_idempotency_key: string
+        }
+        Returns: Json
+      }
       claim_join: {
         Args: { p_idempotency_key: string; p_token: string }
         Returns: Json
@@ -2075,8 +2105,16 @@ export type Database = {
         Args: { p_booking_id: string }
         Returns: Json
       }
+      preview_admin_cancel_event: {
+        Args: { p_event_id: string }
+        Returns: Json
+      }
       preview_admin_delete_note_topic: {
         Args: { p_topic_id: string }
+        Returns: Json
+      }
+      preview_admin_reschedule_event: {
+        Args: { p_ends_at: string; p_event_id: string; p_starts_at: string }
         Returns: Json
       }
       preview_admin_set_product_price: {
@@ -2095,6 +2133,14 @@ export type Database = {
       }
       reset_complete: {
         Args: { p_idempotency_key: string; p_token: string }
+        Returns: Json
+      }
+      set_booking_guest_details: {
+        Args: {
+          p_booking_id: string
+          p_guest_details: string
+          p_idempotency_key: string
+        }
         Returns: Json
       }
       set_personal_photo_consent: {

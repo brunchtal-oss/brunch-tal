@@ -3,9 +3,9 @@ import { describe, expect, it } from "vitest"
 import { isReadOnlySession, sessionsListFilter } from "./load-session"
 
 describe("sessionsListFilter", () => {
-  it("lists every draft and the published sessions that have not ended", () => {
+  it("lists every draft and the published or cancelled sessions that have not ended", () => {
     expect(sessionsListFilter("2026-10-05T07:00:00.000Z")).toBe(
-      "status.eq.draft,and(status.eq.published,ends_at.gt.2026-10-05T07:00:00.000Z)"
+      "status.eq.draft,and(status.in.(published,cancelled),ends_at.gt.2026-10-05T07:00:00.000Z)"
     )
   })
 })

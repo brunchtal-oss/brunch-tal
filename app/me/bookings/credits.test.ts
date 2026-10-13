@@ -5,7 +5,9 @@ import {
   isBookableCredit,
   isExhaustedCredit,
   isOpenRefund,
+  isPendingChoice,
   parseMyCredits,
+  pendingChoiceStartsAt,
 } from "./credits"
 
 const ROW = {
@@ -66,6 +68,9 @@ describe("parseMyCredits (story 3.7)", () => {
       waiting: false,
       exhausted: false,
       refund: null,
+      choicePending: false,
+      cancelledStartsAt: null,
+      optionsCount: 1,
     })
     expect(activeOptions(credit).map((o) => o.eventId)).toEqual(["e1"])
     expect(parseMyCredits(null)).toEqual([])
@@ -120,5 +125,32 @@ describe("parseMyCredits (story 3.7)", () => {
     expect(isBookableCredit(exhausted)).toBe(false)
     expect(isExhaustedCredit(exhausted)).toBe(true)
     expect(isExhaustedCredit(parseMyCredits([ROW])[0])).toBe(false)
+  })
+})
+
+describe("a business cancel waiting for her choice (story 3.8)", () => {
+  it("is pending, not bookable, not exhausted; its title date is the cancelled session", () => {
+    const [pending] = parseMyCredits([
+      {
+        ...ROW,
+        options: [],
+        choice_pending: true,
+        cancelled_starts_at: "2026-10-20T07:30:00Z",
+        options_count: 2,
+        exhausted: true,
+      },
+    ])
+    expect(pending.choicePending).toBe(true)
+    expect(pending.optionsCount).toBe(2)
+    expect(isPendingChoice(pending)).toBe(true)
+    expect(isBookableCredit(pending)).toBe(false)
+    expect(isExhaustedCredit(pending)).toBe(false)
+    expect(pendingChoiceStartsAt(pending)).toBe("2026-10-20T07:30:00Z")
+    expect(isPendingChoice(parseMyCredits([ROW])[0])).toBe(false)
+    expect(
+      pendingChoiceStartsAt(
+        parseMyCredits([{ ...ROW, choice_pending: true }])[0]
+      )
+    ).toBe(ROW.origin_starts_at)
   })
 })

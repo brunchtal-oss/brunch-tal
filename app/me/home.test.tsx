@@ -19,6 +19,9 @@ vi.mock("./load-entitlements", () => ({
 vi.mock("@/lib/content/business-details", () => ({
   getWhatsappHref: async () => null,
 }))
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }),
+}))
 vi.mock("@/lib/sessions/public", () => ({
   getPublicSession: (...args: unknown[]) => getPublicSession(...args),
 }))
@@ -191,6 +194,48 @@ describe("customer home", () => {
     expect(html).not.toContain(customerCopy.emptyHomeTitle)
     expect(html.match(/<section/g)).toHaveLength(1)
     expect(getPublicSession).not.toHaveBeenCalled()
+  })
+})
+
+describe("customer home: a business cancel waiting for her choice (story 3.8)", () => {
+  const PENDING = {
+    ...CREDIT,
+    credit_id: "c5",
+    waiting: false,
+    choice_pending: true,
+    cancelled_starts_at: "2026-10-20T07:30:00Z",
+    options_count: 2,
+  }
+
+  it("the pending card is at the top, before her next session, with no credit line", async () => {
+    bookings([booking("b1", NEXT, "2026-10-12T07:30:00Z")], [PENDING])
+    loadMyEntitlements.mockResolvedValue([CARD])
+    const html = renderToStaticMarkup(await Home())
+    const t = text(html)
+    expect(t).toContain(customerCopy.pendingChoice.chip)
+    expect(t).toContain(customerCopy.pendingChoice.title("20.10"))
+    expect(t).toContain(customerCopy.pendingChoice.text)
+    expect(t).toContain(customerCopy.pendingChoice.button)
+    expect(html.indexOf(customerCopy.pendingChoice.chip)).toBeLessThan(
+      html.indexOf(customerCopy.upcomingTitle)
+    )
+    expect(html).not.toContain(customerCopy.homeCredit)
+  })
+
+  it("only a pending choice: not the empty home", async () => {
+    bookings([], [PENDING])
+    loadMyEntitlements.mockResolvedValue([])
+    const html = renderToStaticMarkup(await Home())
+    expect(html).toContain(customerCopy.pendingChoice.button)
+    expect(html).not.toContain(customerCopy.emptyHomeTitle)
+  })
+
+  it("after her choice of credit: the credit line, no pending card", async () => {
+    bookings([], [{ ...PENDING, choice_pending: false, waiting: true }])
+    loadMyEntitlements.mockResolvedValue([])
+    const html = renderToStaticMarkup(await Home())
+    expect(html).toContain(customerCopy.homeCredit)
+    expect(html).not.toContain(customerCopy.pendingChoice.chip)
   })
 })
 

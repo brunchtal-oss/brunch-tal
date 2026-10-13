@@ -139,6 +139,7 @@
   target: 3.2
   summary: מ-3.2 יש הרשמות, ועד 3.8 `admin_update_event` משנה מועד או סוג של מפגש עם נרשמות בלי תצוגת השפעה ובלי התראה ("לא להזיז אירוע בשקט", מקור §7). ‏3.2 חוסם ב-`admin_update_event` שינוי של `date`, ‏`start_time`, ‏`end_time` או `kind` כשיש הרשמה פעילה (קוד שגיאה חדש), ו-3.8 מחליף את החסימה בתצוגת השפעה.
   evidence: ביקורת 3.1, intent-alignment. היום אין טבלת `bookings`, ולכן זה לא קורה.
+  status: נסגר ב-3.8 (2026-10-13). ‏`admin_update_event` עדיין מחזיר `EVENT_HAS_BOOKINGS`, והעורך שולח את שינוי המועד ל-`admin_reschedule_event`: חלון אישור עם תצוגת השפעה ונוסח הודעה שטל עורכת, ו-`event_changed` לכל נרשמת. שינוי סוג לא קיים (הסוג נקבע בקונספט).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-1-concepts-and-session-management.md`
   target: 3.4
@@ -450,7 +451,7 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-4-7-business-settings-and-templates.md`
   summary: כל סיפור שמוסיף קורא ל-`enqueue_notification` (5.17 reminder, 5.6 waitlist_spot, 3.8 event_cancelled/event_changed, 3.13 entitlement_changed, 5.10 card_expiring/admin_card_expiring) מעביר את כל `allowed_vars` של הסוג, ומוסיף בדיקת מסד שעורכת את התבנית לכל השדות המותרים ומריצה את הזרימה האמיתית.
   evidence: ביקורת 4.7, ממצא 9 (medium, לא אומת). ‏`allowed_vars` של 9 הסוגים בלי קורא נקבע מראש. קורא שמעביר פחות שדות ייכשל ב-render בתוך העסקה ויבטל אותה.
-  status: ‏reminder בוצע ב-5.17 (‏`allowed_vars` = ‏`date`, ‏`time`, ‏`concept`, ובדיקת "כל השדות" ב-`session-reminders.test.ts`).
+  status: ‏reminder בוצע ב-5.17 (‏`allowed_vars` = ‏`date`, ‏`time`, ‏`concept`, ובדיקת "כל השדות" ב-`session-reminders.test.ts`). ‏event_cancelled ו-event_changed בוצעו ב-3.8 (בדיקת "כל השדות" ב-`settings-and-templates.test.ts`, על התצוגה המקדימה ועל ההודעה).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-8-push-pipeline-and-permission.md`
   target: 4.6
@@ -524,6 +525,7 @@
   target: 3.8
   summary: שינוי תאריך, שעה או סגירת הרשמה של מפגש (`admin_update_event`, מותר כשאין בו הרשמות) לא מרענן את הזיכויים שהמפגש הוא חלופה פעילה שלהם. חלופה יכולה לזוז לפני המפגש שבוטל, או להיסגר בלי שהזיכוי יתקדם.
   evidence: ביקורת 3.7 (blind-hunter). ‏`admin_update_event` מרענן זיכויים רק בשינוי מכסה. שינוי מפגש (`event_changed`) נבנה ב-3.8, ושם צריך לרענן חלופות ולהחליף חלופה שזזה לפני `origin_starts_at`.
+  status: נסגר ב-3.8 (2026-10-13). ‏`admin_reschedule_event` מרענן את הזיכויים של המפגש, ו-`private.refresh_credit_options` מחליף חלופה שמתחילה ב-`origin_starts_at` או לפניו (`replaced_reason = 'moved'`). שינוי מועד של מפגש בלי הרשמות ב-`admin_update_event` עדיין מרענן רק בשינוי מכסה; הזיכוי מתעדכן בצפייה הבאה של הלקוחה ובמשימת הרענון.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-7-cancellation-credits-and-refund-requests.md`
   target: 5.20
@@ -543,3 +545,7 @@
   target: 5.20
   summary: ‏`admin_duplicate_event` משכפל גם מפגש של קונספט בארכיון, ולכן נוצרת טיוטה חדשה לקונספט שלא מוצע במפגש חדש. להחליט אם לחסום (כמו `admin_create_event`) או להשאיר.
   evidence: ‏4.8 לא נוגע ב-`admin_duplicate_event` (גבול ה-spec). ‏`admin_create_event` כבר מסנן `archived_at`.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-8-business-cancels-or-changes-a-session.md`
+  summary: No test covers `CONCURRENT_CHANGE` in `admin_cancel_event` / `admin_reschedule_event` when a new booking or a bind commits between the unlocked read of the registrants and the booking locks.
+  evidence: 3.8 review round 1 (blind-hunter). The re-check exists in the code; triggering it needs a paused committing transaction, like the 3.7 `CREDIT_LOCKED` item.

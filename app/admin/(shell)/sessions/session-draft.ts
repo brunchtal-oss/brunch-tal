@@ -312,11 +312,31 @@ export type ListOccupancy =
   | { full: true; percent: number }
   | { full: false; text: string; percent: number }
 
+// Story 3.8: a plain save of the date or times refused because the session
+// has bookings (EVENT_HAS_BOOKINGS) goes to the time change with its
+// notice: the new date and times from the draft. Any other field or answer:
+// null (the row shows the answer as before).
+export function rescheduleRequest(
+  field: EditorField,
+  result: { ok: true } | { ok: false; code: string },
+  draft: Pick<SessionDraft, "date" | "startTime" | "endTime">
+): { date: string; startTime: string; endTime: string } | null {
+  if (field !== "when" || result.ok || result.code !== "EVENT_HAS_BOOKINGS") {
+    return null
+  }
+  return {
+    date: draft.date,
+    startTime: draft.startTime,
+    endTime: draft.endTime,
+  }
+}
+
 export function listOccupancy(
   row: { status: EventStatus; kind: EventKind; capacity_adults: number },
   occupied: number
 ): ListOccupancy | null {
-  if (row.status === "draft") return null
+  // A draft has no bookings; a cancelled session has none left (3.8).
+  if (row.status === "draft" || row.status === "cancelled") return null
   const party = row.kind === "couple" ? 2 : 1
   if (occupied + party > row.capacity_adults) {
     return { full: true, percent: 100 }

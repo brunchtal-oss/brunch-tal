@@ -12,6 +12,7 @@ import {
   fieldError,
   imageChanged,
   listOccupancy,
+  rescheduleRequest,
   listSummary,
   localDateTime,
   occupancyById,
@@ -289,6 +290,11 @@ describe("listOccupancy", () => {
     expect(listOccupancy(ROW, 5)).toBeNull()
   })
 
+  it("story 3.8: a cancelled session shows no number", () => {
+    expect(listOccupancy({ ...ROW, status: "cancelled" }, 0)).toBeNull()
+    expect(listOccupancy({ ...ROW, status: "cancelled" }, 3)).toBeNull()
+  })
+
   it("occupied/capacity while there is room", () => {
     expect(listOccupancy(published, 8)).toEqual({
       full: false,
@@ -371,5 +377,34 @@ describe("imageChanged", () => {
         media_id: "4f8b1c2a-1d4e-4a8b-9c0d-2e3f4a5b6c7d",
       })
     ).toBe(true)
+  })
+})
+
+// Story 3.8: the editor sends a refused time save to the time change.
+describe("rescheduleRequest", () => {
+  const draft = { date: "2026-10-20", startTime: "11:00", endTime: "13:00" }
+
+  it("the when row refused with EVENT_HAS_BOOKINGS: the draft's date and times", () => {
+    expect(
+      rescheduleRequest(
+        "when",
+        { ok: false, code: "EVENT_HAS_BOOKINGS" },
+        { ...draft }
+      )
+    ).toEqual(draft)
+  })
+
+  it("another field, another code or a success: null", () => {
+    expect(
+      rescheduleRequest(
+        "capacity",
+        { ok: false, code: "EVENT_HAS_BOOKINGS" },
+        draft
+      )
+    ).toBeNull()
+    expect(
+      rescheduleRequest("when", { ok: false, code: "INVALID_INPUT" }, draft)
+    ).toBeNull()
+    expect(rescheduleRequest("when", { ok: true }, draft)).toBeNull()
   })
 })

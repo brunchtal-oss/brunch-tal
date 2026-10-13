@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { cancelBookingAction } from "./actions"
+import { cancelBookingAction, chooseCreditOutcomeAction } from "./actions"
 
 const callRpc = vi.fn()
 
@@ -74,5 +74,52 @@ describe("cancelBookingAction", () => {
     await expect(
       cancelBookingAction({ bookingId: BOOKING_ID, idempotencyKey: KEY })
     ).resolves.toEqual({ ok: false, code: "SELF_CANCEL_CLOSED" })
+  })
+})
+
+describe("chooseCreditOutcomeAction (story 3.8)", () => {
+  it("sends her choice with the sheet's key; a refusal passes its code", async () => {
+    callRpc.mockResolvedValue({
+      ok: true,
+      data: { credit_id: BOOKING_ID, outcome: "refund" },
+    })
+    await expect(
+      chooseCreditOutcomeAction({
+        creditId: BOOKING_ID,
+        choice: "refund",
+        idempotencyKey: KEY,
+      })
+    ).resolves.toEqual({ ok: true, data: { outcome: "refund" } })
+    expect(callRpc).toHaveBeenCalledWith(
+      { session: true },
+      "choose_credit_outcome",
+      { p_credit_id: BOOKING_ID, p_choice: "refund", p_idempotency_key: KEY }
+    )
+    callRpc.mockResolvedValue({ ok: false, code: "CHOICE_NOT_PENDING" })
+    await expect(
+      chooseCreditOutcomeAction({
+        creditId: BOOKING_ID,
+        choice: "credit",
+        idempotencyKey: KEY,
+      })
+    ).resolves.toEqual({ ok: false, code: "CHOICE_NOT_PENDING" })
+  })
+
+  it("a bad shape is INVALID_INPUT without a call", async () => {
+    await expect(
+      chooseCreditOutcomeAction({
+        creditId: "x",
+        choice: "credit",
+        idempotencyKey: KEY,
+      })
+    ).resolves.toEqual({ ok: false, code: "INVALID_INPUT" })
+    await expect(
+      chooseCreditOutcomeAction({
+        creditId: BOOKING_ID,
+        choice: "other" as "credit",
+        idempotencyKey: KEY,
+      })
+    ).resolves.toEqual({ ok: false, code: "INVALID_INPUT" })
+    expect(callRpc).not.toHaveBeenCalled()
   })
 })
