@@ -8,12 +8,14 @@ import { InlineNotice } from "@/components/shared/inline-notice"
 import { StatusChip } from "@/components/shared/status-chip"
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { shownCount, type ShownSearch } from "@/lib/admin/customer-export"
 import { adminCopy } from "@/lib/copy/admin"
 import { errorMessage, type ErrorCode } from "@/lib/errors"
 import { formatLocalDate } from "@/lib/time"
 
 import { answerFor, canSearch } from "../payments/new/existing/customer-search"
 import { listCustomersAction } from "./actions"
+import { CustomerExport } from "./export-sheet"
 import {
   LIST_LIMIT,
   listHref,
@@ -63,29 +65,45 @@ export function CustomerLiveSearch({ initialQuery }: { initialQuery: string }) {
   }, [query])
 
   const shown = answerFor(query, answer)
+  // The export's second scope: the search whose results are on screen.
+  const exportSearch: ShownSearch | null = shown?.ok
+    ? {
+        query: shown.query,
+        count: shownCount(
+          shown.list.customers.length,
+          shown.list.has_more,
+          LIST_LIMIT
+        ),
+      }
+    : null
 
   return (
     <div className="flex flex-col gap-6">
-      <Field>
-        <FieldLabel htmlFor={`${id}-q`}>{copy.searchLabel}</FieldLabel>
-        <Input
-          id={`${id}-q`}
-          type="search"
-          value={query}
-          autoComplete="off"
-          maxLength={QUERY_MAX}
-          onChange={(event) => {
-            const next = event.target.value
-            setQuery(next)
-            // Next.js syncs history.replaceState with its router, without
-            // a server round trip on every key.
-            window.history.replaceState(null, "", listHref(next))
-          }}
-          aria-describedby={`${id}-hint`}
-          className="h-12 text-base"
-        />
-        <FieldDescription id={`${id}-hint`}>{copy.searchHint}</FieldDescription>
-      </Field>
+      <div className="flex flex-col gap-2">
+        <Field>
+          <FieldLabel htmlFor={`${id}-q`}>{copy.searchLabel}</FieldLabel>
+          <Input
+            id={`${id}-q`}
+            type="search"
+            value={query}
+            autoComplete="off"
+            maxLength={QUERY_MAX}
+            onChange={(event) => {
+              const next = event.target.value
+              setQuery(next)
+              // Next.js syncs history.replaceState with its router, without
+              // a server round trip on every key.
+              window.history.replaceState(null, "", listHref(next))
+            }}
+            aria-describedby={`${id}-hint`}
+            className="h-12 text-base"
+          />
+          <FieldDescription id={`${id}-hint`}>
+            {copy.searchHint}
+          </FieldDescription>
+        </Field>
+        <CustomerExport search={exportSearch} />
+      </div>
 
       <div aria-live="polite">
         {shown && !shown.ok && (

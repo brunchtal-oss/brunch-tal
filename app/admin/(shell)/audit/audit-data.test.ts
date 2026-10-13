@@ -136,6 +136,15 @@ describe("labels", () => {
     expect(fieldLabel("mystery_key")).toBe("mystery_key")
   })
 
+  it("a customers export row (story 4.4) reads in Hebrew", () => {
+    expect(actionLabel("admin_export_customers")).toBe("ייצוא לקוחות")
+    expect(formatValue("scope", "search")).toBe("תוצאות חיפוש")
+    expect(formatValue("columns", ["full_name", "phone", "email"])).toBe(
+      "שם · טלפון · מייל"
+    )
+    expect(fieldLabel("row_count")).toBe("מספר שורות")
+  })
+
   it("who: Tal, the customer or the system (user decision 2026-10-10)", () => {
     expect(actorLabel("admin")).toBe("טל")
     expect(actorLabel("customer")).toBe("הלקוחה")
