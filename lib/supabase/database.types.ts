@@ -1817,6 +1817,10 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_export_customers: {
+        Args: { p_columns: string[]; p_query: string; p_scope: string }
+        Returns: Json
+      }
       admin_finish_media_publish: {
         Args: { p_media_id: string }
         Returns: Json
