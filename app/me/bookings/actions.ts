@@ -71,3 +71,50 @@ export async function cancelBookingAction(input: {
   if (!result.ok) return result
   return { ok: true, data: parseCancelResult(result.data) }
 }
+
+// The companion's dietary note on her couple booking (story 3.5).
+// set_booking_guest_details checks everything again (hers, confirmed,
+// couple, before the registration close, trimmed, at most 1000); this
+// action checks only the shape (a string of at most 1000 after trimming,
+// so a longer text is refused here with the same detail as the RPC). The
+// key is made when the sheet opens (AD-5).
+export async function setGuestDetailsAction(input: {
+  bookingId: string
+  guestDetails: string
+  idempotencyKey: string
+}): Promise<ActionResult<{ guestDetails: string | null }>> {
+  if (
+    typeof input?.bookingId !== "string" ||
+    typeof input.idempotencyKey !== "string" ||
+    typeof input.guestDetails !== "string" ||
+    !UUID.test(input.bookingId) ||
+    !UUID.test(input.idempotencyKey)
+  ) {
+    return { ok: false, code: "INVALID_INPUT" }
+  }
+  if (input.guestDetails.trim().length > 1000) {
+    return {
+      ok: false,
+      code: "INVALID_INPUT",
+      detail: { field: "guest_details" },
+    }
+  }
+  const result = await callRpc(
+    await createClient(),
+    "set_booking_guest_details",
+    {
+      p_booking_id: input.bookingId,
+      p_guest_details: input.guestDetails,
+      p_idempotency_key: input.idempotencyKey,
+    }
+  )
+  if (!result.ok) return result
+  const row = result.data as Record<string, unknown> | null
+  return {
+    ok: true,
+    data: {
+      guestDetails:
+        row && typeof row.guest_details === "string" ? row.guest_details : null,
+    },
+  }
+}

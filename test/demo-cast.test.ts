@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import {
   ADMIN_BOOKINGS,
+  COMPANION_NOTE,
   CONFLICT,
   CUSTOMERS,
   LOGIN_CUSTOMER,
@@ -73,6 +74,16 @@ describe("demo cast", () => {
   it("cancels a purchase the customer has for that session", () => {
     const purchases = castOf(SELF_CANCEL.customer).purchases
     expect(purchases.some((p) => p.event === SELF_CANCEL.event)).toBe(true)
+  })
+
+  it("story 3.5: the companion's note is on a couple purchase of that customer, at most 1000 characters", () => {
+    const purchases = castOf(COMPANION_NOTE.customer).purchases
+    expect(
+      purchases.some(
+        (p) => p.event === COMPANION_NOTE.event && p.product === "couple"
+      )
+    ).toBe(true)
+    expect(COMPANION_NOTE.text.length).toBeLessThanOrEqual(1000)
   })
 
   it("fills E5 to 10 of 12", () => {

@@ -28,6 +28,7 @@ import { createClient } from "@supabase/supabase-js"
 
 import {
   ADMIN_BOOKINGS,
+  COMPANION_NOTE,
   CONFLICT,
   CUSTOMERS,
   DEMO_DOMAIN,
@@ -668,6 +669,30 @@ async function main() {
         )
       } else {
         warn(`הביטול של ${who.fullName} דולג.`)
+      }
+    }
+
+    // 4b. Liat writes her companion's dietary note on her couple booking
+    //     (story 3.5), signed in as herself.
+    {
+      const who = castOf(COMPANION_NOTE.customer)
+      const index = who.purchases.findIndex(
+        (p) => p.event === COMPANION_NOTE.event
+      )
+      const booking = state.items[`payment:${who.key}:${index}`]?.booking_id
+      if (customerId(who.key) && isUuid(booking)) {
+        await step(
+          `companion:${who.key}:${COMPANION_NOTE.event}`,
+          `${who.fullName} מוסיפה הגבלות תזונה של המלווה ל-${COMPANION_NOTE.event}`,
+          async (key) =>
+            rpc(await signedIn(demoEmail(who.email)), "set_booking_guest_details", {
+              p_booking_id: booking,
+              p_guest_details: COMPANION_NOTE.text,
+              p_idempotency_key: key,
+            })
+        )
+      } else {
+        warn(`ההגבלות של המלווה של ${who.fullName} דולגו.`)
       }
     }
 

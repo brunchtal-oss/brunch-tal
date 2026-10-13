@@ -344,12 +344,49 @@ describe("push", () => {
   )
 })
 
+describe("story 3.5: the push carries its notification id", () => {
+  const ID = "11111111-2222-4333-8444-555555555555"
+
+  it("keeps a valid notification_id in data", async () => {
+    await fire("push", {
+      data: pushData(
+        JSON.stringify({
+          title: "t",
+          target_path: "/me/bookings#booking-x",
+          notification_id: ID,
+        })
+      ),
+    })
+    expect(notifications[0].options.data).toEqual({
+      target_path: "/me/bookings#booking-x",
+      notification_id: ID,
+    })
+  })
+
+  it.each(["nope", 42, null])(
+    "drops a notification_id that is not a uuid (%s)",
+    async (id) => {
+      await fire("push", {
+        data: pushData(
+          JSON.stringify({
+            title: "t",
+            target_path: "/me",
+            notification_id: id,
+          })
+        ),
+      })
+      expect(notifications[0].options.data).toEqual({ target_path: "/me" })
+    }
+  )
+})
+
 describe("notificationclick", () => {
-  const click = (target: unknown) => {
+  const ID = "11111111-2222-4333-8444-555555555555"
+  const click = (target: unknown, notificationId?: unknown) => {
     let closed = false
     const done = fire("notificationclick", {
       notification: {
-        data: { target_path: target },
+        data: { target_path: target, notification_id: notificationId },
         close: () => {
           closed = true
         },
@@ -396,6 +433,17 @@ describe("notificationclick", () => {
       expect(opened).toEqual([`${ORIGIN}/`])
     }
   )
+
+  it("story 3.5: adds ?read=<id> before the hash, so the app marks it read", async () => {
+    await click("/me/bookings#booking-b1", ID)
+    expect(opened).toEqual([`${ORIGIN}/me/bookings?read=${ID}#booking-b1`])
+  })
+
+  it("story 3.5: no read mark for / or an id that is not a uuid", async () => {
+    await click("/elsewhere", ID)
+    await click("/me", "nope")
+    expect(opened).toEqual([`${ORIGIN}/`, `${ORIGIN}/me`])
+  })
 
   it("opens a window when the open one cannot be navigated", async () => {
     const win = openWindow()

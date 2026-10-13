@@ -309,7 +309,7 @@ describe("approving a pinned product places the booking", () => {
     })
   })
 
-  it("a couple for an existing customer in a couple session at 12/14: party 2, one entry, 14/14, purchase_repeat and booking_confirmed", async () => {
+  it("a couple for an existing customer in a couple session at 12/14: party 2, one entry, 14/14, only booking_confirmed_couple", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)
       const eventId = await insertEvent(db, f, { kind: "couple" })
@@ -337,18 +337,17 @@ describe("approving a pinned product places the booking", () => {
       ])
       expect(await occupied(db, eventId)).toBe(14)
 
+      // Story 3.5: a couple booking gets booking_confirmed_couple, on the
+      // companion's note in her bookings; a pinned product sends no
+      // purchase_repeat (user decision 2026-10-13).
       const { rows: notifications } = await db.query(
         "select type, dedupe_key from public.notifications where recipient_id = $1 order by type",
         [f.customerA]
       )
       expect(notifications).toEqual([
         {
-          type: "booking_confirmed",
-          dedupe_key: `booking_confirmed:${f.customerA}:${r.booking_id}`,
-        },
-        {
-          type: "purchase_repeat",
-          dedupe_key: `purchase_repeat:${f.customerA}:${r.payment_id}`,
+          type: "booking_confirmed_couple",
+          dedupe_key: `booking_confirmed_couple:${f.customerA}:${r.booking_id}`,
         },
       ])
     })

@@ -88,6 +88,9 @@ export const ERROR_MESSAGES = {
   // preview_book_session of a completed session with her booking (story
   // 3.12, user decision 2026-10-06); the session page adds "השתתפת במפגש".
   EVENT_COMPLETED: "המפגש הסתיים",
+  // preview_book_session of a cancelled session (story 3.5); with her
+  // booking the session page adds "היית רשומה למפגש הזה…".
+  EVENT_CANCELLED: "המפגש הזה בוטל",
   // The customer deletes her own last baby (story 2.10, user decision
   // 2026-10-06). INVALID_INPUT of a baby write carries detail.field
   // birth_date (after the local today) or babies (more than 10).

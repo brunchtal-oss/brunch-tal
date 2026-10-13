@@ -38,6 +38,9 @@ export type BookingPreview =
   // A completed session she took part in (story 3.12): no cancel and no
   // contact.
   | { kind: "completed" }
+  // A cancelled session (story 3.5): booked when she had a booking there
+  // (confirmed, or cancelled together with the session).
+  | { kind: "cancelled"; booked: boolean }
   | { kind: "blocked"; code: ErrorCode }
 
 export function parsePreview(data: unknown): BookingPreview {
@@ -45,6 +48,10 @@ export function parsePreview(data: unknown): BookingPreview {
     typeof data === "object" && data !== null && !Array.isArray(data)
       ? (data as Record<string, unknown>)
       : {}
+
+  if (row.code === "EVENT_CANCELLED") {
+    return { kind: "cancelled", booked: row.booked === true }
+  }
 
   if (row.booked === true && row.code === "EVENT_COMPLETED") {
     return { kind: "completed" }

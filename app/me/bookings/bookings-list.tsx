@@ -11,7 +11,13 @@ import { createClient } from "@/lib/supabase/server"
 import { formatDayMonth, formatWeekday } from "@/lib/time"
 
 import { sessionPhotos } from "../sessions/load-sessions"
-import { parseMyBookings, pastBookingStatus } from "./cancel-result"
+import {
+  isCoupleBooking,
+  needsContact,
+  parseMyBookings,
+  pastBookingStatus,
+} from "./cancel-result"
+import { CompanionNote } from "./companion-note"
 import { CreditCard, ExhaustedCreditCard, RefundCard } from "./credit-cards"
 import {
   activeOptions,
@@ -41,8 +47,10 @@ export async function Bookings() {
   const credits = allCredits.filter(
     (c) => isBookableCredit(c) || isExhaustedCredit(c) || isOpenRefund(c)
   )
-  // The contact button of an exhausted credit (WhatsApp).
-  const contactHref = credits.some(isExhaustedCredit)
+  // A couple booking (story 3.5): the companion's note under its card.
+  // The contact button of an exhausted credit, or of a companion note that
+  // can no longer be changed (WhatsApp).
+  const contactHref = needsContact(credits, upcoming)
     ? await getWhatsappHref()
     : null
   // The cards' photos (user decision 2026-10-08), read like the session
@@ -124,6 +132,14 @@ export async function Bookings() {
                     <StatusChip tone="booked">{customerCopy.booked}</StatusChip>
                   }
                 />
+                {isCoupleBooking(b) && (
+                  <CompanionNote
+                    bookingId={b.bookingId}
+                    guestDetails={b.guestDetails}
+                    editable={b.guestDetailsEditable}
+                    contactHref={contactHref}
+                  />
+                )}
               </li>
             ))}
           </ul>

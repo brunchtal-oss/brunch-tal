@@ -231,6 +231,14 @@ export const ADMIN_BOOKINGS = [
 export const SELF_BOOKINGS = { customer: "maya", events: ["E2", "E6"] }
 export const SELF_CANCEL = { customer: "maya", event: "E4" }
 
+// Story 3.5: Liat writes her companion's dietary note on her couple booking
+// for E3 (set_booking_guest_details); Tal sees "מלווה: …" in the session.
+export const COMPANION_NOTE = {
+  customer: "liat",
+  event: "E3",
+  text: "צמחוני, בלי פטריות",
+}
+
 // Tal's internal notes on customer cards.
 export const NOTES = [
   {

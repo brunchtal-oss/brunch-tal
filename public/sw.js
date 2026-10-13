@@ -13,14 +13,17 @@
 //   /offline. A 401 (the site lock) or a 500 passes through as it is.
 // - Never caches the HTML of /me or /admin, /api, RSC requests or a non-200.
 // - push always ends in showNotification; notificationclick opens the
-//   payload's target_path when it is under /me or /admin, else "/".
+//   payload's target_path when it is under /me or /admin, else "/". With
+//   the payload's notification_id it adds ?read=<id>, and the app marks
+//   that notification read through its own action (the signed-in session;
+//   story 3.5): no request from here.
 //
 // Bump VERSION when /offline, the icons or this behaviour change: /offline
 // is stored only at install, the icons are cache-first under fixed names
 // (regenerated ones stay stale until then), and activate deletes the caches
 // of older versions.
 
-const VERSION = "v2"
+const VERSION = "v3"
 const CACHE_PREFIX = "brunch-"
 const CACHE = `${CACHE_PREFIX}${VERSION}`
 const OFFLINE_URL = "/offline"
@@ -130,8 +133,26 @@ function safeTarget(value) {
     : "/"
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 /**
- * The push contract with story 5.8: { title, body, target_path }. A missing
+ * The target with ?read=<id> (before any #), so the app marks the
+ * notification read once she lands there; the target as is without an id
+ * or for "/".
+ * @param {string} target
+ * @param {unknown} id
+ */
+function withReadMark(target, id) {
+  const url = new URL(target, sw.location.origin)
+  if (target !== "/" && typeof id === "string" && UUID.test(id)) {
+    url.searchParams.set("read", id)
+  }
+  return url.href
+}
+
+/**
+ * The push contract with story 5.8: { title, body, target_path }, and
+ * notification_id since story 3.5. A missing
  * or broken payload still shows a notification (browsers may revoke the
  * subscription of a push that shows none).
  * @param {PushMessageData | null} data
@@ -140,28 +161,38 @@ function readPayload(data) {
   let title = DEFAULT_TITLE
   let body = ""
   let target = "/"
+  /** @type {string | null} */
+  let notificationId = null
   try {
     const json = data ? data.json() : null
     if (json && typeof json === "object") {
       if (typeof json.title === "string" && json.title) title = json.title
       if (typeof json.body === "string") body = json.body
       target = safeTarget(json.target_path)
+      if (
+        typeof json.notification_id === "string" &&
+        UUID.test(json.notification_id)
+      ) {
+        notificationId = json.notification_id
+      }
     }
   } catch {
     // Not JSON: the defaults.
   }
-  return { title, body, target }
+  return { title, body, target, notificationId }
 }
 
 sw.addEventListener("push", (event) => {
-  const { title, body, target } = readPayload(event.data)
+  const { title, body, target, notificationId } = readPayload(event.data)
   event.waitUntil(
     sw.registration.showNotification(title, {
       body,
       lang: "he",
       dir: "rtl",
       icon: ICON,
-      data: { target_path: target },
+      data: notificationId
+        ? { target_path: target, notification_id: notificationId }
+        : { target_path: target },
     })
   )
 })
@@ -169,7 +200,7 @@ sw.addEventListener("push", (event) => {
 sw.addEventListener("notificationclick", (event) => {
   event.notification.close()
   const target = safeTarget(event.notification.data?.target_path)
-  const url = new URL(target, sw.location.origin).href
+  const url = withReadMark(target, event.notification.data?.notification_id)
   event.waitUntil(
     (async () => {
       const windows = await sw.clients.matchAll({

@@ -169,6 +169,15 @@ const SEED = [
     "ההרשמה אושרה",
     "{date} · {time} · בראנץ׳ {concept}",
   ],
+  // Story 3.5: a couple booking, with push and the companion's note.
+  [
+    "booking_confirmed_couple",
+    "customer",
+    true,
+    "template",
+    "ההרשמה אושרה",
+    "{date} · {time} · בראנץ׳ {concept}. אפשר להוסיף בהרשמות שלך הגבלות תזונה או אלרגיות של המלווה",
+  ],
   [
     "reminder",
     "customer",
@@ -267,7 +276,7 @@ const SEED = [
 }))
 
 describe("notification templates", () => {
-  it("hold the approved seed: 15 types, recipient, channel, mode and wording", async () => {
+  it("hold the approved seed: 16 templates, recipient, channel, mode and wording", async () => {
     const rows = await sql(
       `select type, recipient_kind, push, body_mode, title, body, version
        from public.notification_templates
@@ -289,7 +298,7 @@ describe("notification templates", () => {
     )
   })
 
-  it("accept only the 16 types, each with its fixed recipient kind and body", async () => {
+  it("accept only the 17 types, each with its fixed recipient kind and body", async () => {
     await inRollback(async (db) => {
       const statements = [
         `insert into public.notification_templates

@@ -158,6 +158,20 @@ describe("vapidFromEnv", () => {
 })
 
 describe("runPushWorker", () => {
+  it("story 3.5: carries the job's notification_id in the payload (the push click marks it read)", async () => {
+    const { client } = fakeClient([
+      [{ ...job("j1", ["s1"]), notification_id: "n1" }],
+    ])
+    const send = vi.fn<SendPush>(async () => ({ statusCode: 201 }))
+    await runPushWorker(VAPID, { client, send })
+    expect(JSON.parse(send.mock.calls[0][1])).toEqual({
+      title: "כותרת",
+      body: "גוף",
+      target_path: "/me/bookings",
+      notification_id: "n1",
+    })
+  })
+
   it("sends to every subscription with the payload contract and a 24-hour TTL", async () => {
     const { client, calls } = fakeClient([[job("j1", ["s1", "s2"])]])
     const send = vi.fn<SendPush>(async () => ({ statusCode: 201 }))

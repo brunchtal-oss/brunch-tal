@@ -18,13 +18,16 @@ const copy = shellCopy.notifications
 // The body in body-sm, the time in label, ink-muted. The read/unread toggle
 // is a 44×44 icon button next to the link, never inside it (one target per
 // row). `onOpen` runs on a plain click of an unread row (mark, then go);
-// `now` is for tests.
+// `fresh`: it was unread when the center opened, so it keeps the unread look
+// (dot, strong title) for this visit while the read state, its sr-only word
+// and the toggle follow the server (story 3.5); `now` is for tests.
 export function NotificationItem({
   item,
   href,
   onOpen,
   onToggle,
   pending = false,
+  fresh = false,
   now,
 }: {
   item: NotificationView
@@ -32,9 +35,11 @@ export function NotificationItem({
   onOpen?: (event: React.MouseEvent<HTMLAnchorElement>) => void
   onToggle?: () => void
   pending?: boolean
+  fresh?: boolean
   now?: Date
 }) {
   const unread = !item.read
+  const emphasis = unread || fresh
   return (
     <li
       data-notification-item=""
@@ -46,7 +51,7 @@ export function NotificationItem({
         className="flex min-h-11 min-w-0 flex-1 flex-col gap-1 rounded-[4px] py-4"
       >
         <span className="flex items-baseline gap-2">
-          {unread && (
+          {emphasis && (
             <span
               aria-hidden
               className="size-2 shrink-0 translate-y-[-0.1em] rounded-full bg-brand-accent"
@@ -55,7 +60,7 @@ export function NotificationItem({
           <span
             className={cn(
               "text-base leading-snug text-pretty",
-              unread ? "font-semibold" : "font-normal"
+              emphasis ? "font-semibold" : "font-normal"
             )}
           >
             {unread && <span className="sr-only">{copy.unread}, </span>}
@@ -66,7 +71,7 @@ export function NotificationItem({
           <span
             className={cn(
               "text-[15px] leading-normal text-pretty text-foreground",
-              unread && "ps-4"
+              emphasis && "ps-4"
             )}
           >
             {item.body}
@@ -78,7 +83,7 @@ export function NotificationItem({
           suppressHydrationWarning
           className={cn(
             "text-[13px] leading-tight text-muted-foreground",
-            unread && "ps-4"
+            emphasis && "ps-4"
           )}
         >
           {formatNotificationTime(item.createdAt, now)}
