@@ -541,6 +541,61 @@ describe("Tal books a customer", () => {
   })
 })
 
+// Story 4.3 (user decision 2026-10-13): several sessions at once are booked
+// one after another with admin_book_customer, one key per date.
+describe("several sessions for one customer", () => {
+  it("three dates, one full: two bookings, the full one refused alone; each key returns its first result", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const first = await insertEvent(db, f, { day: await localDay(db, 3) })
+      const full = await insertEvent(db, f, {
+        day: await localDay(db, 4),
+        capacity: 12,
+      })
+      await fill(db, f, full, 12)
+      const third = await insertEvent(db, f, { day: await localDay(db, 5) })
+      const keys = [randomUUID(), randomUUID(), randomUUID()]
+
+      const r1 = await as<{ booking_id: string }>(db, f.admin, BOOK, [
+        f.customerA,
+        first,
+        keys[0],
+      ])
+      expect(
+        await errorAs(db, f.admin, BOOK, [f.customerA, full, keys[1]])
+      ).toMatchObject({ code: "P0001", message: "EVENT_FULL" })
+      const r3 = await as<{ booking_id: string }>(db, f.admin, BOOK, [
+        f.customerA,
+        third,
+        keys[2],
+      ])
+
+      expect(await bookingsOf(db, first)).toHaveLength(1)
+      expect(await bookingsOf(db, full)).toEqual([])
+      expect(await bookingsOf(db, third)).toHaveLength(1)
+      expect(await balance(db, f.entitlement)).toMatchObject({
+        available: 2,
+        reserved: 2,
+      })
+
+      // A retry after a lost answer resends the same keys: no second
+      // booking, the same results.
+      expect(
+        await as(db, f.admin, BOOK, [f.customerA, first, keys[0]])
+      ).toEqual(r1)
+      expect(
+        await as(db, f.admin, BOOK, [f.customerA, third, keys[2]])
+      ).toEqual(r3)
+      expect(await bookingsOf(db, first)).toHaveLength(1)
+      expect(await bookingsOf(db, third)).toHaveLength(1)
+      expect(await balance(db, f.entitlement)).toMatchObject({
+        available: 2,
+        reserved: 2,
+      })
+    })
+  })
+})
+
 describe("permissions", () => {
   it("anon gets 42501 on the three functions", async () => {
     await inRollback(async (db) => {

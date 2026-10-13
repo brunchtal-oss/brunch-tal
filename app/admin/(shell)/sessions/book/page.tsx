@@ -1,7 +1,6 @@
 import { Suspense } from "react"
 import type { Metadata } from "next"
 import Link from "next/link"
-import { ChevronLeftIcon } from "lucide-react"
 
 import { InlineNotice } from "@/components/shared/inline-notice"
 import { PageHeading } from "@/components/shared/page-heading"
@@ -14,7 +13,13 @@ import { createClient } from "@/lib/supabase/server"
 import { formatLocalDate, formatSessionDate } from "@/lib/time"
 
 import { toBookableEvents } from "../../payments/new/event-options"
-import { loadBookingCustomer } from "./load-customer"
+import { markBooked } from "./book-items"
+import {
+  loadBookedEventIds,
+  loadBookingCustomer,
+  loadFreeEntries,
+} from "./load-customer"
+import { MultiBooking } from "./multi-booking"
 
 const copy = adminCopy.sessions
 
@@ -24,9 +29,11 @@ export const metadata: Metadata = {
 
 // Manual booking from the customer's side (story 3.4): after a card is
 // approved ("לרישום לתאריך"), or later from her card (4.2). The open
-// sessions (admin_list_bookable_events) with {occupied}/{capacity}; a row
-// leads to /admin/sessions/[id]/book?customer=<id>, where the preview and
-// the confirm are. Rendered inside the admin shell's <Suspense> gate.
+// sessions (admin_list_bookable_events) with {occupied}/{capacity}. A
+// session she is already booked for shows "רשומה" (story 4.3, user
+// decision 2026-10-13); every other row is a checkbox, and several dates
+// are booked at once (MultiBooking). /admin/sessions/[id]/book stays for a
+// session's own page. Rendered inside the admin shell's <Suspense> gate.
 export default function BookCustomerPage({
   searchParams,
 }: {
@@ -75,12 +82,13 @@ async function BookCustomerContent({
     )
   }
 
-  const result = await callRpc(
-    await createClient(),
-    "admin_list_bookable_events"
-  )
+  const [result, bookedIds, freeEntries] = await Promise.all([
+    callRpc(await createClient(), "admin_list_bookable_events"),
+    loadBookedEventIds(customer.id),
+    loadFreeEntries(customer.id),
+  ])
   if (!result.ok) throw new Error("bookable sessions failed")
-  const events = toBookableEvents(result.data)
+  const events = markBooked(toBookableEvents(result.data), bookedIds)
 
   return (
     <section aria-labelledby="choose-heading" className="flex flex-col gap-3">
@@ -100,46 +108,25 @@ async function BookCustomerContent({
           {copy.noBookableSessions}
         </p>
       ) : (
-        <ul className="flex flex-col border-t border-border">
-          {events.map((event) => {
+        <MultiBooking
+          customer={{ id: customer.id, name: customer.name }}
+          freeEntries={freeEntries}
+          rows={events.map((event) => {
             const party = event.kind === "couple" ? 2 : 1
-            const full = event.occupied + party > event.capacity
-            const day = formatSessionDate(event.startsAt)
-            return (
-              <li key={event.id} className="border-b border-border">
-                <Link
-                  href={`/admin/sessions/${event.id}/book?customer=${customer.id}`}
-                  className="flex min-h-14 items-center justify-between gap-3 py-3"
-                >
-                  <span className="flex min-w-0 flex-col gap-1">
-                    <span className="text-base font-semibold break-words">
-                      <bdi>
-                        {adminCopy.payments.eventOptionTitle(event.conceptName)}
-                      </bdi>
-                    </span>
-                    <span className="text-[13px] text-muted-foreground">
-                      <time dateTime={formatLocalDate(event.startsAt)}>
-                        <bdi>
-                          {adminCopy.payments.eventOptionDetails(
-                            day,
-                            event.occupied,
-                            event.capacity,
-                            full
-                          )}
-                        </bdi>
-                      </time>
-                    </span>
-                  </span>
-                  <ChevronLeftIcon
-                    aria-hidden
-                    strokeWidth={1.5}
-                    className="size-5 shrink-0 text-muted-foreground"
-                  />
-                </Link>
-              </li>
-            )
+            return {
+              id: event.id,
+              title: adminCopy.payments.eventOptionTitle(event.conceptName),
+              details: adminCopy.payments.eventOptionDetails(
+                formatSessionDate(event.startsAt),
+                event.occupied,
+                event.capacity,
+                event.occupied + party > event.capacity
+              ),
+              dateTime: formatLocalDate(event.startsAt),
+              booked: event.booked,
+            }
           })}
-        </ul>
+        />
       )}
     </section>
   )

@@ -11,8 +11,10 @@ const copy = adminCopy.home
 
 // Cards about to expire (story 4.1): active cards with free entries whose
 // days left are within business_settings.admin_expiring_days, by expiry, as
-// decided by admin_get_home. The name links to the customer's card (story
-// 4.2); the row itself is not a link.
+// decided by admin_get_home. The name links to the open cards filtered to
+// "expiring", with this card highlighted (story 4.3, user decision
+// 2026-10-10; also for a purchase not bound yet); the row itself is not a
+// link.
 export async function ExpiringCards() {
   const { expiring_cards: rows } = await loadHome()
 
@@ -31,16 +33,12 @@ export async function ExpiringCards() {
                     breaks apart (phone check 2026-10-06). */}
                 <div className="flex items-start gap-2">
                   <p className="min-w-0 flex-1 text-base leading-[1.35] font-semibold">
-                    {item.href ? (
-                      <Link
-                        href={item.href}
-                        className="rounded-lg underline underline-offset-[3px]"
-                      >
-                        <bdi className="break-words">{item.title}</bdi>
-                      </Link>
-                    ) : (
+                    <Link
+                      href={item.href}
+                      className="rounded-lg underline underline-offset-[3px]"
+                    >
                       <bdi className="break-words">{item.title}</bdi>
-                    )}
+                    </Link>
                   </p>
                   <StatusChip tone="warning" className="shrink-0">
                     {copy.expiringChip}

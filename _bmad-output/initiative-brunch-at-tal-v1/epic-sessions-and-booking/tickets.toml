@@ -206,3 +206,15 @@ after = [13]
 hitl = false
 risk = "medium"
 references = ["ARCHITECTURE-SPINE.md#ad-11 (job_auto_extend)", "ARCHITECTURE-SPINE.md#ad-8 (local_week_start)"]
+
+[[entry]]
+id = 19
+type = "story"
+title = "Manual booking improvements — שיפורי הרישום הידני"
+description = "החלטת המשתמשת 2026-10-13 (בדיקה של 4.3): במסך הרישום הידני (/admin/sessions/book?customer=) מוצגים רק מפגשים שאפשר לממן מהזכויות של הלקוחה לפי private.plan_funding (למשל מפגש זוגי לא מוצע לכרטיסייה). הסימון \"רשומה\" והרישום לכמה מפגשים בבת אחת נבנו ב-4.3."
+verify = "בדיקות: מפגש זוגי לא מוצע ללקוחה שיש לה רק כרטיסייה; מפגש שאפשר לממן ממשיך להופיע; לקוחה מקבלת NOT_AUTHORIZED."
+covers = ["CAP-14"]
+after = [4, 5]
+hitl = false
+risk = "medium"
+references = ["ARCHITECTURE-SPINE.md#ad-7 (plan_funding)", "spec-4-3-open-cards-overview.md (Spec Change Log)"]

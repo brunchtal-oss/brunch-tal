@@ -306,7 +306,7 @@ describe("home rows", () => {
     expect(toSessionTile({ ...row, capacity: 0 }).fillPercent).toBe(0)
   })
 
-  it("an expiring card: the name (or a new customer), free entries and the date", () => {
+  it("an expiring card: the name (or a new customer) linking to the filtered open cards at it, free entries and the date", () => {
     expect(
       toExpiringCard({
         entitlement_id: "c1",
@@ -320,7 +320,7 @@ describe("home rows", () => {
     ).toEqual({
       key: "c1",
       title: "Orna",
-      href: "/admin/customers/11111111-1111-4111-8111-111111111111",
+      href: "/admin/customers/open-cards?filter=expiring#card-c1",
       entries: "2 כניסות שלא נרשמה אליהן",
       until: "בתוקף עד 30.10",
     })
@@ -334,7 +334,10 @@ describe("home rows", () => {
         expires_on: "2026-10-30",
         days_left: 20,
       })
-    ).toMatchObject({ title: copy.newCustomer, href: null })
+    ).toMatchObject({
+      title: copy.newCustomer,
+      href: "/admin/customers/open-cards?filter=expiring#card-c2",
+    })
   })
 
   it("the totals: the month of the period and the amounts from the server", () => {
