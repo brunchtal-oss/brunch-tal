@@ -216,7 +216,9 @@ const SEED = [
     true,
     "template_or_override",
     "שינוי בבראנץ׳ של {date}",
-    "הבראנץ׳ עבר ל{new_date} בשעה {new_time}. כל הפרטים ומה אפשר לעשות מחכים לך באזור האישי",
+    "לידיעתך! מועד הבראנץ׳ שונה ל-{new_date} בשעה {new_time}",
+    // Reworded in 3.8 (20261013185902_business_cancel_texts).
+    2,
   ],
   [
     "event_cancelled",
@@ -224,7 +226,8 @@ const SEED = [
     true,
     "template_or_override",
     "הבראנץ׳ של {date} בוטל",
-    "מצטערות על השינוי. כל הפרטים ומה אפשר לעשות מחכים לך באזור האישי",
+    "אם נרשמת עם כרטיסייה, הכניסה חזרה אלייך. אם שילמת על המפגש בנפרד, ראי פרטים באזור האישי",
+    2,
   ],
   [
     "entitlement_changed",
@@ -564,12 +567,12 @@ describe("enqueue_notification", () => {
         event_changed: {
           title: "שינוי בבראנץ׳ של 10.11",
           body: "נוסח שטל ערכה",
-          template_version: 1,
+          template_version: 2,
         },
         event_cancelled: {
           title: "הבראנץ׳ של 12.11 בוטל",
-          body: "מצטערות על השינוי. כל הפרטים ומה אפשר לעשות מחכים לך באזור האישי",
-          template_version: 1,
+          body: "אם נרשמת עם כרטיסייה, הכניסה חזרה אלייך. אם שילמת על המפגש בנפרד, ראי פרטים באזור האישי",
+          template_version: 2,
         },
       })
     })

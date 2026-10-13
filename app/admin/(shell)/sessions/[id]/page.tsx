@@ -13,6 +13,7 @@ import { shellCopy } from "@/lib/copy/shell"
 import { isReadOnlySession } from "../load-session"
 import { AttendeeList } from "./attendee-list"
 import { detailsSummary, isFull, loadEventDetails } from "./load-details"
+import { SessionCancel } from "./session-cancel"
 import { SessionHeader } from "./session-header"
 
 const copy = adminCopy.sessions
@@ -55,13 +56,17 @@ async function SessionDetailsContent({
   const details = await loadEventDetails(id)
   if (!details) notFound()
 
+  const now = new Date()
   const readOnly = isReadOnlySession(
     { status: details.status, ends_at: details.endsAt },
-    new Date()
+    now
   )
   const full = isFull(details)
   // Only a published session takes a booking (a draft: EVENT_NOT_BOOKABLE).
   const bookable = !readOnly && details.status === "published"
+  // Story 3.8: a published session that has not started can be cancelled
+  // (display only; the plan checks again: EVENT_NOT_CANCELLABLE).
+  const cancellable = bookable && Date.parse(details.startsAt) > now.getTime()
 
   return (
     <>
@@ -145,6 +150,15 @@ async function SessionDetailsContent({
           2026-10-08). */}
       <ResultNoticeHost className="mt-4 flex flex-col gap-8">
         <AttendeeList details={details} cancellable={!readOnly} />
+        {/* Story 3.8: the whole session's cancel, last on the page, far from
+            the everyday actions. */}
+        {cancellable && (
+          <SessionCancel
+            eventId={id}
+            conceptName={details.conceptName}
+            startsAt={details.startsAt}
+          />
+        )}
       </ResultNoticeHost>
     </>
   )

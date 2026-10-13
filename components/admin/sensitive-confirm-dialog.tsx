@@ -38,7 +38,20 @@ export type SensitiveConfirmProps = {
   choiceMissing?: string | null
   notice?: React.ReactNode
   reason?: { label: string; value: string; onChange: (value: string) => void }
+  // A message Tal edits before it is sent (story 3.8: the notice's body,
+  // prefilled from its template). hint: a line above the field (the
+  // notice's title). Required: the caller passes choiceMissing while empty.
+  message?: {
+    label: string
+    hint?: React.ReactNode
+    value: string
+    maxLength: number
+    onChange: (value: string) => void
+  }
   checkboxLabel: React.ReactNode
+  // A second required checkbox (story 3.8: a purchase that needs manual
+  // handling after the cancel). Both must be checked; one confirm button.
+  secondCheckboxLabel?: React.ReactNode
   confirmLabel: string
   destructive?: boolean
   // True from the confirm until the answer: the confirm button is busy.
@@ -59,7 +72,9 @@ export function SensitiveConfirmPanel({
   choiceMissing = null,
   notice,
   reason,
+  message,
   checkboxLabel,
+  secondCheckboxLabel,
   confirmLabel,
   destructive = false,
   pending = false,
@@ -67,10 +82,14 @@ export function SensitiveConfirmPanel({
   onCancel,
 }: SensitiveConfirmProps) {
   const id = useId()
-  const [checked, setChecked] = useState(false)
+  const [firstChecked, setFirstChecked] = useState(false)
+  const [secondChecked, setSecondChecked] = useState(false)
   const [showHint, setShowHint] = useState(false)
   const checkId = `${id}-check`
+  const secondId = `${id}-check-2`
   const hintId = `${id}-hint`
+  const messageHintId = `${id}-message-hint`
+  const checked = firstChecked && (!secondCheckboxLabel || secondChecked)
 
   const confirm = () => {
     if (pending) return
@@ -96,6 +115,33 @@ export function SensitiveConfirmPanel({
 
       {notice && <InlineNotice tone="warning">{notice}</InlineNotice>}
 
+      {message && (
+        <Field>
+          <FieldLabel htmlFor={`${id}-message`}>{message.label}</FieldLabel>
+          {message.hint && (
+            <p id={messageHintId} className="text-[13px] text-muted-foreground">
+              {message.hint}
+            </p>
+          )}
+          <Textarea
+            id={`${id}-message`}
+            value={message.value}
+            maxLength={message.maxLength}
+            aria-describedby={
+              [
+                message.hint ? messageHintId : null,
+                showHint && choiceMissing ? hintId : null,
+              ]
+                .filter(Boolean)
+                .join(" ") || undefined
+            }
+            aria-invalid={(showHint && !!choiceMissing) || undefined}
+            onChange={(event) => message.onChange(event.target.value)}
+            className="min-h-28 text-base"
+          />
+        </Field>
+      )}
+
       {reason && (
         <Field>
           <FieldLabel htmlFor={`${id}-reason`}>{reason.label}</FieldLabel>
@@ -112,9 +158,9 @@ export function SensitiveConfirmPanel({
       <div className="flex items-start gap-3">
         <Checkbox
           id={checkId}
-          checked={checked}
+          checked={firstChecked}
           onCheckedChange={(value) => {
-            setChecked(value === true)
+            setFirstChecked(value === true)
             if (value === true) setShowHint(false)
           }}
           aria-describedby={showHint ? hintId : undefined}
@@ -124,6 +170,24 @@ export function SensitiveConfirmPanel({
           {checkboxLabel}
         </label>
       </div>
+
+      {secondCheckboxLabel && (
+        <div className="flex items-start gap-3">
+          <Checkbox
+            id={secondId}
+            checked={secondChecked}
+            onCheckedChange={(value) => {
+              setSecondChecked(value === true)
+              if (value === true) setShowHint(false)
+            }}
+            aria-describedby={showHint ? hintId : undefined}
+            className="mt-0.5 size-6 rounded-[4px] border-[1.5px] border-muted-foreground"
+          />
+          <label htmlFor={secondId} className="text-[15px] leading-normal">
+            {secondCheckboxLabel}
+          </label>
+        </div>
+      )}
 
       <div className="flex flex-col gap-2">
         <Button

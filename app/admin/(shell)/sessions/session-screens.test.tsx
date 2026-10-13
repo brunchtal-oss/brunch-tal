@@ -107,6 +107,19 @@ describe("SessionsList", () => {
     expect(html).toContain('data-fill="100"')
   })
 
+  it("story 3.8: a cancelled session shows the chip and no occupancy", () => {
+    const html = renderToStaticMarkup(
+      <SessionsList
+        rows={[{ ...ROW, status: "cancelled" }]}
+        occupied={{ [ROW.id]: 3 }}
+      />
+    )
+    expect(html).toContain(copy.status.cancelled)
+    expect(html).toContain("bg-expired-tint")
+    expect(html).not.toContain("/14")
+    expect(html).not.toContain("data-fill=")
+  })
+
   it("an empty list points at a new session", () => {
     expect(renderToStaticMarkup(<SessionsList rows={[]} />)).toContain(
       copy.empty.slice(0, 10)

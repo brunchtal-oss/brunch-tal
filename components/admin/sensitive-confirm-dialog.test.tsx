@@ -49,6 +49,47 @@ describe("SensitiveConfirmPanel", () => {
   })
 })
 
+describe("the message slot (story 3.8)", () => {
+  it("shows the prefilled message with its hint and limit", () => {
+    const html = renderToStaticMarkup(
+      <SensitiveConfirmPanel
+        {...props}
+        message={{
+          label: "Notice",
+          hint: "Title: cancelled",
+          value: "Prefilled body",
+          maxLength: 1000,
+          onChange: vi.fn(),
+        }}
+      />
+    )
+    expect(html).toContain("Notice")
+    expect(html).toContain("Title: cancelled")
+    expect(html).toContain("Prefilled body")
+    expect(html).toContain('maxLength="1000"')
+    // The textarea is described by its hint.
+    const hintId = /<p id="([^"]+)"[^>]*>Title: cancelled/.exec(html)?.[1]
+    expect(hintId).toBeTruthy()
+    expect(html).toMatch(
+      new RegExp(`<textarea[^>]*aria-describedby="${hintId}"`)
+    )
+  })
+
+  it("a second required checkbox when given (story 3.8)", () => {
+    const html = renderToStaticMarkup(
+      <SensitiveConfirmPanel {...props} secondCheckboxLabel="I know" />
+    )
+    expect(html).toContain("I know")
+    expect(html.match(/role="checkbox"/g)).toHaveLength(2)
+    expect(html).toContain('aria-disabled="true"')
+  })
+
+  it("titles the session actions with their questions", () => {
+    expect(sensitiveTitle("event_cancel")).toBe("האם לבטל את המפגש?")
+    expect(sensitiveTitle("event_reschedule")).toBe("האם לשנות את מועד המפגש?")
+  })
+})
+
 describe("sensitive actions", () => {
   it("titles price_change with its question", () => {
     expect(sensitiveTitle("price_change")).toBe("האם לאשר שינוי מחיר?")

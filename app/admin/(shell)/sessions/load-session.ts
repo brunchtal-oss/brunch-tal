@@ -54,9 +54,10 @@ export function toSessionRow(row: {
 // The PostgREST filter of /admin/sessions: every draft, and every published
 // session that has not ended by `now` (an ISO instant), so on the morning Tal
 // still reaches a running session (manual booking until ends_at, story 3.4).
+// A cancelled session stays listed (chip "בוטל") until its end (story 3.8).
 // Display only (which rows to list), not a business decision (AD-8).
 export function sessionsListFilter(now: string): string {
-  return `status.eq.draft,and(status.eq.published,ends_at.gt.${now})`
+  return `status.eq.draft,and(status.in.(published,cancelled),ends_at.gt.${now})`
 }
 
 // A cancelled or completed session, or one whose end has passed by `now`, is

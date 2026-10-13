@@ -18,13 +18,18 @@ import { parseMyBookings } from "./bookings/cancel-result"
 import {
   isBookableCredit,
   isOpenRefund,
+  isPendingChoice,
   parseMyCredits,
+  pendingChoiceStartsAt,
 } from "./bookings/credits"
+import { PendingChoiceCard } from "./bookings/pending-choice"
 import { loadMyEntitlements } from "./load-entitlements"
 import { isEmptyHome, isHomeCard, type SessionRow } from "./purchase-items"
 
 // The home (story 4.12; design round, user decisions 2026-10-07/08), each
-// section under a real heading, in this order: her next session (her
+// section under a real heading, in this order: a business cancel waiting
+// for her refund-or-credit choice (story 3.8, a card at the top until she
+// chooses); her next session (her
 // nearest confirmed booking, a frameless session-card with its photo and
 // time); "הכרטיסייה שלי", each active card as a home-card; one line "יש לך
 // זיכוי להרשמה" to /me/bookings while she has a cancellation credit to book
@@ -62,6 +67,9 @@ export async function Home() {
   const hasCredit = credits.some(isBookableCredit)
   // An open refund request (user decision 2026-10-10): its own line.
   const hasRefund = credits.some(isOpenRefund)
+  // Story 3.8: a business cancel waiting for her choice, at the top until
+  // she chooses (then the credit or refund line).
+  const pending = credits.filter(isPendingChoice)
 
   const allBookingsLink = (
     <Link
@@ -75,7 +83,11 @@ export async function Home() {
   // One host around both states, so a cancel's result stays after the
   // page is read again, also when home becomes empty (story 3.6).
   if (
-    isEmptyHome(upcoming.length, cards.length, hasCredit || hasRefund ? 1 : 0)
+    isEmptyHome(
+      upcoming.length,
+      cards.length,
+      hasCredit || hasRefund || pending.length > 0 ? 1 : 0
+    )
   ) {
     // "לכל ההרשמות שלי" also on the empty home when she has past bookings
     // (user decision 2026-10-10).
@@ -97,6 +109,19 @@ export async function Home() {
   // between the sections, 32 above and below it (user decision 2026-10-08).
   return (
     <ResultNoticeHost className="flex flex-col gap-8 pb-8 [&>section~section]:border-t [&>section~section]:border-border [&>section~section]:pt-8">
+      {pending.length > 0 && (
+        <div className="flex flex-col gap-4">
+          {pending.map((credit) => (
+            <PendingChoiceCard
+              key={credit.creditId}
+              creditId={credit.creditId}
+              startsAt={pendingChoiceStartsAt(credit)}
+              optionsCount={credit.optionsCount}
+            />
+          ))}
+        </div>
+      )}
+
       {next && (
         <HomeSection id="next" title={customerCopy.upcomingTitle}>
           <SessionCard

@@ -33,9 +33,13 @@ export type AttentionRow = {
   event_id?: string
   concept_name?: string
   starts_at?: string
+  // paid_without_place (story 3.8): the session's status; cancelled when
+  // the business cancelled it.
+  event_status?: string
   // push_failed: failed jobs of the last 7 days.
   count?: number
-  // refund_requested (story 3.7): the customer's card.
+  // refund_requested (story 3.7) and choice_pending (3.8): the customer's
+  // card.
   customer_id?: string | null
 }
 
@@ -168,6 +172,18 @@ export function toAttentionItem(row: AttentionRow): AttentionItem {
     }
     case "paid_without_place": {
       const c = copy.items.paid_without_place
+      if (row.event_status === "cancelled") {
+        return {
+          ...base,
+          href: sessionHref(row),
+          title: c.title(name),
+          detail: c.cancelledDetail(
+            row.concept_name ?? "",
+            dayOf(row.starts_at)
+          ),
+          chip: { tone: "expired", label: c.cancelledChip },
+        }
+      }
       return {
         ...base,
         href: sessionHref(row),
@@ -219,6 +235,16 @@ export function toAttentionItem(row: AttentionRow): AttentionItem {
           row.concept_name ?? "",
           dayOf(row.starts_at)
         ),
+      }
+    }
+    case "choice_pending": {
+      const c = copy.items.choice_pending
+      return {
+        ...base,
+        href: row.customer_id
+          ? customerHref(row.customer_id)
+          : sessionHref(row),
+        title: c.title(name, row.concept_name ?? "", dayOf(row.starts_at)),
       }
     }
     case "push_failed": {

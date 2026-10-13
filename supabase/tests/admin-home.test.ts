@@ -765,6 +765,62 @@ describe("refund requests", { timeout: 30_000 }, () => {
     })
   })
 
+  it("story 3.8: a business cancel she has not chosen for is choice_pending until she chooses; a held place is not listed", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const eventId = await insertEvent(db, f)
+      const bound = await approveAs(db, f, {
+        customerId: f.customerB,
+        productId: f.single,
+        eventId,
+        amount: 12800,
+      })
+      await approveAs(db, f, {
+        customerId: null,
+        productId: f.single,
+        eventId,
+        amount: 12800,
+      })
+      await asAdmin(db, f, () =>
+        db.query("select public.admin_cancel_event($1, true, $2, $3)", [
+          eventId,
+          testName("message"),
+          randomUUID(),
+        ])
+      )
+      const { rows } = await db.query(
+        `select c.id, c.customer_id from public.cancellation_credits c
+         join public.bookings b on b.id = c.origin_booking_id
+         where b.event_id = $1 order by c.customer_id nulls last`,
+        [eventId]
+      )
+      const [mine, held] = rows
+      expect(mine.customer_id).toBe(f.customerB)
+      expect(only(await items(db, f), [mine.id, held.id])).toEqual([
+        {
+          kind: "choice_pending",
+          id: mine.id,
+          customer_label: testName("money_b"),
+          since: expect.any(String),
+          customer_id: f.customerB,
+          event_id: eventId,
+          concept_name: expect.any(String),
+          starts_at: expect.any(String),
+          amount_agorot: 12800,
+        },
+      ])
+      expect(bound.payment_id).toEqual(expect.any(String))
+
+      await asAuthenticated(db, f.customerB)
+      await db.query("select public.choose_credit_outcome($1, 'credit', $2)", [
+        mine.id,
+        randomUUID(),
+      ])
+      await db.query("reset role")
+      expect(only(await items(db, f), [mine.id])).toEqual([])
+    })
+  })
+
   it("a completed request (3.9) leaves both lists and counts in the month: net = approved - refunded", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)

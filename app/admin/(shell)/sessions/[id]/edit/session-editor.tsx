@@ -1,6 +1,6 @@
 "use client"
 
-import { startTransition, useState } from "react"
+import { startTransition, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 
 import {
@@ -25,6 +25,7 @@ import {
   fieldChange,
   fieldError,
   imageChanged,
+  rescheduleRequest,
   type EditorField,
   type SessionDraft,
   type SessionImage,
@@ -35,6 +36,8 @@ import {
   SessionImageField,
   WhenFields,
 } from "../../session-fields"
+import { rescheduleRefusal } from "../session-cancel"
+import { RescheduleDialog, type NewWhen } from "./reschedule-dialog"
 
 const copy = adminCopy.sessions
 
@@ -73,6 +76,24 @@ export function SessionEditor({
       closesLocal: draftFromRow(row).closesLocal,
     }))
   }
+  // Story 3.8: a time change of a session with bookings goes through the
+  // event_reschedule dialog (the plain save answers EVENT_HAS_BOOKINGS).
+  const router = useRouter()
+  const [reschedule, setReschedule] = useState<NewWhen | null>(null)
+  const [rescheduleTry, setRescheduleTry] = useState(0)
+  const [moved, setMoved] = useState<
+    | { tone: "success"; text: string }
+    | { tone: "error"; code: ErrorCode; field: string | null }
+    | null
+  >(null)
+  // The time-change result shows above the fields: bring it into view (on a
+  // phone the "when" row Tal just saved is far below it).
+  const movedRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!moved) return
+    movedRef.current?.scrollIntoView({ block: "center", behavior: "smooth" })
+    movedRef.current?.focus({ preventScroll: true })
+  }, [moved])
   const update = (patch: Partial<SessionDraft>) =>
     setDraft((current) => ({ ...current, ...patch }))
   const revert = (keys: readonly (keyof SessionDraft)[]) => {
@@ -83,13 +104,19 @@ export function SessionEditor({
   const saveField = (field: EditorField) => async (key: string) => {
     const change = fieldChange(field, row, draft)
     if (!change) return null
-    return asSaveResult(
-      await updateEventAction({
-        eventId: row.id,
-        changes: change.changes,
-        idempotencyKey: key,
-      })
-    )
+    const result = await updateEventAction({
+      eventId: row.id,
+      changes: change.changes,
+      idempotencyKey: key,
+    })
+    const request = rescheduleRequest(field, result, draft)
+    if (request) {
+      setMoved(null)
+      setReschedule(request)
+      setRescheduleTry((n) => n + 1)
+      return null
+    }
+    return asSaveResult(result)
   }
 
   const fieldRow = (
@@ -116,6 +143,35 @@ export function SessionEditor({
   return (
     <div className="flex flex-col gap-6">
       {row.status === "draft" && <PublishBox eventId={row.id} />}
+
+      {moved && (
+        <InlineNotice tone={moved.tone}>
+          {moved.tone === "error"
+            ? rescheduleRefusal(moved.code, moved.field)
+            : moved.text}
+        </InlineNotice>
+      )}
+      {reschedule && (
+        <RescheduleDialog
+          key={rescheduleTry}
+          eventId={row.id}
+          when={reschedule}
+          onDone={(notified) => {
+            setReschedule(null)
+            setMoved({
+              tone: "success",
+              text: copy.reschedule.done(notified),
+            })
+            router.refresh()
+          }}
+          onRefused={(code, field) => {
+            setReschedule(null)
+            setMoved({ tone: "error", code, field })
+            router.refresh()
+          }}
+          onClose={() => setReschedule(null)}
+        />
+      )}
 
       <ul className="flex flex-col divide-y divide-border border-y border-border">
         <li className="py-6">
