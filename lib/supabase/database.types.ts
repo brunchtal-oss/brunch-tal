@@ -1839,6 +1839,7 @@ export type Database = {
       admin_list_bookable_events: { Args: never; Returns: Json }
       admin_list_customers: { Args: { p_query: string }; Returns: Json }
       admin_list_links: { Args: never; Returns: Json }
+      admin_list_open_cards: { Args: { p_filter: string }; Returns: Json }
       admin_list_payments: { Args: never; Returns: Json }
       admin_move_prep_day: {
         Args: {

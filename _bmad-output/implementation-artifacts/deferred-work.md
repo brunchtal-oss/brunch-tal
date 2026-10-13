@@ -355,13 +355,13 @@
   target: 3.6
   summary: אחרי ביטול הרשמה, לבדוק שהבית ו-`/me/purchases` (`get_my_entitlements`) זהים למסך הכרטיסיות הפתוחות של טל (4.3). באותו סיפור להוסיף לבית את הקישור "לכל ההרשמות שלי" ל-`/me/bookings`, ואת פעולות הביטול וההזזה בכרטיס "המפגש הקרוב".
   evidence: ‏4.12 נבנה לפני 3.6 ו-4.3. אין עדיין ביטול, `/me/bookings` או מסך כרטיסיות פתוחות (Never של spec 4.12).
-  status: החלק של 3.6 נסגר ב-3.6 (2026-10-06): בבית יש ביטול (או "צרי קשר") מתחת לכרטיס "המפגש הקרוב" והקישור "לכל ההרשמות שלי" ל-`/me/bookings`, והיתרה אחרי ביטול נבדקה מול `get_my_entitlements` ב-`supabase/tests/cancel-booking.test.ts`. ההזזה (3.10) וההשוואה למסך הכרטיסיות הפתוחות (4.3) נשארות לסיפורים שלהן.
+  status: החלק של 3.6 נסגר ב-3.6 (2026-10-06): בבית יש ביטול (או "צרי קשר") מתחת לכרטיס "המפגש הקרוב" והקישור "לכל ההרשמות שלי" ל-`/me/bookings`, והיתרה אחרי ביטול נבדקה מול `get_my_entitlements` ב-`supabase/tests/cancel-booking.test.ts`. ההזזה (3.10) וההשוואה למסך הכרטיסיות הפתוחות (4.3) נשארות לסיפורים שלהן. ההשוואה נסגרה ב-4.3 (2026-10-13): ב-`supabase/tests/open-cards.test.ts`, הבדיקה "a booking on the card cancelled: its entry is gone, one more free; numbers still equal on all three" משווה את `admin_list_open_cards` ל-`get_my_entitlements` ול-`admin_get_customer` לפני הביטול ואחריו.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-4-12-personal-area-home-and-entitlements.md`
   target: 3.12
   summary: אחרי סיום מפגש (תנועת `use`), לבדוק שהכניסה עוברת מ"משוריינות" ל"נוצלו" בבית ובפירוט, שכרטיסייה שנוצלה כולה עוברת ל"קודמות", ושהמסך זהה למסך הכרטיסיות הפתוחות של טל.
   evidence: ‏`is_used_up` ו-`used` נבדקו ב-`supabase/tests/my-entitlements.test.ts` בלי סיום מפגש אמיתי, כי 3.12 עוד לא נבנה.
-  status: נסגר ב-3.12 (2026-10-06): ב-`supabase/tests/my-entitlements.test.ts` ‏`private.job_complete_events` מעבירה את הכניסה מ-`reserved` ל-`used` דרך `get_my_entitlements`, וכרטיסייה שנוצלה כולה מקבלת `is_used_up` (הבית והפירוט נגזרים מהמספרים האלה). ההשוואה למסך הכרטיסיות הפתוחות של טל נשארת ל-4.3.
+  status: נסגר ב-3.12 (2026-10-06): ב-`supabase/tests/my-entitlements.test.ts` ‏`private.job_complete_events` מעבירה את הכניסה מ-`reserved` ל-`used` דרך `get_my_entitlements`, וכרטיסייה שנוצלה כולה מקבלת `is_used_up` (הבית והפירוט נגזרים מהמספרים האלה). ההשוואה למסך הכרטיסיות הפתוחות של טל נשארת ל-4.3. נסגרה ב-4.3 (2026-10-13): ב-`supabase/tests/open-cards.test.ts`, הבדיקות "3 used + 1 reserved: ..." (מספרים זהים ב-`admin_list_open_cards`, ‏`get_my_entitlements` ו-`admin_get_customer` אחרי סיום שלושה מפגשים) ו-"the last session completes: the card drops from the list and stays on the customer card".
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-4-12-personal-area-home-and-entitlements.md`
   target: (בלי יעד)
@@ -392,6 +392,7 @@
   target: 4.3
   summary: שורות "כרטיסיות שעומדות לפוג" בבית האדמין מקשרות למסך הכרטיסיות הפתוחות, מסונן לכרטיסיות שעומדות לפוג (EXPERIENCE › בית).
   evidence: ב-4.1 השורה בלי קישור, כי המסך עוד לא קיים (spec 4.1, Always).
+  status: נסגר ב-4.3 (2026-10-13, החלטת המשתמשת 2026-10-10). השם בשורה מקשר ל-`/admin/customers/open-cards?filter=expiring#card-{entitlement_id}` (יעד אחד לשורה, גם לרכישה שלא שויכה), והכרטיסייה המבוקשת מודגשת. נבדק ב-`home-items.test.ts`, ושהשורות זהות לרשימה המסוננת ב-`supabase/tests/open-cards.test.ts` ("5 days left, threshold 21, 1 free: ...").
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-4-1-admin-home-and-attention-items.md`
   target: 3.7
@@ -403,7 +404,7 @@
   target: 4.2
   summary: בבית האדמין, השם של הלקוחה בשורת "כרטיסיות שעומדות לפוג" (ובפריט "לטיפול" של לקוחה שכבר יש לה חשבון) מקשר לכרטיס הלקוחה שלה. ‏`admin_get_home` צריך להחזיר גם `customer_id` (היום רק `entitlement_id`). אם 4.3 מוסיף לשורה קישור לכרטיסיות הפתוחות, להחליט יחד איך השורה נשארת יעד אחד.
   evidence: בקשת המשתמשת בבדיקה בטלפון של 4.1 (2026-10-06). כרטיס הלקוחה עוד לא קיים (4.2, סבב 6).
-  status: נסגר ב-4.2 (2026-10-07). ‏`admin_get_home` מחזיר `customer_id` בכל שורה של `expiring_cards`, והשם בשורה מקשר לכרטיס (השורה עצמה לא קישור). פריטי "לטיפול" לא משתנים (החלטת המשתמשת 2026-10-07: רק "שילמה ואין לה מקום" שייך ללקוחה עם חשבון, והוא מוביל לעמוד המפגש). ההחלטה על יעד אחד לשורה כשמתווסף קישור לכרטיסיות הפתוחות נשארת ל-4.3.
+  status: נסגר ב-4.2 (2026-10-07). ‏`admin_get_home` מחזיר `customer_id` בכל שורה של `expiring_cards`, והשם בשורה מקשר לכרטיס (השורה עצמה לא קישור). פריטי "לטיפול" לא משתנים (החלטת המשתמשת 2026-10-07: רק "שילמה ואין לה מקום" שייך ללקוחה עם חשבון, והוא מוביל לעמוד המפגש). ההחלטה על יעד אחד לשורה כשמתווסף קישור לכרטיסיות הפתוחות נשארת ל-4.3. נסגרה ב-4.3 (2026-10-13, החלטת המשתמשת 2026-10-10): השם מקשר לכרטיסיות הפתוחות המסוננות, עם הכרטיסייה מודגשת, במקום לכרטיס הלקוחה. משם "לפרופיל" מוביל לכרטיס.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-12-session-completion-job.md`
   target: (בלי יעד)
@@ -514,6 +515,7 @@
   target: 4.3 (תוכנית ההשלמה 2026-10-10)
   summary: שורות הכניסות בכרטיס הלקוחה באדמין לא תואמות ליומן התנועות של הלקוחה: אין שורות "בוטלה", ואין שורה לכל הרשמה בזכות בודדת או זוגית.
   evidence: ב-memlog מ-2026-10-08 כתוב שפירוט הכרטיסייה באדמין נראה אותו דבר, בגוף שלישי. ‏`entryLines` ב-`card-items.ts` מציג רק משבצות כניסה (נוצלה, רשומה, פנויה).
+  status: נסגר ב-4.3 (2026-10-13) בלי שינוי, החלטת המשתמשת 2026-10-10: כרטיס הלקוחה נשאר כמו שהוא, בלי שורות "בוטלה" ובלי שורות חדשות. ההיסטוריה של ביטולים נמצאת ב"היסטוריית הרשמות". רשימת הכרטיסיות הפתוחות משתמשת באותן שורות (`EntryRow` עבר ל-`customers/entry-lines.tsx` בלי שינוי).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-19-demo-refactor-sweep.md`
   target: 5.20 (יישור), 6.1 (בדיקה)
@@ -543,3 +545,8 @@
   target: 5.20
   summary: ‏`admin_duplicate_event` משכפל גם מפגש של קונספט בארכיון, ולכן נוצרת טיוטה חדשה לקונספט שלא מוצע במפגש חדש. להחליט אם לחסום (כמו `admin_create_event`) או להשאיר.
   evidence: ‏4.8 לא נוגע ב-`admin_duplicate_event` (גבול ה-spec). ‏`admin_create_event` כבר מסנן `archived_at`.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-4-3-open-cards-overview.md`
+  target: 3.19
+  summary: במסך הרישום הידני מוצגים גם מפגשים שאי אפשר לממן מהזכויות של הלקוחה (מפגש "עם סבתוש" זוגי מוצע לכרטיסייה).
+  evidence: הבדיקה המקומית של 4.3 (2026-10-13, החלטת המשתמשת). ‏`admin_list_bookable_events` לא מקבל לקוחה, והסינון תלוי ב-`plan_funding` ש-3.5 משנה. הסימון "רשומה" והרישום לכמה מפגשים נבנו ב-4.3.

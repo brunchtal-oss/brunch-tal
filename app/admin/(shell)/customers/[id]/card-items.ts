@@ -188,8 +188,11 @@ export type EntryLine = {
 // The entries by session date (used "השתתפה · יום DD.MM", booked "נרשמה ·
 // יום DD.MM", each with the session's title under it, user decision
 // 2026-10-08), then one line per free entry: "פנויה, יש לשריין", or "לא
-// נוצלה" once the card expired.
-export function entryLines(row: CardEntitlement): EntryLine[] {
+// נוצלה" once the card expired. Also the open cards list (story 4.3), which
+// passes its own rows of the same shape.
+export function entryLines(
+  row: Pick<CardEntitlement, "entries" | "available" | "is_expired">
+): EntryLine[] {
   const taken = [...row.entries]
     .sort((a, b) => (a.starts_at < b.starts_at ? -1 : 1))
     .map((entry, i): EntryLine => {

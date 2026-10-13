@@ -9,6 +9,7 @@ import {
 } from "@/lib/time"
 
 import { customerHref } from "./customers/customer-items"
+import { expiringCardHref } from "./customers/open-cards/open-cards-items"
 import { sessionTitle } from "./sessions/session-draft"
 
 // What /admin shows for the rows of admin_get_attention_items and
@@ -279,8 +280,9 @@ export function toSessionTile(row: UpcomingSessionRow): SessionTileItem {
 export type ExpiringCardItem = {
   key: string
   title: string
-  // The customer's card (story 4.2); null for a purchase not bound yet.
-  href: string | null
+  // The open cards filtered to "expiring", at this card (story 4.3, user
+  // decision 2026-10-10); also for a purchase not bound yet.
+  href: string
   entries: string
   until: string
 }
@@ -289,7 +291,7 @@ export function toExpiringCard(row: ExpiringCardRow): ExpiringCardItem {
   return {
     key: row.entitlement_id,
     title: nameOf(row.customer_label),
-    href: row.customer_id ? customerHref(row.customer_id) : null,
+    href: expiringCardHref(row.entitlement_id),
     entries: copy.expiringEntries(row.available),
     until: copy.expiringUntil(formatDayMonth(row.expires_on)),
   }

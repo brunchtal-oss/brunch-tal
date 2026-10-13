@@ -12,6 +12,7 @@ import { formatLocalDate, localToday } from "@/lib/time"
 import { cn } from "@/lib/utils"
 
 import { PageSection } from "../../home/home-section"
+import { EntryRow } from "../entry-lines"
 import { BackLink } from "./back-link"
 import {
   balanceViews,
@@ -21,7 +22,6 @@ import {
   toBabyItems,
   toNoteItem,
   type BalanceItem,
-  type EntryLine,
   type SingleItem,
 } from "./card-items"
 import { CustomerNotes } from "./customer-notes"
@@ -245,33 +245,6 @@ function SinglePlate({ item }: { item: SingleItem }) {
       <p className="text-[15px] text-muted-foreground">
         <bdi>{item.line}</bdi>
       </p>
-    </li>
-  )
-}
-
-// The dot repeats the meter's plate (decorative; the words say it). A used
-// or booked entry has the session's title under it, as in the customer's
-// log.
-function EntryRow({ line }: { line: EntryLine }) {
-  return (
-    <li className="flex items-start gap-2 text-[15px]">
-      <span
-        aria-hidden
-        className={cn(
-          "mt-1 size-3 shrink-0 rounded-full",
-          line.kind === "used"
-            ? "bg-primary"
-            : line.kind === "booked"
-              ? "bg-brand-accent"
-              : "border border-brand-accent"
-        )}
-      />
-      <span className="flex min-w-0 flex-col">
-        <bdi>{line.text}</bdi>
-        {line.title && (
-          <bdi className="text-muted-foreground">{line.title}</bdi>
-        )}
-      </span>
     </li>
   )
 }

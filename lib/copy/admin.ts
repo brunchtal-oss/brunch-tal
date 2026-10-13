@@ -654,6 +654,30 @@ export const adminCopy = {
     booked: (name: string) => `${name} נרשמה למפגש`,
     bookAnother: "רישום לקוחה נוספת",
     chooseSession: "בחירת מפגש",
+    // Several sessions at once for one customer (story 4.3, user decision
+    // 2026-10-13): the bar, the sheet and the results.
+    bookMany: {
+      choose: (n: number) =>
+        n === 1 ? "לרישום למפגש אחד" : `לרישום ל-${n} מפגשים`,
+      // The selection cap (user decision 2026-10-13): her free entries
+      // above the list, and the bar's counter.
+      freeEntries: (n: number) =>
+        n === 0
+          ? "אין לה כניסות פנויות"
+          : n === 1
+            ? "יש לה כניסה פנויה אחת"
+            : `יש לה ${n} כניסות פנויות`,
+      selectedCount: (selected: number, cap: number) =>
+        `נבחרו ${selected} מתוך ${cap}`,
+      sheetTitle: (name: string) => `רישום של ${name}`,
+      confirm: "לאשר את הרישום",
+      resultsHeading: (saved: number, total: number) =>
+        `נרשמה ל-${saved} מתוך ${total}`,
+      saved: "נשמר",
+      notSaved: "לא נשמר",
+      backToList: "חזרה לרשימה",
+      close: "סגירה",
+    },
     noBookableSessions: "אין מפגש פתוח לרישום",
     // A refusal on the manual booking screen, worded for Tal (lib/errors.ts
     // speaks to the customer). Any other code keeps errorMessage.
@@ -1224,6 +1248,30 @@ export const adminCopy = {
     notActivated: "לא הופעלה",
     empty: "לא נמצאו לקוחות",
     hasMore: (limit: number) => `מוצגות ${limit} הראשונות. אפשר לחפש`,
+    // The segmented-switch on /admin/customers and its open cards (story
+    // 4.3, CAP-42): two links, the current one aria-current.
+    switchNav: "תצוגות הלקוחות",
+    // /admin/customers/open-cards (story 4.3, CAP-42).
+    openCards: {
+      title: "כרטיסיות פתוחות",
+      filtersNav: "סינון הכרטיסיות",
+      filters: {
+        all: "הכול",
+        available: "יש כניסות פנויות",
+        expiring: "עומדת לפוג",
+      },
+      purchased: (dayMonth: string) => `נרכשה ${dayMonth}`,
+      book: "לרישום למפגש",
+      profile: "לפרופיל",
+      // The two buttons of a row, named for a screen reader.
+      bookFor: (name: string) => `לרישום למפגש של ${name}`,
+      profileOf: (name: string) => `לפרופיל של ${name}`,
+      // A purchase not bound to an account yet, instead of the two buttons
+      // (user decision 2026-10-13; the payments list's wording).
+      notJoined: "עוד לא הצטרפה",
+      empty: "אין כרטיסיות פתוחות כרגע",
+      showAll: "להצגת כל הכרטיסיות",
+    },
     card: {
       back: "לכל הלקוחות",
       details: "פרטים",
