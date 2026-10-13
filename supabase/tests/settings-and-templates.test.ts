@@ -622,7 +622,7 @@ describe("admin_update_notification_template", { timeout: 30_000 }, () => {
     })
   })
 
-  it("the admin reads all 15 templates (policy and grant)", async () => {
+  it("the admin reads all 16 templates (policy and grant)", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)
       const types = await as(db, f.admin, async () => {
@@ -631,7 +631,7 @@ describe("admin_update_notification_template", { timeout: 30_000 }, () => {
         )
         return rows.map((row) => row.type as string)
       })
-      expect(types).toHaveLength(15)
+      expect(types).toHaveLength(16)
     })
   })
 
@@ -659,7 +659,7 @@ describe("the template contract", { timeout: 60_000 }, () => {
          from public.notification_templates
          order by type`
       )
-      expect(rows).toHaveLength(15)
+      expect(rows).toHaveLength(16)
     })
   })
 
@@ -735,6 +735,103 @@ describe("the template contract", { timeout: 60_000 }, () => {
       })
     })
   }
+
+  // Story 3.5: a couple product approved for a couple session.
+  it("booking_confirmed_couple renders in the real flow", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      await fillAllFields(db, f, "booking_confirmed_couple")
+      const { rows: products } = await db.query(
+        `insert into public.products (
+           name, type, price_agorot, units, validity_mode, validity_days,
+           allowed_weekdays, eligible_event_kind, party_size)
+         values ($1, 'couple', 25000, 1, 'session', null, null, 'couple', 2)
+         returning id`,
+        [testName("couple")]
+      )
+      const event = await insertEvent(db, f, 5)
+      await db.query("update public.events set kind = 'couple' where id = $1", [
+        event,
+      ])
+      await as(db, f.admin, () =>
+        approve(db, {
+          customerId: f.customerA,
+          productId: products[0].id,
+          eventId: event,
+          amount: 25000,
+          paidOn: f.today,
+          methodId: f.method,
+          duplicateConfirmed: true,
+          key: randomUUID(),
+        })
+      )
+      const sent = await notifications(
+        db,
+        f.customerA,
+        "booking_confirmed_couple"
+      )
+      expect(sent).toHaveLength(1)
+      expectRendered(sent[0])
+    })
+  })
+
+  // Story 3.8: the business cancels or moves the session. The plan renders
+  // the template's title and body with every field (the dialog shows
+  // them); the notice keeps the rendered title and Tal's body.
+  it("event_cancelled and event_changed render in the real flows (the plan and the notice)", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      await fillAllFields(db, f, "event_cancelled")
+      await fillAllFields(db, f, "event_changed")
+      const moved = await insertEvent(db, f, 5)
+      const cancelled = await insertEvent(db, f, 6)
+      await grant(db, f, f.single, { eventId: moved })
+      await grant(db, f, f.single, { eventId: cancelled })
+
+      const { rows: when } = await db.query(
+        `select (((now() at time zone 'Asia/Jerusalem')::date + 5) + time '11:00')
+                  at time zone 'Asia/Jerusalem' as s,
+                (((now() at time zone 'Asia/Jerusalem')::date + 5) + time '13:00')
+                  at time zone 'Asia/Jerusalem' as e`
+      )
+      const change = await as(db, f.admin, async () => {
+        const { rows } = await db.query(
+          "select public.preview_admin_reschedule_event($1, $2, $3) as r",
+          [moved, when[0].s, when[0].e]
+        )
+        return rows[0].r
+      })
+      expectRendered(change)
+      await as(db, f.admin, () =>
+        db.query(
+          "select public.admin_reschedule_event($1, $2, $3, true, $4, $5)",
+          [moved, when[0].s, when[0].e, change.body, randomUUID()]
+        )
+      )
+
+      const cancel = await as(db, f.admin, async () => {
+        const { rows } = await db.query(
+          "select public.preview_admin_cancel_event($1) as r",
+          [cancelled]
+        )
+        return rows[0].r
+      })
+      expectRendered(cancel)
+      await as(db, f.admin, () =>
+        db.query("select public.admin_cancel_event($1, true, $2, $3)", [
+          cancelled,
+          cancel.body,
+          randomUUID(),
+        ])
+      )
+
+      for (const type of ["event_changed", "event_cancelled"]) {
+        const sent = await notifications(db, f.customerA, type)
+        expect(sent, type).toHaveLength(1)
+        expectRendered(sent[0])
+      }
+    })
+  })
 
   it("purchase_new_card renders when the purchase is bound", async () => {
     await inRollback(async (db) => {

@@ -169,6 +169,15 @@ const SEED = [
     "ההרשמה אושרה",
     "{date} · {time} · בראנץ׳ {concept}",
   ],
+  // Story 3.5: a couple booking, with push and the companion's note.
+  [
+    "booking_confirmed_couple",
+    "customer",
+    true,
+    "template",
+    "ההרשמה אושרה",
+    "{date} · {time} · בראנץ׳ {concept}. אפשר להוסיף בהרשמות שלך הגבלות תזונה או אלרגיות של המלווה",
+  ],
   [
     "reminder",
     "customer",
@@ -216,7 +225,9 @@ const SEED = [
     true,
     "template_or_override",
     "שינוי בבראנץ׳ של {date}",
-    "הבראנץ׳ עבר ל{new_date} בשעה {new_time}. כל הפרטים ומה אפשר לעשות מחכים לך באזור האישי",
+    "לידיעתך! מועד הבראנץ׳ שונה ל-{new_date} בשעה {new_time}",
+    // Reworded in 3.8 (20261013185902_business_cancel_texts).
+    2,
   ],
   [
     "event_cancelled",
@@ -224,7 +235,8 @@ const SEED = [
     true,
     "template_or_override",
     "הבראנץ׳ של {date} בוטל",
-    "מצטערות על השינוי. כל הפרטים ומה אפשר לעשות מחכים לך באזור האישי",
+    "אם נרשמת עם כרטיסייה, הכניסה חזרה אלייך. אם שילמת על המפגש בנפרד, ראי פרטים באזור האישי",
+    2,
   ],
   [
     "entitlement_changed",
@@ -264,7 +276,7 @@ const SEED = [
 }))
 
 describe("notification templates", () => {
-  it("hold the approved seed: 15 types, recipient, channel, mode and wording", async () => {
+  it("hold the approved seed: 16 templates, recipient, channel, mode and wording", async () => {
     const rows = await sql(
       `select type, recipient_kind, push, body_mode, title, body, version
        from public.notification_templates
@@ -286,7 +298,7 @@ describe("notification templates", () => {
     )
   })
 
-  it("accept only the 16 types, each with its fixed recipient kind and body", async () => {
+  it("accept only the 17 types, each with its fixed recipient kind and body", async () => {
     await inRollback(async (db) => {
       const statements = [
         `insert into public.notification_templates
@@ -564,12 +576,12 @@ describe("enqueue_notification", () => {
         event_changed: {
           title: "שינוי בבראנץ׳ של 10.11",
           body: "נוסח שטל ערכה",
-          template_version: 1,
+          template_version: 2,
         },
         event_cancelled: {
           title: "הבראנץ׳ של 12.11 בוטל",
-          body: "מצטערות על השינוי. כל הפרטים ומה אפשר לעשות מחכים לך באזור האישי",
-          template_version: 1,
+          body: "אם נרשמת עם כרטיסייה, הכניסה חזרה אלייך. אם שילמת על המפגש בנפרד, ראי פרטים באזור האישי",
+          template_version: 2,
         },
       })
     })

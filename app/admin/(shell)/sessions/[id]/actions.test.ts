@@ -1,6 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { adminCancelBookingAction, previewAdminCancelAction } from "./actions"
+import {
+  adminCancelBookingAction,
+  adminCancelEventAction,
+  adminRescheduleEventAction,
+  previewAdminCancelAction,
+  previewCancelEventAction,
+  previewRescheduleEventAction,
+} from "./actions"
 
 const callRpc = vi.fn()
 
@@ -144,5 +151,117 @@ describe("adminCancelBookingAction (story 3.6)", () => {
       ).resolves.toEqual({ ok: false, code: "INVALID_INPUT" })
     }
     expect(callRpc).not.toHaveBeenCalled()
+  })
+})
+
+const EVENT_ID = "55555555-5555-4555-8555-555555555555"
+const WHEN = { date: "2026-10-20", startTime: "11:00", endTime: "13:00" }
+
+describe("the session's cancel and time change (story 3.8)", () => {
+  it("previews the cancel and passes a refusal", async () => {
+    callRpc.mockResolvedValue({
+      ok: true,
+      data: { ok: false, code: "EVENT_NOT_CANCELLABLE" },
+    })
+    await expect(
+      previewCancelEventAction({ eventId: EVENT_ID })
+    ).resolves.toEqual({
+      ok: true,
+      data: { ok: false, code: "EVENT_NOT_CANCELLABLE", field: null },
+    })
+    expect(callRpc).toHaveBeenCalledWith(
+      { session: true },
+      "preview_admin_cancel_event",
+      { p_event_id: EVENT_ID }
+    )
+  })
+
+  it("cancels with the message and the key; returns how many were notified", async () => {
+    callRpc.mockResolvedValue({
+      ok: true,
+      data: { event_id: EVENT_ID, cancelled: 3, notified: 2 },
+    })
+    await expect(
+      adminCancelEventAction({
+        eventId: EVENT_ID,
+        message: "Body",
+        confirmed: true,
+        idempotencyKey: KEY,
+      })
+    ).resolves.toEqual({ ok: true, data: { notified: 2 } })
+    expect(callRpc).toHaveBeenCalledWith(
+      { session: true },
+      "admin_cancel_event",
+      {
+        p_event_id: EVENT_ID,
+        p_confirmed: true,
+        p_message: "Body",
+        p_idempotency_key: KEY,
+        p_parked_acknowledged: false,
+      }
+    )
+    await adminCancelEventAction({
+      eventId: EVENT_ID,
+      message: "Body",
+      confirmed: true,
+      parkedAcknowledged: true,
+      idempotencyKey: KEY,
+    })
+    expect(callRpc).toHaveBeenLastCalledWith(
+      { session: true },
+      "admin_cancel_event",
+      expect.objectContaining({ p_parked_acknowledged: true })
+    )
+  })
+
+  it("an empty or too long message is INVALID_INPUT without a call", async () => {
+    for (const message of ["   ", "x".repeat(1001)]) {
+      await expect(
+        adminCancelEventAction({
+          eventId: EVENT_ID,
+          message,
+          confirmed: true,
+          idempotencyKey: KEY,
+        })
+      ).resolves.toEqual({ ok: false, code: "INVALID_INPUT" })
+    }
+    expect(callRpc).not.toHaveBeenCalled()
+  })
+
+  it("the time change sends the local date and times in Jerusalem's zone (the database converts)", async () => {
+    callRpc.mockResolvedValue({
+      ok: true,
+      data: { ok: true, booking_count: 1 },
+    })
+    await previewRescheduleEventAction({ eventId: EVENT_ID, ...WHEN })
+    expect(callRpc).toHaveBeenCalledWith(
+      { session: true },
+      "preview_admin_reschedule_event",
+      {
+        p_event_id: EVENT_ID,
+        p_starts_at: "2026-10-20 11:00:00 Asia/Jerusalem",
+        p_ends_at: "2026-10-20 13:00:00 Asia/Jerusalem",
+      }
+    )
+    callRpc.mockResolvedValue({ ok: true, data: { notified: 10 } })
+    await expect(
+      adminRescheduleEventAction({
+        eventId: EVENT_ID,
+        ...WHEN,
+        message: "Moved",
+        confirmed: true,
+        idempotencyKey: KEY,
+      })
+    ).resolves.toEqual({ ok: true, data: { notified: 10 } })
+    await expect(
+      adminRescheduleEventAction({
+        eventId: EVENT_ID,
+        ...WHEN,
+        startTime: "25:00",
+        message: "Moved",
+        confirmed: true,
+        idempotencyKey: KEY,
+      })
+    ).resolves.toEqual({ ok: false, code: "INVALID_INPUT" })
   })
 })

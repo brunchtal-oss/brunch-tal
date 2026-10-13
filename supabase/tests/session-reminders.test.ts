@@ -355,6 +355,50 @@ describe("private.job_reminders", { timeout: 30_000 }, () => {
     })
   })
 
+  it("story 3.8: Tal moves the session after the reminder (admin_reschedule_event): a second reminder at the new time", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const { eventId, bookingId } = await dueBooking(db, f)
+      expect(await runJob(db)).toBe(1)
+      const first = await revision(db, eventId)
+
+      await as(db, f.admin, () =>
+        db.query(
+          `select public.admin_reschedule_event(
+             $1, now() + interval '23 hours 30 minutes',
+             now() + interval '25 hours 30 minutes', true, $2, $3)`,
+          [eventId, testName("moved"), randomUUID()]
+        )
+      )
+      expect(await revision(db, eventId)).toBe(first + 1)
+
+      expect(await runJob(db)).toBe(1)
+      const sent = await reminders(db, bookingId)
+      expect(sent.map((n) => n.dedupe_key)).toEqual([
+        `reminder:${f.customerA}:${bookingId}:${first}`,
+        `reminder:${f.customerA}:${bookingId}:${first + 1}`,
+      ])
+      expect(sent[1]).toMatchObject(await expectedText(db, eventId))
+    })
+  })
+
+  it("story 3.8: Tal cancels the session before the reminder (admin_cancel_event): no reminder", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const { eventId, bookingId } = await dueBooking(db, f)
+      await as(db, f.admin, () =>
+        db.query("select public.admin_cancel_event($1, true, $2, $3)", [
+          eventId,
+          testName("cancelled"),
+          randomUUID(),
+        ])
+      )
+
+      expect(await runJob(db)).toBe(0)
+      expect(await reminders(db, bookingId)).toEqual([])
+    })
+  })
+
   it("a change that keeps the revision (capacity) after the reminder: no new reminder", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)

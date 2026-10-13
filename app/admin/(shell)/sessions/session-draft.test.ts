@@ -11,8 +11,11 @@ import {
   fieldChange,
   fieldError,
   imageChanged,
+  listOccupancy,
+  rescheduleRequest,
   listSummary,
   localDateTime,
+  occupancyById,
   sessionTitle,
   type ConceptOption,
   type SessionRow,
@@ -269,12 +272,82 @@ describe("fieldChange", () => {
 })
 
 describe("listSummary", () => {
-  it("shows the day and how many places, never the time", () => {
+  it("shows the weekday and date only: no places, never the time", () => {
     const text = listSummary(ROW)
     expect(text).toContain("15.12")
-    expect(text).not.toContain("10:00")
     expect(text).not.toMatch(/\d{2}:\d{2}/)
-    expect(text).toContain(copy.places(12))
+    expect(text).not.toContain("מקומות")
+    expect(text).not.toContain("·")
+  })
+})
+
+// The list row's occupancy (user decisions 2026-10-10).
+describe("listOccupancy", () => {
+  const published = { ...ROW, status: "published" as const }
+
+  it("a draft shows no number", () => {
+    expect(listOccupancy(ROW, 0)).toBeNull()
+    expect(listOccupancy(ROW, 5)).toBeNull()
+  })
+
+  it("story 3.8: a cancelled session shows no number", () => {
+    expect(listOccupancy({ ...ROW, status: "cancelled" }, 0)).toBeNull()
+    expect(listOccupancy({ ...ROW, status: "cancelled" }, 3)).toBeNull()
+  })
+
+  it("occupied/capacity while there is room", () => {
+    expect(listOccupancy(published, 8)).toEqual({
+      full: false,
+      text: "8/12",
+      percent: 67,
+    })
+    expect(listOccupancy(published, 0)).toEqual({
+      full: false,
+      text: "0/12",
+      percent: 0,
+    })
+    expect(listOccupancy(published, 11)).toEqual({
+      full: false,
+      text: copy.occupancy(11, 12),
+      percent: 92,
+    })
+  })
+
+  it("full when one more booking of its kind does not fit", () => {
+    expect(listOccupancy(published, 12)).toEqual({ full: true, percent: 100 })
+    expect(listOccupancy(published, 13)).toEqual({ full: true, percent: 100 })
+    const couple = {
+      ...published,
+      kind: "couple" as const,
+      capacity_adults: 14,
+    }
+    expect(listOccupancy(couple, 2)).toEqual({
+      full: false,
+      text: "2/14",
+      percent: 14,
+    })
+    expect(listOccupancy(couple, 12)).toEqual({
+      full: false,
+      text: "12/14",
+      percent: 86,
+    })
+    // One place left: a couple does not fit.
+    expect(listOccupancy(couple, 13)).toEqual({ full: true, percent: 100 })
+  })
+})
+
+describe("occupancyById", () => {
+  it("maps the RPC's entries by session id and skips malformed ones", () => {
+    expect(
+      occupancyById([
+        { event_id: "a", occupied: 2 },
+        { event_id: "b", occupied: 0 },
+        { event_id: 3, occupied: 1 },
+        null,
+        { event_id: "c" },
+      ])
+    ).toEqual({ a: 2, b: 0 })
+    expect(occupancyById(null)).toEqual({})
   })
 })
 
@@ -304,5 +377,34 @@ describe("imageChanged", () => {
         media_id: "4f8b1c2a-1d4e-4a8b-9c0d-2e3f4a5b6c7d",
       })
     ).toBe(true)
+  })
+})
+
+// Story 3.8: the editor sends a refused time save to the time change.
+describe("rescheduleRequest", () => {
+  const draft = { date: "2026-10-20", startTime: "11:00", endTime: "13:00" }
+
+  it("the when row refused with EVENT_HAS_BOOKINGS: the draft's date and times", () => {
+    expect(
+      rescheduleRequest(
+        "when",
+        { ok: false, code: "EVENT_HAS_BOOKINGS" },
+        { ...draft }
+      )
+    ).toEqual(draft)
+  })
+
+  it("another field, another code or a success: null", () => {
+    expect(
+      rescheduleRequest(
+        "capacity",
+        { ok: false, code: "EVENT_HAS_BOOKINGS" },
+        draft
+      )
+    ).toBeNull()
+    expect(
+      rescheduleRequest("when", { ok: false, code: "INVALID_INPUT" }, draft)
+    ).toBeNull()
+    expect(rescheduleRequest("when", { ok: true }, draft)).toBeNull()
   })
 })

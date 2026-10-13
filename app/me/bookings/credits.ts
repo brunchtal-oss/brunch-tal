@@ -25,6 +25,14 @@ export type MyCredit = {
   // No active option and all N went by unused (user decision 2026-10-10).
   exhausted: boolean
   refund: { amountAgorot: number; status: string; requestedAt: string } | null
+  // Story 3.8: the business cancelled the session; she chooses refund or
+  // credit (no options until she does, no deadline).
+  choicePending: boolean
+  // The start of the session whose cancel made the credit what it is now
+  // (the origin, or a later session it funded); null when unknown.
+  cancelledStartsAt: string | null
+  // N: the number of next sessions a credit lets her choose from.
+  optionsCount: number
 }
 
 const STATUSES = ["active", "refund_requested", "refunded"] as const
@@ -95,26 +103,53 @@ export function parseMyCredits(data: unknown): MyCredit[] {
                 requestedAt: str(refund.requested_at) ?? "",
               }
             : null,
+        choicePending: r.choice_pending === true,
+        cancelledStartsAt: str(r.cancelled_starts_at),
+        optionsCount:
+          typeof r.options_count === "number" &&
+          Number.isInteger(r.options_count) &&
+          r.options_count > 0
+            ? r.options_count
+            : 1,
       },
     ]
   })
 }
 
 /**
- * A credit she can still book with: active, not funding a booking and not
- * exhausted.
+ * A credit she can still book with: active, chosen (not waiting for her
+ * refund-or-credit choice), not funding a booking and not exhausted.
  */
 export function isBookableCredit(credit: MyCredit): boolean {
   return (
-    credit.status === "active" && credit.reserved === null && !credit.exhausted
+    credit.status === "active" &&
+    !credit.choicePending &&
+    credit.reserved === null &&
+    !credit.exhausted
   )
 }
 
 /** A credit whose options all went by unused: she contacts the business. */
 export function isExhaustedCredit(credit: MyCredit): boolean {
   return (
-    credit.status === "active" && credit.reserved === null && credit.exhausted
+    credit.status === "active" &&
+    !credit.choicePending &&
+    credit.reserved === null &&
+    credit.exhausted
   )
+}
+
+/**
+ * A business cancel waiting for her choice (story 3.8): the card at the top
+ * of home and of her bookings until she chooses.
+ */
+export function isPendingChoice(credit: MyCredit): boolean {
+  return credit.status === "active" && credit.choicePending
+}
+
+/** DD.MM source of the pending card's title: the cancelled session. */
+export function pendingChoiceStartsAt(credit: MyCredit): string {
+  return credit.cancelledStartsAt ?? credit.originStartsAt
 }
 
 /** An open refund request (until 3.9 completes it). */

@@ -502,3 +502,86 @@ describe("Tal and a customer on the last place (story 3.4)", () => {
     })
   }, 30_000)
 })
+
+// Story 3.8: a customer's cancel and Tal's cancel of the whole session at
+// once. Both lock her profile, then the session, then the bookings (AD-6),
+// so neither deadlocks: the second waits and then works on what is left.
+describe("a customer's cancel and Tal's session cancel (story 3.8)", () => {
+  const CANCEL = "select public.cancel_booking($1, $2) as r"
+  const CANCEL_EVENT = "select public.admin_cancel_event($1, true, $2, $3) as r"
+
+  // Committed: the customer books the session (her card).
+  async function bookCommitted(customer: string, eventId: string) {
+    const client = await getPool().connect()
+    try {
+      await client.query("begin")
+      await asAuthenticated(client, customer)
+      const { rows } = await client.query(BOOK, [eventId, randomUUID()])
+      await client.query("commit")
+      return rows[0].r.booking_id as string
+    } catch (error) {
+      await client.query("rollback").catch(() => {})
+      throw error
+    } finally {
+      client.release()
+    }
+  }
+
+  it("the customer cancels first: Tal waits on her profile, then cancels the rest", async () => {
+    const eventId = randomUUID()
+    const fixture = await seedRace("race_event_cancel", [eventId])
+    const admin = await seedAdmin()
+    await insertEvent(eventId, { capacity: 4 })
+    const mine = await bookCommitted(fixture.customerA, eventId)
+    await bookCommitted(fixture.customerB, eventId)
+
+    const second = await race({
+      hold: async (a) => {
+        await asAuthenticated(a, fixture.customerA)
+        await a.query(CANCEL, [mine, randomUUID()])
+      },
+      customer: admin,
+      query: CANCEL_EVENT,
+      params: [eventId, testName("message"), randomUUID()],
+      release: "commit",
+    })
+    expect(second.error).toBeUndefined()
+    expect(second.value?.rows[0].r).toMatchObject({
+      event_id: eventId,
+      cancelled: 1,
+      card_count: 1,
+    })
+  }, 30_000)
+
+  it("Tal cancels first: the customer waits, then her booking is no longer cancellable", async () => {
+    const eventId = randomUUID()
+    const fixture = await seedRace("race_event_cancel_2", [eventId])
+    const admin = await seedAdmin()
+    await insertEvent(eventId, { capacity: 4 })
+    const mine = await bookCommitted(fixture.customerA, eventId)
+
+    const second = await race({
+      hold: async (a) => {
+        await asAuthenticated(a, admin)
+        await a.query(CANCEL_EVENT, [
+          eventId,
+          testName("message"),
+          randomUUID(),
+        ])
+      },
+      customer: fixture.customerA,
+      query: CANCEL,
+      params: [mine, randomUUID()],
+      release: "commit",
+    })
+    expect(second.error).toMatchObject({
+      code: "P0001",
+      message: "BOOKING_NOT_CANCELLABLE",
+    })
+    const [event] = await sql<{ status: string }>(
+      "select status from public.events where id = $1",
+      [eventId]
+    )
+    expect(event.status).toBe("cancelled")
+  }, 30_000)
+})

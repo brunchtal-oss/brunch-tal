@@ -64,10 +64,16 @@ export const ERROR_MESSAGES = {
   INTRO_NOT_ELIGIBLE: "בראנץ׳ היכרות מיועד רק ללקוחה חדשה",
   // A row changed between the read and the lock (AD-6).
   CONCURRENT_CHANGE: "משהו השתנה בינתיים. כדאי לרענן את הדף ולנסות שוב",
-  // Tal changes the time or kind of a session with bookings (story 3.2,
-  // until the impact view of 3.8).
+  // Tal saves the time of a session with bookings as a plain edit (story
+  // 3.2); since 3.8 the editor sends it to the time change with its notice.
   EVENT_HAS_BOOKINGS:
-    "יש נרשמות למפגש, ולכן אי אפשר עדיין לשנות מועד או סוג. אפשר לשנות מכסה, תיאור וסגירה",
+    "יש נרשמות למפגש, ולכן שינוי המועד עובר דרך חלון האישור ושליחת הודעה לנרשמות",
+  // Tal cancels a session that is not published or already started (3.8).
+  EVENT_NOT_CANCELLABLE:
+    "אפשר לבטל רק מפגש שפורסם ועוד לא התחיל. כדאי לרענן את הדף",
+  // The customer's refund-or-credit choice after a business cancel (3.8):
+  // already chosen, or not hers (never telling which).
+  CHOICE_NOT_PENDING: "הבחירה הזו כבר נקלטה. כדאי לרענן את הדף",
   // Tal lowers the capacity below the places already taken (story 3.2).
   CAPACITY_BELOW_BOOKED:
     "המכסה נמוכה ממספר המקומות שכבר תפוסים. אפשר להוריד אותה רק עד מספר התפוסים",
@@ -82,6 +88,9 @@ export const ERROR_MESSAGES = {
   // preview_book_session of a completed session with her booking (story
   // 3.12, user decision 2026-10-06); the session page adds "השתתפת במפגש".
   EVENT_COMPLETED: "המפגש הסתיים",
+  // preview_book_session of a cancelled session (story 3.5); with her
+  // booking the session page adds "היית רשומה למפגש הזה…".
+  EVENT_CANCELLED: "המפגש הזה בוטל",
   // The customer deletes her own last baby (story 2.10, user decision
   // 2026-10-06). INVALID_INPUT of a baby write carries detail.field
   // birth_date (after the local today) or babies (more than 10).

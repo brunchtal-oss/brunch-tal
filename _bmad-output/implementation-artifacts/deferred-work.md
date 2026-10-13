@@ -45,6 +45,7 @@
   target: 3.5
   summary: ‏`booking_confirmed` מוגדר בתבנית כאזור אישי בלבד (`push = false`), אבל ב-memlog של ה-SPEC (שורה 264) התראת אישור להרשמה זוגית נשלחת גם בפוש "כשיש פוש". ‏3.5 צריך להחליט: סוג נפרד, ערוץ שנקבע לפי הקריאה, או לוותר על הפוש.
   evidence: ב-2.12 הערוץ קבוע לסוג (AD-12, "הערוצים והנמענת לכל סוג קבועים באותה טבלה").
+  status: נסגר ב-3.5 (החלטת המשתמשת 2026-10-10): סוג נפרד `booking_confirmed_couple` עם פוש, ו-`booking_confirmed` נשאר בלי פוש.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-12-notification-core.md`
   target: 2.5
@@ -139,6 +140,7 @@
   target: 3.2
   summary: מ-3.2 יש הרשמות, ועד 3.8 `admin_update_event` משנה מועד או סוג של מפגש עם נרשמות בלי תצוגת השפעה ובלי התראה ("לא להזיז אירוע בשקט", מקור §7). ‏3.2 חוסם ב-`admin_update_event` שינוי של `date`, ‏`start_time`, ‏`end_time` או `kind` כשיש הרשמה פעילה (קוד שגיאה חדש), ו-3.8 מחליף את החסימה בתצוגת השפעה.
   evidence: ביקורת 3.1, intent-alignment. היום אין טבלת `bookings`, ולכן זה לא קורה.
+  status: נסגר ב-3.8 (2026-10-13). ‏`admin_update_event` עדיין מחזיר `EVENT_HAS_BOOKINGS`, והעורך שולח את שינוי המועד ל-`admin_reschedule_event`: חלון אישור עם תצוגת השפעה ונוסח הודעה שטל עורכת, ו-`event_changed` לכל נרשמת. שינוי סוג לא קיים (הסוג נקבע בקונספט).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-1-concepts-and-session-management.md`
   target: 3.4
@@ -228,7 +230,7 @@
   target: 3.8
   summary: ‏`preview_book_session` מחזיר `EVENT_NOT_BOOKABLE` עם `booked: false` למפגש שאינו `published`, לפני שהוא מחפש את ההרשמה שלה. במפגש שבוטל (3.8) או הסתיים (3.12) עמוד המפגש לא יציג את ההרשמה שלה. צריך לחפש את ההרשמה לפני בדיקת הסטטוס.
   evidence: ביקורת 3.2 (blind, edge). לא בודק עכשיו: עד 3.8 ו-3.12 אין מפגש מבוטל או שהסתיים.
-  status: נסגר למפגש שהסתיים ב-3.12 (2026-10-06): ‏`preview_book_session` מחפש את ההרשמה שלה (`confirmed` או `completed`) לפני בדיקת הסטטוס, ובמפגש `completed` עם הרשמה שלה מחזיר `booked: true` עם `EVENT_COMPLETED`, והעמוד מציג "המפגש הסתיים" ו"השתתפת במפגש". נשאר ל-3.8 למפגש שבוטל (היום עדיין `EVENT_NOT_BOOKABLE` עם `booked: false`). הועבר ל-3.5 (תוכנית ההשלמה 2026-10-10), כי 3.5 משנה את `preview_book_session` באותו סבב עם 3.8.
+  status: נסגר למפגש שהסתיים ב-3.12 (2026-10-06): ‏`preview_book_session` מחפש את ההרשמה שלה (`confirmed` או `completed`) לפני בדיקת הסטטוס, ובמפגש `completed` עם הרשמה שלה מחזיר `booked: true` עם `EVENT_COMPLETED`, והעמוד מציג "המפגש הסתיים" ו"השתתפת במפגש". נשאר ל-3.8 למפגש שבוטל (היום עדיין `EVENT_NOT_BOOKABLE` עם `booked: false`). הועבר ל-3.5 (תוכנית ההשלמה 2026-10-10), כי 3.5 משנה את `preview_book_session` באותו סבב עם 3.8. נסגר ב-3.5: במפגש `cancelled` מוחזר `EVENT_CANCELLED`, עם `booked: true` כשיש לה הרשמה `confirmed`/`completed` או הרשמה שבוטלה יחד עם המפגש (`admin_cancel_event`), ועמוד המפגש מציג "היית רשומה למפגש הזה".
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-2-self-booking-tracer-with-a-card.md`
   target: 3.6
@@ -410,6 +412,7 @@
   target: (בלי יעד)
   summary: בדיקת הכפילות ב-`bind_purchase` ("כבר יש לה הרשמה במפגש הזה") והאינדקס `bookings_confirmed_customer_event_uidx` מסתכלים רק על `confirmed`. אחרי ש-`job_complete_events` מסיים מפגש, הרשמה מוצמדת בלי לקוחה משויכת ללקוחה שכבר הייתה לה הרשמה באותו מפגש, בלי `BIND_CONFLICT`, ויש לה שתי הרשמות ושני ניצולים. התיקון: לספור גם `completed` בבדיקה (`private.is_real_booking`), עם בדיקה.
   evidence: ביקורת 3.12 (edge, intent). נדיר: טל אישרה בטעות "לקוחה חדשה" למי שיש לה חשבון, למפגש שהיא כבר רשומה אליו, והקישור נפתח אחרי סוף המפגש. החלטת המשתמשת 2026-10-06: לא לתקן ב-3.12.
+  status: נסגר ב-3.5: הבדיקה ב-`bind_purchase` משתמשת ב-`private.is_real_booking`, והאינדקס `bookings_confirmed_customer_event_uidx` נבנה מחדש על `confirmed` ו-`completed`, עם בדיקות.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-12-session-completion-job.md`
   target: 3.7
@@ -451,7 +454,7 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-4-7-business-settings-and-templates.md`
   summary: כל סיפור שמוסיף קורא ל-`enqueue_notification` (5.17 reminder, 5.6 waitlist_spot, 3.8 event_cancelled/event_changed, 3.13 entitlement_changed, 5.10 card_expiring/admin_card_expiring) מעביר את כל `allowed_vars` של הסוג, ומוסיף בדיקת מסד שעורכת את התבנית לכל השדות המותרים ומריצה את הזרימה האמיתית.
   evidence: ביקורת 4.7, ממצא 9 (medium, לא אומת). ‏`allowed_vars` של 9 הסוגים בלי קורא נקבע מראש. קורא שמעביר פחות שדות ייכשל ב-render בתוך העסקה ויבטל אותה.
-  status: ‏reminder בוצע ב-5.17 (‏`allowed_vars` = ‏`date`, ‏`time`, ‏`concept`, ובדיקת "כל השדות" ב-`session-reminders.test.ts`).
+  status: ‏reminder בוצע ב-5.17 (‏`allowed_vars` = ‏`date`, ‏`time`, ‏`concept`, ובדיקת "כל השדות" ב-`session-reminders.test.ts`). ‏event_cancelled ו-event_changed בוצעו ב-3.8 (בדיקת "כל השדות" ב-`settings-and-templates.test.ts`, על התצוגה המקדימה ועל ההודעה).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-8-push-pipeline-and-permission.md`
   target: 4.6
@@ -526,6 +529,7 @@
   target: 3.8
   summary: שינוי תאריך, שעה או סגירת הרשמה של מפגש (`admin_update_event`, מותר כשאין בו הרשמות) לא מרענן את הזיכויים שהמפגש הוא חלופה פעילה שלהם. חלופה יכולה לזוז לפני המפגש שבוטל, או להיסגר בלי שהזיכוי יתקדם.
   evidence: ביקורת 3.7 (blind-hunter). ‏`admin_update_event` מרענן זיכויים רק בשינוי מכסה. שינוי מפגש (`event_changed`) נבנה ב-3.8, ושם צריך לרענן חלופות ולהחליף חלופה שזזה לפני `origin_starts_at`.
+  status: נסגר ב-3.8 (2026-10-13). ‏`admin_reschedule_event` מרענן את הזיכויים של המפגש, ו-`private.refresh_credit_options` מחליף חלופה שמתחילה ב-`origin_starts_at` או לפניו (`replaced_reason = 'moved'`). שינוי מועד של מפגש בלי הרשמות ב-`admin_update_event` עדיין מרענן רק בשינוי מכסה; הזיכוי מתעדכן בצפייה הבאה של הלקוחה ובמשימת הרענון.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-7-cancellation-credits-and-refund-requests.md`
   target: 5.20
@@ -550,3 +554,12 @@
   target: 3.19
   summary: במסך הרישום הידני מוצגים גם מפגשים שאי אפשר לממן מהזכויות של הלקוחה (מפגש "עם סבתוש" זוגי מוצע לכרטיסייה).
   evidence: הבדיקה המקומית של 4.3 (2026-10-13, החלטת המשתמשת). ‏`admin_list_bookable_events` לא מקבל לקוחה, והסינון תלוי ב-`plan_funding` ש-3.5 משנה. הסימון "רשומה" והרישום לכמה מפגשים נבנו ב-4.3.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-5-couple-and-intro-bookings.md`
+  target: 3.8
+  summary: ב-`/me/bookings` הרשמה שבוטלה יחד עם המפגש מוצגת רק עם התווית הכללית "בוטלה", ושום דבר לא אומר שהמפגש עצמו בוטל. עמוד המפגש שבוטל שולח אותה לשם לפרטים.
+  evidence: ביקורת 3.5 (blind). ‏`pastBookingStatus` נותן לכל הרשמה שבוטלה אותה תווית. התצוגה של ביטול מצד העסק שייכת ל-3.8.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-8-business-cancels-or-changes-a-session.md`
+  summary: No test covers `CONCURRENT_CHANGE` in `admin_cancel_event` / `admin_reschedule_event` when a new booking or a bind commits between the unlocked read of the registrants and the booking locks.
+  evidence: 3.8 review round 1 (blind-hunter). The re-check exists in the code; triggering it needs a paused committing transaction, like the 3.7 `CREDIT_LOCKED` item.

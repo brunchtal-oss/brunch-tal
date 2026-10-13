@@ -295,13 +295,77 @@ export function descriptionText(value: string | null): string {
   return trimmed === "" ? adminCopy.products.empty : trimmed
 }
 
-// The list row's line: "יום שני 15.12 · 12 מקומות" (no time, design round
-// 2026-10-08).
-export function listSummary(row: {
-  starts_at: string
-  capacity_adults: number
-}): string {
-  return `${formatSessionDate(row.starts_at)} · ${copy.places(row.capacity_adults)}`
+// The list row's second line: the weekday and date only, "יום שני 15.12"
+// (no time, design round 2026-10-08; the places moved to line 1,
+// 2026-10-10).
+export function listSummary(row: { starts_at: string }): string {
+  return formatSessionDate(row.starts_at)
+}
+
+// The list row's occupancy (user decisions 2026-10-10): a draft shows
+// nothing (its chip says it all); a full session, no room for one more
+// booking of its kind (couple = 2, as isFull on the session page), shows
+// "מלא"; otherwise "{occupied}/{capacity}". percent: the occupancy bar's
+// fill, 100 when full. Display only: occupied comes from
+// private.occupied_places, and every booking RPC checks again.
+export type ListOccupancy =
+  | { full: true; percent: number }
+  | { full: false; text: string; percent: number }
+
+// Story 3.8: a plain save of the date or times refused because the session
+// has bookings (EVENT_HAS_BOOKINGS) goes to the time change with its
+// notice: the new date and times from the draft. Any other field or answer:
+// null (the row shows the answer as before).
+export function rescheduleRequest(
+  field: EditorField,
+  result: { ok: true } | { ok: false; code: string },
+  draft: Pick<SessionDraft, "date" | "startTime" | "endTime">
+): { date: string; startTime: string; endTime: string } | null {
+  if (field !== "when" || result.ok || result.code !== "EVENT_HAS_BOOKINGS") {
+    return null
+  }
+  return {
+    date: draft.date,
+    startTime: draft.startTime,
+    endTime: draft.endTime,
+  }
+}
+
+export function listOccupancy(
+  row: { status: EventStatus; kind: EventKind; capacity_adults: number },
+  occupied: number
+): ListOccupancy | null {
+  // A draft has no bookings; a cancelled session has none left (3.8).
+  if (row.status === "draft" || row.status === "cancelled") return null
+  const party = row.kind === "couple" ? 2 : 1
+  if (occupied + party > row.capacity_adults) {
+    return { full: true, percent: 100 }
+  }
+  return {
+    full: false,
+    text: copy.occupancy(occupied, row.capacity_adults),
+    percent: Math.max(
+      0,
+      Math.round(
+        (Math.min(occupied, row.capacity_adults) / row.capacity_adults) * 100
+      )
+    ),
+  }
+}
+
+// admin_list_session_occupancy's answer as occupied by session id. A
+// malformed entry is skipped; a missing id reads as 0 in the list.
+export function occupancyById(data: unknown): Record<string, number> {
+  const byId: Record<string, number> = {}
+  if (!Array.isArray(data)) return byId
+  for (const entry of data as unknown[]) {
+    if (typeof entry !== "object" || entry === null) continue
+    const { event_id, occupied } = entry as Record<string, unknown>
+    if (typeof event_id === "string" && typeof occupied === "number") {
+      byId[event_id] = occupied
+    }
+  }
+  return byId
 }
 
 // --- The editor's changes ---------------------------------------------------

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
@@ -24,6 +24,39 @@ const OPEN_MARK_TIMEOUT_MS = 1500
 
 type MarkResult = ActionResult<{ marked: number }>
 
+/**
+ * Opening the center marks all her notifications read (story 3.5, user
+ * decision 2026-10-13): the rows and the bell change at once, then the
+ * existing markRead(null); a failed mark puts the rows back to unread
+ * (silently: the screen still renders). The bell then reads its real count.
+ * Nothing is sent when nothing is unread. Returns whether it succeeded.
+ */
+export async function markAllOnOpen(
+  unreadIds: readonly string[],
+  deps: {
+    markRead: (ids: string[] | null) => Promise<MarkResult>
+    setRead: (ids: readonly string[], read: boolean) => void
+    announce: (delta: number) => void
+    refresh: () => void
+  }
+): Promise<boolean> {
+  if (unreadIds.length === 0) return true
+  deps.setRead(unreadIds, true)
+  deps.announce(-unreadIds.length)
+  let result: MarkResult
+  try {
+    result = await deps.markRead(null)
+  } catch {
+    result = { ok: false, code: "SERVER_ERROR" }
+  }
+  if (!result.ok) {
+    deps.setRead(unreadIds, false)
+    deps.announce(unreadIds.length)
+  }
+  deps.refresh()
+  return result.ok
+}
+
 // The list of a notification center (story 5.7): "סימון הכול כנקרא" only
 // while something is unread, then one notification-item per row, newest
 // first; empty: one sentence, no action. A row and the bell change at once
@@ -31,7 +64,9 @@ type MarkResult = ActionResult<{ marked: number }>
 // unread row marks it (waiting up to 1.5 seconds) and then goes to its
 // target, also when the mark failed (the row then turns unread again). Once a
 // mark settles the bell reads the real count from the server. Only targets
-// inside the surface.
+// inside the surface. Opening the list marks everything read (story 3.5,
+// markAllOnOpen); the rows that were unread keep their unread look for this
+// visit (`fresh`).
 export function NotificationList({
   surface,
   initialItems,
@@ -48,6 +83,13 @@ export function NotificationList({
   const [pending, setPending] = useState<ReadonlySet<string>>(new Set())
   const [error, setError] = useState<string | null>(null)
   const [markingAll, setMarkingAll] = useState(false)
+  // The rows that were unread when the list opened: highlighted for this
+  // visit, also after they are marked read.
+  const [fresh] = useState<ReadonlySet<string>>(
+    () =>
+      new Set(initialItems.filter((item) => !item.read).map((item) => item.id))
+  )
+  const openedRef = useRef(false)
 
   const unreadIds = items.filter((item) => !item.read).map((item) => item.id)
 
@@ -56,6 +98,19 @@ export function NotificationList({
       current.map((item) => (ids.includes(item.id) ? { ...item, read } : item))
     )
   }
+
+  useEffect(() => {
+    if (openedRef.current) return
+    openedRef.current = true
+    void markAllOnOpen([...fresh], {
+      markRead,
+      setRead,
+      announce: announceUnreadDelta,
+      refresh: requestUnreadRefresh,
+    })
+    // Once per visit, on open.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   function setBusy(id: string, busy: boolean) {
     setPending((current) => {
@@ -171,6 +226,7 @@ export function NotificationList({
               item={item}
               href={href}
               pending={pending.has(item.id)}
+              fresh={fresh.has(item.id)}
               onOpen={(event) => open(event, item, href)}
               onToggle={() => void toggle(item)}
             />

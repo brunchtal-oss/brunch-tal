@@ -4,11 +4,15 @@ import { customerCopy } from "@/lib/copy/customer"
 
 import {
   cancelDoneMessage,
+  isCoupleBooking,
+  needsContact,
   parseCancelResult,
   parseMyBookings,
   pastBookingStatus,
   returnsText,
+  type MyBooking,
 } from "./cancel-result"
+import type { MyCredit } from "./credits"
 
 const copy = customerCopy.cancel
 
@@ -101,6 +105,9 @@ describe("parseMyBookings", () => {
         canSelfCancel: true,
         funding: "pinned",
         productName: "Single",
+        partySize: 1,
+        guestDetails: null,
+        guestDetailsEditable: false,
       },
     ])
     expect(parsed.past[0]).toMatchObject({
@@ -115,8 +122,91 @@ describe("parseMyBookings", () => {
     })
   })
 
+  it("story 3.5: a couple booking's companion note and whether it can be edited", () => {
+    const row = {
+      booking_id: "b1",
+      event_id: "e1",
+      status: "confirmed",
+      starts_at: "2026-10-12T07:00:00+00:00",
+    }
+    const [couple, blank, odd] = parseMyBookings({
+      upcoming: [
+        {
+          ...row,
+          party_size: 2,
+          guest_details: "צמחונית",
+          guest_details_editable: true,
+        },
+        { ...row, party_size: 2, guest_details: "  " },
+        { ...row, party_size: "2", guest_details_editable: "yes" },
+      ],
+    }).upcoming
+    expect(couple).toMatchObject({
+      partySize: 2,
+      guestDetails: "צמחונית",
+      guestDetailsEditable: true,
+    })
+    expect(blank).toMatchObject({
+      partySize: 2,
+      guestDetails: null,
+      guestDetailsEditable: false,
+    })
+    expect(odd).toMatchObject({ partySize: 1, guestDetailsEditable: false })
+  })
+
+  it("story 3.5: only a confirmed couple booking has a companion note", () => {
+    expect(isCoupleBooking({ partySize: 2, status: "confirmed" })).toBe(true)
+    // A single booking: no note.
+    expect(isCoupleBooking({ partySize: 1, status: "confirmed" })).toBe(false)
+    expect(isCoupleBooking({ partySize: 2, status: "cancelled" })).toBe(false)
+  })
+
+  it("story 3.5: the contact link is needed for an exhausted credit or a read-only couple note", () => {
+    const booking = (
+      partySize: number,
+      guestDetailsEditable: boolean
+    ): MyBooking => ({
+      bookingId: "b1",
+      eventId: "e1",
+      status: "confirmed",
+      startsAt: "2026-10-12T07:00:00+00:00",
+      conceptName: "Mothers",
+      canSelfCancel: true,
+      funding: "pinned",
+      productName: "",
+      partySize,
+      guestDetails: null,
+      guestDetailsEditable,
+    })
+    const credit = (exhausted: boolean): MyCredit => ({
+      creditId: "c1",
+      status: "active",
+      partySize: 1,
+      originStartsAt: "2026-10-01T07:00:00+00:00",
+      originConceptName: "Mothers",
+      reserved: null,
+      options: [],
+      waiting: false,
+      exhausted,
+      refund: null,
+      choicePending: false,
+      cancelledStartsAt: null,
+      optionsCount: 2,
+    })
+    // A read-only couple note, no exhausted credit: needs contact.
+    expect(needsContact([], [booking(2, false)])).toBe(true)
+    expect(needsContact([credit(true)], [])).toBe(true)
+    expect(needsContact([credit(false)], [booking(2, true)])).toBe(false)
+    // A single booking has no note, editable or not.
+    expect(needsContact([], [booking(1, false)])).toBe(false)
+    expect(needsContact([], [])).toBe(false)
+  })
+
   it("a past booking is cancelled or took place", () => {
     expect(pastBookingStatus("cancelled")).toBe(customerCopy.bookingCancelled)
     expect(pastBookingStatus("completed")).toBe(customerCopy.bookingHeld)
+    // The brunch, masculine (user decision 2026-10-13).
+    expect(pastBookingStatus("cancelled")).toBe("בוטל")
+    expect(pastBookingStatus("completed")).toBe("התקיים")
   })
 })

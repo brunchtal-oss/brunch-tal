@@ -782,12 +782,13 @@ describe(
       })
     })
 
-    it("cancelled session with her booking -> as before: EVENT_NOT_BOOKABLE", async () => {
+    // Story 3.5: a cancelled session shows her booking (EVENT_CANCELLED).
+    it("cancelled session with her booking -> EVENT_CANCELLED with booked true", async () => {
       await inRollback(async (db) => {
         const f = await seed(db)
         await grant(db, f, f.anyDayCard)
         const eventId = await insertEvent(db, f)
-        await book(db, f.customerA, eventId)
+        const bookingId = await book(db, f.customerA, eventId)
         await db.query(
           "update public.events set status = 'cancelled' where id = $1",
           [eventId]
@@ -799,8 +800,9 @@ describe(
         })
         expect(r).toEqual({
           ok: false,
-          code: "EVENT_NOT_BOOKABLE",
-          booked: false,
+          code: "EVENT_CANCELLED",
+          booked: true,
+          booking_id: bookingId,
         })
       })
     })

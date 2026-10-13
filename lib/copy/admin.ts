@@ -1,3 +1,5 @@
+import type { ErrorCode } from "@/lib/errors"
+
 // System microcopy of the admin screens. Amounts arrive formatted by
 // lib/money.ts ("472 ₪"), dates by lib/time.ts.
 
@@ -547,8 +549,14 @@ export const adminCopy = {
     addBrunch: "בראנץ׳ חדש",
     // The title of a session is always the concept's name (no events.title).
     sessionTitle: (concept: string) => `בראנץ׳ ${concept}`,
-    status: { draft: "טיוטה", published: "פורסם" },
-    places: (n: number) => `${n} מקומות`,
+    status: { draft: "טיוטה", published: "פורסם", cancelled: "בוטל" },
+    // The list row's occupancy, as the admin home's tile (user decisions
+    // 2026-10-10): after the title, the bare number, or "מלא" when no room is
+    // left.
+    occupancySeparator: " · ",
+    occupancy: (occupied: number, capacity: number) =>
+      `${occupied}/${capacity}`,
+    listFull: "מלא",
     empty: 'אין מפגשים קרובים. "בראנץ׳ חדש" יוצר את הראשון',
     fields: {
       concept: "קונספט",
@@ -716,6 +724,83 @@ export const adminCopy = {
       confirm: "ביטול ההרשמה",
       done: (name: string) => `ההרשמה של ${name} בוטלה והמקום התפנה`,
     },
+    // Story 3.8: Tal cancels the whole session or moves it (the dialogs'
+    // titles are in lib/admin/sensitive-actions.ts: event_cancel,
+    // event_reschedule). The notice's body is prefilled from the template
+    // and edited here; its title stays the template's.
+    cancelEvent: {
+      button: "ביטול מפגש",
+      description:
+        "כל ההרשמות יבוטלו, והנרשמות יקבלו הודעה בנוסח שלמטה. הביטול סופי.",
+      session: "מפגש",
+      bookings: "נרשמות",
+      bookingsValue: (bookings: number, places: number) =>
+        `${bookings} (${places} מקומות)`,
+      cards: "כניסה חוזרת לכרטיסייה",
+      choices: "בוחרות זיכוי או החזר",
+      unbound: "מקום שמור ללקוחה חדשה",
+      checkbox:
+        "אני מאשרת לבטל את המפגש ולשלוח הודעה לנרשמות, ושהביטול יירשם ביומן הפעולות",
+      confirm: "ביטול המפגש",
+      // n: the customers notified; none (only held places) -> no count.
+      done: (n: number) =>
+        n === 0 ? "המפגש בוטל" : `המפגש בוטל ו-${n} נרשמות קיבלו הודעה`,
+      // A purchase paid without a place on this session (user decision
+      // 2026-10-13): one warning each, and the second required checkbox.
+      parked: (name: string) =>
+        `${name} שילמה למפגש הזה ואין לה מקום. אחרי הביטול היא תופיע ב'לטיפול', ותצטרכי לסגור איתה החזר או זיכוי ידנית.`,
+      parkedCheckbox: "ידוע לי שיש לקוחה שצריכה טיפול ידני אחרי הביטול",
+    },
+    reschedule: {
+      description: "ההרשמות נשארות, וכל נרשמת תקבל הודעה בנוסח שלמטה.",
+      from: "מועד נוכחי",
+      to: "מועד חדש",
+      bookings: "נרשמות",
+      checkbox:
+        "אני מאשרת לשנות את מועד המפגש ולשלוח הודעה לנרשמות, ושהשינוי יירשם ביומן הפעולות",
+      confirm: "שינוי המועד",
+      done: (n: number) =>
+        n === 0 ? "המפגש הוזז" : `המפגש הוזז ו-${n} נרשמות קיבלו הודעה`,
+      // The plan's refusal by field (INVALID_INPUT).
+      refusal: {
+        event_id:
+          "אי אפשר לשנות עוד את מועד המפגש: הוא כבר התחיל, בוטל או לא פורסם",
+        start_time: "שעת ההתחלה החדשה צריכה להיות בעתיד ושונה מהמועד הנוכחי",
+        end_time: "שעת הסיום צריכה להיות אחרי שעת ההתחלה",
+        registration_closes_local:
+          "סגירת ההרשמה נקבעה ידנית אחרי המועד החדש. צריך קודם להקדים אותה",
+      } as Partial<Record<string, string>>,
+    },
+    // The notice slot and the at-risk list of both dialogs.
+    eventNotice: {
+      label: "נוסח ההודעה לנרשמות",
+      title: (title: string) => `כותרת ההודעה: ${title}`,
+      required: "צריך לכתוב את נוסח ההודעה כדי להמשיך",
+    },
+    atRisk: {
+      cancelTitle: (n: number) =>
+        n === 1
+          ? "לקוחה אחת עלולה להישאר עם כניסה שאי אפשר לממש"
+          : `${n} לקוחות עלולות להישאר עם כניסה שאי אפשר לממש`,
+      rescheduleTitle: (n: number) =>
+        n === 1
+          ? "לקוחה אחת עם כרטיסייה שלא בתוקף ביום החדש"
+          : `${n} לקוחות עם כרטיסייה שלא בתוקף ביום החדש`,
+      reason: {
+        expired: "כבר פגה",
+        no_session_before_expiry: "אין מפגש מתאים לפני התפוגה",
+        not_valid_on_new_day: "לא בתוקף ביום החדש",
+      },
+      line: (product: string, expiresOn: string) =>
+        `${product}, בתוקף עד ${expiresOn}`,
+      toCustomer: (name: string) => `לכרטיס של ${name}`,
+    },
+    // A refusal of the session cancel or move whose lib/errors.ts text speaks
+    // to the customer, worded for Tal; any other code keeps errorMessage.
+    eventRefusal: {
+      MANUAL_HANDLING_REQUIRED:
+        "יש במפגש הרשמה שמומנה משני סוגי כניסה. צריך לבטל אותה ידנית לפני ביטול המפגש",
+    } as Partial<Record<ErrorCode, string>>,
     // A refusal of the cancellation, worded for Tal; any other code keeps
     // errorMessage.
     cancelRefusal: {
@@ -874,6 +959,10 @@ export const adminCopy = {
         detail: (concept: string, dayMonth: string) =>
           `שילמה לבראנץ׳ ${concept} ${dayMonth} והמפגש היה מלא. צריך למצוא מקום או להחליט על החזר`,
         chip: "צריך מקום",
+        // Story 3.8: the business cancelled that session.
+        cancelledDetail: (concept: string, dayMonth: string) =>
+          `שילמה לבראנץ׳ ${concept} ${dayMonth} והמפגש בוטל. צריך לסגור איתה החזר או זיכוי ידנית`,
+        cancelledChip: "בוטל",
       },
       pinned_seat_held: {
         title: (name: string) => `מקום שמור למי שלא הצטרפה (${name})`,
@@ -897,6 +986,12 @@ export const adminCopy = {
       refund_requested: {
         title: (name: string, amount: string, concept: string, day: string) =>
           `${name} ביקשה החזר של ${amount} על בראנץ׳ ${concept} ${day}`,
+      },
+      // A business cancel she has not chosen for yet (story 3.8): refund or
+      // credit, no deadline; to the customer's card. No chip.
+      choice_pending: {
+        title: (name: string, concept: string, day: string) =>
+          `${name} עוד לא בחרה זיכוי או החזר על בראנץ׳ ${concept} ${day}`,
       },
       // Push notifications that failed in the last 7 days (story 5.8): one
       // item for all of them; the notifications themselves are in the
@@ -1175,6 +1270,7 @@ export const adminCopy = {
         purchase_new_card: "כרטיסייה חדשה",
         purchase_repeat: "רכישה נוספת",
         booking_confirmed: "ההרשמה אושרה",
+        booking_confirmed_couple: "אישור הרשמה זוגית",
         reminder: "תזכורת לפני מפגש",
         waitlist_spot: "התפנה מקום",
         booking_cancelled: "ביטול הרשמה מכרטיסייה",

@@ -97,6 +97,17 @@ const ROWS: Record<AttentionKind, AttentionRow> = {
     concept_name: "שישי מיוחד",
     starts_at: "2026-10-16T07:00:00Z",
   },
+  choice_pending: {
+    kind: "choice_pending",
+    id: "c1",
+    customer_label: "Noa",
+    since: SINCE,
+    customer_id: "44444444-4444-4444-8444-444444444444",
+    amount_agorot: 12800,
+    event_id: EVENT,
+    concept_name: "שישי מיוחד",
+    starts_at: "2026-10-16T07:00:00Z",
+  },
   push_failed: {
     kind: "push_failed",
     id: "push_failed",
@@ -179,6 +190,13 @@ describe("toAttentionItem", () => {
         chip: null,
         tone: "",
       },
+      choice_pending: {
+        href: "/admin/customers/44444444-4444-4444-8444-444444444444",
+        title: "Noa עוד לא בחרה זיכוי או החזר על בראנץ׳ שישי מיוחד 16.10",
+        detail: "",
+        chip: null,
+        tone: "",
+      },
       push_failed: {
         href: "/admin/notifications",
         title: "3 התראות פוש לא נשלחו השבוע",
@@ -238,10 +256,25 @@ describe("toAttentionItem", () => {
     expect(linksHref(PAY)).toBe(`/admin/links?payment=${PAY}`)
   })
 
+  it("story 3.8: paid without a place on a session the business cancelled", () => {
+    const item = toAttentionItem({
+      ...ROWS.paid_without_place,
+      event_status: "cancelled",
+    })
+    expect(item.detail).toBe(
+      "שילמה לבראנץ׳ שישי מיוחד 16.10 והמפגש בוטל. צריך לסגור איתה החזר או זיכוי ידנית"
+    )
+    expect(item.chip).toEqual({ tone: "expired", label: "בוטל" })
+    expect(
+      toAttentionItem({ ...ROWS.paid_without_place, event_status: "published" })
+        .chip
+    ).toEqual({ tone: "warning", label: "צריך מקום" })
+  })
+
   it("skips a kind this screen does not know", () => {
     const rows = [
       ROWS.media_stuck,
-      { ...ROWS.media_stuck, kind: "choice_pending" as AttentionKind },
+      { ...ROWS.media_stuck, kind: "credit_extension" as AttentionKind },
     ]
     expect(toAttentionItems(rows).map((i) => i.key)).toEqual(["media_stuck:m1"])
   })

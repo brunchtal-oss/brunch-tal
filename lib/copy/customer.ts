@@ -196,6 +196,18 @@ export const customerCopy = {
   // Every one of the N options went by unused (user decision 2026-10-10),
   // followed by contactPhrase.
   creditExhausted: "המפגשים החלופיים עברו בלי הרשמה. אפשר לפנות אלינו",
+  // The business cancelled the session (story 3.8, user decision
+  // 2026-10-10): a card at the top of home and of her bookings until she
+  // chooses; the sheet reuses the cancel's two options. No "Tal".
+  pendingChoice: {
+    chip: "ממתינה לבחירה שלך",
+    title: (date: string) => `המפגש ב-${date} בוטל`,
+    text: "מה מתאים לך: זיכוי למפגש אחר או החזר כספי?",
+    button: "לבחירה",
+    confirm: "לאישור הבחירה",
+    doneCredit: "הזיכוי מחכה לך בהרשמות שלך",
+    doneRefund: "בקשת ההחזר התקבלה",
+  },
   refundTitle: (amount: string) => `בקשת החזר של ${amount} התקבלה`,
   refundNote: "נעדכן אותך כשההחזר יבוצע",
   // Cancelling a booking (story 3.6). No self-cancel deadline and no "Tal"
@@ -234,6 +246,24 @@ export const customerCopy = {
   pastBookings: "הרשמות קודמות",
   bookingsEmpty: "עוד אין לך הרשמות",
   toSchedule: "ללו״ז הבראנצ׳ים",
-  bookingCancelled: "בוטלה",
-  bookingHeld: "התקיימה",
+  // The chip of a past booking speaks of the brunch (masculine; user
+  // decision 2026-10-13).
+  bookingCancelled: "בוטל",
+  bookingHeld: "התקיים",
+  // The companion's dietary note under an upcoming couple booking (story
+  // 3.5, wording from the spec). Editable until the session's registration
+  // closes; after it, read-only with closedNote and contactPhrase.
+  companion: {
+    label: "הגבלות תזונה או אלרגיות של המלווה",
+    empty: "לא נמסרו",
+    edit: "עריכה",
+    add: "הוספה",
+    save: "שמירה",
+    saved: "נשמר",
+    closedNote: "אפשר לשנות דרך",
+  },
+  // A cancelled session's page (story 3.5); its first line is
+  // EVENT_CANCELLED in lib/errors.ts.
+  cancelledBooked: "היית רשומה למפגש הזה. הפרטים בהרשמות שלך",
+  toMyBookings: "להרשמות שלי",
 } as const
