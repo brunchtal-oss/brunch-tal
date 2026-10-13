@@ -5,6 +5,8 @@
 
 import { customerCopy } from "@/lib/copy/customer"
 
+import { isExhaustedCredit, type MyCredit } from "./credits"
+
 // How a booking was funded: a card (a 3.6 returned entry too), a pinned
 // purchase of this session (she chooses refund or credit), or a
 // cancellation credit (the same credit comes back).
@@ -70,6 +72,12 @@ export type MyBooking = {
   canSelfCancel: boolean
   funding: Funding
   productName: string
+  // Story 3.5: adults on the booking (2 = couple) and the companion's
+  // dietary note; editable is the server's decision (confirmed, couple,
+  // before the session's registration close).
+  partySize: number
+  guestDetails: string | null
+  guestDetailsEditable: boolean
 }
 
 export type MyBookings = {
@@ -100,6 +108,12 @@ function parseRows(value: unknown): MyBooking[] {
         canSelfCancel: r.can_self_cancel === true,
         funding: parseFunding(r.funding),
         productName: typeof r.product_name === "string" ? r.product_name : "",
+        partySize: r.party_size === 2 ? 2 : 1,
+        guestDetails:
+          typeof r.guest_details === "string" && r.guest_details.trim() !== ""
+            ? r.guest_details
+            : null,
+        guestDetailsEditable: r.guest_details_editable === true,
       },
     ]
   })
@@ -124,4 +138,24 @@ export function pastBookingStatus(status: string): string {
   return status === "cancelled"
     ? customerCopy.bookingCancelled
     : customerCopy.bookingHeld
+}
+
+/** A confirmed couple booking: it shows the companion's note (story 3.5). */
+export function isCoupleBooking(b: Pick<MyBooking, "partySize" | "status">) {
+  return b.partySize === 2 && b.status === "confirmed"
+}
+
+/**
+ * Whether /me/bookings needs the contact link (WhatsApp): an exhausted
+ * credit (story 3.7), or a couple booking whose note can no longer be
+ * changed (story 3.5).
+ */
+export function needsContact(
+  credits: MyCredit[],
+  upcoming: MyBooking[]
+): boolean {
+  return (
+    credits.some(isExhaustedCredit) ||
+    upcoming.some((b) => isCoupleBooking(b) && !b.guestDetailsEditable)
+  )
 }

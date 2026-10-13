@@ -72,6 +72,26 @@ describe("BookingPanel (story 3.6)", () => {
     expect(html).not.toContain(customerCopy.book)
   })
 
+  it("story 3.5: a cancelled session she was booked to: the reason, her booking and the way to her bookings", () => {
+    const html = render({ kind: "cancelled", booked: true })
+    expect(html).toContain(ERROR_MESSAGES.EVENT_CANCELLED)
+    expect(html).toContain("היית רשומה למפגש הזה. הפרטים בהרשמות שלך")
+    expect(html).toContain('href="/me/bookings"')
+    expect(html).toContain("להרשמות שלי")
+    expect(html).not.toContain(customerCopy.cancel.button)
+    expect(html).not.toContain(customerCopy.book)
+    expect(html).not.toContain(CONTACT)
+    expect(html).not.toMatch(/(^|[\s>"(])טל($|[\s.,)<])/)
+  })
+
+  it("story 3.5: a cancelled session without her booking: only the reason", () => {
+    const html = render({ kind: "cancelled", booked: false })
+    expect(html).toContain("המפגש הזה בוטל")
+    expect(html).not.toContain(customerCopy.cancelledBooked)
+    expect(html).not.toContain('href="/me/bookings"')
+    expect(html).not.toContain(customerCopy.book)
+  })
+
   it("bookable: the booking button, no cancel", () => {
     const html = render({
       kind: "bookable",

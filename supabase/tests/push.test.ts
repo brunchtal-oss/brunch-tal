@@ -42,6 +42,7 @@ const KEYS = {
 type Sub = { id: string; endpoint: string; p256dh: string; auth: string }
 type Claimed = {
   job_id: string
+  notification_id: string
   title: string
   body: string
   target_path: string
@@ -196,6 +197,15 @@ async function subIds(db: Db, userId: string): Promise<string[]> {
   return rows.map((row) => row.id)
 }
 
+// The notification a job sends.
+async function notificationOf(db: Db, jobId: string): Promise<string> {
+  const { rows } = await db.query(
+    "select notification_id from public.notification_jobs where id = $1",
+    [jobId]
+  )
+  return rows[0].notification_id
+}
+
 function mine(claimed: Claimed[], jobIds: string[]): Claimed[] {
   return claimed.filter((c) => jobIds.includes(c.job_id))
 }
@@ -213,6 +223,8 @@ describe("claim_push_jobs / finish_push_job", { timeout: 30_000 }, () => {
       expect(claimed).toHaveLength(1)
       expect(claimed[0]).toMatchObject({
         job_id: job,
+        // Story 3.5 round 2: the push click marks it read.
+        notification_id: await notificationOf(db, job),
         title: "הכרטיסייה שלך מוכנה.",
         body: expect.any(String),
         target_path: "/me/bookings",
@@ -496,6 +508,7 @@ describe("claim_push_jobs / finish_push_job", { timeout: 30_000 }, () => {
       expect(claimed).toEqual([
         {
           job_id: job,
+          notification_id: await notificationOf(db, job),
           title: "תזכורת שיווק",
           body: "גוף",
           target_path: "/admin",

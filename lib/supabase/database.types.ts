@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.17"
   }
   public: {
     Tables: {
@@ -1839,7 +1839,12 @@ export type Database = {
       admin_list_bookable_events: { Args: never; Returns: Json }
       admin_list_customers: { Args: { p_query: string }; Returns: Json }
       admin_list_links: { Args: never; Returns: Json }
+      admin_list_open_cards: { Args: { p_filter: string }; Returns: Json }
       admin_list_payments: { Args: never; Returns: Json }
+      admin_list_session_occupancy: {
+        Args: { p_event_ids: string[] }
+        Returns: Json
+      }
       admin_move_prep_day: {
         Args: {
           p_event_id: string
@@ -2091,6 +2096,14 @@ export type Database = {
       }
       reset_complete: {
         Args: { p_idempotency_key: string; p_token: string }
+        Returns: Json
+      }
+      set_booking_guest_details: {
+        Args: {
+          p_booking_id: string
+          p_guest_details: string
+          p_idempotency_key: string
+        }
         Returns: Json
       }
       set_personal_photo_consent: {

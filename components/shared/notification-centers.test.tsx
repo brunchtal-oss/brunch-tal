@@ -2,12 +2,13 @@ import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it, vi } from "vitest"
 
 import { shellCopy } from "@/lib/copy/shell"
+import type { ActionResult } from "@/lib/errors"
 import type { NotificationView } from "@/lib/notifications/shared"
 
 import { AppTopBar } from "./app-top-bar"
 import { BellButton } from "./bell-button"
 import { NotificationItem } from "./notification-item"
-import { NotificationList } from "./notification-list"
+import { NotificationList, markAllOnOpen } from "./notification-list"
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/me",
@@ -196,5 +197,75 @@ describe("NotificationList", () => {
     )
     expect(html).toContain('href="/me"')
     expect(html).not.toContain("/admin/links")
+  })
+})
+
+describe("opening the center marks everything read (story 3.5)", () => {
+  function deps(result: Promise<ActionResult<{ marked: number }>>) {
+    const calls: string[] = []
+    return {
+      calls,
+      markRead: vi.fn(async (ids: string[] | null) => {
+        calls.push(`mark:${ids === null ? "all" : ids.join(",")}`)
+        return result
+      }),
+      setRead: vi.fn((ids: readonly string[], read: boolean) => {
+        calls.push(`set:${ids.join(",")}:${read}`)
+      }),
+      announce: vi.fn((delta: number) => {
+        calls.push(`announce:${delta}`)
+      }),
+      refresh: vi.fn(() => {
+        calls.push("refresh")
+      }),
+    }
+  }
+
+  it("3 unread: rows and bell at once, then mark all, then the bell's real count", async () => {
+    const d = deps(Promise.resolve({ ok: true, data: { marked: 3 } }))
+    await expect(markAllOnOpen(["n1", "n2", "n3"], d)).resolves.toBe(true)
+    expect(d.calls).toEqual([
+      "set:n1,n2,n3:true",
+      "announce:-3",
+      "mark:all",
+      "refresh",
+    ])
+  })
+
+  it("a failed mark puts the rows back to unread, and the screen goes on", async () => {
+    const failed = deps(Promise.resolve({ ok: false, code: "SERVER_ERROR" }))
+    await expect(markAllOnOpen(["n1"], failed)).resolves.toBe(false)
+    expect(failed.calls).toEqual([
+      "set:n1:true",
+      "announce:-1",
+      "mark:all",
+      "set:n1:false",
+      "announce:1",
+      "refresh",
+    ])
+    const thrown = deps(Promise.reject(new Error("network")))
+    await expect(markAllOnOpen(["n1"], thrown)).resolves.toBe(false)
+    expect(thrown.calls).toContain("set:n1:false")
+  })
+
+  it("nothing unread: no call", async () => {
+    const d = deps(Promise.resolve({ ok: true, data: { marked: 0 } }))
+    await expect(markAllOnOpen([], d)).resolves.toBe(true)
+    expect(d.calls).toEqual([])
+  })
+
+  it("a row that was unread on open keeps the unread look, but reads as read", () => {
+    const html = renderToStaticMarkup(
+      <NotificationItem
+        item={item({ read: true })}
+        href="/me"
+        fresh
+        now={NOW}
+      />
+    )
+    expect(html).toContain("bg-brand-accent")
+    expect(html).toContain("font-semibold")
+    expect(html).not.toContain(`sr-only">${copy.unread}`)
+    expect(html).toContain(`aria-label="${copy.markUnread}"`)
   })
 })

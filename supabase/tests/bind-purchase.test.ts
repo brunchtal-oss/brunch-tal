@@ -325,6 +325,59 @@ describe("bind_purchase coverage", () => {
     })
   })
 
+  // Story 3.5: "already booked in this session" is any real booking
+  // (private.is_real_booking), a completed one too.
+  it("a seat in a session where she has a completed booking -> BIND_CONFLICT, nothing bound", async () => {
+    await inRollback(async (db) => {
+      const f = await seedMoney(db)
+      const paymentId = await approveCard(db, f)
+      const { eventId } = await unboundBooking(db, paymentId)
+      await db.query(
+        `insert into public.bookings (
+           customer_id, event_id, party_size, status, booked_by, policy_snapshot)
+         values ($1, $2, 1, 'completed', 'customer',
+           '{"cancel_window_hours": 48, "reminder_lead_hours": 24}'::jsonb)`,
+        [f.customerA, eventId]
+      )
+
+      expect(
+        await queryError(db, "select private.bind_purchase($1, $2)", [
+          paymentId,
+          f.customerA,
+        ])
+      ).toMatchObject({ code: "P0001", message: "BIND_CONFLICT" })
+      const { rows } = await db.query(
+        "select customer_id from public.bookings where payment_id = $1",
+        [paymentId]
+      )
+      expect(rows).toEqual([{ customer_id: null }])
+    })
+  })
+
+  // Story 3.5: the index backs the same rule: a second real booking of a
+  // customer in one session is refused (23505), a completed one too.
+  it("bookings_confirmed_customer_event_uidx: one confirmed or completed booking per customer and session", async () => {
+    await inRollback(async (db) => {
+      const f = await seedMoney(db)
+      const paymentId = await approveCard(db, f)
+      const { eventId } = await unboundBooking(db, paymentId)
+      const insert = (status: string) =>
+        queryError(
+          db,
+          `insert into public.bookings (
+             customer_id, event_id, party_size, status, booked_by,
+             cancelled_at, policy_snapshot)
+           values ($1, $2, 1, $3, 'customer',
+             case when $3 = 'cancelled' then now() end,
+             '{"cancel_window_hours": 48, "reminder_lead_hours": 24}'::jsonb)`,
+          [f.customerA, eventId, status]
+        )
+      expect(await insert("completed")).toBeNull()
+      expect(await insert("confirmed")).toMatchObject({ code: "23505" })
+      expect(await insert("cancelled")).toBeNull()
+    })
+  })
+
   // Story 3.11: the intro is checked again at the bind.
   it("an intro for a customer who took part or has another active intro -> BIND_CONFLICT, nothing bound", async () => {
     await inRollback(async (db) => {

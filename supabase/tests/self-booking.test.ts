@@ -420,6 +420,16 @@ describe("refusals keep no place and take no entry", () => {
       expect(
         await as<Record<string, unknown>>(db, f.customerA, PREVIEW, [draft])
       ).toEqual({ ok: false, code: "EVENT_NOT_BOOKABLE", booked: false })
+
+      // Story 3.5: a cancelled session without her booking: EVENT_CANCELLED
+      // in the preview; booking it stays EVENT_NOT_BOOKABLE.
+      const cancelled = await insertEvent(db, f, { day, status: "cancelled" })
+      expect(
+        await as<Record<string, unknown>>(db, f.customerA, PREVIEW, [cancelled])
+      ).toEqual({ ok: false, code: "EVENT_CANCELLED", booked: false })
+      expect(
+        await errorAs(db, f.customerA, BOOK, [cancelled, randomUUID()])
+      ).toMatchObject({ code: "P0001", message: "EVENT_NOT_BOOKABLE" })
       expect(await movementsOf(db, f.entitlement)).toHaveLength(1)
     })
   })

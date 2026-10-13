@@ -99,6 +99,20 @@ describe("parsePreview", () => {
     ).toEqual({ kind: "blocked", code: "EVENT_NOT_BOOKABLE" })
   })
 
+  it("story 3.5: a cancelled session, with or without her booking", () => {
+    expect(
+      parsePreview({
+        ok: false,
+        code: "EVENT_CANCELLED",
+        booked: true,
+        booking_id: "b1",
+      })
+    ).toEqual({ kind: "cancelled", booked: true })
+    expect(
+      parsePreview({ ok: false, code: "EVENT_CANCELLED", booked: false })
+    ).toEqual({ kind: "cancelled", booked: false })
+  })
+
   it("a known code is kept; anything else is a server error", () => {
     expect(parsePreview({ ok: false, code: "EVENT_FULL" })).toEqual({
       kind: "blocked",

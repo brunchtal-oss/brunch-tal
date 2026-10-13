@@ -45,6 +45,7 @@
   target: 3.5
   summary: ‏`booking_confirmed` מוגדר בתבנית כאזור אישי בלבד (`push = false`), אבל ב-memlog של ה-SPEC (שורה 264) התראת אישור להרשמה זוגית נשלחת גם בפוש "כשיש פוש". ‏3.5 צריך להחליט: סוג נפרד, ערוץ שנקבע לפי הקריאה, או לוותר על הפוש.
   evidence: ב-2.12 הערוץ קבוע לסוג (AD-12, "הערוצים והנמענת לכל סוג קבועים באותה טבלה").
+  status: נסגר ב-3.5 (החלטת המשתמשת 2026-10-10): סוג נפרד `booking_confirmed_couple` עם פוש, ו-`booking_confirmed` נשאר בלי פוש.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-12-notification-core.md`
   target: 2.5
@@ -228,7 +229,7 @@
   target: 3.8
   summary: ‏`preview_book_session` מחזיר `EVENT_NOT_BOOKABLE` עם `booked: false` למפגש שאינו `published`, לפני שהוא מחפש את ההרשמה שלה. במפגש שבוטל (3.8) או הסתיים (3.12) עמוד המפגש לא יציג את ההרשמה שלה. צריך לחפש את ההרשמה לפני בדיקת הסטטוס.
   evidence: ביקורת 3.2 (blind, edge). לא בודק עכשיו: עד 3.8 ו-3.12 אין מפגש מבוטל או שהסתיים.
-  status: נסגר למפגש שהסתיים ב-3.12 (2026-10-06): ‏`preview_book_session` מחפש את ההרשמה שלה (`confirmed` או `completed`) לפני בדיקת הסטטוס, ובמפגש `completed` עם הרשמה שלה מחזיר `booked: true` עם `EVENT_COMPLETED`, והעמוד מציג "המפגש הסתיים" ו"השתתפת במפגש". נשאר ל-3.8 למפגש שבוטל (היום עדיין `EVENT_NOT_BOOKABLE` עם `booked: false`). הועבר ל-3.5 (תוכנית ההשלמה 2026-10-10), כי 3.5 משנה את `preview_book_session` באותו סבב עם 3.8.
+  status: נסגר למפגש שהסתיים ב-3.12 (2026-10-06): ‏`preview_book_session` מחפש את ההרשמה שלה (`confirmed` או `completed`) לפני בדיקת הסטטוס, ובמפגש `completed` עם הרשמה שלה מחזיר `booked: true` עם `EVENT_COMPLETED`, והעמוד מציג "המפגש הסתיים" ו"השתתפת במפגש". נשאר ל-3.8 למפגש שבוטל (היום עדיין `EVENT_NOT_BOOKABLE` עם `booked: false`). הועבר ל-3.5 (תוכנית ההשלמה 2026-10-10), כי 3.5 משנה את `preview_book_session` באותו סבב עם 3.8. נסגר ב-3.5: במפגש `cancelled` מוחזר `EVENT_CANCELLED`, עם `booked: true` כשיש לה הרשמה `confirmed`/`completed` או הרשמה שבוטלה יחד עם המפגש (`admin_cancel_event`), ועמוד המפגש מציג "היית רשומה למפגש הזה".
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-2-self-booking-tracer-with-a-card.md`
   target: 3.6
@@ -409,6 +410,7 @@
   target: (בלי יעד)
   summary: בדיקת הכפילות ב-`bind_purchase` ("כבר יש לה הרשמה במפגש הזה") והאינדקס `bookings_confirmed_customer_event_uidx` מסתכלים רק על `confirmed`. אחרי ש-`job_complete_events` מסיים מפגש, הרשמה מוצמדת בלי לקוחה משויכת ללקוחה שכבר הייתה לה הרשמה באותו מפגש, בלי `BIND_CONFLICT`, ויש לה שתי הרשמות ושני ניצולים. התיקון: לספור גם `completed` בבדיקה (`private.is_real_booking`), עם בדיקה.
   evidence: ביקורת 3.12 (edge, intent). נדיר: טל אישרה בטעות "לקוחה חדשה" למי שיש לה חשבון, למפגש שהיא כבר רשומה אליו, והקישור נפתח אחרי סוף המפגש. החלטת המשתמשת 2026-10-06: לא לתקן ב-3.12.
+  status: נסגר ב-3.5: הבדיקה ב-`bind_purchase` משתמשת ב-`private.is_real_booking`, והאינדקס `bookings_confirmed_customer_event_uidx` נבנה מחדש על `confirmed` ו-`completed`, עם בדיקות.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-12-session-completion-job.md`
   target: 3.7
@@ -543,3 +545,8 @@
   target: 5.20
   summary: ‏`admin_duplicate_event` משכפל גם מפגש של קונספט בארכיון, ולכן נוצרת טיוטה חדשה לקונספט שלא מוצע במפגש חדש. להחליט אם לחסום (כמו `admin_create_event`) או להשאיר.
   evidence: ‏4.8 לא נוגע ב-`admin_duplicate_event` (גבול ה-spec). ‏`admin_create_event` כבר מסנן `archived_at`.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-5-couple-and-intro-bookings.md`
+  target: 3.8
+  summary: ב-`/me/bookings` הרשמה שבוטלה יחד עם המפגש מוצגת רק עם התווית הכללית "בוטלה", ושום דבר לא אומר שהמפגש עצמו בוטל. עמוד המפגש שבוטל שולח אותה לשם לפרטים.
+  evidence: ביקורת 3.5 (blind). ‏`pastBookingStatus` נותן לכל הרשמה שבוטלה אותה תווית. התצוגה של ביטול מצד העסק שייכת ל-3.8.

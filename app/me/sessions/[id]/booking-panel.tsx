@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { XIcon } from "lucide-react"
 
+import { buttonClass } from "@/components/shared/button-class"
 import { InlineNotice } from "@/components/shared/inline-notice"
 import { Button } from "@/components/ui/button"
 import {
@@ -36,6 +37,8 @@ const LINK = "font-semibold underline underline-offset-[3px]"
 // the last self-cancel time, one confirm button). Already booked: a success
 // notice and the cancel (story 3.6). A completed session she took part in:
 // "the session ended" and "you took part", nothing to press (story 3.12).
+// A cancelled session: "the session was cancelled", and when she was booked
+// "you were booked" with a button to her bookings (story 3.5).
 // Blocked: the reason in an inline-notice, the button replaced by the
 // action that can help. After a booking: the climax, and focus on it.
 // No optimistic result: the button stays busy until the server answers.
@@ -119,6 +122,47 @@ export function BookingPanel({
         {errorMessage("EVENT_COMPLETED")}
         <br />
         {copy.attended}
+      </InlineNotice>
+    )
+  }
+
+  if (preview.kind === "cancelled") {
+    // Story 3.5: the session was cancelled. When she was booked there, the
+    // line and the way to her bookings (the credit or the returned entry is
+    // there); otherwise only the reason and all sessions.
+    if (!preview.booked) {
+      return (
+        <InlineNotice
+          tone="warning"
+          actions={
+            <Link href="/me/sessions" className={cn(LINK, "py-3")}>
+              {copy.allSessions}
+            </Link>
+          }
+        >
+          {errorMessage("EVENT_CANCELLED")}
+        </InlineNotice>
+      )
+    }
+    return (
+      <InlineNotice
+        tone="warning"
+        actions={
+          <Link
+            href="/me/bookings"
+            className={buttonClass({
+              variant: "outline",
+              size: "lg",
+              className: "h-12 rounded-[4px] border-foreground text-base",
+            })}
+          >
+            {copy.toMyBookings}
+          </Link>
+        }
+      >
+        {errorMessage("EVENT_CANCELLED")}
+        <br />
+        {copy.cancelledBooked}
       </InlineNotice>
     )
   }

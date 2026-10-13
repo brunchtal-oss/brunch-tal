@@ -15,7 +15,13 @@ import { createClient } from "@/lib/supabase/server"
 import { formatDayMonth, formatWeekday } from "@/lib/time"
 
 import { sessionPhotos } from "../sessions/load-sessions"
-import { parseMyBookings, pastBookingStatus } from "./cancel-result"
+import {
+  isCoupleBooking,
+  needsContact,
+  parseMyBookings,
+  pastBookingStatus,
+} from "./cancel-result"
+import { CompanionNote } from "./companion-note"
 import { CreditCard, ExhaustedCreditCard, RefundCard } from "./credit-cards"
 import {
   activeOptions,
@@ -36,7 +42,8 @@ export const metadata: Metadata = {
 // "צרי קשר") and her open refund requests (from get_my_credits, which refreshes the options first). Then
 // the upcoming ones, each a
 // session-card (the cancel is only on the session page, user decision
-// 2026-10-06); then the past ones (cancelled / took place). Empty: a link to the schedule. Every value comes
+// 2026-10-06), a couple booking with its companion's note under the card
+// (story 3.5, CompanionNote); then the past ones (cancelled / took place). Empty: a link to the schedule. Every value comes
 // from get_my_bookings. Rendered inside the layout's customer gate.
 export default function BookingsPage() {
   return (
@@ -63,8 +70,10 @@ async function Bookings() {
   const credits = parseMyCredits(creditsResult.data).filter(
     (c) => isBookableCredit(c) || isExhaustedCredit(c) || isOpenRefund(c)
   )
-  // The contact button of an exhausted credit (WhatsApp).
-  const contactHref = credits.some(isExhaustedCredit)
+  // A couple booking (story 3.5): the companion's note under its card.
+  // The contact button of an exhausted credit, or of a companion note that
+  // can no longer be changed (WhatsApp).
+  const contactHref = needsContact(credits, upcoming)
     ? await getWhatsappHref()
     : null
   // The cards' photos (user decision 2026-10-08), read like the session
@@ -133,6 +142,14 @@ async function Bookings() {
                     <StatusChip tone="booked">{customerCopy.booked}</StatusChip>
                   }
                 />
+                {isCoupleBooking(b) && (
+                  <CompanionNote
+                    bookingId={b.bookingId}
+                    guestDetails={b.guestDetails}
+                    editable={b.guestDetailsEditable}
+                    contactHref={contactHref}
+                  />
+                )}
               </li>
             ))}
           </ul>

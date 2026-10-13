@@ -1151,6 +1151,7 @@ export const adminCopy = {
         purchase_new_card: "כרטיסייה חדשה",
         purchase_repeat: "רכישה נוספת",
         booking_confirmed: "ההרשמה אושרה",
+        booking_confirmed_couple: "אישור הרשמה זוגית",
         reminder: "תזכורת לפני מפגש",
         waitlist_spot: "התפנה מקום",
         booking_cancelled: "ביטול הרשמה מכרטיסייה",

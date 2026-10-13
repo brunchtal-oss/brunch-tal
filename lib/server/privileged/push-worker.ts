@@ -69,6 +69,9 @@ export type ClaimedSubscription = {
 
 export type ClaimedJob = {
   job_id: string
+  // The notification it sends (story 3.5 round 2): the push click marks it
+  // read. Missing from a claim made before that migration.
+  notification_id?: string
   title: string
   body: string
   target_path: string
@@ -131,6 +134,9 @@ async function sendJob(
     title: job.title,
     body: pushBody(job.body),
     target_path: job.target_path,
+    ...(typeof job.notification_id === "string"
+      ? { notification_id: job.notification_id }
+      : {}),
   })
   const options: webpush.RequestOptions = {
     TTL: TTL_SECONDS,

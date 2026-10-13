@@ -388,6 +388,21 @@ describe("Tal books a customer", () => {
         await errorAs(db, f.admin, BOOK, [f.customerA, couple, randomUUID()])
       ).toMatchObject({ code: "P0001", message: "NO_MATCHING_ENTITLEMENT" })
       expect(await movementsOf(db, f.entitlement)).toHaveLength(1)
+
+      // Story 3.5: a card never funds a couple session, also for Tal and
+      // also a card for couple sessions (no couple offset).
+      const coupleCard = await insertEntitlement(db, f, {
+        customer: f.customerA,
+        kind: "card",
+        eligibleKind: "couple",
+      })
+      expect(
+        await as(db, f.admin, PREVIEW, [f.customerA, couple])
+      ).toMatchObject({ ok: false, code: "NO_MATCHING_ENTITLEMENT" })
+      expect(
+        await errorAs(db, f.admin, BOOK, [f.customerA, couple, randomUUID()])
+      ).toMatchObject({ code: "P0001", message: "NO_MATCHING_ENTITLEMENT" })
+      expect(await movementsOf(db, coupleCard.id)).toHaveLength(1)
     })
   })
 
