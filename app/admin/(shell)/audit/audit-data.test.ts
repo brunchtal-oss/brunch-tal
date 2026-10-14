@@ -289,6 +289,24 @@ describe("labels seen in the dev database", () => {
       "העברת קונספט לארכיון"
     )
     expect(actionLabel("admin_set_concept_image")).toBe("בחירת תמונה לקונספט")
+    for (const action of [
+      "admin_cancel_event",
+      "admin_reschedule_event",
+      "choose_credit_outcome",
+      "set_booking_guest_details",
+    ]) {
+      expect(actionLabel(action), action).not.toBe(action)
+    }
+    for (const key of [
+      "sort_order",
+      "created_at",
+      "updated_at",
+      "input_hash",
+      "token_hash",
+      "provider_transaction_id",
+    ]) {
+      expect(isTechnicalKey(key), key).toBe(true)
+    }
   })
 
   it("every key has a Hebrew field name", () => {
@@ -329,6 +347,13 @@ describe("labels seen in the dev database", () => {
       "expires_at",
       "refunded_on",
       "completed_at",
+      "requested_at",
+      "choice_pending",
+      "event_kind",
+      "monetary_basis_agorot",
+      "options_count",
+      "origin_starts_at",
+      "original_cancelled_at",
     ]) {
       expect(fieldLabel(key), key).not.toBe(key)
     }
