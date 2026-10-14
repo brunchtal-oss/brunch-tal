@@ -2,6 +2,8 @@
 
 import type { ActionResult } from "@/lib/errors"
 import { callRpc } from "@/lib/rpc"
+import { resetLinkFor } from "@/lib/server/join-link"
+import { changeEmail } from "@/lib/server/privileged/account"
 import { createClient } from "@/lib/supabase/server"
 
 import { NOTE_MAX } from "./card-items"
@@ -66,4 +68,78 @@ export async function deleteCustomerNoteAction(input: {
       p_idempotency_key: input.idempotencyKey,
     })
   )
+}
+
+// The account section (story 2.8). Email: the two-step change of
+// lib/server/privileged/account.ts (Tal's session for the RPCs, the service
+// role only for the Auth update). Phone: admin_change_phone; a blocked
+// change answers { result: 'taken' } (its audit row is committed).
+// Reset: admin_issue_link('reset'), the raw link shown once (AD-10).
+
+export async function changeEmailAction(input: {
+  customerId: string
+  email: string
+  idempotencyKey: string
+}): Promise<ActionResult> {
+  if (
+    !isUuid(input?.customerId) ||
+    typeof input.email !== "string" ||
+    !input.email.trim() ||
+    input.email.trim().length > 254 ||
+    !isUuid(input.idempotencyKey)
+  ) {
+    return INVALID
+  }
+  return changeEmail(input.customerId, input.email, input.idempotencyKey)
+}
+
+export async function changePhoneAction(input: {
+  customerId: string
+  phone: string
+  idempotencyKey: string
+}): Promise<ActionResult> {
+  if (
+    !isUuid(input?.customerId) ||
+    typeof input.phone !== "string" ||
+    !input.phone.trim() ||
+    input.phone.length > 40 ||
+    !isUuid(input.idempotencyKey)
+  ) {
+    return INVALID
+  }
+  const result = await callRpc(await createClient(), "admin_change_phone", {
+    p_customer_id: input.customerId,
+    p_phone: input.phone.trim(),
+    p_idempotency_key: input.idempotencyKey,
+  })
+  if (!result.ok) return result
+  const outcome = (result.data as { result?: string } | null)?.result
+  if (outcome === "taken") return { ok: false, code: "PHONE_TAKEN" }
+  if (outcome !== "changed") return { ok: false, code: "SERVER_ERROR" }
+  return { ok: true, data: undefined }
+}
+
+// link is null only for a repeat with the same key (the raw token is
+// returned once) or when the site's address cannot be read.
+export async function issueResetLinkAction(input: {
+  customerId: string
+  idempotencyKey: string
+}): Promise<ActionResult<{ link: string | null; linkExpiresAt: string }>> {
+  if (!isUuid(input?.customerId) || !isUuid(input.idempotencyKey)) {
+    return INVALID
+  }
+  const result = await callRpc(await createClient(), "admin_issue_link", {
+    p_purpose: "reset",
+    p_target_id: input.customerId,
+    p_idempotency_key: input.idempotencyKey,
+  })
+  if (!result.ok) return result
+  const issued = result.data as { token?: string; link_expires_at: string }
+  return {
+    ok: true,
+    data: {
+      link: issued.token ? await resetLinkFor(issued.token) : null,
+      linkExpiresAt: issued.link_expires_at,
+    },
+  }
 }

@@ -108,6 +108,13 @@ const ROWS: Record<AttentionKind, AttentionRow> = {
     concept_name: "שישי מיוחד",
     starts_at: "2026-10-16T07:00:00Z",
   },
+  email_change_stuck: {
+    kind: "email_change_stuck",
+    id: "55555555-5555-4555-8555-555555555555",
+    customer_label: "Maya",
+    since: SINCE,
+    customer_id: "55555555-5555-4555-8555-555555555555",
+  },
   push_failed: {
     kind: "push_failed",
     id: "push_failed",
@@ -196,6 +203,13 @@ describe("toAttentionItem", () => {
         detail: "",
         chip: null,
         tone: "",
+      },
+      email_change_stuck: {
+        href: "/admin/customers/55555555-5555-4555-8555-555555555555",
+        title: "שינוי המייל של Maya לא הושלם",
+        detail: "שינוי המייל לא הושלם. כדי לסיים, שמרי שוב את המייל החדש",
+        chip: "תקוע",
+        tone: "warning",
       },
       push_failed: {
         href: "/admin/notifications",

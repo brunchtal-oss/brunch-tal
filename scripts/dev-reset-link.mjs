@@ -15,7 +15,9 @@
 //
 // The account gets a random password that is never printed; the link is the
 // only way in. Running it again reuses the same account and revokes the
-// previous link. Replaced by the admin "issue link" button in story 2.8.
+// previous link. Dev only: Tal issues reset links from the customer card
+// (admin_issue_link 'reset', story 2.8), which serves customers only; this
+// script (issue_reset_token) stays for fictitious admins and quick dev logins.
 
 import { randomBytes } from "node:crypto"
 import { existsSync } from "node:fs"

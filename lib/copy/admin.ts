@@ -1001,6 +1001,14 @@ export const adminCopy = {
         title: (name: string, concept: string, day: string) =>
           `${name} עוד לא בחרה זיכוי או החזר על בראנץ׳ ${concept} ${day}`,
       },
+      // An email change stuck between its steps for more than 15 minutes
+      // (story 2.8): to the customer's card, where saving the same address
+      // again finishes it.
+      email_change_stuck: {
+        title: (name: string) => `שינוי המייל של ${name} לא הושלם`,
+        detail: "שינוי המייל לא הושלם. כדי לסיים, שמרי שוב את המייל החדש",
+        chip: "תקוע",
+      },
       // Push notifications that failed in the last 7 days (story 5.8): one
       // item for all of them; the notifications themselves are in the
       // centers.
@@ -1444,6 +1452,28 @@ export const adminCopy = {
       cancel: "ביטול",
       noteDeleted: "ההערה נמחקה",
       noteTooLong: (max: number) => `אפשר עד ${max} תווים`,
+      // The account section (story 2.8): email and phone change through
+      // Tal, and the reset link she sends herself.
+      account: {
+        title: "חשבון",
+        changeEmail: "שינוי מייל",
+        emailChanged: "המייל עודכן. מעכשיו נכנסים איתו",
+        changePhone: "שינוי מספר טלפון",
+        // The field's name in the "old ← new" line.
+        phone: "טלפון",
+        phoneChanged: "המספר עודכן",
+        resetReady: "קישור האיפוס מוכן לשליחה",
+        // A repeat with the same key: the raw link is returned only once.
+        resetNotShown:
+          "הקישור כבר הופק, ואי אפשר להציג אותו שוב. אפשר להפיק קישור חלופי",
+        issueReset: "הפקת קישור איפוס",
+        reissueReset: "הפקת קישור חלופי",
+        resetPending: (date: string) => `קישור איפוס ממתין עד ${date}`,
+        resetUsed: (date: string) => `קישור האיפוס מומש ${date}`,
+        resetExpired: "קישור האיפוס פג",
+        emailChangeStuck:
+          "שינוי המייל לא הושלם. כדי לסיים, שמרי שוב את המייל החדש",
+      },
     },
     // The CSV export (story 4.4, CAP-25, user decisions 2026-10-13): a
     // bottom sheet with the scope and the closed column list. `headers` are
@@ -1636,6 +1666,9 @@ export const adminCopy = {
       admin_export_customers: "ייצוא לקוחות",
       admin_update_notification_template: "עריכת תבנית התראה",
       admin_issue_link: "הפקת קישור",
+      admin_begin_email_change: "התחלת שינוי מייל",
+      admin_finish_email_change: "שינוי מייל",
+      admin_change_phone: "שינוי מספר טלפון",
       revoke_link: "ביטול קישור",
       admin_approve_payment: "אישור תשלום",
       approve_payment: "אישור תשלום",

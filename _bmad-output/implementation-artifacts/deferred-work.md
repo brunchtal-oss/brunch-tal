@@ -563,3 +563,17 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-8-business-cancels-or-changes-a-session.md`
   summary: No test covers `CONCURRENT_CHANGE` in `admin_cancel_event` / `admin_reschedule_event` when a new booking or a bind commits between the unlocked read of the registrants and the booking locks.
   evidence: 3.8 review round 1 (blind-hunter). The re-check exists in the code; triggering it needs a paused committing transaction, like the 3.7 `CREDIT_LOCKED` item.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-8-admin-assisted-reset-and-rate-limit.md`
+  summary: The auth.users trigger (`private.guard_auth_user_change`) has no automated test against real Supabase Auth; the DB tests stand Auth in with an owner UPDATE.
+  evidence: 2.8 review (verification-gap). Checked by hand on dev 2026-10-14 with a throwaway user (all cases passed). Re-check by hand when a mail provider is added (secure email change will then reach the trigger) and on the production project (6.1).
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-8-admin-assisted-reset-and-rate-limit.md`
+  target: 4.6
+  summary: `admin_issue_link('reset')` does not refuse a profile in `anonymization_pending`; 4.6 must add it (email and phone change already refuse it).
+  evidence: 2.8 review (edge-case-hunter). The state is unreachable until 4.6 writes it.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-8-admin-assisted-reset-and-rate-limit.md`
+  summary: AGENTS.md line on 2.8 says a phone change in auth.users is blocked "unless started by admin_begin_email_change" (it is always blocked), and does not mention the SQL Editor switch `set local app.allow_auth_identity_change = 'on'` for an admin's own email.
+  evidence: 2.8 review (blind-hunter). Agent-context file, so deferred by the review rules.
+

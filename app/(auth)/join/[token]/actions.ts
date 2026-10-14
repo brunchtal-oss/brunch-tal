@@ -8,6 +8,11 @@ import type { ConflictReason } from "@/lib/auth/join-link-state"
 import type { ErrorCode, ErrorDetail } from "@/lib/errors"
 import { callRpc } from "@/lib/rpc"
 import { getJoinTokenView, submitJoin } from "@/lib/server/privileged/join"
+import {
+  clientIp,
+  hitRateLimit,
+  rateLimitCode,
+} from "@/lib/server/privileged/rate-limit"
 import { createClient } from "@/lib/supabase/server"
 
 import { validateJoin, type JoinFieldError } from "./join-input"
@@ -85,6 +90,12 @@ export async function submitJoinAction(
     return { status: "expired" }
   }
 
+  // The rate limit first (story 2.8): per IP and per token.
+  const limited = rateLimitCode(
+    await hitRateLimit("token", { ip: await clientIp(), id: token })
+  )
+  if (limited) return { status: "error", code: limited, errors: [] }
+
   const validated = validateJoin(formData)
   if (!validated.ok) {
     return { status: "error", code: "INVALID_INPUT", errors: validated.errors }
@@ -157,6 +168,12 @@ export async function claimJoinAction(
   ) {
     return { status: "expired" }
   }
+
+  // The rate limit first (story 2.8): per IP and per token.
+  const limited = rateLimitCode(
+    await hitRateLimit("token", { ip: await clientIp(), id: token })
+  )
+  if (limited) return { status: "error", code: limited }
 
   const supabase = await createClient()
   const result = await callRpc(supabase, "claim_join", {

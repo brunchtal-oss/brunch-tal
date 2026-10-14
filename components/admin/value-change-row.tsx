@@ -30,8 +30,12 @@ export function asSaveResult(result: ActionResult<unknown>): ValueSaveResult {
 // failure shows an inline-notice error and the saved value stays as it was
 // (nothing is optimistic). After a success the page is refreshed, so the
 // saved value arrives from the server and the box closes with "saved".
-// One idempotency key per change (AD-5): a failed call stores nothing, so a
-// retry may send it again; a success takes a new key.
+// One idempotency key per save (AD-5): every answer, ok or not, takes a new
+// key, because an RPC may store a non-error answer under it (a phone or
+// email "taken", or an email change that began before Auth failed), and the
+// next save of a different value with that key would be
+// IDEMPOTENCY_KEY_REUSED. Retrying the same value with a new key is safe:
+// the RPCs check the stored state again.
 export function ValueChangeRow({
   label,
   oldValue,
@@ -39,6 +43,7 @@ export function ValueChangeRow({
   scope,
   onSave,
   onCancel,
+  savedText,
   children,
 }: {
   // The field's name in the change line.
@@ -54,6 +59,9 @@ export function ValueChangeRow({
   // Returns the field to its saved value (phone test 2026-10-04), which
   // closes the box.
   onCancel: () => void
+  // The success notice, when this value has its own ("המייל עודכן…");
+  // "saved" otherwise.
+  savedText?: string
   children: React.ReactNode
 }) {
   const router = useRouter()
@@ -80,18 +88,11 @@ export function ValueChangeRow({
     if (pending || newValue === null) return
     setPending(true)
     try {
-      const result = await onSave(key)
-      if (!result) return
-      setAnswer({ value: newValue, result })
-      if (result.ok) {
-        setKey(newIdempotencyKey())
-        router.refresh()
-      }
-    } catch {
-      setAnswer({
-        value: newValue,
-        result: { ok: false, code: "SERVER_ERROR" },
-      })
+      const saved = await saveWithKey(onSave, key)
+      setKey(saved.nextKey)
+      if (!saved.result) return
+      setAnswer({ value: newValue, result: saved.result })
+      if (saved.result.ok) router.refresh()
     } finally {
       setPending(false)
     }
@@ -136,7 +137,27 @@ export function ValueChangeRow({
           </div>
         </div>
       )}
-      {savedNow && <InlineNotice tone="success">{copy.saved}</InlineNotice>}
+      {savedNow && (
+        <InlineNotice tone="success">{savedText ?? copy.saved}</InlineNotice>
+      )}
     </div>
   )
+}
+
+// One save: sends the change with `key` and tells which key the next save
+// uses. A new key after every answer (ok, refused or thrown); only a save
+// that sent nothing (null, a closed dialog) keeps it.
+export async function saveWithKey(
+  onSave: (idempotencyKey: string) => Promise<ValueSaveResult | null>,
+  key: string
+): Promise<{ result: ValueSaveResult | null; nextKey: string }> {
+  try {
+    const result = await onSave(key)
+    return { result, nextKey: result ? newIdempotencyKey() : key }
+  } catch {
+    return {
+      result: { ok: false, code: "SERVER_ERROR" },
+      nextKey: newIdempotencyKey(),
+    }
+  }
 }
