@@ -41,9 +41,14 @@ type RowError = { code: ErrorCode; field?: string }
 // by default, the server's day), the amount (the requested one by default)
 // and an optional reference. The confirm waits for valid fields and the
 // checkbox. One key per opening and per change (AD-5). On success the
-// dialog closes, the page is read again (the row moves to the completed
-// ones) and "ההחזר נרשם" is announced. A refusal closes the dialog, shows
-// the reason under the button and reads the page again.
+// dialog closes, "ההחזר נרשם" is announced (by the nearest
+// ResultNoticeHost) and the page is read again: the request leaves the open
+// ones (on /admin/payments a bound purchase's leaves the section, an unbound
+// one's moves under the completed ones; in the customer card it shows
+// "הוחזר"). A refusal (REFUND_ALREADY_COMPLETED after it was closed
+// elsewhere, too) closes the dialog and shows the reason under the button,
+// without reading the page again, so the row and its reason stay; the next
+// press reads a new plan.
 export function RefundComplete({
   refundRequestId,
   name,
@@ -77,8 +82,8 @@ export function RefundComplete({
         ? result.data
         : { ok: false, code: result.code }
       if (!fresh.ok) {
+        // No refresh: it would unmount the row and the reason with it.
         setRowError({ code: fresh.code })
-        router.refresh()
         return
       }
       setKey(newIdempotencyKey())
@@ -124,7 +129,6 @@ export function RefundComplete({
     }
     setPlan(null)
     setRowError(error)
-    router.refresh()
   }
 
   // A changed field is a new request (AD-5).

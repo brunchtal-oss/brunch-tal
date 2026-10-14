@@ -243,7 +243,12 @@ export function dateErrorOf(
 // "<changed>" is "השתנה", booleans כן/לא, *_agorot in ₪,
 // timestamps and dates by lib/time, null "—", allowed_weekdays as day
 // names, other arrays and objects as their values joined with " · ".
-export function formatValue(key: string, value: unknown): string {
+// entityType picks a table's own wording first (copy.valuesByEntity).
+export function formatValue(
+  key: string,
+  value: unknown,
+  entityType?: string
+): string {
   if (value === null || value === undefined) return copy.none
   if (value === MASKED) return copy.masked
   if (typeof value === "boolean") return value ? copy.yes : copy.no
@@ -253,6 +258,8 @@ export function formatValue(key: string, value: unknown): string {
       : String(value)
   }
   if (typeof value === "string") {
+    const own = entityType ? copy.valuesByEntity[entityType]?.[key] : undefined
+    if (own && Object.hasOwn(own, value)) return own[value]
     const known = copy.values[key]
     if (known && Object.hasOwn(known, value)) return known[value]
     try {
@@ -284,7 +291,10 @@ export function formatValue(key: string, value: unknown): string {
   return readable(value)
 }
 
-export function toChange(change: AuditChangeRow): AuditChange {
+export function toChange(
+  change: AuditChangeRow,
+  entityType?: string
+): AuditChange {
   const field = fieldLabel(change.key)
   const before = change.before ?? null
   const after = change.after ?? null
@@ -293,7 +303,7 @@ export function toChange(change: AuditChangeRow): AuditChange {
       key: change.key,
       field,
       kind: "add",
-      after: formatValue(change.key, after),
+      after: formatValue(change.key, after, entityType),
     }
   }
   if (after === null && before !== null) {
@@ -301,15 +311,27 @@ export function toChange(change: AuditChangeRow): AuditChange {
       key: change.key,
       field,
       kind: "delete",
-      before: formatValue(change.key, before),
+      before: formatValue(change.key, before, entityType),
     }
   }
+  // A refund completed for less than was asked: "100 ₪ מתוך 128 ₪".
+  const partial =
+    entityType === "refund_requests" &&
+    change.key === "amount_agorot" &&
+    typeof before === "number" &&
+    typeof after === "number" &&
+    after < before
   return {
     key: change.key,
     field,
     kind: "change",
-    before: formatValue(change.key, before),
-    after: formatValue(change.key, after),
+    before: formatValue(change.key, before, entityType),
+    after: partial
+      ? copy.outOf(
+          formatValue(change.key, after, entityType),
+          formatValue(change.key, before, entityType)
+        )
+      : formatValue(change.key, after, entityType),
   }
 }
 
@@ -330,7 +352,9 @@ export function toAuditItem(row: AuditRow): AuditItem {
           formatShortDate(row.event.local_date)
         )
       : null,
-    changes: row.changes.filter(isShownChange).map(toChange),
+    changes: row.changes
+      .filter(isShownChange)
+      .map((change) => toChange(change, row.entity_type)),
     reason: row.reason && row.reason.trim() !== "" ? row.reason : null,
   }
 }

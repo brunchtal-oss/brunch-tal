@@ -59,21 +59,38 @@ describe("RefundsSection (story 3.9)", () => {
     expect(callRpc.mock.calls[0][1]).toBe("admin_list_refund_requests")
   })
 
-  it("open requests only, each with its anchor and button; a completed one is not shown", async () => {
-    callRpc.mockResolvedValue({ ok: true, data: [OPEN, DONE] })
+  it("open requests with their anchor and button, then a completed refund of an unbound purchase under its heading", async () => {
+    callRpc.mockResolvedValue({
+      ok: true,
+      data: [OPEN, { ...DONE, customer_id: null, customer_label: null }],
+    })
     const html = (await render())!
     const text = html.replace(/\s/g, " ")
     expect(html).toContain(copy.title)
     expect(html).toContain('id="refund-r1"')
-    expect(html).not.toContain('id="refund-r2"')
+    expect(html).toContain('id="refund-r2"')
+    expect(html.indexOf('id="refund-r1"')).toBeLessThan(
+      html.indexOf(copy.unboundDone)
+    )
+    expect(html.indexOf(copy.unboundDone)).toBeLessThan(
+      html.indexOf('id="refund-r2"')
+    )
     expect(html.split(copy.button).length - 1).toBe(1)
     expect(text).toContain("בקשת החזר של 180 ₪")
-    expect(text).not.toContain("הוחזר 120 ₪")
+    expect(text).toContain("הוחזר 120 ₪ ב-12.10.26")
+    expect(text).toContain("אסמכתה: 1234")
+    expect(html).toContain(copy.chipDone)
   })
 
-  it("only completed ones: the section is not shown", async () => {
-    callRpc.mockResolvedValue({ ok: true, data: [DONE] })
-    expect(await render()).toBeNull()
+  it("only a completed refund of an unbound purchase: shown without the open chip or a button", async () => {
+    callRpc.mockResolvedValue({
+      ok: true,
+      data: [{ ...DONE, customer_id: null, customer_label: null }],
+    })
+    const html = (await render())!
+    expect(html).toContain(copy.unboundDone)
+    expect(html).not.toContain(copy.button)
+    expect(html).not.toContain(`${copy.chipOpen} (`)
   })
 
   it("a failed read throws (the page's error boundary)", async () => {

@@ -2,14 +2,14 @@
 title: 'Refund completion (3.9)'
 type: 'feature'
 created: '2026-10-13'
-status: 'in-progress'
+status: 'done'
 baseline_commit: 'bd377881a5e6c8a3d4ccd46c13f1582f2f8698c1'
 route: 'full'
 route_source: 'auto'
-review: ''
-review_source: ''
-lenses_ran: []
-review_loop_iteration: 0
+review: 'thorough'
+review_source: 'pinned'
+lenses_ran: ['blind-hunter', 'edge-case-hunter', 'verification-gap', 'intent-alignment']
+review_loop_iteration: 1
 context:
   - '{project-root}/_bmad-output/planning-artifacts/architecture/architecture-brunch-at-tals-2026-09-24/ARCHITECTURE-SPINE.md'
   - '{project-root}/_bmad-output/specs/spec-brunch-at-tal/security-and-rpc-rules.md'
@@ -30,6 +30,8 @@ context:
 - New notification type `refund_completed`, push on: title `ההחזר בוצע`, body `החזר של {amount} על הבראנץ׳ ב-{date} הועבר אלייך`, `allowed_vars` `['amount','date']` (`date` = the cancelled session's day).
 - The list lives at the top of `/admin/payments` (section `בקשות החזר`, open first, then recent completed); the home rows and the attention item link to `/admin/payments#refund-<id>`.
 - 2026-10-14 (local check, overrides the list wording above and below): the `/admin/payments` section shows **open requests only** and is not shown at all without one; completed refunds stay in the customer card. `admin_list_refund_requests` keeps returning the completed ones (already applied; the section filters). The done notice lives in a page-level `ResultNoticeHost`.
+- 2026-10-14 (review round 1): `refund_completed` (from `admin_complete_refund` and from the bind) targets the purchase page `/me/purchases/<source_entitlement_id>`, where the chip `הוחזר` stays, not `/me/bookings` (a back-dated or late-bound refund would land on a page without its card). Small migration, no drop.
+- 2026-10-14 (review round 1): the `/admin/payments` section also lists completed refunds of purchases not bound yet (no customer card to show them), under the open requests; it is shown when either exists. Once bound, they leave it for the customer card.
 - The home month totals count a refund by `refunded_on` (like payments by `paid_on`): `admin_get_home` is redefined from live, only that filter changes.
 - A refunded card stays in `/me/bookings` for 14 days after `refunded_on` (local days, computed in SQL), then only the purchase chip `הוחזר` remains.
 - Build order: everything except the customer-card section first (migrations, RPCs incl. `admin_list_customer_credits`, payments refunds section, home/attention links, customer screens). The `app/admin/(shell)/customers/[id]/` section is built only after 4.3 is merged and `origin/main` is merged into this branch.
@@ -90,7 +92,7 @@ context:
 - [x] `lib/errors.ts`, `lib/copy/{admin,customer}.ts`, `lib/admin/sensitive-actions.ts`.
 - [x] Admin screens (`frontend-design` first): `/admin/payments` refunds section, dialog, home and attention hrefs; parser and render tests.
 - [x] Customer screens (`frontend-design` first): refunded card, purchase chip; tests.
-- [ ] **After 4.3 is merged and `origin/main` merged in:** `app/admin/(shell)/customers/[id]/` section `זיכויים והחזרים` (`frontend-design` first); parser and render tests.
+- [x] **After 4.3 is merged and `origin/main` merged in:** `app/admin/(shell)/customers/[id]/` section `זיכויים והחזרים` (`frontend-design` first); parser and render tests.
 - [ ] Docs -- `deferred-work.md` (2.2 and 4.12 items stay open for voiding with a note; new item: parked purchase in a cancelled session → 3.13), `completion-plan-2026-10-10.md`, `tickets.toml` id 9 done in the PR.
 
 **Acceptance Criteria:**
@@ -103,9 +105,30 @@ context:
 
 - 2026-10-13 (implementation): migrations `20261013215828_refund_completed_type.sql` (type check, user runs first) and `20261013215833_refund_completion.sql` (column, check, template, RPCs, redefinitions; also drops/adds `refund_requests_completion_check`, so the user runs it too). Not applied. Additions beyond the text: the plan also returns `today` (the local day, the date field's default and max; AD-8) and a missing request is `NOT_FOUND`; `refunded_on` before `paid_on` is checked after the plan (it needs the payment). `database.types.ts` hand-edited (regenerate after apply). DB tests ran with a temporary hook in `supabase/tests/support/db.ts` (removed). The refunds section sits under "הוספת תשלום" and the links link, above the payments list. Customer card section not built (waits for 4.3). `tickets.toml` id 9 left for the PR.
 
+- 2026-10-14 (customer card): section `זיכויים והחזרים` (`card-credits`) after the balances, before the history links, untouched 2.8 account section. `credit-items.ts` (parser, chip and line; extra chip tones: active/refunded success, requested pending, pending choice warning, used expired), `credits-section.tsx` (muted plates like the single plates, a `ResultNoticeHost` around the list so "ההחזר נרשם" survives the refresh, `RefundComplete` from the payments folder on an open request), `loadCredits` in `load-card.ts`. A couple credit adds "· זוגי" to its title.
+
+- 2026-10-14, applied and checked: the user ran `20261013215828`, `20261013215833` and `20261014114926` in the SQL Editor; all registered in `schema_migrations`. Advisors: only approved WARNs. `database.types.ts` regenerated (review-round-1 migration changes no signature). Full `test:db`: only `content.test.ts` fails (dev now has a second card product; unrelated). Local check by the user: home, "לטיפול" (the home cube shows the 3 newest items, so older requests sit in the full list), payments section, dialog, ₪500 refused, partial ₪100, customer card, customer "הוחזר" card and notification.
+- 2026-10-14, audit log wording (user decisions during the local check, beyond the story): a change shows only the value after the action (`{שדה}: {ערך}`, no arrow and no old value; a removed value shows "—"); code values read per table (`adminCopy.audit.valuesByEntity`: events, bookings, entitlements, payments, credits, refund requests), e.g. a refund request "הוחזר" and a partial amount "100 ₪ מתוך 128 ₪" (`toChange`, `refund_requests.amount_agorot` lower than before); time fields read "מועד …"; a few action names tightened.
+
 ## Spec Change Log
 
 ## Review Triage Log
+
+**Round 1 (2026-10-14):** blind-hunter, edge-case-hunter, verification-gap, intent-alignment. intent_gap 2 (decided by the user without a revert: unhandled cases, no code built on a wrong assumption), medium 3, low 6, false 1.
+
+| # | Source | Finding | Verdict | Route | Evidence / action |
+|---|---|---|---|---|---|
+| 1 | blind, edge | `refund_completed` opens `/me/bookings` after the 14-day card is gone (back-dated or late bind) | medium | intent_gap → decided | user: target the purchase page; new migration |
+| 2 | blind, intent | A completed refund of an unbound purchase shows on no admin screen | medium | intent_gap → decided | user: list it in the payments section |
+| 3 | edge | A refusal (already completed elsewhere, not found) vanishes: `router.refresh()` unmounts the row | medium | patch | same as 3.8 #4/#5; no refresh on refusal |
+| 4 | vgap | Audit row of `admin_complete_refund` shows raw `refunded_on`, `completed_at`, `requested` | low | patch | labels in `audit.fields`/`values.status`, keys in `audit-data.test.ts` |
+| 5 | vgap | `/me/bookings` never rendered with a refunded credit | medium | patch | `bookings-list.test.tsx` case |
+| 6 | blind | No DB test for `NOT_FOUND` and for the new completion check | low | patch | add tests |
+| 7 | blind | Customer card awaits credits after the card (serial round-trip) | low | patch | `Promise.all` |
+| 8 | blind | Dead branch, copy and comments from before the 2026-10-14 "open only" decision | low | patch | remove or reword (completed rows return with #2) |
+| 9 | vgap | `CONCURRENT_CHANGE` (bind between the unlocked read and the locks) untested | medium | defer | needs a paused committing bind, like 3.8 #19 |
+
+Rejected: per-payment vs per-right ceiling (one entitlement per payment, `payment_id` unique); `refunded_on` before the request day and the 0/max-0 cases (no flow creates them); anchor inside `Suspense` (false: the user checked the link lands on the row); stale link without a message, malformed refund shown as active, section failure takes the page, default `min(requested, max)`, untested dialog interactions and `pendingJoin` text (low); push vs in-app (user decision); spec bookkeeping (spec edit).
 
 ## Design Notes
 

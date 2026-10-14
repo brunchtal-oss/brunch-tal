@@ -93,3 +93,30 @@ describe("my bookings: a pending choice", () => {
     expect(html).toContain(customerCopy.bookingsEmpty)
   })
 })
+
+// Story 3.9: a refund Tal recorded (the server returns it for 14 days).
+describe("my bookings: a refunded credit", () => {
+  it("renders its refunded card: the chip and the amount paid back; no refund note, no credit card", async () => {
+    answers([
+      {
+        ...CREDIT,
+        credit_id: "c7",
+        status: "refunded",
+        waiting: false,
+        refund: {
+          amount_agorot: 12000,
+          status: "completed",
+          requested_at: "2026-10-09T07:00:00Z",
+          refunded_on: "2026-10-12",
+        },
+      },
+    ])
+    const html = renderToStaticMarkup(await Bookings())
+    const text = html.replace(/\s/g, " ")
+    expect(html).toContain(customerCopy.refundedChip)
+    expect(text).toContain("ההחזר של 120 ₪ בוצע")
+    expect(html).not.toContain(customerCopy.refundNote)
+    expect(html).not.toContain(customerCopy.creditWaiting)
+    expect(html).not.toContain(customerCopy.bookingsEmpty)
+  })
+})

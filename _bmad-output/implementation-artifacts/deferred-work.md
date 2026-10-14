@@ -584,3 +584,7 @@
   summary: AGENTS.md line on 2.8 says a phone change in auth.users is blocked "unless started by admin_begin_email_change" (it is always blocked), and does not mention the SQL Editor switch `set local app.allow_auth_identity_change = 'on'` for an admin's own email.
   evidence: 2.8 review (blind-hunter). Agent-context file, so deferred by the review rules.
 
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-9-refund-completion.md`
+  summary: No test covers `CONCURRENT_CHANGE` in `admin_complete_refund` when a bind commits between the unlocked read of an unbound request and the credit lock.
+  evidence: 3.9 review round 1 (verification-gap). The re-check exists in the code; triggering it needs a paused committing bind, like the 3.8 `admin_cancel_event` item.

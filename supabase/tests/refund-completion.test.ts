@@ -2,18 +2,23 @@
 // plan and preview, admin_list_refund_requests, admin_list_customer_credits,
 // get_my_credits (refunded_on, the 14-day card), admin_get_home (by
 // refunded_on) and the bind of a refunded credit. One test per row of the
-// spec's I/O matrix, except the concurrent row: two completions on one
-// payment serialize on the payment row lock (it needs real commits, so it
-// is not run here). Everything runs in inRollback.
+// spec's I/O matrix. Everything runs in inRollback, except the concurrent
+// row (two completions on one payment serialize on the payment row lock),
+// which needs real commits: its fixtures are committed and removed in
+// onCleanup.
 
 import { randomUUID } from "node:crypto"
 
+import type { PoolClient, QueryResult } from "pg"
 import { describe, expect, it } from "vitest"
 
 import {
   asAuthenticated,
+  getPool,
   inRollback,
+  onCleanup,
   queryError,
+  sql,
   testName,
   type Db,
 } from "./support/db"
@@ -31,11 +36,14 @@ const ITEMS = "select public.admin_get_attention_items() as r"
 
 type Fixture = MoneyFixture & { single: string }
 
-async function seed(db: Db): Promise<Fixture> {
+// settings: false in a committed fixture (never change the dev settings).
+async function seed(db: Db, settings = true): Promise<Fixture> {
   const f = await seedMoney(db)
-  await db.query(
-    "update public.business_settings set cancel_window_hours = 48, credit_options_count = 2"
-  )
+  if (settings) {
+    await db.query(
+      "update public.business_settings set cancel_window_hours = 48, credit_options_count = 2"
+    )
+  }
   const { rows } = await db.query(
     `insert into public.products (
        name, type, price_agorot, units, validity_mode, validity_days,
@@ -86,6 +94,8 @@ type Opened = {
   paymentId: string
   bookingId: string
   eventId: string
+  // The purchase's entitlement: refund_completed targets its page.
+  entitlementId: string
 }
 
 // A pinned single of ₪180 on a session in 7 days, cancelled with a refund:
@@ -112,7 +122,10 @@ async function openRefund(
   )
   const paymentId = approved.payment_id as string
   const { rows: booking } = await db.query(
-    "select id from public.bookings where payment_id = $1",
+    `select b.id, e.id as entitlement_id
+     from public.bookings b
+     join public.entitlements e on e.payment_id = b.payment_id
+     where b.payment_id = $1`,
     [paymentId]
   )
   const bookingId = booking[0].id as string
@@ -137,6 +150,7 @@ async function openRefund(
     paymentId,
     bookingId,
     eventId,
+    entitlementId: booking[0].entitlement_id as string,
   }
 }
 
@@ -304,7 +318,9 @@ describe("admin_complete_refund", { timeout: 60_000 }, () => {
             /^החזר של 180 ₪ על הבראנץ׳ ב-\d\d\.\d\d הועבר אלייך$/
           ),
           dedupe_key: `refund_completed:${f.customerA}:${o.refundId}`,
-          target_path: "/me/bookings",
+          // Review round 1 (2026-10-14): the purchase page, where "הוחזר"
+          // stays.
+          target_path: `/me/purchases/${o.entitlementId}`,
           jobs: 1,
         },
       ])
@@ -461,6 +477,7 @@ describe("admin_complete_refund", { timeout: 60_000 }, () => {
         expect.objectContaining({
           title: "ההחזר בוצע",
           dedupe_key: `refund_completed:${f.customerB}:bind:${o.creditId}`,
+          target_path: `/me/purchases/${o.entitlementId}`,
         }),
       ])
       const { rows: other } = await db.query(
@@ -583,6 +600,42 @@ describe("admin_complete_refund", { timeout: 60_000 }, () => {
     })
   })
 
+  it("a missing request: NOT_FOUND from the preview (ok false) and from the action", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const missing = randomUUID()
+      expect(await adminRead(db, f, PREVIEW, [missing] as never)).toEqual({
+        ok: false,
+        code: "NOT_FOUND",
+      })
+      expect(await completeError(db, f, missing)).toEqual({
+        message: "NOT_FOUND",
+        field: null,
+      })
+    })
+  })
+
+  it("the completion check: a completed request needs refunded_on; a requested one cannot have it", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const o = await openRefund(db, f)
+      expect(
+        await queryError(
+          db,
+          "update public.refund_requests set status = 'completed', completed_at = now() where id = $1",
+          [o.refundId]
+        )
+      ).toMatchObject({ code: "23514" })
+      expect(
+        await queryError(
+          db,
+          "update public.refund_requests set refunded_on = current_date where id = $1",
+          [o.refundId]
+        )
+      ).toMatchObject({ code: "23514" })
+    })
+  })
+
   it("a customer gets NOT_AUTHORIZED from every admin RPC of the story", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)
@@ -608,12 +661,14 @@ describe("admin_complete_refund", { timeout: 60_000 }, () => {
 })
 
 describe("admin lists", { timeout: 60_000 }, () => {
-  it("admin_list_refund_requests: open first (oldest first), then completed (newest first)", async () => {
+  it("admin_list_refund_requests: every open request (oldest first), then the completed ones of unbound purchases (newest first); a bound completed one is not listed", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)
       const a = await openRefund(db, f)
       const b = await openRefund(db, f)
       const c = await openRefund(db, f, { customerId: f.customerB })
+      const d = await openRefund(db, f, { customerId: null })
+      const e = await openRefund(db, f, { customerId: null })
       // One transaction has one now(): the order is set explicitly.
       await db.query(
         `update public.refund_requests
@@ -623,28 +678,36 @@ describe("admin lists", { timeout: 60_000 }, () => {
         [a.refundId, b.refundId, c.refundId]
       )
       await complete(db, f, b.refundId, { amount: 9000, reference: "77" })
+      await complete(db, f, d.refundId, { amount: 9000, reference: "77" })
+      await complete(db, f, e.refundId, { amount: 18000 })
+      await db.query(
+        `update public.refund_requests
+         set completed_at = now() - interval '1 hour' where id = $1`,
+        [d.refundId]
+      )
 
       const list = (await adminRead(db, f, LIST)) as Record<string, unknown>[]
+      const ids = [a, b, c, d, e].map((o) => o.refundId)
       const mine = list.filter((r) =>
-        [a.refundId, b.refundId, c.refundId].includes(
-          r.refund_request_id as string
-        )
+        ids.includes(r.refund_request_id as string)
       )
       expect(mine.map((r) => r.refund_request_id)).toEqual([
         a.refundId,
         c.refundId,
-        b.refundId,
+        e.refundId,
+        d.refundId,
       ])
-      // Every open row comes before every completed one.
+      // Every open row comes before every completed one, and every
+      // completed one is of a purchase not bound yet.
       const firstDone = list.findIndex((r) => r.status === "completed")
-      expect(list.slice(firstDone).every((r) => r.status === "completed")).toBe(
-        true
-      )
-      expect(mine[2]).toEqual({
-        refund_request_id: b.refundId,
+      const done = list.slice(firstDone)
+      expect(done.every((r) => r.status === "completed")).toBe(true)
+      expect(done.every((r) => r.customer_id === null)).toBe(true)
+      expect(mine[3]).toEqual({
+        refund_request_id: d.refundId,
         status: "completed",
-        customer_id: f.customerA,
-        customer_label: testName("money_a"),
+        customer_id: null,
+        customer_label: expect.any(String),
         amount_agorot: 9000,
         requested_at: expect.any(String),
         refunded_on: f.today,
@@ -657,11 +720,22 @@ describe("admin lists", { timeout: 60_000 }, () => {
       })
       expect(mine[0]).toMatchObject({
         status: "requested",
+        customer_id: f.customerA,
         amount_agorot: 18000,
         refunded_on: null,
         reference: null,
         max_agorot: 18000,
       })
+
+      // Once bound, it leaves the list (the customer card shows it).
+      await db.query("select private.bind_purchase($1, $2)", [
+        d.paymentId,
+        f.customerB,
+      ])
+      const after = (await adminRead(db, f, LIST)) as Record<string, unknown>[]
+      expect(after.filter((r) => r.refund_request_id === d.refundId)).toEqual(
+        []
+      )
     })
   })
 
@@ -709,4 +783,226 @@ describe("admin lists", { timeout: 60_000 }, () => {
       ).toEqual([])
     })
   })
+})
+
+// From `watcher`, as the owner: waits until `pid` waits on a lock (as in
+// booking-concurrency.test.ts).
+async function waitsOnLock(watcher: PoolClient, pid: number): Promise<boolean> {
+  for (let tries = 0; tries < 50; tries++) {
+    await watcher.query("select pg_stat_clear_snapshot()")
+    const { rows } = await watcher.query<{ wait_event_type: string | null }>(
+      "select wait_event_type from pg_stat_activity where pid = $1",
+      [pid]
+    )
+    if (rows[0]?.wait_event_type === "Lock") return true
+    await new Promise((r) => setTimeout(r, 100))
+  }
+  return false
+}
+
+// Committed: the money fixture and two refund requests of ₪180 (customer
+// A's and customer B's, so B's call takes its own profile lock and then
+// waits on the payment), both on A's payment (a second cancelled entry of
+// one purchase, simulated as in the in-rollback test). Removed in
+// onCleanup.
+async function seedCommitted() {
+  const client = await getPool().connect()
+  try {
+    await client.query("begin")
+    const f = await seed(client, false)
+    const first = await openRefund(client, f)
+    const second = await openRefund(client, f, { customerId: f.customerB })
+    await client.query(
+      "update public.refund_requests set payment_id = $1 where id = $2",
+      [first.paymentId, second.refundId]
+    )
+    await client.query("commit")
+    onCleanup(() => removeCommitted(f, [first, second]))
+    return { f, first, second }
+  } catch (error) {
+    await client.query("rollback").catch(() => {})
+    throw error
+  } finally {
+    client.release()
+  }
+}
+
+async function removeCommitted(f: Fixture, opened: Opened[]) {
+  const people = [f.admin, f.customerA, f.customerB]
+  const payments = opened.map((o) => o.paymentId)
+  const events = opened.map((o) => o.eventId)
+  const credits = opened.map((o) => o.creditId)
+  const entitlements =
+    "select id from public.entitlements where payment_id = any($1::uuid[])"
+  const client = await getPool().connect()
+  try {
+    await client.query("begin")
+    await client.query(
+      "delete from public.notifications where recipient_id = any($1::uuid[])",
+      [people]
+    )
+    await client.query(
+      "delete from public.audit_log where customer_id = any($1::uuid[]) or actor_id = any($1::uuid[]) or event_id = any($2::uuid[])",
+      [people, events]
+    )
+    await client.query(
+      "delete from private.idempotency_results where actor_scope = any($1::text[])",
+      [people]
+    )
+    await client.query(
+      "delete from public.refund_requests where credit_id = any($1::uuid[])",
+      [credits]
+    )
+    await client.query(
+      "delete from public.credit_options where credit_id = any($1::uuid[])",
+      [credits]
+    )
+    await client.query(
+      "delete from public.booking_allocations where booking_id in (select id from public.bookings where payment_id = any($1::uuid[]))",
+      [payments]
+    )
+    await client.query(
+      "delete from public.cancellation_credits where id = any($1::uuid[])",
+      [credits]
+    )
+    // entitlement_movements is append-only (a trigger raises on delete);
+    // the trigger is off only inside this cleanup transaction.
+    await client.query(
+      "alter table public.entitlement_movements disable trigger entitlement_movements_no_update_delete"
+    )
+    await client.query(
+      `delete from public.entitlement_movements where entitlement_id in (${entitlements})`,
+      [payments]
+    )
+    await client.query(
+      "alter table public.entitlement_movements enable trigger entitlement_movements_no_update_delete"
+    )
+    await client.query(
+      "delete from public.bookings where payment_id = any($1::uuid[])",
+      [payments]
+    )
+    await client.query(
+      "delete from public.entitlements where payment_id = any($1::uuid[])",
+      [payments]
+    )
+    await client.query(
+      "delete from public.activation_tokens where payment_id = any($1::uuid[])",
+      [payments]
+    )
+    await client.query(
+      "delete from public.payments where id = any($1::uuid[])",
+      [payments]
+    )
+    await client.query("delete from public.events where id = any($1::uuid[])", [
+      events,
+    ])
+    await client.query(
+      "delete from public.products where id = any($1::uuid[])",
+      [[f.card, f.single]]
+    )
+    await client.query(
+      "delete from public.payment_methods where id = any($1::uuid[])",
+      [[f.method, f.hiddenMethod]]
+    )
+    await client.query(
+      "delete from public.profiles where id = any($1::uuid[])",
+      [[f.customerA, f.customerB]]
+    )
+    await client.query("delete from public.admin_roles where user_id = $1", [
+      f.admin,
+    ])
+    await client.query("commit")
+  } catch (error) {
+    await client.query("rollback").catch(() => {})
+    throw error
+  } finally {
+    client.release()
+  }
+}
+
+function completeArgs(refundId: string, today: string, amount: number) {
+  return [refundId, today, amount, null, true, randomUUID()]
+}
+
+describe("concurrency (committed)", () => {
+  it("two completions on one payment: B waits on the payment lock; after A commits, B gets REFUND_EXCEEDS_PAID and ₪80 then succeeds", async () => {
+    const { f, first, second } = await seedCommitted()
+
+    // Both pool connections (max: 2); while B waits only A queries.
+    const a = await getPool().connect()
+    const b = await getPool().connect()
+    let released = false
+    let pendingB: Promise<QueryResult> | undefined
+    try {
+      await a.query("begin")
+      await asAuthenticated(a, f.admin)
+      const done = await a.query(
+        COMPLETE,
+        completeArgs(first.refundId, f.today, 10000)
+      )
+      expect(done.rows[0].r).toEqual({
+        refund_request_id: first.refundId,
+        amount_agorot: 10000,
+      })
+
+      await b.query("begin")
+      await asAuthenticated(b, f.admin)
+      const { rows: pid } = await b.query<{ pid: number }>(
+        "select pg_backend_pid() as pid"
+      )
+      pendingB = b.query(
+        COMPLETE,
+        completeArgs(second.refundId, f.today, 10000)
+      )
+      // Keep a rejection of B from going unhandled while it is not awaited.
+      pendingB.catch(() => {})
+
+      await a.query("reset role")
+      expect(await waitsOnLock(a, pid[0].pid)).toBe(true)
+      await a.query("commit")
+      released = true
+
+      const outcome = await pendingB.then(
+        () => null,
+        (error: unknown) => error
+      )
+      expect(outcome).toMatchObject({
+        code: "P0001",
+        message: "REFUND_EXCEEDS_PAID",
+      })
+      await b.query("rollback")
+
+      // What the payment can still refund: ₪80.
+      await b.query("begin")
+      await asAuthenticated(b, f.admin)
+      const rest = await b.query(
+        COMPLETE,
+        completeArgs(second.refundId, f.today, 8000)
+      )
+      expect(rest.rows[0].r).toEqual({
+        refund_request_id: second.refundId,
+        amount_agorot: 8000,
+      })
+      await b.query("commit")
+    } finally {
+      if (!released) await a.query("rollback").catch(() => {})
+      await pendingB?.catch(() => {})
+      await b.query("rollback").catch(() => {})
+      a.release()
+      b.release()
+    }
+
+    const rows = await sql<{
+      id: string
+      status: string
+      amount_agorot: number
+    }>(
+      "select id, status, amount_agorot from public.refund_requests where id = any($1::uuid[]) order by amount_agorot desc",
+      [[first.refundId, second.refundId]]
+    )
+    expect(rows).toEqual([
+      { id: first.refundId, status: "completed", amount_agorot: 10000 },
+      { id: second.refundId, status: "completed", amount_agorot: 8000 },
+    ])
+  }, 60_000)
 })

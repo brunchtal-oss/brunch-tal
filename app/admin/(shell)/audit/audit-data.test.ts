@@ -157,6 +157,17 @@ describe("formatValue", () => {
     expect(formatValue("full_name", "<changed>")).toBe(copy.masked)
     expect(formatValue("done", true)).toBe("כן")
     expect(formatValue("done", false)).toBe("לא")
+    // Story 3.9: an open refund request in "אישור החזר".
+    expect(formatValue("status", "requested", "refund_requests")).toBe("פתוחה")
+    expect(formatValue("status", "completed", "refund_requests")).toBe("הוחזר")
+    // Other tables keep the shared wording.
+    expect(formatValue("status", "completed", "events")).toBe("התקיים")
+    expect(formatValue("status", "cancelled", "bookings")).toBe("בוטלה")
+    expect(formatValue("status", "refunded", "cancellation_credits")).toBe(
+      "הוחזר"
+    )
+    expect(formatValue("status", "refund_requested")).toBe("ממתין להחזר")
+    expect(formatValue("status", "refunded")).toBe("הוחזר")
     expect(formatValue("reason", null)).toBe("—")
   })
 
@@ -274,7 +285,9 @@ describe("labels seen in the dev database", () => {
     expect(actionLabel("admin_create_concept")).toBe("יצירת קונספט")
     expect(actionLabel("admin_update_concept")).toBe("עריכת קונספט")
     expect(actionLabel("admin_delete_concept")).toBe("מחיקת קונספט")
-    expect(actionLabel("admin_set_concept_archived")).toBe("ארכיון קונספט")
+    expect(actionLabel("admin_set_concept_archived")).toBe(
+      "העברת קונספט לארכיון"
+    )
     expect(actionLabel("admin_set_concept_image")).toBe("בחירת תמונה לקונספט")
   })
 
@@ -314,6 +327,8 @@ describe("labels seen in the dev database", () => {
       "publish_state",
       "published_at",
       "expires_at",
+      "refunded_on",
+      "completed_at",
     ]) {
       expect(fieldLabel(key), key).not.toBe(key)
     }
@@ -372,6 +387,28 @@ describe("the filters' state (phone check, 2026-10-10)", () => {
 })
 
 describe("toChange and toAuditItem", () => {
+  it("a partial refund's amount: what was refunded out of what was asked", () => {
+    expect(
+      toChange(
+        { key: "amount_agorot", before: 12800, after: 10000 },
+        "refund_requests"
+      )
+    ).toMatchObject({ after: "100 ₪ מתוך 128 ₪" })
+    expect(
+      toChange(
+        { key: "amount_agorot", before: 12800, after: 12800 },
+        "refund_requests"
+      )
+    ).toMatchObject({ after: "128 ₪" })
+    // Elsewhere an amount is just the new one.
+    expect(
+      toChange(
+        { key: "amount_agorot", before: 12800, after: 10000 },
+        "payments"
+      )
+    ).toMatchObject({ after: "100 ₪" })
+  })
+
   it("a change, an add and a delete", () => {
     expect(toChange({ key: "capacity_adults", before: 12, after: 14 })).toEqual(
       {
