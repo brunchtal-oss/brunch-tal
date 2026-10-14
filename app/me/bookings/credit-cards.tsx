@@ -1,9 +1,10 @@
 import { buttonClass } from "@/components/shared/button-class"
 import { SessionCard } from "@/components/shared/session-card"
+import { StatusChip } from "@/components/shared/status-chip"
 import { customerCopy } from "@/lib/copy/customer"
 import type { SessionPhotoData } from "@/lib/media/photo"
 import { formatAgorot } from "@/lib/money"
-import { formatDayMonth } from "@/lib/time"
+import { formatDayMonth, formatShortDate } from "@/lib/time"
 
 import { activeOptions, type MyCredit } from "./credits"
 
@@ -106,7 +107,7 @@ export function ExhaustedCreditCard({
 }
 
 // An open refund request: received, not done; never "הוחזר" before Tal
-// completes it (3.9).
+// completes it (RefundedCard, 3.9).
 export function RefundCard({ credit }: { credit: MyCredit }) {
   const id = `refund-${credit.creditId}`
   return (
@@ -124,6 +125,36 @@ export function RefundCard({ credit }: { credit: MyCredit }) {
       <p className="text-[15px] text-muted-foreground">
         {customerCopy.refundNote}
       </p>
+    </section>
+  )
+}
+
+// A refund Tal recorded (story 3.9): "הוחזר", what was paid back and the
+// day, for 14 days after it (the server decides); then only the purchase
+// chip remains.
+export function RefundedCard({ credit }: { credit: MyCredit }) {
+  const id = `refund-${credit.creditId}`
+  const refundedOn = credit.refund?.refundedOn ?? null
+  return (
+    <section
+      aria-labelledby={id}
+      className="flex flex-col items-start gap-1 rounded-lg border border-border bg-card p-4"
+    >
+      <StatusChip tone="success">{customerCopy.refundedChip}</StatusChip>
+      <h2 id={id} className="pt-1 text-[17px] font-semibold">
+        <bdi>
+          {customerCopy.refundedTitle(
+            formatAgorot(credit.refund?.amountAgorot ?? 0)
+          )}
+        </bdi>
+      </h2>
+      {refundedOn && (
+        <p className="text-[15px] text-muted-foreground">
+          <time dateTime={refundedOn}>
+            <bdi>{customerCopy.refundedNote(formatShortDate(refundedOn))}</bdi>
+          </time>
+        </p>
+      )}
     </section>
   )
 }

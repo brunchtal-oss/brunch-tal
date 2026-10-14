@@ -151,6 +151,51 @@ export const adminCopy = {
     limit: "מוצגים 50 התשלומים האחרונים",
     empty: "אין עדיין תשלומים",
   },
+  // The refunds section at the top of /admin/payments (story 3.9): open
+  // requests, then the latest completed ones. The dialog's title is in
+  // lib/admin/sensitive-actions.ts (refund_complete).
+  refunds: {
+    title: "בקשות החזר",
+    // "{customer} · בראנץ׳ {concept} {DD.MM}"
+    rowTitle: (customer: string, concept: string, day: string) =>
+      `${customer} · בראנץ׳ ${concept} ${day}`,
+    // An open request: "בקשת החזר של {amount} · {product}"
+    requested: (amount: string, product: string) =>
+      `בקשת החזר של ${amount} · ${product}`,
+    // A completed one: "הוחזר {amount} ב-{DD.MM.YY}"
+    completed: (amount: string, date: string) => `הוחזר ${amount} ב-${date}`,
+    reference: (value: string) => `אסמכתה: ${value}`,
+    chipOpen: "בקשת החזר",
+    button: "סימון שההחזר בוצע",
+    buttonLabel: (name: string) => `סימון שההחזר של ${name} בוצע`,
+    // The dialog.
+    description:
+      "ההחזר יירשם כבוצע, והזיכוי ייסגר. הלקוחה תקבל הודעה שההחזר הועבר אליה.",
+    descriptionNoCustomer:
+      "ההחזר יירשם כבוצע, והזיכוי ייסגר. הלקוחה תראה אותו כשתצטרף.",
+    customer: "לקוחה",
+    session: "מפגש",
+    paid: "שולם",
+    refundedBefore: "הוחזר כבר מהתשלום הזה",
+    max: "אפשר להחזיר עד",
+    dateLabel: "תאריך ההחזר",
+    amountLabel: "סכום ההחזר",
+    referenceLabel: "אסמכתה (לא חובה)",
+    // The confirm pressed with a field that is not valid.
+    dateMissing: "צריך לבחור את תאריך ההחזר",
+    amountInvalid: "צריך להזין סכום תקין, למשל 180",
+    amountTooHigh: (max: string) => `אפשר להחזיר עד ${max}`,
+    // INVALID_INPUT of the action, by detail.field.
+    dateInvalid: "התאריך צריך להיות בין יום התשלום להיום",
+    referenceTooLong: "האסמכתה ארוכה מדי. אפשר עד 200 תווים",
+    // amount: "" while the field is not a valid sum.
+    checkbox: (amount: string, name: string) =>
+      amount === ""
+        ? `אני מאשרת שההחזר הועבר ל${name}, ושהוא יירשם ביומן הפעולות`
+        : `אני מאשרת שהחזר של ${amount} הועבר ל${name}, ושהוא יירשם ביומן הפעולות`,
+    confirm: "לאישור ההחזר",
+    done: "ההחזר נרשם",
+  },
   // /admin/content (story 5.1): the content editor. Draft -> preview ->
   // publish (EXPERIENCE › admin states › site content).
   content: {
@@ -1252,6 +1297,7 @@ export const adminCopy = {
         booking_cancelled: "ביטול הרשמה מכרטיסייה",
         booking_cancelled_pinned: "ביטול הרשמה עם זיכוי",
         booking_cancelled_refund: "ביטול הרשמה עם בקשת החזר",
+        refund_completed: "ההחזר בוצע",
         event_changed: "שינוי במפגש",
         event_cancelled: "ביטול מפגש",
         entitlement_changed: "עדכון בכרטיסייה",
@@ -1272,6 +1318,7 @@ export const adminCopy = {
         new_time: "שעה חדשה",
         units: "כניסות",
         customer: "שם הלקוחה",
+        amount: "סכום",
       } as Record<string, string>,
       samples: {
         date: "12.11",
@@ -1284,6 +1331,7 @@ export const adminCopy = {
         new_time: "11:00",
         units: "3",
         customer: "נועה לוי",
+        amount: "180 ₪",
       } as Record<string, string>,
       fields: {
         title: "כותרת",
@@ -1567,6 +1615,7 @@ export const adminCopy = {
       approve_payment: "אישור תשלום",
       admin_book_customer: "רישום ללקוחה למפגש",
       admin_cancel_booking: "ביטול הרשמה",
+      admin_complete_refund: "אישור החזר",
       bind_purchase: "שיוך רכישה",
       claim_join: "צירוף רכישה לחשבון קיים",
       join_begin: "התחלת הצטרפות",

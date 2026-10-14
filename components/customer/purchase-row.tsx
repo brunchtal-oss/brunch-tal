@@ -24,6 +24,7 @@ export function PurchaseRow({
   status,
   expiredNote = null,
   creditChip = null,
+  creditChipTone = "pending",
 }: {
   href: string
   productName: string
@@ -33,8 +34,10 @@ export function PurchaseRow({
   status: string | null
   expiredNote?: React.ReactNode
   // Story 3.7: a pinned purchase whose booking was cancelled: "הומרה
-  // לזיכוי" or "בקשת החזר", in place of the validity or the ended word.
+  // לזיכוי", "בקשת החזר" or "הוחזר" (3.9), in place of the validity or the ended word.
   creditChip?: string | null
+  // Story 3.9: success once refunded ("הוחזר"), pending otherwise.
+  creditChipTone?: "success" | "pending"
 }) {
   return (
     <div className="relative flex flex-col gap-1 py-4 pe-8">
@@ -55,7 +58,7 @@ export function PurchaseRow({
         {expiredNote ? (
           <div className="relative z-10">{expiredNote}</div>
         ) : creditChip ? (
-          <StatusChip tone="pending">{creditChip}</StatusChip>
+          <StatusChip tone={creditChipTone}>{creditChip}</StatusChip>
         ) : status ? (
           <span>{status}</span>
         ) : (

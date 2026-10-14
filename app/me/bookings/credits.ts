@@ -24,7 +24,14 @@ export type MyCredit = {
   waiting: boolean
   // No active option and all N went by unused (user decision 2026-10-10).
   exhausted: boolean
-  refund: { amountAgorot: number; status: string; requestedAt: string } | null
+  // amountAgorot: requested, or refunded once completed (3.9);
+  // refundedOn: the day Tal paid it, null while requested.
+  refund: {
+    amountAgorot: number
+    status: string
+    requestedAt: string
+    refundedOn: string | null
+  } | null
   // Story 3.8: the business cancelled the session; she chooses refund or
   // credit (no options until she does, no deadline).
   choicePending: boolean
@@ -101,6 +108,7 @@ export function parseMyCredits(data: unknown): MyCredit[] {
                 amountAgorot: amount,
                 status: str(refund.status) ?? "",
                 requestedAt: str(refund.requested_at) ?? "",
+                refundedOn: str(refund.refunded_on),
               }
             : null,
         choicePending: r.choice_pending === true,
@@ -152,11 +160,23 @@ export function pendingChoiceStartsAt(credit: MyCredit): string {
   return credit.cancelledStartsAt ?? credit.originStartsAt
 }
 
-/** An open refund request (until 3.9 completes it). */
+/** An open refund request (until Tal completes it, 3.9). */
 export function isOpenRefund(credit: MyCredit): boolean {
   return (
     credit.status === "refund_requested" &&
     credit.refund?.status === "requested"
+  )
+}
+
+/**
+ * A refund Tal recorded (story 3.9): the server returns it for 14 days
+ * after its date, then only the purchase chip remains.
+ */
+export function isRefunded(credit: MyCredit): boolean {
+  return (
+    credit.status === "refunded" &&
+    credit.refund?.status === "completed" &&
+    credit.refund.refundedOn !== null
   )
 }
 

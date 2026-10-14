@@ -1313,6 +1313,9 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_op_started_at: string | null
+          account_op_state: string | null
+          account_op_target_hash: string | null
           activated_at: string | null
           anonymized_at: string | null
           created_at: string
@@ -1331,6 +1334,9 @@ export type Database = {
           privacy_policy_version: number | null
         }
         Insert: {
+          account_op_started_at?: string | null
+          account_op_state?: string | null
+          account_op_target_hash?: string | null
           activated_at?: string | null
           anonymized_at?: string | null
           created_at?: string
@@ -1349,6 +1355,9 @@ export type Database = {
           privacy_policy_version?: number | null
         }
         Update: {
+          account_op_started_at?: string | null
+          account_op_state?: string | null
+          account_op_target_hash?: string | null
           activated_at?: string | null
           anonymized_at?: string | null
           created_at?: string
@@ -1412,6 +1421,7 @@ export type Database = {
           id: string
           payment_id: string
           reference: string | null
+          refunded_on: string | null
           requested_at: string
           status: string
         }
@@ -1425,6 +1435,7 @@ export type Database = {
           id?: string
           payment_id: string
           reference?: string | null
+          refunded_on?: string | null
           requested_at?: string
           status?: string
         }
@@ -1438,6 +1449,7 @@ export type Database = {
           id?: string
           payment_id?: string
           reference?: string | null
+          refunded_on?: string | null
           requested_at?: string
           status?: string
         }
@@ -1725,6 +1737,14 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_begin_email_change: {
+        Args: {
+          p_customer_id: string
+          p_email: string
+          p_idempotency_key: string
+        }
+        Returns: Json
+      }
       admin_begin_media_publish: {
         Args: {
           p_alt_text: string
@@ -1759,6 +1779,25 @@ export type Database = {
           p_idempotency_key: string
           p_message: string
           p_parked_acknowledged?: boolean
+        }
+        Returns: Json
+      }
+      admin_change_phone: {
+        Args: {
+          p_customer_id: string
+          p_idempotency_key: string
+          p_phone: string
+        }
+        Returns: Json
+      }
+      admin_complete_refund: {
+        Args: {
+          p_amount_agorot: number
+          p_confirmed: boolean
+          p_idempotency_key: string
+          p_reference: string
+          p_refund_request_id: string
+          p_refunded_on: string
         }
         Returns: Json
       }
@@ -1817,6 +1856,18 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_export_customers: {
+        Args: { p_columns: string[]; p_query: string; p_scope: string }
+        Returns: Json
+      }
+      admin_finish_email_change: {
+        Args: {
+          p_customer_id: string
+          p_idempotency_key: string
+          p_succeeded: boolean
+        }
+        Returns: Json
+      }
       admin_finish_media_publish: {
         Args: { p_media_id: string }
         Returns: Json
@@ -1824,6 +1875,10 @@ export type Database = {
       admin_get_attention_items: { Args: never; Returns: Json }
       admin_get_content_page: { Args: { p_slug: string }; Returns: Json }
       admin_get_customer: { Args: { p_customer_id: string }; Returns: Json }
+      admin_get_customer_account: {
+        Args: { p_customer_id: string }
+        Returns: Json
+      }
       admin_get_event_details: { Args: { p_event_id: string }; Returns: Json }
       admin_get_home: { Args: never; Returns: Json }
       admin_get_work_sheet: { Args: { p_event_id: string }; Returns: Json }
@@ -1847,10 +1902,15 @@ export type Database = {
         Returns: Json
       }
       admin_list_bookable_events: { Args: never; Returns: Json }
+      admin_list_customer_credits: {
+        Args: { p_customer_id: string }
+        Returns: Json
+      }
       admin_list_customers: { Args: { p_query: string }; Returns: Json }
       admin_list_links: { Args: never; Returns: Json }
       admin_list_open_cards: { Args: { p_filter: string }; Returns: Json }
       admin_list_payments: { Args: never; Returns: Json }
+      admin_list_refund_requests: { Args: never; Returns: Json }
       admin_list_session_occupancy: {
         Args: { p_event_ids: string[] }
         Returns: Json
@@ -2109,6 +2169,10 @@ export type Database = {
         Args: { p_event_id: string }
         Returns: Json
       }
+      preview_admin_complete_refund: {
+        Args: { p_refund_request_id: string }
+        Returns: Json
+      }
       preview_admin_delete_note_topic: {
         Args: { p_topic_id: string }
         Returns: Json
@@ -2123,6 +2187,10 @@ export type Database = {
       }
       preview_book_session: { Args: { p_event_id: string }; Returns: Json }
       preview_book_sessions: { Args: { p_items: string[] }; Returns: Json }
+      rate_limit_hit: {
+        Args: { p_bucket: string; p_keys: string[] }
+        Returns: Json
+      }
       register_push_subscription: {
         Args: { p_endpoint: string; p_keys: Json; p_platform: string }
         Returns: Json

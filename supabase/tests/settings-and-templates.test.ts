@@ -622,7 +622,7 @@ describe("admin_update_notification_template", { timeout: 30_000 }, () => {
     })
   })
 
-  it("the admin reads all 16 templates (policy and grant)", async () => {
+  it("the admin reads all 17 templates (policy and grant)", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)
       const types = await as(db, f.admin, async () => {
@@ -631,7 +631,7 @@ describe("admin_update_notification_template", { timeout: 30_000 }, () => {
         )
         return rows.map((row) => row.type as string)
       })
-      expect(types).toHaveLength(16)
+      expect(types).toHaveLength(17)
     })
   })
 
@@ -659,7 +659,7 @@ describe("the template contract", { timeout: 60_000 }, () => {
          from public.notification_templates
          order by type`
       )
-      expect(rows).toHaveLength(16)
+      expect(rows).toHaveLength(17)
     })
   })
 
@@ -735,6 +735,36 @@ describe("the template contract", { timeout: 60_000 }, () => {
       })
     })
   }
+
+  // Story 3.9: Tal completes the refund request.
+  it("refund_completed renders in the real flow", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      await fillAllFields(db, f, "refund_completed")
+      const event = await insertEvent(db, f, 5)
+      await grant(db, f, f.single, { eventId: event })
+      const { rows } = await db.query(
+        "select id from public.bookings where event_id = $1 and customer_id = $2",
+        [event, f.customerA]
+      )
+      const cancelled = await as(db, f.customerA, async () => {
+        const { rows: r } = await db.query(
+          "select public.cancel_booking($1, $2, 'refund') as r",
+          [rows[0].id, randomUUID()]
+        )
+        return r[0].r
+      })
+      await as(db, f.admin, () =>
+        db.query(
+          "select public.admin_complete_refund($1, $2::date, 100, null, true, $3)",
+          [cancelled.refund_request_id, f.today, randomUUID()]
+        )
+      )
+      const sent = await notifications(db, f.customerA, "refund_completed")
+      expect(sent).toHaveLength(1)
+      expectRendered(sent[0])
+    })
+  })
 
   // Story 3.5: a couple product approved for a couple session.
   it("booking_confirmed_couple renders in the real flow", async () => {

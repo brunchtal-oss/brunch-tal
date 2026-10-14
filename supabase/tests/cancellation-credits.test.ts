@@ -440,6 +440,8 @@ describe("the cancel outcome", { timeout: 30_000 }, () => {
             amount_agorot: 12800,
             status: "requested",
             requested_at: expect.any(String),
+            // Story 3.9: null until Tal records the refund.
+            refunded_on: null,
           },
         }),
       ])

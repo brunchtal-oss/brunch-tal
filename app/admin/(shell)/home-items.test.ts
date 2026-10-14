@@ -184,7 +184,8 @@ describe("toAttentionItem", () => {
         tone: "warning",
       },
       refund_requested: {
-        href: "/admin/customers/44444444-4444-4444-8444-444444444444",
+        // Story 3.9: the request's row with its complete button.
+        href: "/admin/payments#refund-r1",
         title: "Noa ביקשה החזר של 128 ₪ על בראנץ׳ שישי מיוחד 16.10",
         detail: "",
         chip: null,
@@ -355,7 +356,7 @@ describe("home rows", () => {
     expect(view.refunded.replace(/\s/g, " ")).toBe("128 ₪")
   })
 
-  it("an open refund: the row's text and the customer's card", () => {
+  it("an open refund: the row's text and its row on /admin/payments (3.9)", () => {
     const item = toOpenRefund({
       refund_request_id: "r1",
       customer_id: "44444444-4444-4444-8444-444444444444",
@@ -367,9 +368,7 @@ describe("home rows", () => {
       starts_at: "2026-10-16T07:00:00Z",
     })
     expect(item.key).toBe("r1")
-    expect(item.href).toBe(
-      "/admin/customers/44444444-4444-4444-8444-444444444444"
-    )
+    expect(item.href).toBe("/admin/payments#refund-r1")
     expect(item.text.replace(/\s/g, " ")).toBe(
       "Noa · 128 ₪ · בראנץ׳ שישי מיוחד 16.10"
     )

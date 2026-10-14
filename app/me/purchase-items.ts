@@ -150,16 +150,24 @@ export function isHomeCard(e: MyEntitlement): boolean {
 
 /**
  * Story 3.7: the chip of a pinned purchase whose booking was cancelled (in
- * the purchase history): a credit, or a refund request (also once
- * refunded, until 3.9 adds its own word); null otherwise.
+ * the purchase history): a credit, or a refund request; "הוחזר" only once
+ * Tal recorded the refund (3.9); null otherwise.
  */
 export function creditChip(
   e: Pick<MyEntitlement, "creditStatus">
 ): string | null {
   if (e.creditStatus === null) return null
-  return e.creditStatus === "refund_requested" || e.creditStatus === "refunded"
+  if (e.creditStatus === "refunded") return customerCopy.creditChip.refunded
+  return e.creditStatus === "refund_requested"
     ? customerCopy.creditChip.refund
     : customerCopy.creditChip.credit
+}
+
+/** The tone of creditChip: done (success) once refunded, else pending. */
+export function creditChipTone(
+  e: Pick<MyEntitlement, "creditStatus">
+): "success" | "pending" {
+  return e.creditStatus === "refunded" ? "success" : "pending"
 }
 
 /**

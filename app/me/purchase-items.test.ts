@@ -5,6 +5,7 @@ import { customerCopy } from "@/lib/copy/customer"
 import {
   byPaidOnDesc,
   creditChip,
+  creditChipTone,
   entitlementName,
   isEmptyHome,
   isHomeCard,
@@ -180,9 +181,16 @@ describe("creditChip (story 3.7)", () => {
     ["a credit", "active", customerCopy.creditChip.credit],
     ["a used credit", "used", customerCopy.creditChip.credit],
     ["a refund request", "refund_requested", customerCopy.creditChip.refund],
-    ["a refunded one", "refunded", customerCopy.creditChip.refund],
+    // Story 3.9: "הוחזר" only once Tal recorded it.
+    ["a refunded one", "refunded", customerCopy.creditChip.refunded],
   ] as const)("%s", (_label, status, expected) => {
     expect(creditChip({ creditStatus: status })).toBe(expected)
+  })
+
+  it("is success once refunded, pending otherwise (3.9)", () => {
+    expect(creditChipTone({ creditStatus: "refunded" })).toBe("success")
+    expect(creditChipTone({ creditStatus: "refund_requested" })).toBe("pending")
+    expect(creditChipTone({ creditStatus: "active" })).toBe("pending")
   })
 
   it("parses credit_status", () => {
@@ -192,6 +200,7 @@ describe("creditChip (story 3.7)", () => {
     expect(customerCopy.creditChip).toEqual({
       credit: "הומרה לזיכוי",
       refund: "בקשת החזר",
+      refunded: "הוחזר",
     })
   })
 })

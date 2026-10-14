@@ -55,7 +55,7 @@ describe("OpenRefunds (story 3.7)", () => {
     expect(await OpenRefunds()).toBeNull()
   })
 
-  it("a row per request, linked to the customer's card; plain text while unbound", async () => {
+  it("a row per request, each linked to its row on /admin/payments (3.9), bound or not", async () => {
     loadHome.mockResolvedValue(
       home([
         ROW,
@@ -69,13 +69,15 @@ describe("OpenRefunds (story 3.7)", () => {
     )
     const html = renderToStaticMarkup((await OpenRefunds())!)
     expect(html).toContain(copy.openRefunds)
-    expect(html).toContain(`href="/admin/customers/${CUSTOMER}"`)
+    expect(html).toContain('href="/admin/payments#refund-r1"')
+    expect(html).toContain('href="/admin/payments#refund-r2"')
+    expect(html).not.toContain(`href="/admin/customers/${CUSTOMER}"`)
     expect(html.replace(/\s/g, " ")).toContain(
       "Noa · 128 ₪ · בראנץ׳ שישי מיוחד 16.10"
     )
     expect(html).toContain(copy.newCustomer)
     expect(html.split("<li").length - 1).toBe(2)
-    expect(html.split("<a ").length - 1).toBe(1)
+    expect(html.split("<a ").length - 1).toBe(2)
     expect(html).not.toContain("בוצע")
   })
 })
