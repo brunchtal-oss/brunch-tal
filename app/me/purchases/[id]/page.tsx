@@ -13,7 +13,12 @@ import { createClient } from "@/lib/supabase/server"
 import { formatDayMonth, formatLocalDate } from "@/lib/time"
 
 import { loadMyEntitlements, pinnedConceptNames } from "../../load-entitlements"
-import { creditChip, entitlementName, pastStatus } from "../../purchase-items"
+import {
+  creditChip,
+  creditChipTone,
+  entitlementName,
+  pastStatus,
+} from "../../purchase-items"
 import { buildHistory } from "./history"
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -122,7 +127,7 @@ async function EntitlementContent({
             </time>
           </span>
           {chip ? (
-            <StatusChip tone="pending">{chip}</StatusChip>
+            <StatusChip tone={creditChipTone(entitlement)}>{chip}</StatusChip>
           ) : past ? (
             <span>{past}</span>
           ) : (

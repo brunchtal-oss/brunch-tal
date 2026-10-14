@@ -186,6 +186,8 @@ export const customerCopy = {
   creditChip: {
     credit: "הומרה לזיכוי",
     refund: "בקשת החזר",
+    // Story 3.9: only after Tal recorded the refund.
+    refunded: "הוחזר",
   },
   // /me/bookings: a credit's card ({date}: DD.MM of the cancelled session)
   // with its active options, or the line while it waits; a refund's card.
@@ -210,6 +212,11 @@ export const customerCopy = {
   },
   refundTitle: (amount: string) => `בקשת החזר של ${amount} התקבלה`,
   refundNote: "נעדכן אותך כשההחזר יבוצע",
+  // Story 3.9: a refund Tal recorded, for 14 days after its date (then only
+  // the purchase chip remains). Never shown while the request is open.
+  refundedChip: "הוחזר",
+  refundedTitle: (amount: string) => `ההחזר של ${amount} בוצע`,
+  refundedNote: (date: string) => `בתאריך ${date}`,
   // Cancelling a booking (story 3.6). No self-cancel deadline and no "Tal"
   // anywhere (user decision 2026-10-05); the contact phrase is
   // contactPhrase.

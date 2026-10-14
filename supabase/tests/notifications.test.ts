@@ -219,6 +219,15 @@ const SEED = [
     "ההרשמה ל{date} בוטלה",
     "בקשת ההחזר התקבלה. נעדכן אותך כשההחזר יבוצע",
   ],
+  // Story 3.9: Tal completed the refund.
+  [
+    "refund_completed",
+    "customer",
+    true,
+    "template",
+    "ההחזר בוצע",
+    "החזר של {amount} על הבראנץ׳ ב-{date} הועבר אלייך",
+  ],
   [
     "event_changed",
     "customer",
@@ -276,7 +285,7 @@ const SEED = [
 }))
 
 describe("notification templates", () => {
-  it("hold the approved seed: 16 templates, recipient, channel, mode and wording", async () => {
+  it("hold the approved seed: 17 templates, recipient, channel, mode and wording", async () => {
     const rows = await sql(
       `select type, recipient_kind, push, body_mode, title, body, version
        from public.notification_templates

@@ -18,13 +18,19 @@ import {
   pastBookingStatus,
 } from "./cancel-result"
 import { CompanionNote } from "./companion-note"
-import { CreditCard, ExhaustedCreditCard, RefundCard } from "./credit-cards"
+import {
+  CreditCard,
+  ExhaustedCreditCard,
+  RefundCard,
+  RefundedCard,
+} from "./credit-cards"
 import {
   activeOptions,
   isBookableCredit,
   isExhaustedCredit,
   isOpenRefund,
   isPendingChoice,
+  isRefunded,
   parseMyCredits,
   pendingChoiceStartsAt,
 } from "./credits"
@@ -45,7 +51,11 @@ export async function Bookings() {
   // Story 3.8: a business cancel waiting for her choice, at the top.
   const pending = allCredits.filter(isPendingChoice)
   const credits = allCredits.filter(
-    (c) => isBookableCredit(c) || isExhaustedCredit(c) || isOpenRefund(c)
+    (c) =>
+      isBookableCredit(c) ||
+      isExhaustedCredit(c) ||
+      isOpenRefund(c) ||
+      isRefunded(c)
   )
   // A couple booking (story 3.5): the companion's note under its card.
   // The contact button of an exhausted credit, or of a companion note that
@@ -95,6 +105,8 @@ export async function Bookings() {
       {credits.map((credit) =>
         isOpenRefund(credit) ? (
           <RefundCard key={credit.creditId} credit={credit} />
+        ) : isRefunded(credit) ? (
+          <RefundedCard key={credit.creditId} credit={credit} />
         ) : isExhaustedCredit(credit) ? (
           <ExhaustedCreditCard
             key={credit.creditId}

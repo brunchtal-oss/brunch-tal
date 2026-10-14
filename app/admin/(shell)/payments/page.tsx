@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 
 import { PageHeading } from "@/components/shared/page-heading"
+import { ResultNoticeHost } from "@/components/shared/result-notice"
 import { buttonClass } from "@/components/shared/button-class"
 import { adminCopy } from "@/lib/copy/admin"
 import { shellCopy } from "@/lib/copy/shell"
@@ -11,6 +12,7 @@ import { createClient } from "@/lib/supabase/server"
 import { cn } from "@/lib/utils"
 
 import { PAYMENTS_LIMIT, toPaymentItem, type PaymentRow } from "./payment-items"
+import { RefundsSection } from "./refunds-section"
 
 const copy = adminCopy.paymentsList
 
@@ -18,8 +20,8 @@ export const metadata: Metadata = {
   title: copy.title,
 }
 
-// /admin/payments (story 2.5): "add payment", the links screen, and the 50
-// latest payments as rows with a divider (DESIGN › content-section-row).
+// /admin/payments (story 2.5): "add payment", the links screen, the refund
+// requests (story 3.9), and the 50 latest payments as rows with a divider (DESIGN › content-section-row).
 // Filters, search, sums and "recent payments" on the home arrive in E4.
 // Rendered inside the admin shell's <Suspense> gate.
 export default function PaymentsPage() {
@@ -45,6 +47,15 @@ export default function PaymentsPage() {
           {adminCopy.payments.allLinks}
         </Link>
       </div>
+      {/* Story 3.9: the open refund requests above the payments (user
+          decisions 2026-10-13, 2026-10-14); the home and "לטיפול" link to a
+          row here. The host keeps "ההחזר נרשם" on screen after the section
+          disappears with its last open request. */}
+      <ResultNoticeHost>
+        <Suspense fallback={null}>
+          <RefundsSection />
+        </Suspense>
+      </ResultNoticeHost>
       <Suspense
         fallback={<p className="text-muted-foreground">{shellCopy.loading}</p>}
       >

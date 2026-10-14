@@ -159,6 +159,56 @@ export const adminCopy = {
     limit: "מוצגים 50 התשלומים האחרונים",
     empty: "אין עדיין תשלומים",
   },
+  // The refunds section of /admin/payments (story 3.9, user decisions
+  // 2026-10-14): the open requests, then the completed refunds of purchases
+  // not bound yet (they have no customer card); a bound one's completed
+  // refund is in her card. The dialog's title is in
+  // lib/admin/sensitive-actions.ts (refund_complete).
+  refunds: {
+    title: "בקשות החזר",
+    // "{customer} · בראנץ׳ {concept} {DD.MM}"
+    rowTitle: (customer: string, concept: string, day: string) =>
+      `${customer} · בראנץ׳ ${concept} ${day}`,
+    // An open request: "בקשת החזר של {amount} · {product}"
+    requested: (amount: string, product: string) =>
+      `בקשת החזר של ${amount} · ${product}`,
+    // A completed one: "הוחזר {amount} ב-{DD.MM.YY}"
+    completed: (amount: string, date: string) => `הוחזר ${amount} ב-${date}`,
+    reference: (value: string) => `אסמכתה: ${value}`,
+    chipOpen: "בקשת החזר",
+    chipDone: "הוחזר",
+    // The small heading of the completed refunds of unbound purchases.
+    unboundDone: "החזרים ללקוחות שעוד לא הצטרפו",
+    button: "סימון שההחזר בוצע",
+    buttonLabel: (name: string) => `סימון שההחזר של ${name} בוצע`,
+    // The dialog.
+    description:
+      "ההחזר יירשם כבוצע, והזיכוי ייסגר. הלקוחה תקבל הודעה שההחזר הועבר אליה.",
+    descriptionNoCustomer:
+      "ההחזר יירשם כבוצע, והזיכוי ייסגר. הלקוחה תראה אותו כשתצטרף.",
+    customer: "לקוחה",
+    session: "מפגש",
+    paid: "שולם",
+    refundedBefore: "הוחזר כבר מהתשלום הזה",
+    max: "אפשר להחזיר עד",
+    dateLabel: "תאריך ההחזר",
+    amountLabel: "סכום ההחזר",
+    referenceLabel: "אסמכתה (לא חובה)",
+    // The confirm pressed with a field that is not valid.
+    dateMissing: "צריך לבחור את תאריך ההחזר",
+    amountInvalid: "צריך להזין סכום תקין, למשל 180",
+    amountTooHigh: (max: string) => `אפשר להחזיר עד ${max}`,
+    // INVALID_INPUT of the action, by detail.field.
+    dateInvalid: "התאריך צריך להיות בין יום התשלום להיום",
+    referenceTooLong: "האסמכתה ארוכה מדי. אפשר עד 200 תווים",
+    // amount: "" while the field is not a valid sum.
+    checkbox: (amount: string, name: string) =>
+      amount === ""
+        ? `אני מאשרת שההחזר הועבר ל${name}, ושהוא יירשם ביומן הפעולות`
+        : `אני מאשרת שהחזר של ${amount} הועבר ל${name}, ושהוא יירשם ביומן הפעולות`,
+    confirm: "לאישור ההחזר",
+    done: "ההחזר נרשם",
+  },
   // /admin/content (story 5.1): the content editor. Draft -> preview ->
   // publish (EXPERIENCE › admin states › site content).
   content: {
@@ -1292,6 +1342,7 @@ export const adminCopy = {
         booking_cancelled: "ביטול הרשמה מכרטיסייה",
         booking_cancelled_pinned: "ביטול הרשמה עם זיכוי",
         booking_cancelled_refund: "ביטול הרשמה עם בקשת החזר",
+        refund_completed: "ההחזר בוצע",
         event_changed: "שינוי במפגש",
         event_cancelled: "ביטול מפגש",
         entitlement_changed: "עדכון בכרטיסייה",
@@ -1312,6 +1363,7 @@ export const adminCopy = {
         new_time: "שעה חדשה",
         units: "כניסות",
         customer: "שם הלקוחה",
+        amount: "סכום",
       } as Record<string, string>,
       samples: {
         date: "12.11",
@@ -1324,6 +1376,7 @@ export const adminCopy = {
         new_time: "11:00",
         units: "3",
         customer: "נועה לוי",
+        amount: "180 ₪",
       } as Record<string, string>,
       fields: {
         title: "כותרת",
@@ -1400,6 +1453,30 @@ export const adminCopy = {
       noBabies: "לא נוספו תינוקות",
       balances: "יתרות ותוקף",
       noBalances: "אין כרטיסיות או כניסות",
+      // Story 3.9: her cancellation credits and refunds, after the
+      // balances. Title: the cancelled session "בראנץ׳ {concept} {DD.MM}".
+      credits: {
+        title: "זיכויים והחזרים",
+        empty: "אין זיכויים או בקשות החזר",
+        sessionTitle: (concept: string, day: string) =>
+          `בראנץ׳ ${concept} ${day}`,
+        chips: {
+          active: "זיכוי פעיל",
+          used: "נוצל",
+          pending: "ממתינה לבחירה",
+          requested: "בקשת החזר",
+          refunded: "הוחזר",
+        },
+        // The line under the title, by state.
+        worth: (amount: string) => `זיכוי בשווי ${amount}`,
+        pendingLine: "המפגש בוטל. היא עוד לא בחרה זיכוי או החזר",
+        requestedLine: (amount: string, day: string) =>
+          `ביקשה החזר של ${amount} ב-${day}`,
+        refundedLine: (amount: string, date: string) =>
+          `הוחזר ${amount} ב-${date}`,
+        reference: (value: string) => `אסמכתה: ${value}`,
+        couple: "זוגי",
+      },
       // "נוצלו 2 · שוריינו 1 · פנויות 1"
       balanceSummary: (used: number, booked: number, free: number) =>
         `נוצלו ${used} · שוריינו ${booked} · פנויות ${free}`,
@@ -1605,6 +1682,8 @@ export const adminCopy = {
     when: (date: string, time: string) => `${date} · ${time}`,
     sessionLabel: (concept: string, date: string) => `${concept} · ${date}`,
     reason: (text: string) => `סיבה: ${text}`,
+    // A partial refund: "{הוחזר} מתוך {התבקש}".
+    outOf: (part: string, whole: string) => `${part} מתוך ${whole}`,
     // Values.
     masked: "השתנה",
     yes: "כן",
@@ -1617,7 +1696,7 @@ export const adminCopy = {
       admin_add_note: "הוספת פתק",
       admin_update_note: "עריכת פתק",
       admin_delete_note: "מחיקת פתק",
-      admin_set_note_archived: "ארכיון פתק",
+      admin_set_note_archived: "העברת פתק לארכיון",
       admin_set_note_done: "סימון פתק כבוצע",
       admin_set_note_pinned: "נעיצת פתק",
       admin_set_note_order: "סידור פתקים",
@@ -1646,7 +1725,7 @@ export const adminCopy = {
       admin_create_concept: "יצירת קונספט",
       admin_update_concept: "עריכת קונספט",
       admin_delete_concept: "מחיקת קונספט",
-      admin_set_concept_archived: "ארכיון קונספט",
+      admin_set_concept_archived: "העברת קונספט לארכיון",
       admin_set_concept_image: "בחירת תמונה לקונספט",
       admin_create_event: "יצירת מפגש",
       admin_update_event: "עריכת מפגש",
@@ -1672,8 +1751,9 @@ export const adminCopy = {
       revoke_link: "ביטול קישור",
       admin_approve_payment: "אישור תשלום",
       approve_payment: "אישור תשלום",
-      admin_book_customer: "רישום ללקוחה למפגש",
+      admin_book_customer: "רישום לקוחה למפגש",
       admin_cancel_booking: "ביטול הרשמה",
+      admin_complete_refund: "אישור החזר",
       bind_purchase: "שיוך רכישה",
       claim_join: "צירוף רכישה לחשבון קיים",
       join_begin: "התחלת הצטרפות",
@@ -1697,7 +1777,7 @@ export const adminCopy = {
       starts_at: "התחלה",
       ends_at: "סיום",
       registration_closes_at: "סגירת הרשמה",
-      registration_close_overridden: "סגירה שונתה ידנית",
+      registration_close_overridden: "סגירת הרשמה ידנית",
       display_price_agorot: "מחיר תצוגה",
       revision: "גרסה",
       full_name: "שם מלא",
@@ -1709,8 +1789,8 @@ export const adminCopy = {
       photo_consent_at: "מועד אישור תמונות אווירה",
       personal_photo_consent: "אישור תמונות אישיות",
       personal_photo_consent_at: "מועד אישור תמונות אישיות",
-      activated_at: "הופעלה",
-      anonymized_at: "פרטים הוסרו",
+      activated_at: "מועד הפעלה",
+      anonymized_at: "מועד הסרת הפרטים",
       name: "שם",
       birth_date: "תאריך לידה",
       body: "תוכן",
@@ -1719,15 +1799,15 @@ export const adminCopy = {
       done: "בוצע",
       bought: "נקנה",
       quantity: "כמות",
-      archived_at: "בארכיון",
+      archived_at: "מועד העברה לארכיון",
       day_offset: "יום הכנה",
       prep_days: "ימי הכנה",
       state: "מצב",
       purpose: "מטרה",
-      expires_at: "תפוגה",
-      consumed_at: "מומש",
-      revoked_at: "בוטל",
-      bound_at: "שויך",
+      expires_at: "בתוקף עד",
+      consumed_at: "מועד מימוש",
+      revoked_at: "מועד ביטול",
+      bound_at: "מועד שיוך",
       conflict_reason: "סיבת התנגשות",
       amount_agorot: "סכום",
       price_agorot: "מחיר",
@@ -1738,7 +1818,7 @@ export const adminCopy = {
       source: "מקור",
       units: "כניסות",
       original_units: "כניסות במקור",
-      valid_from: "בתוקף מ",
+      valid_from: "בתוקף מתאריך",
       expires_on: "בתוקף עד",
       validity_mode: "סוג תוקף",
       validity_days: "ימי תוקף",
@@ -1750,11 +1830,14 @@ export const adminCopy = {
       hidden: "מוסתר",
       type: "סוג מוצר",
       booked_by: "נרשמה על ידי",
-      confirmed_at: "אושרה",
-      cancelled_at: "בוטלה",
+      confirmed_at: "מועד אישור",
+      cancelled_at: "מועד ביטול",
+      // Story 3.9: a refund request's completion.
+      refunded_on: "תאריך ההחזר",
+      completed_at: "מועד השלמה",
       alt_text: "טקסט חלופי",
       publish_state: "מצב פרסום",
-      published_at: "פורסם",
+      published_at: "מועד פרסום",
       draft_content: "טיוטה",
       published_content: "תוכן שפורסם",
       default_validity_days: "תוקף למוצר חדש (ימים)",
@@ -1780,7 +1863,7 @@ export const adminCopy = {
       payer_label: "שם המשלמת",
       post_join_button_label: "כפתור אחרי הצטרפות",
       post_join_message: "הודעה אחרי הצטרפות",
-      privacy_consent_at: "אישור מדיניות פרטיות",
+      privacy_consent_at: "מועד אישור מדיניות הפרטיות",
       // The customers export (story 4.4).
       scope: "היקף",
       columns: "עמודות",
@@ -1797,7 +1880,8 @@ export const adminCopy = {
         confirmed: "רשומה",
         active: "פעילה",
         revoked: "בוטלה",
-        refunded: "הוחזרה",
+        refunded: "הוחזר",
+        refund_requested: "ממתין להחזר",
         approved: "אושר",
         voided: "בוטל",
       },
@@ -1841,5 +1925,39 @@ export const adminCopy = {
       scope: { all: "כל הלקוחות", search: "תוצאות חיפוש" },
       columns: exportHeaders,
     } as Record<string, Record<string, string>>,
+    // A table's own wording of a code value (gender and meaning), by
+    // entity_type then key; it wins over values above.
+    valuesByEntity: {
+      events: {
+        status: {
+          draft: "טיוטה",
+          published: "פורסם",
+          cancelled: "בוטל",
+          completed: "התקיים",
+        },
+      },
+      bookings: {
+        status: {
+          confirmed: "רשומה",
+          cancelled: "בוטלה",
+          completed: "התקיימה",
+        },
+      },
+      entitlements: {
+        status: { active: "פעילה", revoked: "בוטלה", refunded: "הוחזרה" },
+      },
+      payments: { status: { approved: "אושר", voided: "בוטל" } },
+      cancellation_credits: {
+        status: {
+          active: "פעיל",
+          used: "נוצל",
+          refund_requested: "ממתין להחזר",
+          refunded: "הוחזר",
+        },
+      },
+      refund_requests: {
+        status: { requested: "פתוחה", completed: "הוחזר" },
+      },
+    } as Record<string, Record<string, Record<string, string>>>,
   },
 } as const

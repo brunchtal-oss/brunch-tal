@@ -169,8 +169,9 @@ function About({ item, className }: { item: AuditItem; className?: string }) {
   )
 }
 
-// "{שדה}: {ישן} ← {חדש}"; an add shows only the new value, a delete only
-// the old one (struck through).
+// "{שדה}: {ערך}": the value after the action only (user decision
+// 2026-10-14); a removed value shows "—". A partial refund's amount reads
+// "{הוחזר} מתוך {התבקש}" (toChange).
 function Changes({
   changes,
   className,
@@ -190,22 +191,8 @@ function Changes({
 }
 
 function ChangeText({ change }: { change: AuditChange }) {
-  if (change.kind === "add") {
-    return <span>{`${change.field}: ${change.after}`}</span>
-  }
-  if (change.kind === "delete") {
-    return (
-      <span>
-        {`${change.field}: `}
-        <s className="text-muted-foreground">{change.before}</s>
-      </span>
-    )
-  }
-  return (
-    <span>
-      {adminCopy.valueChange.change(change.field, change.before, change.after)}
-    </span>
-  )
+  const value = change.kind === "delete" ? adminCopy.audit.none : change.after
+  return <span>{`${change.field}: ${value}`}</span>
 }
 
 // empty-state (DESIGN › empty-state): the sentence and one action.

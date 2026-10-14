@@ -10,6 +10,7 @@ import {
 
 import { customerHref } from "./customers/customer-items"
 import { expiringCardHref } from "./customers/open-cards/open-cards-items"
+import { refundHref } from "./payments/refund-items"
 import { sessionTitle } from "./sessions/session-draft"
 
 // What /admin shows for the rows of admin_get_attention_items and
@@ -227,9 +228,9 @@ export function toAttentionItem(row: AttentionRow): AttentionItem {
       const c = copy.items.refund_requested
       return {
         ...base,
-        href: row.customer_id
-          ? customerHref(row.customer_id)
-          : sessionHref(row),
+        // Story 3.9: the request's row on /admin/payments, with its
+        // "סימון שההחזר בוצע" (the item's id is the request).
+        href: refundHref(row.id),
         title: c.title(
           name,
           formatAgorot(row.amount_agorot ?? 0),
@@ -358,15 +359,15 @@ export function totalsView(totals: HomeTotals): TotalsView {
 
 export type OpenRefundItem = {
   key: string
-  // The customer's card; null while the purchase is not bound.
-  href: string | null
+  // Story 3.9: the request's row on /admin/payments.
+  href: string
   text: string
 }
 
 export function toOpenRefund(row: OpenRefundRow): OpenRefundItem {
   return {
     key: row.refund_request_id,
-    href: row.customer_id ? customerHref(row.customer_id) : null,
+    href: refundHref(row.refund_request_id),
     text: copy.openRefundRow(
       nameOf(row.customer_label),
       formatAgorot(row.amount_agorot),

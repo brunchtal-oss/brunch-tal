@@ -291,6 +291,93 @@ describe("bind_purchase coverage", () => {
     })
   })
 
+  // Story 3.9: Tal completed the refund of a held place before the
+  // purchase was bound; the bind moves the refunded credit and its request
+  // and sends refund_completed only.
+  it("story 3.9: a refunded credit moves with its completed request; one refund_completed, no booking_cancelled_refund", async () => {
+    await inRollback(async (db) => {
+      const f = await seedMoney(db)
+      const { rows: products } = await db.query(
+        `insert into public.products (
+           name, type, price_agorot, units, validity_mode, validity_days,
+           allowed_weekdays, eligible_event_kind, party_size)
+         values ($1, 'single', 12800, 1, 'session', null, null, 'regular', 1)
+         returning id`,
+        [testName("single")]
+      )
+      const { rows: events } = await db.query(
+        `insert into public.events (
+           concept_id, kind, starts_at, ends_at, capacity_adults,
+           registration_closes_at, status)
+         select c.id, 'regular', now() + interval '7 days',
+           now() + interval '7 days 2 hours', 12, now() + interval '7 days',
+           'published'
+         from public.concepts c where c.theme_key = 'mothers' limit 1
+         returning id`
+      )
+      await asAuthenticated(db, f.admin)
+      const r = await approve(db, {
+        productId: products[0].id,
+        eventId: events[0].id,
+        amount: 12800,
+        paidOn: f.today,
+        methodId: f.method,
+        duplicateConfirmed: true,
+        key: randomUUID(),
+      })
+      const { rows: held } = await db.query(
+        "select id from public.bookings where payment_id = $1",
+        [r.payment_id]
+      )
+      const { rows: c } = await db.query(
+        "select public.admin_cancel_booking($1, true, $2, null, 'refund') as r",
+        [held[0].id, randomUUID()]
+      )
+      const { credit_id: creditId, refund_request_id: refundId } = c[0].r
+      await db.query(
+        "select public.admin_complete_refund($1, $2::date, 12000, null, true, $3)",
+        [refundId, f.today, randomUUID()]
+      )
+      await db.query("reset role")
+
+      await db.query("select private.bind_purchase($1, $2)", [
+        r.payment_id,
+        f.customerA,
+      ])
+
+      const { rows: moved } = await db.query(
+        `select c.customer_id as credit_customer, c.status,
+           q.customer_id as request_customer, q.status as request_status
+         from public.cancellation_credits c
+         join public.refund_requests q on q.credit_id = c.id
+         where c.id = $1`,
+        [creditId]
+      )
+      expect(moved).toEqual([
+        {
+          credit_customer: f.customerA,
+          status: "refunded",
+          request_customer: f.customerA,
+          request_status: "completed",
+        },
+      ])
+      const { rows: sent } = await db.query(
+        `select type, dedupe_key, payload ->> 'body' as body
+         from public.notifications
+         where recipient_id = $1
+           and (type like 'booking_cancelled%' or type = 'refund_completed')`,
+        [f.customerA]
+      )
+      expect(sent).toEqual([
+        {
+          type: "refund_completed",
+          dedupe_key: `refund_completed:${f.customerA}:bind:${creditId}`,
+          body: expect.stringContaining("120 ₪"),
+        },
+      ])
+    })
+  })
+
   it("story 3.8: a held place of a session the business cancelled: the credit moves still choice_pending, one event_cancelled (template body), no booking_cancelled*", async () => {
     await inRollback(async (db) => {
       const f = await seedMoney(db)

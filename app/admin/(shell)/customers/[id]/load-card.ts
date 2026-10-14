@@ -37,3 +37,17 @@ export async function loadAccount(id: string): Promise<CardAccount> {
   }
   return result.data as unknown as CardAccount
 }
+
+// admin_list_customer_credits for the credits-and-refunds section (story
+// 3.9). Read together with loadCard, which answers a bad id or a
+// non-customer with notFound() (here: [] for either).
+export async function loadCredits(id: string): Promise<unknown> {
+  if (!UUID.test(id)) return []
+  const result = await callRpc(
+    await createClient(),
+    "admin_list_customer_credits",
+    { p_customer_id: id }
+  )
+  if (!result.ok) throw new Error("admin_list_customer_credits failed")
+  return result.data
+}

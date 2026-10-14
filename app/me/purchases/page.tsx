@@ -13,6 +13,7 @@ import { loadMyEntitlements, pinnedConceptNames } from "../load-entitlements"
 import {
   byPaidOnDesc,
   creditChip,
+  creditChipTone,
   entitlementName,
   pastStatus,
 } from "../purchase-items"
@@ -62,6 +63,7 @@ async function Purchases() {
             expiresOn={e.expiresOn}
             status={pastStatus(e)}
             creditChip={creditChip(e)}
+            creditChipTone={creditChipTone(e)}
             expiredNote={
               e.expiredBeforeBound ? (
                 <ExpiredCardNote

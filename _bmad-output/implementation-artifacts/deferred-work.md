@@ -81,6 +81,7 @@
   target: E3
   summary: ‏`private.bind_purchase` ו-`token_view` לא בודקים `payments.status = 'approved'` ו-`entitlements.status = 'active'`. כשתהיה פעולה שמבטלת תשלום או שוללת זכות, קישור פתוח ישייך ויתריע על רכישה שבוטלה.
   evidence: היום אף RPC לא קובע `voided`, ‏`revoked` או `refunded`, ולכן זה לא קורה. ביקורת 2.2, edge-case 6–7.
+  status: נשאר פתוח לביטול תשלום (`voided`) ולשלילת זכות. ‏3.9 (2026-10-13) לא נוגע בו: החזר משנה רק את הזיכוי (`refunded`) ואת בקשת ההחזר, לא את התשלום או הזכות, ורכישה שהוחזרה נשארת ניתנת לשיוך בכוונה (היא עוברת ללקוחה עם ההתראה `refund_completed`; נבדק ב-`bind-purchase.test.ts` וב-`session-role-and-token-view.test.ts`).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-2-join-tracer.md`
   target: 2.10
@@ -374,6 +375,7 @@
   target: (הסיפור שיבנה ביטול תשלום)
   summary: `get_my_entitlements` לא מחזיר את מצב התשלום (`payments.status`). כשיתווסף ביטול תשלום (`voided`), להחליט איך הזכות והסכום מוצגים ללקוחה, ולהוסיף לכך שדה ובדיקה.
   evidence: ה-RPC מחזיר `amount_agorot` ו-`paid_on` מכל תשלום, בלי הבדל. אין היום פעולה שמבטלת תשלום (unverified, medium אם יתממש).
+  status: נשאר פתוח לביטול תשלום. ‏3.9 (2026-10-13) לא מבטל תשלום: רכישה מוצמדת שהוחזרה מוצגת ב-`/me/purchases` עם `credit_status = refunded` (הצ׳יפ "הוחזר"), והסכום שמוצג הוא עדיין מה ששולם.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-10-customer-profile-babies-and-photo-consent.md`
   target: (בלי יעד)
@@ -564,6 +566,11 @@
   summary: No test covers `CONCURRENT_CHANGE` in `admin_cancel_event` / `admin_reschedule_event` when a new booking or a bind commits between the unlocked read of the registrants and the booking locks.
   evidence: 3.8 review round 1 (blind-hunter). The re-check exists in the code; triggering it needs a paused committing transaction, like the 3.7 `CREDIT_LOCKED` item.
 
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-9-refund-completion.md`
+  target: 3.13
+  summary: רכישה מוצמדת ששולמה ונשארה בלי מקום ("park") במפגש שהעסק ביטל (3.8) אין לה בקשת החזר, ולכן אין לה מסלול החזר במערכת. טל מטפלת בה ידנית, והפריט שלה ב"לטיפול" (`paid_without_place` עם `event_status = cancelled`) נשאר עד אז. ‏3.13 (תיקונים בזכות) מחליט איך לסגור אותה: זיכוי, החזר או תיקון.
+  evidence: החלטת המשתמשת 2026-10-13 (spec 3.9). ‏`admin_complete_refund` משלים רק בקשה קיימת (Never של spec 3.9).
+
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-8-admin-assisted-reset-and-rate-limit.md`
   summary: The auth.users trigger (`private.guard_auth_user_change`) has no automated test against real Supabase Auth; the DB tests stand Auth in with an owner UPDATE.
   evidence: 2.8 review (verification-gap). Checked by hand on dev 2026-10-14 with a throwaway user (all cases passed). Re-check by hand when a mail provider is added (secure email change will then reach the trigger) and on the production project (6.1).
@@ -577,3 +584,7 @@
   summary: AGENTS.md line on 2.8 says a phone change in auth.users is blocked "unless started by admin_begin_email_change" (it is always blocked), and does not mention the SQL Editor switch `set local app.allow_auth_identity_change = 'on'` for an admin's own email.
   evidence: 2.8 review (blind-hunter). Agent-context file, so deferred by the review rules.
 
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-9-refund-completion.md`
+  summary: No test covers `CONCURRENT_CHANGE` in `admin_complete_refund` when a bind commits between the unlocked read of an unbound request and the credit lock.
+  evidence: 3.9 review round 1 (verification-gap). The re-check exists in the code; triggering it needs a paused committing bind, like the 3.8 `admin_cancel_event` item.

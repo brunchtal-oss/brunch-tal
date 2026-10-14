@@ -6,6 +6,7 @@ import {
   isExhaustedCredit,
   isOpenRefund,
   isPendingChoice,
+  isRefunded,
   parseMyCredits,
   pendingChoiceStartsAt,
 } from "./credits"
@@ -113,8 +114,35 @@ describe("parseMyCredits (story 3.7)", () => {
       amountAgorot: 12800,
       status: "requested",
       requestedAt: "2026-10-10T07:00:00Z",
+      refundedOn: null,
     })
     expect(isOpenRefund(free)).toBe(false)
+    expect(isRefunded(refund)).toBe(false)
+  })
+
+  it("story 3.9: a refund Tal recorded is refunded (its own card), never an open request", () => {
+    const [done] = parseMyCredits([
+      {
+        ...ROW,
+        status: "refunded",
+        options: [],
+        refund: {
+          amount_agorot: 12000,
+          status: "completed",
+          requested_at: "2026-10-10T07:00:00Z",
+          refunded_on: "2026-10-12",
+        },
+      },
+    ])
+    expect(done.refund).toEqual({
+      amountAgorot: 12000,
+      status: "completed",
+      requestedAt: "2026-10-10T07:00:00Z",
+      refundedOn: "2026-10-12",
+    })
+    expect(isRefunded(done)).toBe(true)
+    expect(isOpenRefund(done)).toBe(false)
+    expect(isBookableCredit(done)).toBe(false)
   })
 
   it("an exhausted credit is not bookable (no home line); it has its own card", () => {

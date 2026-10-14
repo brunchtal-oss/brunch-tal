@@ -26,8 +26,10 @@ import {
   type BalanceItem,
   type SingleItem,
 } from "./card-items"
+import { parseCustomerCredits, toCustomerCreditItem } from "./credit-items"
+import { CreditsSection } from "./credits-section"
 import { CustomerNotes } from "./customer-notes"
-import { loadAccount, loadCard } from "./load-card"
+import { loadAccount, loadCard, loadCredits } from "./load-card"
 
 const copy = adminCopy.customers.card
 
@@ -40,7 +42,8 @@ export const metadata: Metadata = {
 // activated") → details (photo consent read only) → the account (story
 // 2.8: email, phone, reset link) → babies → balances
 // and validity: each card opening in place to its entries, then the open
-// singles → links to the booking and purchase histories → internal notes,
+// singles → credits and refunds (story 3.9, admin_list_customer_credits)
+// → links to the booking and purchase histories → internal notes,
 // marked as Tal's only. No notifications. All
 // values come from admin_get_customer. Rendered inside the admin shell's
 // <Suspense> gate.
@@ -64,11 +67,19 @@ async function CustomerCardContent({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const card = await loadCard(id)
-  const account = accountView(await loadAccount(id))
+  // The three reads at once; loadCard answers a bad id or a non-customer
+  // with notFound() before the others settle.
+  const [card, accountRow, creditRows] = await Promise.all([
+    loadCard(id),
+    loadAccount(id),
+    // Story 3.9: her credits and refunds (admin_list_customer_credits).
+    loadCredits(id),
+  ])
+  const account = accountView(accountRow)
   const header = cardHeader(card.profile)
   const balances = balanceViews(card.entitlements)
   const babies = toBabyItems(card.babies, localToday())
+  const credits = parseCustomerCredits(creditRows).map(toCustomerCreditItem)
 
   return (
     <>
@@ -150,6 +161,10 @@ async function CustomerCardContent({
             )}
           </ul>
         )}
+      </PageSection>
+
+      <PageSection id="card-credits" title={copy.credits.title}>
+        <CreditsSection items={credits} customerName={header.name} />
       </PageSection>
 
       <PageSection id="card-history" title={copy.history}>

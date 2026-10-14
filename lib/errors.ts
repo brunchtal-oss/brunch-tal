@@ -74,6 +74,13 @@ export const ERROR_MESSAGES = {
   // The customer's refund-or-credit choice after a business cancel (3.8):
   // already chosen, or not hers (never telling which).
   CHOICE_NOT_PENDING: "הבחירה הזו כבר נקלטה. כדאי לרענן את הדף",
+  // Completing a refund request (story 3.9): it was completed in the
+  // meantime; the amount is above what the payment can still refund (what
+  // was paid minus its completed refunds). INVALID_INPUT of
+  // admin_complete_refund carries detail.field refunded_on | amount |
+  // reference.
+  REFUND_ALREADY_COMPLETED: "ההחזר הזה כבר נרשם. כדאי לרענן את הדף",
+  REFUND_EXCEEDS_PAID: "הסכום גבוה ממה שאפשר להחזיר על התשלום הזה",
   // Tal lowers the capacity below the places already taken (story 3.2).
   CAPACITY_BELOW_BOOKED:
     "המכסה נמוכה ממספר המקומות שכבר תפוסים. אפשר להוריד אותה רק עד מספר התפוסים",

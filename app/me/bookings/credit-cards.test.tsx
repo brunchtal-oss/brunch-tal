@@ -3,7 +3,12 @@ import { describe, expect, it } from "vitest"
 
 import { customerCopy } from "@/lib/copy/customer"
 
-import { CreditCard, ExhaustedCreditCard, RefundCard } from "./credit-cards"
+import {
+  CreditCard,
+  ExhaustedCreditCard,
+  RefundCard,
+  RefundedCard,
+} from "./credit-cards"
 import { parseMyCredits, type MyCredit } from "./credits"
 
 const BASE = {
@@ -103,5 +108,27 @@ describe("credit cards (story 3.7)", () => {
     expect(html.replace(/\s/g, " ")).toContain("בקשת החזר של 128 ₪ התקבלה")
     expect(html).toContain(customerCopy.refundNote)
     expect(html).not.toContain("הוחזר")
+  })
+
+  it("story 3.9: a refund Tal recorded: the chip, the amount paid back and its day", () => {
+    const html = renderToStaticMarkup(
+      <RefundedCard
+        credit={credit({
+          status: "refunded",
+          refund: {
+            amount_agorot: 12000,
+            status: "completed",
+            requested_at: "2026-10-10T07:00:00Z",
+            refunded_on: "2026-10-12",
+          },
+        })}
+      />
+    )
+    const text = html.replace(/\s/g, " ")
+    expect(html).toContain(customerCopy.refundedChip)
+    expect(text).toContain("ההחזר של 120 ₪ בוצע")
+    expect(text).toContain("בתאריך 12.10.26")
+    expect(html).toMatch(/datetime="2026-10-12"/i)
+    expect(html).not.toContain("טל")
   })
 })

@@ -220,6 +220,62 @@ describe("token_view state_public", () => {
     })
   })
 
+  // Story 3.9: a refund completed before the purchase was bound leaves the
+  // purchase bindable; token_view is unchanged (the link stays active, with
+  // the product and the amount paid).
+  it("is still active for a join link whose held place was refunded", async () => {
+    await inRollback(async (db) => {
+      const f = await seedMoney(db)
+      const { rows: products } = await db.query(
+        `insert into public.products (
+           name, type, price_agorot, units, validity_mode, validity_days,
+           allowed_weekdays, eligible_event_kind, party_size)
+         values ($1, 'single', 18000, 1, 'session', null, null, 'regular', 1)
+         returning id`,
+        [testName("single")]
+      )
+      const { rows: events } = await db.query(
+        `insert into public.events (
+           concept_id, kind, starts_at, ends_at, capacity_adults,
+           registration_closes_at, status)
+         select c.id, 'regular', now() + interval '7 days',
+           now() + interval '7 days 2 hours', 12, now() + interval '7 days',
+           'published'
+         from public.concepts c where c.archived_at is null limit 1
+         returning id`
+      )
+      await asAuthenticated(db, f.admin)
+      const r = await approve(db, {
+        productId: products[0].id,
+        eventId: events[0].id,
+        amount: 18000,
+        paidOn: f.today,
+        methodId: f.method,
+        key: randomUUID(),
+      })
+      const { rows: held } = await db.query(
+        "select id from public.bookings where payment_id = $1",
+        [r.payment_id]
+      )
+      const { rows: c } = await db.query(
+        "select public.admin_cancel_booking($1, true, $2, null, 'refund') as r",
+        [held[0].id, randomUUID()]
+      )
+      await db.query(
+        "select public.admin_complete_refund($1, $2::date, 18000, null, true, $3)",
+        [c[0].r.refund_request_id, f.today, randomUUID()]
+      )
+      await db.query("reset role")
+      await asServiceRole(db)
+      expect(await view(db, r.token as string)).toMatchObject({
+        state_public: "active",
+        purpose: "join",
+        product_name: testName("single"),
+        amount_agorot: 18000,
+      })
+    })
+  })
+
   it("returns bound_user_id only for a join link in awaiting_login", async () => {
     await inRollback(async (db) => {
       const f = await seedMoney(db)

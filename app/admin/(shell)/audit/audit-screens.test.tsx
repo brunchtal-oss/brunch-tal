@@ -57,12 +57,12 @@ function render(rows: AuditRow[], hasMore = false) {
 }
 
 describe("the audit log's screen (story 4.5)", () => {
-  it("a capacity change: who, when, the session, old ← new and the reason", () => {
+  it("a capacity change: who, when, the session, the new value and the reason", () => {
     const html = render([row("a", { reason: "ביקוש גבוה" })])
     expect(html).toContain("טל")
     expect(html).toContain("10.10.26 · 12:15")
     expect(html).toContain("בראנץ׳ סתיו · 12.10.26")
-    expect(html).toContain("מכסה: 12 ← 14")
+    expect(html).toContain("מכסה: 14")
     expect(html).toContain(copy.reason("ביקוש גבוה"))
     // A table for the desktop, with headers.
     expect(html).toContain("<table")
@@ -81,9 +81,10 @@ describe("the audit log's screen (story 4.5)", () => {
       }),
     ])
     expect(html).toContain("תוכן: להזמין פרחים")
-    expect(html).not.toContain("— ← להזמין פרחים")
-    expect(html).toMatch(/תוכן: <s[^>]*>ישן<\/s>/)
-    expect(html).not.toContain("ישן ← —")
+    expect(html).not.toContain("לפני כן")
+    expect(html).toContain("תוכן: —")
+    expect(html).not.toContain("ישן")
+    expect(html).not.toContain("←")
   })
 
   it("a masked value shows השתנה, never <changed>", () => {
@@ -97,7 +98,7 @@ describe("the audit log's screen (story 4.5)", () => {
         ],
       }),
     ])
-    expect(html).toContain("שם מלא: השתנה ← השתנה")
+    expect(html).toContain("שם מלא: השתנה<")
     expect(html).not.toContain("&lt;changed&gt;")
     expect(html).toContain(copy.anonymous)
     expect(html).toContain("הלקוחה")

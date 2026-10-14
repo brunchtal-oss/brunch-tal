@@ -855,14 +855,16 @@ describe("refund requests", { timeout: 30_000 }, () => {
     })
   })
 
-  it("a completed request (3.9) leaves both lists and counts in the month: net = approved - refunded", async () => {
+  it("a completed request (3.9) leaves both lists and counts in the month by refunded_on: net = approved - refunded", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)
       const { refundId } = await openRefund(db, f)
       const before = (await home(db, f)).totals
-      await db.query(
-        "update public.refund_requests set status = 'completed', completed_at = now() where id = $1",
-        [refundId]
+      await asAdmin(db, f, () =>
+        db.query(
+          "select public.admin_complete_refund($1, $2::date, 12800, null, true, $3)",
+          [refundId, f.today, randomUUID()]
+        )
       )
       const after = await home(db, f)
       expect(after.totals.refunded_count - before.refunded_count).toBe(1)

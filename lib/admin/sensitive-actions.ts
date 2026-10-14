@@ -17,6 +17,8 @@ export const SENSITIVE_ACTIONS = {
   // Cancelling a whole session, and changing its time with bookings (3.8).
   event_cancel: "האם לבטל את המפגש?",
   event_reschedule: "האם לשנות את מועד המפגש?",
+  // Recording a refund Tal paid outside the app (3.9, source §7).
+  refund_complete: "האם לאשר החזר?",
 } as const
 
 export type SensitiveAction = keyof typeof SENSITIVE_ACTIONS
