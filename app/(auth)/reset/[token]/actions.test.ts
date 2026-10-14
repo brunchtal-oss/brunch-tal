@@ -9,6 +9,19 @@ const signOut = vi.fn()
 vi.mock("@/lib/server/privileged/reset", () => ({
   completeReset: (...args: unknown[]) => completeReset(...args),
 }))
+const hitRateLimit = vi.fn<(...args: unknown[]) => Promise<string>>(
+  async () => "allowed"
+)
+vi.mock("@/lib/server/privileged/rate-limit", () => ({
+  clientIp: async () => "203.0.113.7",
+  hitRateLimit: (...args: unknown[]) => hitRateLimit(...args),
+  rateLimitCode: (v: string) =>
+    v === "allowed"
+      ? null
+      : v === "blocked"
+        ? "TOO_MANY_ATTEMPTS"
+        : "SERVER_ERROR",
+}))
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({ auth: { signInWithPassword, signOut } }),
 }))
@@ -23,6 +36,8 @@ function form(fields: Record<string, string>) {
 }
 
 beforeEach(() => {
+  hitRateLimit.mockReset()
+  hitRateLimit.mockResolvedValue("allowed")
   completeReset.mockReset()
   signInWithPassword.mockReset()
   signOut.mockReset()
@@ -31,6 +46,26 @@ beforeEach(() => {
 })
 
 describe("completeResetAction", () => {
+  it("stops at the rate limit before the reset, keyed by IP and token (story 2.8)", async () => {
+    hitRateLimit.mockResolvedValue("blocked")
+    await expect(
+      completeResetAction(
+        null,
+        form({
+          token: TOKEN,
+          idempotencyKey: KEY,
+          password: "Test-pass-123",
+          confirm: "Test-pass-123",
+        })
+      )
+    ).resolves.toEqual({ ok: false, code: "TOO_MANY_ATTEMPTS" })
+    expect(hitRateLimit).toHaveBeenCalledWith("token", {
+      ip: "203.0.113.7",
+      id: TOKEN,
+    })
+    expect(completeReset).not.toHaveBeenCalled()
+  })
+
   it("returns LINK_EXPIRED when the token is missing", async () => {
     await expect(
       completeResetAction(

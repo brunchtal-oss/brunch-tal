@@ -408,6 +408,40 @@ describe("admin_get_attention_items", () => {
     })
   })
 
+  it("an email change pending for 16 minutes is email_change_stuck with her name; 14 minutes or finished is nothing (2.8)", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const hash = "a".repeat(64)
+      const setPending = (id: string, minutes: number) =>
+        db.query(
+          `update public.profiles
+           set account_op_state = 'email_change_pending',
+               account_op_started_at = now() - make_interval(mins => $2::int),
+               account_op_target_hash = $3
+           where id = $1`,
+          [id, minutes, hash]
+        )
+      await setPending(f.customerA, 16)
+      await setPending(f.customerB, 14)
+      const ids = [f.customerA, f.customerB]
+
+      expect(only(await items(db, f), ids)).toEqual([
+        expect.objectContaining({
+          kind: "email_change_stuck",
+          id: f.customerA,
+          customer_id: f.customerA,
+          customer_label: testName("money_a"),
+        }),
+      ])
+
+      await db.query(
+        "update public.profiles set account_op_state = null, account_op_started_at = null, account_op_target_hash = null where id = $1",
+        [f.customerA]
+      )
+      expect(only(await items(db, f), ids)).toEqual([])
+    })
+  })
+
   it("the accessibility statement never published is accessibility_unpublished; its first publish removes it (5.5)", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)

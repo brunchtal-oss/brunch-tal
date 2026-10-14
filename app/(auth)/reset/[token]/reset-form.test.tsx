@@ -9,6 +9,16 @@ const completeReset = vi.fn()
 vi.mock("@/lib/server/privileged/reset", () => ({
   completeReset: (...args: unknown[]) => completeReset(...args),
 }))
+vi.mock("@/lib/server/privileged/rate-limit", () => ({
+  clientIp: async () => "203.0.113.7",
+  hitRateLimit: async () => "allowed",
+  rateLimitCode: (v: string) =>
+    v === "allowed"
+      ? null
+      : v === "blocked"
+        ? "TOO_MANY_ATTEMPTS"
+        : "SERVER_ERROR",
+}))
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({ auth: {} }),
 }))

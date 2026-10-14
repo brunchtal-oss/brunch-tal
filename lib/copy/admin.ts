@@ -3,6 +3,14 @@ import type { ErrorCode } from "@/lib/errors"
 // System microcopy of the admin screens. Amounts arrive formatted by
 // lib/money.ts ("472 ₪"), dates by lib/time.ts.
 
+// The customers export's column headers (story 4.4): the file's header row
+// and the audit log's "columns" values.
+const exportHeaders = {
+  full_name: "שם",
+  phone: "טלפון",
+  email: "מייל",
+}
+
 export const adminCopy = {
   // The two photo consents (story 2.13, user decision 2026-10-07): a line
   // each on the customer card and the session's registrant row, and a short
@@ -707,6 +715,30 @@ export const adminCopy = {
     booked: (name: string) => `${name} נרשמה למפגש`,
     bookAnother: "רישום לקוחה נוספת",
     chooseSession: "בחירת מפגש",
+    // Several sessions at once for one customer (story 4.3, user decision
+    // 2026-10-13): the bar, the sheet and the results.
+    bookMany: {
+      choose: (n: number) =>
+        n === 1 ? "לרישום למפגש אחד" : `לרישום ל-${n} מפגשים`,
+      // The selection cap (user decision 2026-10-13): her free entries
+      // above the list, and the bar's counter.
+      freeEntries: (n: number) =>
+        n === 0
+          ? "אין לה כניסות פנויות"
+          : n === 1
+            ? "יש לה כניסה פנויה אחת"
+            : `יש לה ${n} כניסות פנויות`,
+      selectedCount: (selected: number, cap: number) =>
+        `נבחרו ${selected} מתוך ${cap}`,
+      sheetTitle: (name: string) => `רישום של ${name}`,
+      confirm: "לאשר את הרישום",
+      resultsHeading: (saved: number, total: number) =>
+        `נרשמה ל-${saved} מתוך ${total}`,
+      saved: "נשמר",
+      notSaved: "לא נשמר",
+      backToList: "חזרה לרשימה",
+      close: "סגירה",
+    },
     noBookableSessions: "אין מפגש פתוח לרישום",
     // A refusal on the manual booking screen, worded for Tal (lib/errors.ts
     // speaks to the customer). Any other code keeps errorMessage.
@@ -1013,6 +1045,14 @@ export const adminCopy = {
       choice_pending: {
         title: (name: string, concept: string, day: string) =>
           `${name} עוד לא בחרה זיכוי או החזר על בראנץ׳ ${concept} ${day}`,
+      },
+      // An email change stuck between its steps for more than 15 minutes
+      // (story 2.8): to the customer's card, where saving the same address
+      // again finishes it.
+      email_change_stuck: {
+        title: (name: string) => `שינוי המייל של ${name} לא הושלם`,
+        detail: "שינוי המייל לא הושלם. כדי לסיים, שמרי שוב את המייל החדש",
+        chip: "תקוע",
       },
       // Push notifications that failed in the last 7 days (story 5.8): one
       // item for all of them; the notifications themselves are in the
@@ -1368,6 +1408,30 @@ export const adminCopy = {
     notActivated: "לא הופעלה",
     empty: "לא נמצאו לקוחות",
     hasMore: (limit: number) => `מוצגות ${limit} הראשונות. אפשר לחפש`,
+    // The segmented-switch on /admin/customers and its open cards (story
+    // 4.3, CAP-42): two links, the current one aria-current.
+    switchNav: "תצוגות הלקוחות",
+    // /admin/customers/open-cards (story 4.3, CAP-42).
+    openCards: {
+      title: "כרטיסיות פתוחות",
+      filtersNav: "סינון הכרטיסיות",
+      filters: {
+        all: "הכול",
+        available: "יש כניסות פנויות",
+        expiring: "עומדת לפוג",
+      },
+      purchased: (dayMonth: string) => `נרכשה ${dayMonth}`,
+      book: "לרישום למפגש",
+      profile: "לפרופיל",
+      // The two buttons of a row, named for a screen reader.
+      bookFor: (name: string) => `לרישום למפגש של ${name}`,
+      profileOf: (name: string) => `לפרופיל של ${name}`,
+      // A purchase not bound to an account yet, instead of the two buttons
+      // (user decision 2026-10-13; the payments list's wording).
+      notJoined: "עוד לא הצטרפה",
+      empty: "אין כרטיסיות פתוחות כרגע",
+      showAll: "להצגת כל הכרטיסיות",
+    },
     card: {
       back: "לכל הלקוחות",
       details: "פרטים",
@@ -1436,6 +1500,45 @@ export const adminCopy = {
       cancel: "ביטול",
       noteDeleted: "ההערה נמחקה",
       noteTooLong: (max: number) => `אפשר עד ${max} תווים`,
+      // The account section (story 2.8): email and phone change through
+      // Tal, and the reset link she sends herself.
+      account: {
+        title: "חשבון",
+        changeEmail: "שינוי מייל",
+        emailChanged: "המייל עודכן. מעכשיו נכנסים איתו",
+        changePhone: "שינוי מספר טלפון",
+        // The field's name in the "old ← new" line.
+        phone: "טלפון",
+        phoneChanged: "המספר עודכן",
+        resetReady: "קישור האיפוס מוכן לשליחה",
+        // A repeat with the same key: the raw link is returned only once.
+        resetNotShown:
+          "הקישור כבר הופק, ואי אפשר להציג אותו שוב. אפשר להפיק קישור חלופי",
+        issueReset: "הפקת קישור איפוס",
+        reissueReset: "הפקת קישור חלופי",
+        resetPending: (date: string) => `קישור איפוס ממתין עד ${date}`,
+        resetUsed: (date: string) => `קישור האיפוס מומש ${date}`,
+        resetExpired: "קישור האיפוס פג",
+        emailChangeStuck:
+          "שינוי המייל לא הושלם. כדי לסיים, שמרי שוב את המייל החדש",
+      },
+    },
+    // The CSV export (story 4.4, CAP-25, user decisions 2026-10-13): a
+    // bottom sheet with the scope and the closed column list. `headers` are
+    // the file's header row, keyed by lib/admin/customer-export.ts.
+    export: {
+      button: "ייצוא",
+      title: "ייצוא לקוחות",
+      // The legends of the two groups in the sheet.
+      scopeLegend: "מה לייצא",
+      columnsLegend: "עמודות",
+      scopeAll: "כל הלקוחות",
+      scopeSearch: (count: string) => `תוצאות החיפוש (${count})`,
+      // The shown count when the list has more than its limit.
+      moreThan: (limit: number) => `${limit}+`,
+      headers: exportHeaders,
+      noColumns: "יש לבחור לפחות עמודה אחת",
+      done: "הקובץ ירד",
     },
   },
   // /admin/notes (story 4.11, CAP-39): topics and free notes, admin only.
@@ -1608,8 +1711,12 @@ export const adminCopy = {
       admin_set_content_draft: "שמירת טיוטת תוכן",
       admin_publish_content: "פרסום תוכן",
       admin_update_business_settings: "שינוי הגדרות",
+      admin_export_customers: "ייצוא לקוחות",
       admin_update_notification_template: "עריכת תבנית התראה",
       admin_issue_link: "הפקת קישור",
+      admin_begin_email_change: "התחלת שינוי מייל",
+      admin_finish_email_change: "שינוי מייל",
+      admin_change_phone: "שינוי מספר טלפון",
       revoke_link: "ביטול קישור",
       admin_approve_payment: "אישור תשלום",
       approve_payment: "אישור תשלום",
@@ -1723,6 +1830,10 @@ export const adminCopy = {
       post_join_button_label: "כפתור אחרי הצטרפות",
       post_join_message: "הודעה אחרי הצטרפות",
       privacy_consent_at: "אישור מדיניות פרטיות",
+      // The customers export (story 4.4).
+      scope: "היקף",
+      columns: "עמודות",
+      row_count: "מספר שורות",
     } as Record<string, string>,
     // Known values of code columns (their CHECK constraints), per key; an
     // unknown value shows its code.
@@ -1776,6 +1887,8 @@ export const adminCopy = {
       validity_mode: { days: "לפי ימים", session: "למפגש מסוים" },
       eligible_event_kind: { regular: "רגיל", couple: "זוגי" },
       default_kind: { regular: "רגיל", couple: "זוגי" },
+      scope: { all: "כל הלקוחות", search: "תוצאות חיפוש" },
+      columns: exportHeaders,
     } as Record<string, Record<string, string>>,
   },
 } as const

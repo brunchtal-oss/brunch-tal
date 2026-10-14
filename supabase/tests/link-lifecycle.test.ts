@@ -348,7 +348,9 @@ describe("admin_issue_link (replacement)", () => {
     await inRollback(async (db) => {
       const a = await approveCard(db)
       for (const params of [
-        ["reset", a.paymentId, randomUUID()],
+        // reset is a purpose since 2.8 (account-admin.test.ts); without a
+        // target it is still INVALID_INPUT.
+        ["reset", null, randomUUID()],
         ["claim", a.paymentId, randomUUID()],
         ["join", null, randomUUID()],
         ["join", randomUUID(), randomUUID()],

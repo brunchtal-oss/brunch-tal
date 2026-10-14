@@ -2,6 +2,11 @@
 
 import { cleanToken } from "@/lib/auth/clean-token"
 import type { ErrorCode } from "@/lib/errors"
+import {
+  clientIp,
+  hitRateLimit,
+  rateLimitCode,
+} from "@/lib/server/privileged/rate-limit"
 import { completeReset } from "@/lib/server/privileged/reset"
 import { createClient } from "@/lib/supabase/server"
 
@@ -27,6 +32,12 @@ export async function completeResetAction(
   if (typeof idempotencyKey !== "string" || !UUID.test(idempotencyKey)) {
     return { ok: false, code: "LINK_EXPIRED" }
   }
+
+  // The rate limit first (story 2.8): per IP and per token.
+  const limited = rateLimitCode(
+    await hitRateLimit("token", { ip: await clientIp(), id: token })
+  )
+  if (limited) return { ok: false, code: limited }
 
   const confirm = formData.get("confirm")
 

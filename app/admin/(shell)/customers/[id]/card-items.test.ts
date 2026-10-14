@@ -3,19 +3,23 @@ import { describe, expect, it } from "vitest"
 import { adminCopy } from "@/lib/copy/admin"
 
 import {
+  accountView,
   balanceViews,
   cardHeader,
   detailRows,
+  emailChange,
   entryLines,
   historyHref,
   isOpenSingle,
   orderBalances,
+  phoneChange,
   toBabyItems,
   toBalanceItem,
   toBookingItem,
   toNoteItem,
   toPaymentLine,
   toSingleItem,
+  type CardAccount,
   type CardEntitlement,
   type CardProfile,
 } from "./card-items"
@@ -364,5 +368,98 @@ describe("the other parts", () => {
     expect(
       toNoteItem({ id: "n1", body: "הערה", created_at: "2026-10-04T22:30:00Z" })
     ).toEqual({ id: "n1", body: "הערה", when: "05.10.26, 01:30" })
+  })
+})
+
+describe("the account section (story 2.8)", () => {
+  const account = (overrides: Partial<CardAccount> = {}): CardAccount => ({
+    customer_id: "c1",
+    is_activated: true,
+    account_op_state: null,
+    account_op_started_at: null,
+    email_change_stuck: false,
+    reset_link: null,
+    ...overrides,
+  })
+  const link = (
+    status: string,
+    extra: Partial<NonNullable<CardAccount["reset_link"]>> = {}
+  ) => ({
+    token_id: "t1",
+    status,
+    created_at: "2026-10-12T07:00:00Z",
+    // 14.10.2026 10:00 in Jerusalem.
+    expires_at: "2026-10-14T07:00:00Z",
+    consumed_at: null,
+    revoked_at: null,
+    ...extra,
+  })
+  const c = copy.account
+
+  it("no link yet: no status, the first-link button", () => {
+    expect(accountView(account())).toEqual({
+      canChangeEmail: true,
+      canIssueReset: true,
+      stuck: false,
+      resetStatus: null,
+      resetButton: c.issueReset,
+    })
+  })
+
+  it("a pending link: waiting until its expiry, and a replacement", () => {
+    const view = accountView(account({ reset_link: link("pending") }))
+    expect(view.resetStatus).toEqual({
+      text: "קישור איפוס ממתין עד יום רביעי 14.10 · 10:00",
+      at: "2026-10-14T07:00:00Z",
+    })
+    expect(view.resetButton).toBe("הפקת קישור חלופי")
+  })
+
+  it("a used link shows its day; an expired one says so; a revoked one shows nothing", () => {
+    expect(
+      accountView(
+        account({
+          reset_link: link("consumed", { consumed_at: "2026-10-13T09:00:00Z" }),
+        })
+      ).resetStatus?.text
+    ).toBe("קישור האיפוס מומש 13.10.26")
+    expect(
+      accountView(account({ reset_link: link("expired") })).resetStatus?.text
+    ).toBe("קישור האיפוס פג")
+    const revoked = accountView(account({ reset_link: link("revoked") }))
+    expect(revoked.resetStatus).toBeNull()
+    expect(revoked.resetButton).toBe(c.issueReset)
+  })
+
+  it("not activated: only the phone; stuck comes from the server", () => {
+    expect(accountView(account({ is_activated: false }))).toMatchObject({
+      canChangeEmail: false,
+      canIssueReset: false,
+    })
+    expect(accountView(account({ email_change_stuck: true })).stuck).toBe(true)
+  })
+
+  it("emailChange: a new address, trimmed and lower case; else null", () => {
+    expect(emailChange("roni@example.test", " Roni.New@Example.Test ")).toBe(
+      "roni.new@example.test"
+    )
+    expect(emailChange("roni@example.test", "RONI@example.test")).toBeNull()
+    expect(emailChange("roni@example.test", "roni@")).toBeNull()
+    expect(emailChange("roni@example.test", "ro ni@example.test")).toBeNull()
+    expect(emailChange("", "new@example.test")).toBe("new@example.test")
+  })
+
+  it("emailChange while stuck: the saved address may be sent again", () => {
+    expect(emailChange("new@example.test", "new@example.test", true)).toBe(
+      "new@example.test"
+    )
+    expect(emailChange("new@example.test", "new@", true)).toBeNull()
+  })
+
+  it("phoneChange: a number that differs from the saved one; else null", () => {
+    expect(phoneChange("054-123-4567", "052-765-4321")).toBe("052-765-4321")
+    expect(phoneChange("054-123-4567", "0541234567")).toBeNull()
+    expect(phoneChange("054-123-4567", "054")).toBeNull()
+    expect(phoneChange("", "+972527654321")).toBe("+972527654321")
   })
 })

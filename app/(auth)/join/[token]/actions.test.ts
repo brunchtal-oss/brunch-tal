@@ -22,6 +22,19 @@ vi.mock("@/lib/supabase/server", () => ({
     rpc,
   }),
 }))
+const hitRateLimit = vi.fn<(...args: unknown[]) => Promise<string>>(
+  async () => "allowed"
+)
+vi.mock("@/lib/server/privileged/rate-limit", () => ({
+  clientIp: async () => "203.0.113.7",
+  hitRateLimit: (...args: unknown[]) => hitRateLimit(...args),
+  rateLimitCode: (v: string) =>
+    v === "allowed"
+      ? null
+      : v === "blocked"
+        ? "TOO_MANY_ATTEMPTS"
+        : "SERVER_ERROR",
+}))
 vi.mock("next/navigation", () => ({
   redirect: (path: string) => redirect(path),
 }))
@@ -64,6 +77,8 @@ function form(
 }
 
 beforeEach(() => {
+  hitRateLimit.mockReset()
+  hitRateLimit.mockResolvedValue("allowed")
   submitJoin.mockReset()
   getJoinTokenView.mockReset()
   signInWithPassword.mockReset()
@@ -483,5 +498,37 @@ describe("claimJoinAction", () => {
       status: "error",
       code: "SERVER_ERROR",
     })
+  })
+})
+
+describe("rate limit (story 2.8)", () => {
+  it("submit: stops before any RPC, keyed by IP and token", async () => {
+    hitRateLimit.mockResolvedValue("blocked")
+    await expect(submitJoinAction(null, form())).resolves.toEqual({
+      status: "error",
+      code: "TOO_MANY_ATTEMPTS",
+      errors: [],
+    })
+    expect(hitRateLimit).toHaveBeenCalledWith("token", {
+      ip: "203.0.113.7",
+      id: TOKEN,
+    })
+    expect(submitJoin).not.toHaveBeenCalled()
+  })
+
+  it("claim: stops before claim_join", async () => {
+    hitRateLimit.mockResolvedValue("blocked")
+    const data = new FormData()
+    data.append("token", TOKEN)
+    data.append("idempotencyKey", KEY)
+    await expect(claimJoinAction(null, data)).resolves.toEqual({
+      status: "error",
+      code: "TOO_MANY_ATTEMPTS",
+    })
+    expect(hitRateLimit).toHaveBeenCalledWith("token", {
+      ip: "203.0.113.7",
+      id: TOKEN,
+    })
+    expect(rpc).not.toHaveBeenCalled()
   })
 })

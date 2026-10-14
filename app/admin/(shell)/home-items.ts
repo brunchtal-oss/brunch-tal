@@ -9,6 +9,7 @@ import {
 } from "@/lib/time"
 
 import { customerHref } from "./customers/customer-items"
+import { expiringCardHref } from "./customers/open-cards/open-cards-items"
 import { refundHref } from "./payments/refund-items"
 import { sessionTitle } from "./sessions/session-draft"
 
@@ -248,6 +249,17 @@ export function toAttentionItem(row: AttentionRow): AttentionItem {
         title: c.title(name, row.concept_name ?? "", dayOf(row.starts_at)),
       }
     }
+    case "email_change_stuck": {
+      const c = copy.items.email_change_stuck
+      return {
+        ...base,
+        // The item's id is the customer.
+        href: customerHref(row.customer_id ?? row.id),
+        title: c.title(name),
+        detail: c.detail,
+        chip: { tone: "warning", label: c.chip },
+      }
+    }
     case "push_failed": {
       const c = copy.items.push_failed
       return {
@@ -306,8 +318,9 @@ export function toSessionTile(row: UpcomingSessionRow): SessionTileItem {
 export type ExpiringCardItem = {
   key: string
   title: string
-  // The customer's card (story 4.2); null for a purchase not bound yet.
-  href: string | null
+  // The open cards filtered to "expiring", at this card (story 4.3, user
+  // decision 2026-10-10); also for a purchase not bound yet.
+  href: string
   entries: string
   until: string
 }
@@ -316,7 +329,7 @@ export function toExpiringCard(row: ExpiringCardRow): ExpiringCardItem {
   return {
     key: row.entitlement_id,
     title: nameOf(row.customer_label),
-    href: row.customer_id ? customerHref(row.customer_id) : null,
+    href: expiringCardHref(row.entitlement_id),
     entries: copy.expiringEntries(row.available),
     until: copy.expiringUntil(formatDayMonth(row.expires_on)),
   }

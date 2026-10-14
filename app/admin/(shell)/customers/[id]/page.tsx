@@ -12,8 +12,11 @@ import { formatLocalDate, localToday } from "@/lib/time"
 import { cn } from "@/lib/utils"
 
 import { PageSection } from "../../home/home-section"
+import { EntryRow } from "../entry-lines"
+import { AccountSection } from "./account-section"
 import { BackLink } from "./back-link"
 import {
+  accountView,
   balanceViews,
   cardHeader,
   detailRows,
@@ -21,11 +24,10 @@ import {
   toBabyItems,
   toNoteItem,
   type BalanceItem,
-  type EntryLine,
   type SingleItem,
 } from "./card-items"
 import { CustomerNotes } from "./customer-notes"
-import { loadCard } from "./load-card"
+import { loadAccount, loadCard } from "./load-card"
 
 const copy = adminCopy.customers.card
 
@@ -35,7 +37,8 @@ export const metadata: Metadata = {
 
 // The customer card (story 4.2, CAP-25; phone check, user decision
 // 2026-10-07, and the second phone check): the header (name, phone, "not
-// activated") → details (photo consent read only) and babies → balances
+// activated") → details (photo consent read only) → the account (story
+// 2.8: email, phone, reset link) → babies → balances
 // and validity: each card opening in place to its entries, then the open
 // singles → links to the booking and purchase histories → internal notes,
 // marked as Tal's only. No notifications. All
@@ -62,6 +65,7 @@ async function CustomerCardContent({
 }) {
   const { id } = await params
   const card = await loadCard(id)
+  const account = accountView(await loadAccount(id))
   const header = cardHeader(card.profile)
   const balances = balanceViews(card.entitlements)
   const babies = toBabyItems(card.babies, localToday())
@@ -104,6 +108,15 @@ async function CustomerCardContent({
             </div>
           ))}
         </dl>
+      </PageSection>
+
+      <PageSection id="card-account" title={copy.account.title}>
+        <AccountSection
+          customerId={card.profile.id}
+          email={card.profile.email ?? ""}
+          phone={header.phone ?? ""}
+          view={account}
+        />
       </PageSection>
 
       <PageSection id="card-babies" title={copy.babies}>
@@ -245,33 +258,6 @@ function SinglePlate({ item }: { item: SingleItem }) {
       <p className="text-[15px] text-muted-foreground">
         <bdi>{item.line}</bdi>
       </p>
-    </li>
-  )
-}
-
-// The dot repeats the meter's plate (decorative; the words say it). A used
-// or booked entry has the session's title under it, as in the customer's
-// log.
-function EntryRow({ line }: { line: EntryLine }) {
-  return (
-    <li className="flex items-start gap-2 text-[15px]">
-      <span
-        aria-hidden
-        className={cn(
-          "mt-1 size-3 shrink-0 rounded-full",
-          line.kind === "used"
-            ? "bg-primary"
-            : line.kind === "booked"
-              ? "bg-brand-accent"
-              : "border border-brand-accent"
-        )}
-      />
-      <span className="flex min-w-0 flex-col">
-        <bdi>{line.text}</bdi>
-        {line.title && (
-          <bdi className="text-muted-foreground">{line.title}</bdi>
-        )}
-      </span>
     </li>
   )
 }

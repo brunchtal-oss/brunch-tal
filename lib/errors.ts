@@ -121,6 +121,20 @@ export const ERROR_MESSAGES = {
   CONCEPT_IN_USE:
     "יש לקונספט מפגשים, ולכן אי אפשר למחוק אותו. אפשר להעביר אותו לארכיון.",
   CONCEPT_NAME_TAKEN: "כבר יש קונספט בשם הזה",
+  // Account changes through Tal (story 2.8). EMAIL_TAKEN and PHONE_TAKEN
+  // come from the result { result: 'taken' } (the block is logged and
+  // committed, so the RPC does not raise) and from Auth's email_exists.
+  EMAIL_TAKEN: "המייל הזה כבר שייך לחשבון אחר",
+  EMAIL_UNCHANGED: "זה כבר המייל של החשבון",
+  PHONE_TAKEN: "המספר הזה כבר שייך לחשבון אחר",
+  PHONE_UNCHANGED: "זה כבר המספר של החשבון",
+  INVALID_PHONE: "מספר הטלפון לא תקין",
+  // Raised by the auth.users trigger: an email or phone change that Tal did
+  // not start (auth.updateUser with the publishable key).
+  ACCOUNT_CHANGE_BLOCKED: "אי אפשר לשנות כאן מייל או טלפון. צרי קשר",
+  // The login and token actions' rate limit (story 2.8), for the IP and the
+  // account or token alike; Supabase Auth's own 429 maps here too.
+  TOO_MANY_ATTEMPTS: "יותר מדי ניסיונות. אפשר לנסות שוב בעוד 15 דקות",
   // Raised by the adapter (never by SQL).
   INVALID_CREDENTIALS: "המייל או הסיסמה לא תואמים",
   // Correct password, but no active customer profile and not an admin.
