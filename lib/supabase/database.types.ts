@@ -1421,6 +1421,7 @@ export type Database = {
           id: string
           payment_id: string
           reference: string | null
+          refunded_on: string | null
           requested_at: string
           status: string
         }
@@ -1434,6 +1435,7 @@ export type Database = {
           id?: string
           payment_id: string
           reference?: string | null
+          refunded_on?: string | null
           requested_at?: string
           status?: string
         }
@@ -1447,6 +1449,7 @@ export type Database = {
           id?: string
           payment_id?: string
           reference?: string | null
+          refunded_on?: string | null
           requested_at?: string
           status?: string
         }
@@ -1787,6 +1790,17 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_complete_refund: {
+        Args: {
+          p_amount_agorot: number
+          p_confirmed: boolean
+          p_idempotency_key: string
+          p_reference: string
+          p_refund_request_id: string
+          p_refunded_on: string
+        }
+        Returns: Json
+      }
       admin_create_concept: {
         Args: { p_concept: Json; p_idempotency_key: string }
         Returns: Json
@@ -1888,10 +1902,15 @@ export type Database = {
         Returns: Json
       }
       admin_list_bookable_events: { Args: never; Returns: Json }
+      admin_list_customer_credits: {
+        Args: { p_customer_id: string }
+        Returns: Json
+      }
       admin_list_customers: { Args: { p_query: string }; Returns: Json }
       admin_list_links: { Args: never; Returns: Json }
       admin_list_open_cards: { Args: { p_filter: string }; Returns: Json }
       admin_list_payments: { Args: never; Returns: Json }
+      admin_list_refund_requests: { Args: never; Returns: Json }
       admin_list_session_occupancy: {
         Args: { p_event_ids: string[] }
         Returns: Json
@@ -2148,6 +2167,10 @@ export type Database = {
       }
       preview_admin_cancel_event: {
         Args: { p_event_id: string }
+        Returns: Json
+      }
+      preview_admin_complete_refund: {
+        Args: { p_refund_request_id: string }
         Returns: Json
       }
       preview_admin_delete_note_topic: {

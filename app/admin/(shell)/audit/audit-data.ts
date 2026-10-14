@@ -270,6 +270,17 @@ export function formatValue(key: string, value: unknown): string {
     const days = weekdaysText(value)
     if (days !== null) return days
   }
+  // An array of codes with known values (the export's columns).
+  const known = copy.values[key]
+  if (known && Array.isArray(value)) {
+    return readable(
+      value.map((item) =>
+        typeof item === "string" && Object.hasOwn(known, item)
+          ? known[item]
+          : item
+      )
+    )
+  }
   return readable(value)
 }
 

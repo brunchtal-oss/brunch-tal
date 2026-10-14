@@ -3,6 +3,14 @@ import type { ErrorCode } from "@/lib/errors"
 // System microcopy of the admin screens. Amounts arrive formatted by
 // lib/money.ts ("472 ₪"), dates by lib/time.ts.
 
+// The customers export's column headers (story 4.4): the file's header row
+// and the audit log's "columns" values.
+const exportHeaders = {
+  full_name: "שם",
+  phone: "טלפון",
+  email: "מייל",
+}
+
 export const adminCopy = {
   // The two photo consents (story 2.13, user decision 2026-10-07): a line
   // each on the customer card and the session's registrant row, and a short
@@ -1467,6 +1475,23 @@ export const adminCopy = {
           "שינוי המייל לא הושלם. כדי לסיים, שמרי שוב את המייל החדש",
       },
     },
+    // The CSV export (story 4.4, CAP-25, user decisions 2026-10-13): a
+    // bottom sheet with the scope and the closed column list. `headers` are
+    // the file's header row, keyed by lib/admin/customer-export.ts.
+    export: {
+      button: "ייצוא",
+      title: "ייצוא לקוחות",
+      // The legends of the two groups in the sheet.
+      scopeLegend: "מה לייצא",
+      columnsLegend: "עמודות",
+      scopeAll: "כל הלקוחות",
+      scopeSearch: (count: string) => `תוצאות החיפוש (${count})`,
+      // The shown count when the list has more than its limit.
+      moreThan: (limit: number) => `${limit}+`,
+      headers: exportHeaders,
+      noColumns: "יש לבחור לפחות עמודה אחת",
+      done: "הקובץ ירד",
+    },
   },
   // /admin/notes (story 4.11, CAP-39): topics and free notes, admin only.
   notes: {
@@ -1638,6 +1663,7 @@ export const adminCopy = {
       admin_set_content_draft: "שמירת טיוטת תוכן",
       admin_publish_content: "פרסום תוכן",
       admin_update_business_settings: "שינוי הגדרות",
+      admin_export_customers: "ייצוא לקוחות",
       admin_update_notification_template: "עריכת תבנית התראה",
       admin_issue_link: "הפקת קישור",
       admin_begin_email_change: "התחלת שינוי מייל",
@@ -1755,6 +1781,10 @@ export const adminCopy = {
       post_join_button_label: "כפתור אחרי הצטרפות",
       post_join_message: "הודעה אחרי הצטרפות",
       privacy_consent_at: "אישור מדיניות פרטיות",
+      // The customers export (story 4.4).
+      scope: "היקף",
+      columns: "עמודות",
+      row_count: "מספר שורות",
     } as Record<string, string>,
     // Known values of code columns (their CHECK constraints), per key; an
     // unknown value shows its code.
@@ -1808,6 +1838,8 @@ export const adminCopy = {
       validity_mode: { days: "לפי ימים", session: "למפגש מסוים" },
       eligible_event_kind: { regular: "רגיל", couple: "זוגי" },
       default_kind: { regular: "רגיל", couple: "זוגי" },
+      scope: { all: "כל הלקוחות", search: "תוצאות חיפוש" },
+      columns: exportHeaders,
     } as Record<string, Record<string, string>>,
   },
 } as const

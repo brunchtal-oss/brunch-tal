@@ -97,6 +97,7 @@ const EXPECTED_GRANTS = [
   "function public.admin_delete_work_dish(p_dish_id uuid, p_idempotency_key uuid) authenticated EXECUTE",
   "function public.admin_delete_work_task(p_task_id uuid, p_idempotency_key uuid) authenticated EXECUTE",
   "function public.admin_duplicate_event(p_event_id uuid, p_date date, p_start_time time without time zone, p_end_time time without time zone, p_idempotency_key uuid) authenticated EXECUTE",
+  "function public.admin_export_customers(p_scope text, p_query text, p_columns text[]) authenticated EXECUTE",
   "function public.admin_finish_email_change(p_customer_id uuid, p_succeeded boolean, p_idempotency_key uuid) authenticated EXECUTE",
   "function public.admin_finish_media_publish(p_media_id uuid) authenticated EXECUTE",
   "function public.admin_get_attention_items() authenticated EXECUTE",
