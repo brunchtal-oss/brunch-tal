@@ -182,6 +182,12 @@ const TECHNICAL_KEYS = new Set([
   "revision",
   "provider",
   "task_order",
+  "sort_order",
+  "created_at",
+  "updated_at",
+  "input_hash",
+  "token_hash",
+  "provider_transaction_id",
 ])
 
 export function isTechnicalKey(key: string): boolean {
