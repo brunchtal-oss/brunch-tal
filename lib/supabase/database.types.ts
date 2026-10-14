@@ -1313,6 +1313,9 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_op_started_at: string | null
+          account_op_state: string | null
+          account_op_target_hash: string | null
           activated_at: string | null
           anonymized_at: string | null
           created_at: string
@@ -1331,6 +1334,9 @@ export type Database = {
           privacy_policy_version: number | null
         }
         Insert: {
+          account_op_started_at?: string | null
+          account_op_state?: string | null
+          account_op_target_hash?: string | null
           activated_at?: string | null
           anonymized_at?: string | null
           created_at?: string
@@ -1349,6 +1355,9 @@ export type Database = {
           privacy_policy_version?: number | null
         }
         Update: {
+          account_op_started_at?: string | null
+          account_op_state?: string | null
+          account_op_target_hash?: string | null
           activated_at?: string | null
           anonymized_at?: string | null
           created_at?: string
@@ -1725,6 +1734,14 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_begin_email_change: {
+        Args: {
+          p_customer_id: string
+          p_email: string
+          p_idempotency_key: string
+        }
+        Returns: Json
+      }
       admin_begin_media_publish: {
         Args: {
           p_alt_text: string
@@ -1759,6 +1776,14 @@ export type Database = {
           p_idempotency_key: string
           p_message: string
           p_parked_acknowledged?: boolean
+        }
+        Returns: Json
+      }
+      admin_change_phone: {
+        Args: {
+          p_customer_id: string
+          p_idempotency_key: string
+          p_phone: string
         }
         Returns: Json
       }
@@ -1817,6 +1842,18 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_export_customers: {
+        Args: { p_columns: string[]; p_query: string; p_scope: string }
+        Returns: Json
+      }
+      admin_finish_email_change: {
+        Args: {
+          p_customer_id: string
+          p_idempotency_key: string
+          p_succeeded: boolean
+        }
+        Returns: Json
+      }
       admin_finish_media_publish: {
         Args: { p_media_id: string }
         Returns: Json
@@ -1824,6 +1861,10 @@ export type Database = {
       admin_get_attention_items: { Args: never; Returns: Json }
       admin_get_content_page: { Args: { p_slug: string }; Returns: Json }
       admin_get_customer: { Args: { p_customer_id: string }; Returns: Json }
+      admin_get_customer_account: {
+        Args: { p_customer_id: string }
+        Returns: Json
+      }
       admin_get_event_details: { Args: { p_event_id: string }; Returns: Json }
       admin_get_home: { Args: never; Returns: Json }
       admin_get_work_sheet: { Args: { p_event_id: string }; Returns: Json }
@@ -2123,6 +2164,10 @@ export type Database = {
       }
       preview_book_session: { Args: { p_event_id: string }; Returns: Json }
       preview_book_sessions: { Args: { p_items: string[] }; Returns: Json }
+      rate_limit_hit: {
+        Args: { p_bucket: string; p_keys: string[] }
+        Returns: Json
+      }
       register_push_subscription: {
         Args: { p_endpoint: string; p_keys: Json; p_platform: string }
         Returns: Json

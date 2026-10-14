@@ -11,6 +11,13 @@ export async function joinLinkFor(token: string): Promise<string | null> {
   return origin ? `${origin}/join/${token}` : null
 }
 
+// The full reset link of a raw token (admin_issue_link 'reset', story 2.8),
+// built the same way.
+export async function resetLinkFor(token: string): Promise<string | null> {
+  const origin = await requestOrigin()
+  return origin ? `${origin}/reset/${token}` : null
+}
+
 async function requestOrigin(): Promise<string | null> {
   const h = await headers()
   const origin = h.get("origin")

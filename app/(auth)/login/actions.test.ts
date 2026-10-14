@@ -13,6 +13,19 @@ class RedirectSignal extends Error {
   }
 }
 
+const hitRateLimit = vi.fn<(...args: unknown[]) => Promise<string>>(
+  async () => "allowed"
+)
+vi.mock("@/lib/server/privileged/rate-limit", () => ({
+  clientIp: async () => "203.0.113.7",
+  hitRateLimit: (...args: unknown[]) => hitRateLimit(...args),
+  rateLimitCode: (v: string) =>
+    v === "allowed"
+      ? null
+      : v === "blocked"
+        ? "TOO_MANY_ATTEMPTS"
+        : "SERVER_ERROR",
+}))
 vi.mock("next/navigation", () => ({
   redirect: (url: string) => {
     throw new RedirectSignal(url)
@@ -48,6 +61,8 @@ function signedInAs(role: string) {
 }
 
 beforeEach(() => {
+  hitRateLimit.mockReset()
+  hitRateLimit.mockResolvedValue("allowed")
   signInWithPassword.mockReset()
   signOut.mockClear()
   rpc.mockReset()
@@ -55,6 +70,52 @@ beforeEach(() => {
 })
 
 describe("loginAction", () => {
+  it("stops at the rate limit before Auth, keyed by IP and normalized email (story 2.8)", async () => {
+    hitRateLimit.mockResolvedValue("blocked")
+
+    await expect(
+      loginAction(
+        null,
+        form({ email: " Dev-Customer@Example.com ", password: "x" })
+      )
+    ).resolves.toEqual({
+      ok: false,
+      code: "TOO_MANY_ATTEMPTS",
+      email: " Dev-Customer@Example.com ",
+    })
+    expect(hitRateLimit).toHaveBeenCalledWith("login", {
+      ip: "203.0.113.7",
+      id: "dev-customer@example.com",
+    })
+    expect(signInWithPassword).not.toHaveBeenCalled()
+  })
+
+  it("blocks with a server error when the limiter itself fails (user decision 2026-10-13)", async () => {
+    hitRateLimit.mockResolvedValue("failed")
+
+    await expect(
+      loginAction(null, form({ email: "a@example.com", password: "x" }))
+    ).resolves.toEqual({
+      ok: false,
+      code: "SERVER_ERROR",
+      email: "a@example.com",
+    })
+    expect(signInWithPassword).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    [{ code: "over_request_rate_limit", status: 429 }],
+    [{ code: undefined, status: 429 }],
+  ])("maps Supabase's own rate limit to TOO_MANY_ATTEMPTS", async (error) => {
+    signInWithPassword.mockResolvedValue({ error })
+
+    await expect(loginAction(null, form(credentials))).resolves.toEqual({
+      ok: false,
+      code: "TOO_MANY_ATTEMPTS",
+      email: "dev-customer@example.com",
+    })
+  })
+
   it("returns INVALID_CREDENTIALS with the email echoed on bad credentials", async () => {
     signInWithPassword.mockResolvedValue({
       error: { code: "invalid_credentials", status: 400 },
@@ -83,7 +144,6 @@ describe("loginAction", () => {
 
   it.each([
     ["a 5xx", { code: "unexpected_failure", status: 503 }],
-    ["a 429 rate limit", { code: "over_request_rate_limit", status: 429 }],
     ["a network failure (status 0)", { code: undefined, status: 0 }],
     ["a network failure (no status)", { code: undefined, status: undefined }],
   ])(

@@ -5,6 +5,11 @@ import { redirect } from "next/navigation"
 import { destinationFor, toSessionRole } from "@/lib/auth/destination"
 import type { ErrorCode } from "@/lib/errors"
 import { callRpc } from "@/lib/rpc"
+import {
+  clientIp,
+  hitRateLimit,
+  rateLimitCode,
+} from "@/lib/server/privileged/rate-limit"
 import { createClient } from "@/lib/supabase/server"
 
 // The email is echoed back so the form keeps it after an error (React resets
@@ -41,6 +46,17 @@ export async function loginAction(
     }
   }
 
+  // The rate limit (story 2.8) before any call to Auth: per IP and per
+  // account (the normalized email), counted whether the account exists or
+  // not, with one message for both.
+  const limited = rateLimitCode(
+    await hitRateLimit("login", {
+      ip: await clientIp(),
+      id: email.trim().toLowerCase(),
+    })
+  )
+  if (limited) return { ok: false, code: limited, email }
+
   const supabase = await createClient()
   const { error } = await supabase.auth.signInWithPassword({
     email: email.trim(),
@@ -52,12 +68,15 @@ export async function loginAction(
     if (authCode !== "invalid_credentials") {
       console.error("login.sign_in_failed", { authCode, status: error.status })
     }
-    // Only a real credentials mismatch says "email or password"; network
-    // failures, rate limits and server errors are shown as a server error.
+    // Only a real credentials mismatch says "email or password"; Supabase's
+    // own rate limit reads as ours; network failures and server errors are
+    // shown as a server error.
     const code: ErrorCode =
       authCode === "invalid_credentials"
         ? "INVALID_CREDENTIALS"
-        : "SERVER_ERROR"
+        : authCode === "over_request_rate_limit" || error.status === 429
+          ? "TOO_MANY_ATTEMPTS"
+          : "SERVER_ERROR"
     return { ok: false, code, email }
   }
 

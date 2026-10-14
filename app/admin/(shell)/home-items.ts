@@ -248,6 +248,17 @@ export function toAttentionItem(row: AttentionRow): AttentionItem {
         title: c.title(name, row.concept_name ?? "", dayOf(row.starts_at)),
       }
     }
+    case "email_change_stuck": {
+      const c = copy.items.email_change_stuck
+      return {
+        ...base,
+        // The item's id is the customer.
+        href: customerHref(row.customer_id ?? row.id),
+        title: c.title(name),
+        detail: c.detail,
+        chip: { tone: "warning", label: c.chip },
+      }
+    }
     case "push_failed": {
       const c = copy.items.push_failed
       return {

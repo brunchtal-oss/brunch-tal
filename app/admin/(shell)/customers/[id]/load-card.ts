@@ -5,7 +5,7 @@ import { notFound } from "next/navigation"
 import { callRpc } from "@/lib/rpc"
 import { createClient } from "@/lib/supabase/server"
 
-import type { CustomerCard } from "./card-items"
+import type { CardAccount, CustomerCard } from "./card-items"
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -21,4 +21,19 @@ export async function loadCard(id: string): Promise<CustomerCard> {
     throw new Error("admin_get_customer failed")
   }
   return result.data as unknown as CustomerCard
+}
+
+// admin_get_customer_account for the account section (story 2.8). Called
+// after loadCard, so the id is already a customer.
+export async function loadAccount(id: string): Promise<CardAccount> {
+  const result = await callRpc(
+    await createClient(),
+    "admin_get_customer_account",
+    { p_customer_id: id }
+  )
+  if (!result.ok) {
+    if (result.code === "NOT_FOUND") notFound()
+    throw new Error("admin_get_customer_account failed")
+  }
+  return result.data as unknown as CardAccount
 }

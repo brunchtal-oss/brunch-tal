@@ -8,6 +8,7 @@ import { formatLocalPhone } from "@/lib/phone"
 import {
   formatDayMonth,
   formatSessionDate,
+  formatSessionDateTime,
   formatShortDate,
   formatTime,
 } from "@/lib/time"
@@ -374,4 +375,91 @@ export function historyHref(
   page: "bookings" | "purchases"
 ): string {
   return `/admin/customers/${encodeURIComponent(customerId)}/${page}`
+}
+
+// The account section (story 2.8): admin_get_customer_account. The stuck
+// flag and the link status are decided in SQL; this only words them.
+export type CardResetLink = {
+  token_id: string
+  status: "pending" | "expired" | "consumed" | "revoked" | string
+  created_at: string
+  expires_at: string
+  consumed_at: string | null
+  revoked_at: string | null
+}
+
+export type CardAccount = {
+  customer_id: string
+  is_activated: boolean
+  account_op_state: string | null
+  account_op_started_at: string | null
+  email_change_stuck: boolean
+  reset_link: CardResetLink | null
+}
+
+export type AccountView = {
+  // The email change and the reset link need an activated account; the
+  // phone changes for any customer.
+  canChangeEmail: boolean
+  canIssueReset: boolean
+  stuck: boolean
+  // The latest reset link's line; null when there is none to tell (none
+  // issued, or a revoked one).
+  resetStatus: { text: string; at: string } | null
+  // A pending link is replaced; otherwise a first (or new) link.
+  resetButton: string
+}
+
+export function accountView(account: CardAccount): AccountView {
+  const c = copy.account
+  const link = account.reset_link
+  let resetStatus: AccountView["resetStatus"] = null
+  if (link?.status === "pending") {
+    resetStatus = {
+      text: c.resetPending(formatSessionDateTime(link.expires_at)),
+      at: link.expires_at,
+    }
+  } else if (link?.status === "consumed" && link.consumed_at) {
+    resetStatus = {
+      text: c.resetUsed(formatShortDate(link.consumed_at)),
+      at: link.consumed_at,
+    }
+  } else if (link?.status === "expired") {
+    resetStatus = { text: c.resetExpired, at: link.expires_at }
+  }
+  return {
+    canChangeEmail: account.is_activated,
+    canIssueReset: account.is_activated,
+    stuck: account.email_change_stuck,
+    resetStatus,
+    resetButton: link?.status === "pending" ? c.reissueReset : c.issueReset,
+  }
+}
+
+// A soft check before "save" (the RPC checks again): one @, a dot after it,
+// no spaces.
+const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+// The edited email when it is a change worth sending, else null (unchanged
+// or not an address yet). resume (the change is stuck): the same address
+// may be sent again, since Auth may already hold it and
+// admin_begin_email_change resumes on the same hash.
+export function emailChange(
+  saved: string,
+  edited: string,
+  resume = false
+): string | null {
+  const next = edited.trim().toLowerCase()
+  if (!EMAIL_SHAPE.test(next) || next.length > 254) return null
+  return !resume && next === saved.trim().toLowerCase() ? null : next
+}
+
+// The edited phone when it looks like a number and differs from the saved
+// one as typed (private.normalize_phone decides; PHONE_UNCHANGED if equal).
+export function phoneChange(saved: string, edited: string): string | null {
+  const next = edited.trim()
+  const digits = next.replace(/\D/g, "")
+  if (digits.length < 9 || digits.length > 15) return null
+  if (digits === saved.replace(/\D/g, "")) return null
+  return next
 }
