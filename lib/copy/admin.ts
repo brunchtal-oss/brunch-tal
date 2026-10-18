@@ -840,6 +840,28 @@ export const adminCopy = {
         `${name} שילמה למפגש הזה ואין לה מקום. אחרי הביטול היא תופיע ב'לטיפול', ותצטרכי לסגור איתה החזר או זיכוי ידנית.`,
       parkedCheckbox: "ידוע לי שיש לקוחה שצריכה טיפול ידני אחרי הביטול",
     },
+    // Story 3.17: Tal deletes a draft or published session nobody booked
+    // (the dialog's title: event_delete in lib/admin/sensitive-actions.ts).
+    deleteEvent: {
+      button: "מחיקת מפגש",
+      description:
+        "המפגש יימחק לגמרי, יחד עם דף העבודה שלו. אי אפשר לשחזר אותו.",
+      session: "מפגש",
+      dishes: "מנות בדף העבודה",
+      tasks: "משימות בדף העבודה",
+      shopping: "פריטים ברשימת הקניות",
+      // The notice when the session is a credit alternative.
+      creditsNotice: "המפגש מוצע כחלופה ללקוחות שקיבלו זיכוי.",
+      creditsCustomers: (n: number) =>
+        n === 1
+          ? "לקוחה אחת תקבל מפגש חלופי אחר."
+          : `${n} לקוחות יקבלו מפגש חלופי אחר.`,
+      checkbox: "אני מאשרת למחוק את המפגש",
+      confirm: "מחיקת המפגש",
+      done: "המפגש נמחק.",
+      // Next to EVENT_HAS_BOOKINGS while the session can be cancelled.
+      cancelLink: "לביטול המפגש",
+    },
     reschedule: {
       description: "ההרשמות נשארות, וכל נרשמת תקבל הודעה בנוסח שלמטה.",
       from: "מועד נוכחי",
@@ -1733,6 +1755,11 @@ export const adminCopy = {
     reason: (text: string) => `סיבה: ${text}`,
     // A partial refund: "{הוחזר} מתוך {התבקש}".
     outOf: (part: string, whole: string) => `${part} מתוך ${whole}`,
+    // A deleted session's row (story 3.17): its own lines, from before.
+    deletedEvent: {
+      date: "תאריך המפגש",
+      status: "נמחק",
+    },
     // Values.
     masked: "השתנה",
     yes: "כן",
@@ -1805,6 +1832,7 @@ export const adminCopy = {
       admin_move_booking: "הזזת הרשמה",
       admin_complete_refund: "אישור החזר",
       admin_cancel_event: "ביטול מפגש",
+      admin_delete_event: "מחיקת מפגש",
       admin_reschedule_event: "שינוי מועד מפגש",
       choose_credit_outcome: "בחירה בין זיכוי להחזר",
       set_booking_guest_details: "עדכון פרטי מלווה",
@@ -1924,6 +1952,12 @@ export const adminCopy = {
       theme_key: "ערכת צבעים",
       generic_paper_key: "רקע",
       deleted_tasks: "משימות שנמחקו",
+      // A deleted session (story 3.17): its concept and what went with it.
+      concept_name: "קונספט",
+      work_dishes_count: "מנות בדף העבודה",
+      work_tasks_count: "משימות בדף העבודה",
+      shopping_items_count: "פריטים ברשימת הקניות",
+      credit_options: "חלופות זיכוי שהוסרו",
       guest_details: "פרטי מלווה",
       note_count: "מספר פתקים",
       payer_label: "שם המשלמת",

@@ -595,3 +595,6 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-10-move-a-booking.md`
   summary: "מחוץ לחלון לא נקרא שום RPC" בהזזה נבדק רק על הפונקציה הטהורה `moveTapAction`, לא על לחיצה בכפתור.
   evidence: אין בפרויקט בדיקות רכיב אינטראקטיביות (אין testing-library). השרת עדיין מחזיר `can_move: false`, כך שהמסך נכון גם בלי הבדיקה המקומית; נבדק בטלפון (ביקורת 3.10, ממצא 12).
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-17-delete-a-session.md`
+  summary: `private.hide_unused_media` (called by session delete, concept delete and set image) hides every published or copying media row not in `private.used_media_ids()`, so an image uploaded but not attached yet may be hidden and its public file deleted when Tal deletes something else.
+  evidence: 3.17 review round 1 (edge-case, maybe-false, medium if true). Pre-existing function behaviour; settle by checking whether an upload can sit in `published`/`copying` before it is attached (the upload and publish flow of `20261005193920_media_upload_and_publish.sql`).

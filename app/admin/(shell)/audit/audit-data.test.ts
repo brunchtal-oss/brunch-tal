@@ -136,6 +136,30 @@ describe("labels", () => {
     expect(fieldLabel("mystery_key")).toBe("mystery_key")
   })
 
+  it("a deleted session (story 3.17) reads in Hebrew, its counts too", () => {
+    expect(actionLabel("admin_delete_event")).toBe("מחיקת מפגש")
+    expect(fieldLabel("concept_name")).toBe("קונספט")
+    expect(fieldLabel("work_dishes_count")).toBe("מנות בדף העבודה")
+    expect(fieldLabel("work_tasks_count")).toBe("משימות בדף העבודה")
+    expect(fieldLabel("shopping_items_count")).toBe("פריטים ברשימת הקניות")
+    expect(fieldLabel("credit_options")).toBe("חלופות זיכוי שהוסרו")
+    expect(formatValue("work_dishes_count", 3)).toBe("3")
+    expect(
+      formatValue("credit_options", [
+        { credit_id: "7f8c2a52-2f0e-4a4c-9d8e-6f1f6a3b2c11", state: "active" },
+        { credit_id: "8a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d", state: "passed" },
+      ])
+    ).toBe("2")
+    expect(
+      toChange({ key: "work_tasks_count", before: 5, after: null }, "events")
+    ).toEqual({
+      key: "work_tasks_count",
+      field: "משימות בדף העבודה",
+      kind: "delete",
+      before: "5",
+    })
+  })
+
   it("a customers export row (story 4.4) reads in Hebrew", () => {
     expect(actionLabel("admin_export_customers")).toBe("ייצוא לקוחות")
     expect(formatValue("scope", "search")).toBe("תוצאות חיפוש")
@@ -291,6 +315,7 @@ describe("labels seen in the dev database", () => {
     expect(actionLabel("admin_set_concept_image")).toBe("בחירת תמונה לקונספט")
     for (const action of [
       "admin_cancel_event",
+      "admin_delete_event",
       "admin_reschedule_event",
       "choose_credit_outcome",
       "set_booking_guest_details",
@@ -467,6 +492,65 @@ describe("toChange and toAuditItem", () => {
       session: "בראנץ׳ סתיו · 12.10.26",
       reason: "יותר מקום",
     })
+  })
+
+  it("a deleted session (story 3.17): its own lines from before, the session label from before", () => {
+    const deleted = (counts: Record<string, unknown>) =>
+      toAuditItem(
+        row({
+          action: "admin_delete_event",
+          event: null,
+          changes: [
+            { key: "concept_name", before: "בראנץ׳ סתיו", after: null },
+            {
+              key: "starts_at",
+              before: "2026-10-12T07:00:00+00:00",
+              after: null,
+            },
+            { key: "status", before: "published", after: null },
+            { key: "capacity_adults", before: 12, after: null },
+            { key: "description", before: "תיאור", after: null },
+            ...Object.entries(counts).map(([key, before]) => ({
+              key,
+              before,
+              after: null,
+            })),
+          ],
+        })
+      )
+    const full = deleted({
+      work_dishes_count: 2,
+      work_tasks_count: 5,
+      shopping_items_count: 0,
+      credit_options: [{ credit_id: CUSTOMER, state: "active" }],
+    })
+    expect(full.action).toBe("מחיקת מפגש")
+    expect(full.session).toBe("בראנץ׳ סתיו · 12.10.26")
+    expect(
+      full.changes.map((c) => `${c.field}: ${c.kind === "add" ? c.after : ""}`)
+    ).toEqual([
+      "קונספט: בראנץ׳ סתיו",
+      "תאריך המפגש: 12.10.26",
+      "סטטוס: נמחק",
+      "מנות בדף העבודה: 2",
+      "משימות בדף העבודה: 5",
+      "חלופות זיכוי שהוסרו: 1",
+    ])
+    const empty = deleted({
+      work_dishes_count: 0,
+      work_tasks_count: 0,
+      shopping_items_count: 0,
+      credit_options: [],
+    })
+    expect(empty.changes.map((c) => c.field)).toEqual([
+      "קונספט",
+      "תאריך המפגש",
+      "סטטוס",
+    ])
+    // Other actions keep their rendering.
+    expect(toAuditItem(row()).changes.map((c) => c.field)).not.toContain(
+      "תאריך המפגש"
+    )
   })
 
   it("an anonymized customer", () => {

@@ -764,8 +764,12 @@ describe("move_booking: pinned and credit-funded", { timeout: 60_000 }, () => {
       expect(await allocations(db, r.booking_id)).toEqual([
         { entitlement_id: null, credit_id: credit.id, units: 1 },
       ])
+      // Scoped to this credit: the dev DB keeps real moves from phone checks.
       const { rows: audit } = await db.query(
-        "select count(*)::int as n from public.audit_log where action = 'admin_move_booking' and entity_type = 'credit_options'"
+        `select count(*)::int as n from public.audit_log
+         where action = 'admin_move_booking' and entity_type = 'credit_options'
+           and entity_id in (select o.id from public.credit_options o where o.credit_id = $1)`,
+        [credit.id]
       )
       expect(audit[0].n).toBe(1)
     })

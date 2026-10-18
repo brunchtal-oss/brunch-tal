@@ -1832,6 +1832,14 @@ export type Database = {
         Args: { p_idempotency_key: string; p_note_id: string }
         Returns: Json
       }
+      admin_delete_event: {
+        Args: {
+          p_confirmed: boolean
+          p_event_id: string
+          p_idempotency_key: string
+        }
+        Returns: Json
+      }
       admin_delete_note: {
         Args: { p_idempotency_key: string; p_note_id: string }
         Returns: Json
@@ -2199,6 +2207,10 @@ export type Database = {
       }
       preview_admin_complete_refund: {
         Args: { p_refund_request_id: string }
+        Returns: Json
+      }
+      preview_admin_delete_event: {
+        Args: { p_event_id: string }
         Returns: Json
       }
       preview_admin_delete_note_topic: {

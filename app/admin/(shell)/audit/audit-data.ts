@@ -279,6 +279,11 @@ export function formatValue(
     if (CLOCK.test(value)) return formatClockTime(value)
     return cut(value)
   }
+  // A deleted session's removed credit options (story 3.17,
+  // [{credit_id, state}]): how many, not their ids.
+  if (key === "credit_options" && Array.isArray(value)) {
+    return String(value.length)
+  }
   if (key === "allowed_weekdays") {
     const days = weekdaysText(value)
     if (days !== null) return days
@@ -341,7 +346,72 @@ export function toChange(
   }
 }
 
+// A deleted session (admin_delete_event, story 3.17): its after is empty,
+// so the row shows these lines from before instead of every column: the
+// concept, the session's date, "נמחק", then each work sheet count and the
+// removed credit options only when above 0.
+const DELETED_EVENT_COUNTS = [
+  "work_dishes_count",
+  "work_tasks_count",
+  "shopping_items_count",
+  "credit_options",
+] as const
+
+function beforeOf(row: AuditRow): Record<string, unknown> {
+  return Object.fromEntries(
+    row.changes.map((change) => [change.key, change.before])
+  )
+}
+
+function deletedEventDate(before: Record<string, unknown>): string | null {
+  if (!isInstant(before.starts_at)) return null
+  try {
+    return formatShortDate(before.starts_at as string)
+  } catch {
+    return null
+  }
+}
+
+export function deletedEventChanges(row: AuditRow): AuditChange[] {
+  const before = beforeOf(row)
+  const line = (key: string, field: string, after: string): AuditChange => ({
+    key,
+    field,
+    kind: "add",
+    after,
+  })
+  const lines: AuditChange[] = []
+  if (typeof before.concept_name === "string") {
+    lines.push(
+      line("concept_name", fieldLabel("concept_name"), before.concept_name)
+    )
+  }
+  const date = deletedEventDate(before)
+  if (date) lines.push(line("starts_at", copy.deletedEvent.date, date))
+  lines.push(line("status", fieldLabel("status"), copy.deletedEvent.status))
+  for (const key of DELETED_EVENT_COUNTS) {
+    const value = before[key]
+    const n = Array.isArray(value)
+      ? value.length
+      : typeof value === "number"
+        ? value
+        : 0
+    if (n > 0) lines.push(line(key, fieldLabel(key), String(n)))
+  }
+  return lines
+}
+
+// The session label of a deleted session's row (its event is gone).
+function deletedEventSession(row: AuditRow): string | null {
+  const before = beforeOf(row)
+  const date = deletedEventDate(before)
+  return typeof before.concept_name === "string" && date
+    ? copy.sessionLabel(before.concept_name, date)
+    : null
+}
+
 export function toAuditItem(row: AuditRow): AuditItem {
+  const deletedEvent = row.action === "admin_delete_event"
   return {
     id: row.id,
     createdAt: row.created_at,
@@ -357,10 +427,14 @@ export function toAuditItem(row: AuditRow): AuditItem {
           row.event.title,
           formatShortDate(row.event.local_date)
         )
-      : null,
-    changes: row.changes
-      .filter(isShownChange)
-      .map((change) => toChange(change, row.entity_type)),
+      : deletedEvent
+        ? deletedEventSession(row)
+        : null,
+    changes: deletedEvent
+      ? deletedEventChanges(row)
+      : row.changes
+          .filter(isShownChange)
+          .map((change) => toChange(change, row.entity_type)),
     reason: row.reason && row.reason.trim() !== "" ? row.reason : null,
   }
 }
