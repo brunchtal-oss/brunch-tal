@@ -26,7 +26,11 @@ import {
 } from "@/lib/time"
 import { cn } from "@/lib/utils"
 
-import { CancelBooking } from "../../bookings/cancel-booking"
+import {
+  CancelBooking,
+  SelfServiceClosedNotice,
+} from "../../bookings/cancel-booking"
+import { MoveBooking } from "../../bookings/move-booking"
 import { bookSessionAction } from "../actions"
 import { blockedAction, type BookingPreview } from "./booking-preview"
 
@@ -98,14 +102,11 @@ export function BookingPanel({
           {copy.registered}
         </InlineNotice>
         {preview.bookingId && (
-          <CancelBooking
+          <BookedActions
             bookingId={preview.bookingId}
             title={title}
             startsAt={startsAt}
-            funding={preview.funding}
-            productName={preview.productName}
-            optionsCount={preview.optionsCount}
-            canSelfCancel={preview.canSelfCancel}
+            preview={preview}
             cancelWindowHours={cancelWindowHours}
             contactHref={contactHref}
           />
@@ -315,5 +316,62 @@ export function BookingPanel({
         </Button>
       </SheetContent>
     </Sheet>
+  )
+}
+
+// Story 3.10: "הזזה למועד אחר" next to "ביטול ההרשמה" (user decision
+// 2026-10-18, the session page only). Past the self-cancel window a tap on
+// either shows the same closed notice with the contact phrase, once.
+function BookedActions({
+  bookingId,
+  title,
+  startsAt,
+  preview,
+  cancelWindowHours,
+  contactHref,
+}: {
+  bookingId: string
+  title: string
+  startsAt: string
+  preview: Extract<BookingPreview, { kind: "booked" }>
+  cancelWindowHours: number | null
+  contactHref: string | null
+}) {
+  const [closedShown, setClosedShown] = useState(false)
+  const showClosed = () => setClosedShown(true)
+  return (
+    <>
+      <div className="flex w-full flex-wrap gap-3">
+        <MoveBooking
+          bookingId={bookingId}
+          title={title}
+          startsAt={startsAt}
+          canSelfCancel={preview.canSelfCancel}
+          cancelWindowHours={cancelWindowHours}
+          onClosed={showClosed}
+          contactHref={contactHref}
+          className="flex-1 basis-40"
+        />
+        <CancelBooking
+          bookingId={bookingId}
+          title={title}
+          startsAt={startsAt}
+          funding={preview.funding}
+          productName={preview.productName}
+          optionsCount={preview.optionsCount}
+          canSelfCancel={preview.canSelfCancel}
+          cancelWindowHours={cancelWindowHours}
+          contactHref={contactHref}
+          onClosed={showClosed}
+          className="flex-1 basis-40"
+        />
+      </div>
+      {closedShown && (
+        <SelfServiceClosedNotice
+          cancelWindowHours={cancelWindowHours}
+          contactHref={contactHref}
+        />
+      )}
+    </>
   )
 }

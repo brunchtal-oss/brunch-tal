@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import {
   cancelBookingAction,
   chooseCreditOutcomeAction,
+  moveBookingAction,
+  previewMoveBookingAction,
   setGuestDetailsAction,
 } from "./actions"
 
@@ -202,5 +204,62 @@ describe("chooseCreditOutcomeAction (story 3.8)", () => {
       })
     ).resolves.toEqual({ ok: false, code: "INVALID_INPUT" })
     expect(callRpc).not.toHaveBeenCalled()
+  })
+})
+
+describe("story 3.10: moving her booking", () => {
+  const TARGET = "44444444-4444-4444-8444-444444444444"
+
+  it("the preview with her session; a bad id is refused here", async () => {
+    callRpc.mockResolvedValue({
+      ok: true,
+      data: { ok: true, funding: "card", can_move: true, targets: [] },
+    })
+    await expect(
+      previewMoveBookingAction({ bookingId: BOOKING_ID })
+    ).resolves.toMatchObject({
+      ok: true,
+      data: { ok: true, funding: "card", canMove: true, targets: [] },
+    })
+    expect(callRpc).toHaveBeenCalledWith(
+      { session: true },
+      "preview_move_booking",
+      { p_booking_id: BOOKING_ID }
+    )
+    callRpc.mockReset()
+    await expect(previewMoveBookingAction({ bookingId: "x" })).resolves.toEqual(
+      { ok: false, code: "INVALID_INPUT" }
+    )
+    expect(callRpc).not.toHaveBeenCalled()
+  })
+
+  it("the move with the sheet's key; the new booking comes back", async () => {
+    callRpc.mockResolvedValue({
+      ok: true,
+      data: { booking_id: "b2", from_booking_id: BOOKING_ID },
+    })
+    await expect(
+      moveBookingAction({
+        bookingId: BOOKING_ID,
+        targetEventId: TARGET,
+        idempotencyKey: KEY,
+      })
+    ).resolves.toEqual({
+      ok: true,
+      data: { bookingId: "b2", fromBookingId: BOOKING_ID },
+    })
+    expect(callRpc).toHaveBeenCalledWith({ session: true }, "move_booking", {
+      p_booking_id: BOOKING_ID,
+      p_target_event_id: TARGET,
+      p_idempotency_key: KEY,
+    })
+    callRpc.mockResolvedValue({ ok: false, code: "EVENT_FULL" })
+    await expect(
+      moveBookingAction({
+        bookingId: BOOKING_ID,
+        targetEventId: TARGET,
+        idempotencyKey: KEY,
+      })
+    ).resolves.toEqual({ ok: false, code: "EVENT_FULL" })
   })
 })

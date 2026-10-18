@@ -109,6 +109,12 @@ export const ERROR_MESSAGES = {
   BOOKING_NOT_CANCELLABLE: "ההרשמה הזו כבר לא פעילה. כדאי לרענן את הדף",
   SELF_CANCEL_CLOSED: "לא ניתן לבטל עצמאית כל כך קרוב למפגש. צרי קשר",
   MANUAL_HANDLING_REQUIRED: "את הביטול הזה עושים ידנית. צרי קשר ונטפל בו",
+  // Moving a booking (story 3.10): the session is not one she may move to
+  // (not published, another kind, the same session, or not one of her
+  // credit's options); the booking cannot be moved (not hers, no longer
+  // confirmed, or without a customer).
+  MOVE_TARGET_NOT_ALLOWED: "אי אפשר לעבור למפגש הזה",
+  BOOKING_NOT_MOVABLE: "אי אפשר להזיז את ההרשמה הזו",
   // Settings and notification templates (story 4.7). The row changed since
   // the screen read it (another tab or device saved first).
   STALE_VERSION: "הנתונים השתנו בינתיים. צריך לרענן את הדף",
@@ -138,7 +144,7 @@ export const ERROR_MESSAGES = {
   // Raised by the adapter (never by SQL).
   INVALID_CREDENTIALS: "המייל או הסיסמה לא תואמים",
   // Correct password, but no active customer profile and not an admin.
-  ACCOUNT_NOT_ACTIVE: "החשבון הזה עוד לא פעיל. אפשר לפנות לטל",
+  ACCOUNT_NOT_ACTIVE: "החשבון הזה עוד לא פעיל. צרי קשר",
   PASSWORD_TOO_SHORT: "הסיסמה צריכה להיות באורך 8 תווים לפחות",
   PASSWORDS_DONT_MATCH: "הסיסמאות לא תואמות",
   FIELD_REQUIRED: "צריך למלא את השדה הזה",

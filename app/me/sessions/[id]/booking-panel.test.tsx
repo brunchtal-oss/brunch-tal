@@ -9,7 +9,11 @@ import type { BookingPreview } from "./booking-preview"
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }))
 vi.mock("../actions", () => ({ bookSessionAction: vi.fn() }))
-vi.mock("../../bookings/actions", () => ({ cancelBookingAction: vi.fn() }))
+vi.mock("../../bookings/actions", () => ({
+  cancelBookingAction: vi.fn(),
+  moveBookingAction: vi.fn(),
+  previewMoveBookingAction: vi.fn(),
+}))
 
 const CONTACT = "https://wa.me/972500000000"
 
@@ -50,7 +54,7 @@ describe("BookingPanel (story 3.6)", () => {
   it("booked, past the boundary: the same cancel button, and no notice or contact until it is tapped", () => {
     // User decision 2026-10-06: no call to action in view unless she asked
     // to cancel; the tap shows "לא ניתן לבטל עצמאית פחות מ-48 שעות לפני
-    // המפגש." with "צרי קשר" (checked on the phone).
+    // המפגש." with "ליצירת קשר" (checked on the phone).
     const html = render({ ...BOOKED, canSelfCancel: false })
     expect(html).toContain(customerCopy.registered)
     expect(html).toContain(customerCopy.cancel.button)
@@ -58,6 +62,19 @@ describe("BookingPanel (story 3.6)", () => {
     expect(html).not.toContain(CONTACT)
     expect(html).not.toContain("10.10")
     expect(html).not.toMatch(/(^|[\s>"(])טל($|[\s.,)<])/)
+  })
+
+  it("story 3.10: booked: 'הזזה למועד אחר' next to the cancel, inside and past the window, no notice until a tap", () => {
+    for (const canSelfCancel of [true, false]) {
+      const html = render({ ...BOOKED, canSelfCancel })
+      expect(html).toContain(customerCopy.move.button)
+      expect(html).toContain(customerCopy.cancel.button)
+      expect(html.indexOf(customerCopy.move.button)).toBeLessThan(
+        html.indexOf(customerCopy.cancel.button)
+      )
+      expect(html).not.toContain(customerCopy.cancel.closed(48))
+      expect(html).not.toContain(CONTACT)
+    }
   })
 
   it("story 3.12: completed: the session ended and she took part, no buttons, no cancel and no contact", () => {

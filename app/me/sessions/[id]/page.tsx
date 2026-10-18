@@ -9,6 +9,7 @@ import { getWhatsappHref } from "@/lib/content/business-details"
 import { customerCopy } from "@/lib/copy/customer"
 import { shellCopy } from "@/lib/copy/shell"
 import { formatAgorot } from "@/lib/money"
+import { formatDayMonth } from "@/lib/time"
 import { callRpc } from "@/lib/rpc"
 import { createClient } from "@/lib/supabase/server"
 
@@ -19,6 +20,7 @@ import {
 } from "../load-sessions"
 import { sessionStatus } from "../session-status"
 import { BookingPanel } from "./booking-panel"
+import { MovedNotice } from "./moved-notice"
 import { parsePreview, type BookingPreview } from "./booking-preview"
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -37,20 +39,30 @@ export const metadata: Metadata = {
 // layout's <Suspense> customer gate.
 export default function MeSessionPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>
+  searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
   return (
     <Suspense
       fallback={<p className="text-muted-foreground">{shellCopy.loading}</p>}
     >
-      <SessionContent params={params} />
+      <SessionContent params={params} searchParams={searchParams} />
     </Suspense>
   )
 }
 
-async function SessionContent({ params }: { params: Promise<{ id: string }> }) {
+async function SessionContent({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}) {
   const { id } = await params
+  // Story 3.10: arriving here after moving her booking to this session.
+  const { moved } = await searchParams
   if (!UUID.test(id)) notFound()
   const supabase = await createClient()
   // RLS: a draft is never returned to a customer.
@@ -73,10 +85,11 @@ async function SessionContent({ params }: { params: Promise<{ id: string }> }) {
   const preview: BookingPreview = previewResult.ok
     ? parsePreview(previewResult.data)
     : { kind: "blocked", code: previewResult.code }
-  // Past the self-cancel boundary the notice names the booking's own
-  // cancel window (policy_snapshot; RLS: her own booking).
+  // The closed notice names the booking's own cancel window
+  // (policy_snapshot; RLS: her own booking): past the boundary, or when a
+  // move is refused at it (story 3.10).
   const cancelWindowHours =
-    preview.kind === "booked" && preview.bookingId && !preview.canSelfCancel
+    preview.kind === "booked" && preview.bookingId
       ? await cancelWindowOf(supabase, preview.bookingId)
       : null
   const status = sessionStatus({
@@ -104,6 +117,10 @@ async function SessionContent({ params }: { params: Promise<{ id: string }> }) {
         </p>
       )}
       <ResultNoticeHost className="pb-8">
+        <MovedNotice
+          arrived={moved === "1" && preview.kind === "booked"}
+          message={customerCopy.move.done(formatDayMonth(session.starts_at))}
+        />
         <BookingPanel
           eventId={session.id}
           title={customerCopy.sessionTitle(session.concept_name)}

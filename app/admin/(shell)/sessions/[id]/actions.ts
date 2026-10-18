@@ -16,6 +16,7 @@ import {
   type CancelEventPlan,
   type RescheduleEventPlan,
 } from "./event-plan"
+import { parseMovePlan, type AdminMovePlan } from "./move-plan"
 
 // Tal cancels a booking from "מי מגיעה" (story 3.6, a sensitive action,
 // AD-7). Both RPCs run with the admin's own session (private.is_admin()
@@ -71,6 +72,72 @@ export async function adminCancelBookingAction(input: {
     p_idempotency_key: input.idempotencyKey,
     p_reason: input.reason.trim() === "" ? undefined : input.reason,
     ...(input.choice ? { p_choice: input.choice } : {}),
+  })
+  if (!result.ok) return result
+  return { ok: true, data: undefined }
+}
+
+// Story 3.10: Tal moves a booking to another session (sensitive, AD-7),
+// any time until its session ends. Both RPCs check everything again; these
+// actions check only the shape. The key is made when the dialog opens and
+// again on every change (AD-5).
+export async function previewAdminMoveAction(input: {
+  bookingId: string
+}): Promise<ActionResult<AdminMovePlan>> {
+  if (typeof input?.bookingId !== "string" || !UUID.test(input.bookingId)) {
+    return { ok: false, code: "INVALID_INPUT" }
+  }
+  const supabase = await createClient()
+  const result = await callRpc(supabase, "preview_admin_move_booking", {
+    p_booking_id: input.bookingId,
+  })
+  if (!result.ok) return result
+  const plan = parseMovePlan(result.data)
+  if (!plan.ok) return { ok: true, data: plan }
+  // The window the booking was made under (display only; the RPC decides).
+  const { data } = await supabase
+    .from("bookings")
+    .select("policy_snapshot")
+    .eq("id", input.bookingId)
+    .maybeSingle()
+  const hours = (data?.policy_snapshot as { cancel_window_hours?: unknown })
+    ?.cancel_window_hours
+  return {
+    ok: true,
+    data: {
+      ...plan,
+      cancelWindowHours:
+        typeof hours === "number" && Number.isInteger(hours) ? hours : null,
+    },
+  }
+}
+
+export async function adminMoveBookingAction(input: {
+  bookingId: string
+  targetEventId: string
+  reason: string
+  confirmed: boolean
+  idempotencyKey: string
+}): Promise<ActionResult> {
+  if (
+    typeof input?.bookingId !== "string" ||
+    !UUID.test(input.bookingId) ||
+    typeof input.targetEventId !== "string" ||
+    !UUID.test(input.targetEventId) ||
+    typeof input.idempotencyKey !== "string" ||
+    !UUID.test(input.idempotencyKey) ||
+    typeof input.reason !== "string" ||
+    input.reason.trim().length > 2000 ||
+    typeof input.confirmed !== "boolean"
+  ) {
+    return { ok: false, code: "INVALID_INPUT" }
+  }
+  const result = await callRpc(await createClient(), "admin_move_booking", {
+    p_booking_id: input.bookingId,
+    p_target_event_id: input.targetEventId,
+    p_confirmed: input.confirmed,
+    p_idempotency_key: input.idempotencyKey,
+    p_reason: input.reason.trim() === "" ? undefined : input.reason,
   })
   if (!result.ok) return result
   return { ok: true, data: undefined }

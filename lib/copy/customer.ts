@@ -70,6 +70,9 @@ export const customerCopy = {
   expiredBeforeBoundInfo: (days: number) =>
     `${elapsed(days)} מרכישת הכרטיסיה ולכן פג תוקפה. לבירורים צרי קשר`,
   contactPhrase: "צרי קשר",
+  // The button under the self-service closed notice (cancel or move inside
+  // the window; user decision 2026-10-18, phone check).
+  closedContact: "ליצירת קשר",
   // Also the tab's label (shellCopy.nav.customerSessions, user decision
   // 2026-10-06).
   sessionsTitle: "לו״ז בראנצ׳ים",
@@ -235,17 +238,42 @@ export const customerCopy = {
     returnsCredit: "הזיכוי יחזור אלייך עם אותן חלופות",
     confirm: "כן, לבטל",
     // Past the self-cancel boundary, on the session page only, followed by
-    // the contact phrase (user decision 2026-10-06). hours: the booking's
-    // own cancel window (policy_snapshot), null when it cannot be read.
+    // the contact phrase (user decision 2026-10-06). The same notice for a
+    // tap on cancel or on move (story 3.10). hours: the booking's own cancel
+    // window (policy_snapshot), null when it cannot be read.
     closed: (hours: number | null) =>
       hours === null
-        ? "לא ניתן לבטל עצמאית כל כך קרוב למפגש."
-        : `לא ניתן לבטל עצמאית פחות מ-${hours} שעות לפני המפגש.`,
+        ? "לא ניתן לבטל או להזיז עצמאית כל כך קרוב למפגש."
+        : `לא ניתן לבטל או להזיז עצמאית פחות מ-${hours} שעות לפני המפגש.`,
     // The result (inline-notice, success).
     doneCard: "ההרשמה בוטלה. הכניסה חזרה ליתרה שלך",
     doneCredit: "ההרשמה בוטלה. הזיכוי מחכה לך בהרשמות שלך",
     doneRefund: "ההרשמה בוטלה. בקשת ההחזר התקבלה",
   },
+  // Moving a booking (story 3.10), on the session page only, next to the
+  // cancel (user decision 2026-10-18). Past the window both buttons show
+  // cancel.closed.
+  move: {
+    button: "הזזה למועד אחר",
+    title: "לאיזה מפגש לעבור?",
+    from: "ההרשמה הנוכחית",
+    targets: "המפגשים שאפשר לעבור אליהם",
+    // A pinned booking: after the move it is funded by a credit (wording:
+    // user decision 2026-10-18, phone check).
+    pinnedNote:
+      "לאחר שינוי התאריך, במקרה של ביטול תתאפשר קבלת זיכוי למפגש אחר בלבד, בהתאם למדיניות הביטולים, ולא החזר כספי.",
+    empty: "אין כרגע מפגש אחר שאפשר לעבור אליו.",
+    confirm: "כן, להזיז",
+    // A booking funded from two kinds of entry: not moved here; followed by
+    // the contact phrase.
+    manual: "את ההזזה הזו לא ניתן לעשות כאן.",
+    // Under a refusal: nothing changed.
+    unchanged: "ההרשמה הנוכחית נשארה כמו שהייתה.",
+    // On the new session's page after the move.
+    done: (date: string) => `ההרשמה הועברה ל-${date}`,
+  },
+  // A moved booking in her history (story 3.10).
+  bookingMoved: (date: string) => `הועברה ל-${date}`,
   // /me/bookings (story 3.6), opened from home.
   bookingsTitle: "ההרשמות שלי",
   allMyBookings: "לכל ההרשמות שלי",

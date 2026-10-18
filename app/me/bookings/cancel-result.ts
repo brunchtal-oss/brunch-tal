@@ -4,6 +4,7 @@
 // clock here (AD-8).
 
 import { customerCopy } from "@/lib/copy/customer"
+import { formatDayMonth } from "@/lib/time"
 
 import { isExhaustedCredit, type MyCredit } from "./credits"
 
@@ -78,6 +79,8 @@ export type MyBooking = {
   partySize: number
   guestDetails: string | null
   guestDetailsEditable: boolean
+  // Story 3.10: a moved (cancelled) booking: the session it moved to.
+  movedToStartsAt: string | null
 }
 
 export type MyBookings = {
@@ -114,6 +117,10 @@ function parseRows(value: unknown): MyBooking[] {
             ? r.guest_details
             : null,
         guestDetailsEditable: r.guest_details_editable === true,
+        movedToStartsAt:
+          typeof r.moved_to_starts_at === "string" && r.moved_to_starts_at
+            ? r.moved_to_starts_at
+            : null,
       },
     ]
   })
@@ -133,8 +140,17 @@ export function parseMyBookings(data: unknown): MyBookings {
   }
 }
 
-/** The word of a past booking: cancelled, or it took place. */
-export function pastBookingStatus(status: string): string {
+/**
+ * The word of a past booking: moved to another session (story 3.10),
+ * cancelled, or it took place.
+ */
+export function pastBookingStatus(
+  status: string,
+  movedToStartsAt: string | null = null
+): string {
+  if (status === "cancelled" && movedToStartsAt) {
+    return customerCopy.bookingMoved(formatDayMonth(movedToStartsAt))
+  }
   return status === "cancelled"
     ? customerCopy.bookingCancelled
     : customerCopy.bookingHeld

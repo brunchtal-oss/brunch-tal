@@ -9,6 +9,12 @@ import {
   type CancelChoice,
   type CancelResult,
 } from "./cancel-result"
+import {
+  parseMovePlan,
+  parseMoveResult,
+  type MovePlan,
+  type MoveResult,
+} from "./move-result"
 
 // Self-cancel (stories 3.6, 3.7). cancel_booking runs with the customer's
 // own session and checks everything again (hers, confirmed, the
@@ -70,6 +76,50 @@ export async function cancelBookingAction(input: {
   })
   if (!result.ok) return result
   return { ok: true, data: parseCancelResult(result.data) }
+}
+
+// Moving her booking (story 3.10). preview_move_booking and move_booking
+// run with her own session and check everything again (hers, confirmed,
+// the self-cancel boundary, the target's place and the original's funding
+// source); these actions check only the shape. The key is made when the
+// move sheet opens and again on a change of target (AD-5).
+export async function previewMoveBookingAction(input: {
+  bookingId: string
+}): Promise<ActionResult<MovePlan>> {
+  if (typeof input?.bookingId !== "string" || !UUID.test(input.bookingId)) {
+    return { ok: false, code: "INVALID_INPUT" }
+  }
+  const result = await callRpc(await createClient(), "preview_move_booking", {
+    p_booking_id: input.bookingId,
+  })
+  if (!result.ok) return result
+  return { ok: true, data: parseMovePlan(result.data) }
+}
+
+export async function moveBookingAction(input: {
+  bookingId: string
+  targetEventId: string
+  idempotencyKey: string
+}): Promise<ActionResult<MoveResult>> {
+  if (
+    typeof input?.bookingId !== "string" ||
+    typeof input.targetEventId !== "string" ||
+    typeof input.idempotencyKey !== "string" ||
+    !UUID.test(input.bookingId) ||
+    !UUID.test(input.targetEventId) ||
+    !UUID.test(input.idempotencyKey)
+  ) {
+    return { ok: false, code: "INVALID_INPUT" }
+  }
+  const result = await callRpc(await createClient(), "move_booking", {
+    p_booking_id: input.bookingId,
+    p_target_event_id: input.targetEventId,
+    p_idempotency_key: input.idempotencyKey,
+  })
+  if (!result.ok) return result
+  const moved = parseMoveResult(result.data)
+  if (!moved) return { ok: false, code: "SERVER_ERROR" }
+  return { ok: true, data: moved }
 }
 
 // The companion's dietary note on her couple booking (story 3.5).

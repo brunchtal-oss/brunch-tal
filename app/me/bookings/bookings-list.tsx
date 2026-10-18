@@ -185,7 +185,7 @@ export async function Bookings() {
                   </time>
                 </span>
                 <StatusChip tone="expired">
-                  {pastBookingStatus(b.status)}
+                  {pastBookingStatus(b.status, b.movedToStartsAt)}
                 </StatusChip>
               </li>
             ))}

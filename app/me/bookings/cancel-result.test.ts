@@ -108,6 +108,7 @@ describe("parseMyBookings", () => {
         partySize: 1,
         guestDetails: null,
         guestDetailsEditable: false,
+        movedToStartsAt: null,
       },
     ])
     expect(parsed.past[0]).toMatchObject({
@@ -177,6 +178,7 @@ describe("parseMyBookings", () => {
       partySize,
       guestDetails: null,
       guestDetailsEditable,
+      movedToStartsAt: null,
     })
     const credit = (exhausted: boolean): MyCredit => ({
       creditId: "c1",
@@ -208,5 +210,24 @@ describe("parseMyBookings", () => {
     // The brunch, masculine (user decision 2026-10-13).
     expect(pastBookingStatus("cancelled")).toBe("בוטל")
     expect(pastBookingStatus("completed")).toBe("התקיים")
+  })
+
+  it("story 3.10: a moved booking reads 'הועברה ל-{date}', not cancelled", () => {
+    // 2026-11-12 10:00 in Jerusalem.
+    const moved = "2026-11-12T08:00:00+00:00"
+    expect(pastBookingStatus("cancelled", moved)).toBe("הועברה ל-12.11")
+    expect(pastBookingStatus("cancelled", null)).toBe("בוטל")
+    const [row] = parseMyBookings({
+      past: [
+        {
+          booking_id: "b1",
+          event_id: "e1",
+          status: "cancelled",
+          starts_at: "2026-11-05T08:00:00+00:00",
+          moved_to_starts_at: moved,
+        },
+      ],
+    }).past
+    expect(row.movedToStartsAt).toBe(moved)
   })
 })
