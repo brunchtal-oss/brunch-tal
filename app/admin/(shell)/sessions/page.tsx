@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { PlusIcon } from "lucide-react"
 
+import { InlineNotice } from "@/components/shared/inline-notice"
 import { PageHeading } from "@/components/shared/page-heading"
 import { buttonClass } from "@/components/shared/button-class"
 import { adminCopy } from "@/lib/copy/admin"
@@ -27,10 +28,18 @@ export const metadata: Metadata = {
 // The sessions (CAP-12): every draft and every published session that has
 // not ended yet, by date, each with its status-chip and its occupancy
 // (2026-10-10). Rendered inside the admin shell's <Suspense> gate.
-export default function SessionsPage() {
+// ?deleted=1: a session was just deleted (story 3.17).
+export default function SessionsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ deleted?: string | string[] }>
+}) {
   return (
     <>
       <PageHeading>{copy.title}</PageHeading>
+      <Suspense fallback={null}>
+        <DeletedNotice searchParams={searchParams} />
+      </Suspense>
       {/* button-primary at inline-start, 12px above the first session; the
           content starts at inline-start, a 16px plus 8px before the text
           (user decision 2026-10-08). */}
@@ -56,6 +65,16 @@ export default function SessionsPage() {
       </div>
     </>
   )
+}
+
+async function DeletedNotice({
+  searchParams,
+}: {
+  searchParams: Promise<{ deleted?: string | string[] }>
+}) {
+  const { deleted } = await searchParams
+  if (deleted !== "1") return null
+  return <InlineNotice tone="success">{copy.deleteEvent.done}</InlineNotice>
 }
 
 async function SessionsContent() {

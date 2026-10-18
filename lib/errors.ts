@@ -64,10 +64,19 @@ export const ERROR_MESSAGES = {
   INTRO_NOT_ELIGIBLE: "בראנץ׳ היכרות מיועד רק ללקוחה חדשה",
   // A row changed between the read and the lock (AD-6).
   CONCURRENT_CHANGE: "משהו השתנה בינתיים. כדאי לרענן את הדף ולנסות שוב",
-  // Tal saves the time of a session with bookings as a plain edit (story
-  // 3.2); since 3.8 the editor sends it to the time change with its notice.
+  // Deleting a session (story 3.17): any bookings row, a cancelled one or a
+  // place held for a new customer included; a purchase pinned to it that is
+  // not placed; a session that ended or was cancelled. The cancel offer is
+  // the delete's link, shown only while the session can be cancelled.
+  // admin_update_event also raises EVENT_HAS_BOOKINGS for a time change of
+  // a session with bookings, but the editor sends that to the time change
+  // (3.8) and never shows this text.
   EVENT_HAS_BOOKINGS:
-    "יש נרשמות למפגש, ולכן שינוי המועד עובר דרך חלון האישור ושליחת הודעה לנרשמות",
+    "אי אפשר למחוק מפגש שיש בו הרשמות, גם הרשמה שבוטלה, כי היא שומרת את ההיסטוריה של הלקוחה.",
+  EVENT_HAS_PURCHASES:
+    "אי אפשר למחוק את המפגש: לקוחה שילמה על מקום בו ועוד לא שובצה. צריך לטפל ברכישה שלה קודם.",
+  EVENT_NOT_DELETABLE:
+    "אי אפשר למחוק מפגש שהסתיים או בוטל. הוא נשאר בהיסטוריה.",
   // Tal cancels a session that is not published or already started (3.8).
   EVENT_NOT_CANCELLABLE:
     "אפשר לבטל רק מפגש שפורסם ועוד לא התחיל. כדאי לרענן את הדף",

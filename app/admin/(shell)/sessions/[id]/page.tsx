@@ -13,7 +13,8 @@ import { shellCopy } from "@/lib/copy/shell"
 import { isReadOnlySession } from "../load-session"
 import { AttendeeList } from "./attendee-list"
 import { detailsSummary, isFull, loadEventDetails } from "./load-details"
-import { SessionCancel } from "./session-cancel"
+import { CANCEL_ANCHOR, SessionCancel } from "./session-cancel"
+import { SessionDelete } from "./session-delete"
 import { SessionHeader } from "./session-header"
 
 const copy = adminCopy.sessions
@@ -153,12 +154,22 @@ async function SessionDetailsContent({
         {/* Story 3.8: the whole session's cancel, last on the page, far from
             the everyday actions. */}
         {cancellable && (
-          <SessionCancel
-            eventId={id}
-            conceptName={details.conceptName}
-            startsAt={details.startsAt}
-          />
+          <div id={CANCEL_ANCHOR} className="scroll-mt-24">
+            <SessionCancel
+              eventId={id}
+              conceptName={details.conceptName}
+              startsAt={details.startsAt}
+            />
+          </div>
         )}
+        {/* Story 3.17: the delete, for every status (its refusal says why
+            a session cannot be deleted). */}
+        <SessionDelete
+          eventId={id}
+          conceptName={details.conceptName}
+          startsAt={details.startsAt}
+          cancellable={cancellable}
+        />
       </ResultNoticeHost>
     </>
   )

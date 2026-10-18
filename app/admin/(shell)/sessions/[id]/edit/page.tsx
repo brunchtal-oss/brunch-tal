@@ -65,7 +65,11 @@ async function EditSessionContent({
   if (error) throw new Error("session read failed")
   if (!data) notFound()
   const row = toSessionRow(data)
-  if (isReadOnlySession(row, new Date())) redirect(`/admin/sessions/${id}`)
+  const now = new Date()
+  if (isReadOnlySession(row, now)) redirect(`/admin/sessions/${id}`)
+  // As on the details page (display only; the cancel's plan checks again).
+  const cancellable =
+    row.status === "published" && Date.parse(row.starts_at) > now.getTime()
   // Story 5.4: the saved image's draft file, for the preview.
   const imageId = row.image?.media_id
   const previews = imageId ? await signedDraftUrls(supabase, [imageId]) : {}
@@ -86,6 +90,7 @@ async function EditSessionContent({
       <SessionEditor
         row={row}
         imagePreviewUrl={imageId ? (previews[imageId] ?? null) : null}
+        cancellable={cancellable}
       />
     </>
   )

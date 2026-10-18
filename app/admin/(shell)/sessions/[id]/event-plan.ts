@@ -154,6 +154,39 @@ export function parseRescheduleEventPlan(data: unknown): RescheduleEventPlan {
   }
 }
 
+// Story 3.17: what deleting the session removes (preview_admin_delete_event).
+// creditCount: the credits that offer it as an alternative (each gets
+// another one on the customer's next view).
+export type DeleteEventPlan =
+  | {
+      ok: true
+      dishCount: number
+      taskCount: number
+      shoppingCount: number
+      creditCount: number
+    }
+  | Refusal
+
+export function parseDeleteEventPlan(data: unknown): DeleteEventPlan {
+  const row = asRecord(data)
+  if (row.ok !== true) return refusal(row)
+  return {
+    ok: true,
+    dishCount: count(row.work_dishes_count),
+    taskCount: count(row.work_tasks_count),
+    shoppingCount: count(row.shopping_items_count),
+    creditCount: count(row.credit_count),
+  }
+}
+
+// The public files the delete hid (admin_delete_event's hidden_paths).
+export function parseHiddenPaths(data: unknown): string[] {
+  const paths = asRecord(data).hidden_paths
+  return Array.isArray(paths)
+    ? paths.filter((path): path is string => typeof path === "string")
+    : []
+}
+
 // The number of customers notified, from either action's result.
 export function parseNotified(data: unknown): number {
   return count(asRecord(data).notified)
