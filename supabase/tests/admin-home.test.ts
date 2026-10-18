@@ -152,6 +152,22 @@ async function sameInstant(
   return rows[0].same
 }
 
+// Story 3.13: the weekdays (0 = Sunday) other than these sessions' local
+// days, so a card corrected to them no longer fits the sessions.
+async function weekdaysExcept(db: Db, eventIds: string[]): Promise<number[]> {
+  const { rows } = await db.query(
+    `select array_agg(d order by d) as days
+     from generate_series(0, 6) d
+     where d not in (
+       select extract(dow from (e.starts_at at time zone 'Asia/Jerusalem'))::int
+       from public.events e
+       where e.id = any ($1::uuid[])
+     )`,
+    [eventIds]
+  )
+  return rows[0].days
+}
+
 function only(list: Item[], ids: string[]): Item[] {
   return list.filter((i) => ids.includes(i.id))
 }
@@ -374,6 +390,97 @@ describe("admin_get_attention_items", () => {
         [entitlementId]
       )
       expect(only(await items(db, f), [entitlementId])).toEqual([])
+    })
+  })
+
+  it("story 3.13: a booking that no longer fits its card after a correction is correction_affected until it fits again, is cancelled, or its session starts", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const card = await approveAs(db, f, { customerId: f.customerA })
+      const { rows: ent } = await db.query(
+        "select id from public.entitlements where payment_id = $1",
+        [card.payment_id]
+      )
+      const entitlementId = ent[0].id
+      const first = await insertEvent(db, f, { startDays: 5 })
+      const second = await insertEvent(db, f, { startDays: 6 })
+      const bookings: string[] = []
+      for (const eventId of [first, second]) {
+        await asAuthenticated(db, f.customerA)
+        const { rows } = await db.query(
+          "select public.book_session($1, $2) as r",
+          [eventId, randomUUID()]
+        )
+        await db.query("reset role")
+        bookings.push(rows[0].r.booking_id)
+      }
+      // Every weekday but the two sessions' local days.
+      const days = await weekdaysExcept(db, [first, second])
+      await asAdmin(db, f, () =>
+        db.query(
+          "select public.admin_correct_entitlement($1, 'allowed_weekdays', $2::jsonb, null, null, true, $3)",
+          [entitlementId, JSON.stringify(days), randomUUID()]
+        )
+      )
+
+      const found = only(await items(db, f), bookings)
+      expect(found).toHaveLength(2)
+      expect(found[0]).toEqual(
+        expect.objectContaining({
+          kind: "correction_affected",
+          customer_id: f.customerA,
+          customer_label: testName("money_a"),
+          entitlement_id: entitlementId,
+          concept_name: expect.any(String),
+          starts_at: expect.any(String),
+          since: expect.any(String),
+          field: "allowed_weekdays",
+        })
+      )
+
+      // Cancelled: gone. Started: gone.
+      await asAuthenticated(db, f.customerA)
+      await db.query("select public.cancel_booking($1, $2) as r", [
+        bookings[0],
+        randomUUID(),
+      ])
+      await db.query("reset role")
+      await db.query(
+        "update public.events set starts_at = now() - interval '1 minute' where id = $1",
+        [second]
+      )
+      expect(only(await items(db, f), bookings)).toEqual([])
+    })
+  })
+
+  it("story 3.13: a later correction that makes the booking fit again ends correction_affected", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const card = await approveAs(db, f, { customerId: f.customerA })
+      const { rows: ent } = await db.query(
+        "select id from public.entitlements where payment_id = $1",
+        [card.payment_id]
+      )
+      const eventId = await insertEvent(db, f, { startDays: 5 })
+      await asAuthenticated(db, f.customerA)
+      const { rows } = await db.query(
+        "select public.book_session($1, $2) as r",
+        [eventId, randomUUID()]
+      )
+      await db.query("reset role")
+      const booking = rows[0].r.booking_id
+      // A weekday set without the session's day, then every day again.
+      for (const value of [await weekdaysExcept(db, [eventId]), null]) {
+        await asAdmin(db, f, () =>
+          db.query(
+            "select public.admin_correct_entitlement($1, 'allowed_weekdays', $2::jsonb, null, null, true, $3)",
+            [ent[0].id, JSON.stringify(value), randomUUID()]
+          )
+        )
+        expect(only(await items(db, f), [booking]).length).toBe(
+          value === null ? 0 : 1
+        )
+      }
     })
   })
 

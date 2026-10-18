@@ -3,6 +3,7 @@ import { adminCopy } from "@/lib/copy/admin"
 import { formatDayMonth } from "@/lib/time"
 
 import { entryLines, type CardEntry, type EntryLine } from "../[id]/card-items"
+import { entitlementHref } from "../[id]/entitlements/[entitlementId]/entitlement-items"
 import { customerHref } from "../customer-items"
 
 // What /admin/customers/open-cards shows for admin_list_open_cards (story
@@ -33,6 +34,8 @@ export type OpenCardRow = {
   expires_on: string
   days_left: number
   is_expiring: boolean
+  // Story 3.13: a correction moved the expiry later than it was.
+  is_extended?: boolean
   entries: CardEntry[]
 }
 
@@ -87,6 +90,10 @@ export type OpenCardItem = {
   paidOn: string
   until: string
   expiresOn: string
+  // Story 3.13: "(כולל הארכה)" after the expiry, and the card's page (also
+  // for a purchase not bound yet).
+  extended: boolean
+  detailsHref: string
   chip: { tone: StatusTone; label: string } | null
   entries: EntryLine[]
   // null for a purchase not bound yet: no buttons.
@@ -105,6 +112,8 @@ export function toOpenCardItem(row: OpenCardRow): OpenCardItem {
     paidOn: row.paid_on,
     until: adminCopy.customers.card.validUntil(formatDayMonth(row.expires_on)),
     expiresOn: row.expires_on,
+    extended: row.is_extended === true,
+    detailsHref: entitlementHref(row.customer_id, row.entitlement_id),
     chip: row.is_expiring
       ? { tone: "warning", label: adminCopy.customers.card.expiring }
       : null,

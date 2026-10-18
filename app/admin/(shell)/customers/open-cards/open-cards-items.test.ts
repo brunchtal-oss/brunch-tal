@@ -58,6 +58,17 @@ const row = (overrides: Partial<OpenCardRow> = {}): OpenCardRow => ({
 })
 
 describe("open cards items", () => {
+  it("story 3.13: the extension marker and the card's page, also for a purchase not bound yet", () => {
+    expect(toOpenCardItem(row({ is_extended: true })).extended).toBe(true)
+    expect(toOpenCardItem(row()).extended).toBe(false)
+    expect(toOpenCardItem(row()).detailsHref).toBe(
+      "/admin/customers/11111111-1111-4111-8111-111111111111/entitlements/e1"
+    )
+    expect(toOpenCardItem(row({ customer_id: null })).detailsHref).toBe(
+      "/admin/customers/unbound/entitlements/e1"
+    )
+  })
+
   it("?filter=: the three filters; anything else (or none) is all", () => {
     expect(parseFilter({ filter: "available" })).toBe("available")
     expect(parseFilter({ filter: "expiring" })).toBe("expiring")

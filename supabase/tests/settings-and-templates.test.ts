@@ -622,7 +622,7 @@ describe("admin_update_notification_template", { timeout: 30_000 }, () => {
     })
   })
 
-  it("the admin reads all 17 templates (policy and grant)", async () => {
+  it("the admin reads all 20 templates (policy and grant)", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)
       const types = await as(db, f.admin, async () => {
@@ -631,7 +631,7 @@ describe("admin_update_notification_template", { timeout: 30_000 }, () => {
         )
         return rows.map((row) => row.type as string)
       })
-      expect(types).toHaveLength(17)
+      expect(types).toHaveLength(20)
     })
   })
 
@@ -659,7 +659,7 @@ describe("the template contract", { timeout: 60_000 }, () => {
          from public.notification_templates
          order by type`
       )
-      expect(rows).toHaveLength(17)
+      expect(rows).toHaveLength(20)
     })
   })
 
@@ -856,6 +856,35 @@ describe("the template contract", { timeout: 60_000 }, () => {
       )
 
       for (const type of ["event_changed", "event_cancelled"]) {
+        const sent = await notifications(db, f.customerA, type)
+        expect(sent, type).toHaveLength(1)
+        expectRendered(sent[0])
+      }
+    })
+  })
+
+  // Story 3.13: Tal corrects a card (expiry, balance, terms).
+  it("entitlement_changed, entitlement_units_changed and entitlement_terms_changed render in the real flow", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const types = {
+        entitlement_changed: ["expires_on", '"2099-12-31"'],
+        entitlement_units_changed: ["units", "2"],
+        entitlement_terms_changed: ["allowed_weekdays", "[0]"],
+      } as const
+      for (const type of Object.keys(types)) await fillAllFields(db, f, type)
+      const r = await grant(db, f, f.card)
+      const { rows } = await db.query(
+        "select id from public.entitlements where payment_id = $1",
+        [r.payment_id]
+      )
+      for (const [type, [field, value]] of Object.entries(types)) {
+        await as(db, f.admin, () =>
+          db.query(
+            "select public.admin_correct_entitlement($1, $2, $3::jsonb, null, null, true, $4)",
+            [rows[0].id, field, value, randomUUID()]
+          )
+        )
         const sent = await notifications(db, f.customerA, type)
         expect(sent, type).toHaveLength(1)
         expectRendered(sent[0])

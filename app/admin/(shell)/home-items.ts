@@ -43,9 +43,22 @@ export type AttentionRow = {
   // refund_requested (story 3.7) and choice_pending (3.8): the customer's
   // card.
   customer_id?: string | null
+  // correction_affected (story 3.13): the card and the corrected field.
+  entitlement_id?: string
+  field?: string
 }
 
-export type AttentionItem = TaskRowProps & { key: string }
+// A button under the row (story 3.13): "טופל" on a booking a correction
+// left unfit; the offer of a refund or a credit on a purchase paid without
+// a place in a cancelled session.
+export type AttentionAction =
+  | { kind: "handled"; bookingId: string; name: string }
+  | { kind: "settle"; entitlementId: string; name: string }
+
+export type AttentionItem = TaskRowProps & {
+  key: string
+  action?: AttentionAction
+}
 
 export type UpcomingSessionRow = {
   event_id: string
@@ -184,6 +197,8 @@ export function toAttentionItem(row: AttentionRow): AttentionItem {
             dayOf(row.starts_at)
           ),
           chip: { tone: "expired", label: c.cancelledChip },
+          // Story 3.13: the item's id is the entitlement.
+          action: { kind: "settle", entitlementId: row.id, name },
         }
       }
       return {
@@ -247,6 +262,19 @@ export function toAttentionItem(row: AttentionRow): AttentionItem {
           ? customerHref(row.customer_id)
           : sessionHref(row),
         title: c.title(name, row.concept_name ?? "", dayOf(row.starts_at)),
+      }
+    }
+    case "correction_affected": {
+      const c = copy.items.correction_affected
+      return {
+        ...base,
+        // The session's page, where the booking is cancelled or moved (user
+        // decision 2026-10-19); the item's id is the booking.
+        href: sessionHref(row),
+        title: c.title(name),
+        detail: c.detail(row.concept_name ?? "", dayOf(row.starts_at)),
+        chip: { tone: "warning", label: c.chip },
+        action: { kind: "handled", bookingId: row.id, name },
       }
     }
     case "email_change_stuck": {

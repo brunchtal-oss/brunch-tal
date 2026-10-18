@@ -34,7 +34,7 @@
   target: 3.6, ‏3.13/3.14
   summary: ב-2.12 יש תבנית אחת לכל סוג. ‏3.6 מחליט על נוסח לכל מקרה ב-`booking_cancelled` (זיכוי, החזר, ביטול בלי החזר), ו-3.13/3.14 ב-`entitlement_changed` (הארכה, החזרת כניסה, תיקון). אפשרות: שדה `{outcome}` שהקורא מעצב, או תבניות נוספות בטבלה.
   evidence: החלטת המשתמשת ב-2.12: תבנית אחת לסוג, ונוסח לכל מקרה נדחה לסיפורים שיוצרים את ההתראות.
-  status: החלק של 3.6 נסגר ב-3.6 (2026-10-06, החלטת המשתמשת): תבנית לכל מקרה. ‏`booking_cancelled` (כרטיסייה) בנוסח קבוע, ו-`booking_cancelled_pinned` חדשה למוצמדת, עם המשתנים `{date}` ו-`{expires_on}`. ‏3.7 מוסיף את מקרי הזיכוי וההחזר, ו-3.13/3.14 את `entitlement_changed`. החלק של 3.7 נסגר ב-3.7 (2026-10-10, החלטת המשתמשת): `booking_cancelled_pinned` היא עכשיו "זיכוי" (גם ביטול חוזר של הרשמה ממומנת מזיכוי), ו-`booking_cancelled_refund` חדשה לבקשת החזר; שתיהן רק עם `{date}`.
+  status: החלק של 3.6 נסגר ב-3.6 (2026-10-06, החלטת המשתמשת): תבנית לכל מקרה. ‏`booking_cancelled` (כרטיסייה) בנוסח קבוע, ו-`booking_cancelled_pinned` חדשה למוצמדת, עם המשתנים `{date}` ו-`{expires_on}`. ‏3.7 מוסיף את מקרי הזיכוי וההחזר, ו-3.13/3.14 את `entitlement_changed`. החלק של 3.7 נסגר ב-3.7 (2026-10-10, החלטת המשתמשת): `booking_cancelled_pinned` היא עכשיו "זיכוי" (גם ביטול חוזר של הרשמה ממומנת מזיכוי), ו-`booking_cancelled_refund` חדשה לבקשת החזר; שתיהן רק עם `{date}`. החלק של 3.13 נסגר ב-3.13 (2026-10-18, החלטת המשתמשת): תבנית לכל מקרה של תיקון. ‏`entitlement_changed` (תוקף, בנוסח חדש), ‏`entitlement_units_changed` (יתרה) ו-`entitlement_terms_changed` (ימים או סוג מפגש), כולן עם `{expires_on}` ו-`{units}`. ההארכה האוטומטית (3.14) תשתמש ב-`entitlement_changed`.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-12-notification-core.md`
   target: 5.8
@@ -456,7 +456,7 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-4-7-business-settings-and-templates.md`
   summary: כל סיפור שמוסיף קורא ל-`enqueue_notification` (5.17 reminder, 5.6 waitlist_spot, 3.8 event_cancelled/event_changed, 3.13 entitlement_changed, 5.10 card_expiring/admin_card_expiring) מעביר את כל `allowed_vars` של הסוג, ומוסיף בדיקת מסד שעורכת את התבנית לכל השדות המותרים ומריצה את הזרימה האמיתית.
   evidence: ביקורת 4.7, ממצא 9 (medium, לא אומת). ‏`allowed_vars` של 9 הסוגים בלי קורא נקבע מראש. קורא שמעביר פחות שדות ייכשל ב-render בתוך העסקה ויבטל אותה.
-  status: ‏reminder בוצע ב-5.17 (‏`allowed_vars` = ‏`date`, ‏`time`, ‏`concept`, ובדיקת "כל השדות" ב-`session-reminders.test.ts`). ‏event_cancelled ו-event_changed בוצעו ב-3.8 (בדיקת "כל השדות" ב-`settings-and-templates.test.ts`, על התצוגה המקדימה ועל ההודעה).
+  status: ‏reminder בוצע ב-5.17 (‏`allowed_vars` = ‏`date`, ‏`time`, ‏`concept`, ובדיקת "כל השדות" ב-`session-reminders.test.ts`). ‏event_cancelled ו-event_changed בוצעו ב-3.8 (בדיקת "כל השדות" ב-`settings-and-templates.test.ts`, על התצוגה המקדימה ועל ההודעה). ‏entitlement_changed, ‏entitlement_units_changed ו-entitlement_terms_changed בוצעו ב-3.13 (‏`expires_on` ו-`units` בכל קריאה; בדיקת "כל השדות" ב-`settings-and-templates.test.ts` וב-`entitlement-corrections.test.ts`).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-8-push-pipeline-and-permission.md`
   target: 4.6
@@ -570,6 +570,7 @@
   target: 3.13
   summary: רכישה מוצמדת ששולמה ונשארה בלי מקום ("park") במפגש שהעסק ביטל (3.8) אין לה בקשת החזר, ולכן אין לה מסלול החזר במערכת. טל מטפלת בה ידנית, והפריט שלה ב"לטיפול" (`paid_without_place` עם `event_status = cancelled`) נשאר עד אז. ‏3.13 (תיקונים בזכות) מחליט איך לסגור אותה: זיכוי, החזר או תיקון.
   evidence: החלטת המשתמשת 2026-10-13 (spec 3.9). ‏`admin_complete_refund` משלים רק בקשה קיימת (Never של spec 3.9).
+  status: נסגר ב-3.13 (2026-10-18, החלטת המשתמשת): כמו ביטול מצד העסק. ב"לטיפול" יש לפריט כפתור "הצעת החזר או זיכוי" (`admin_settle_parked_purchase`), שיוצר הרשמה מבוטלת וזיכוי עם `choice_pending`, והלקוחה בוחרת כמו ב-3.8. הפריט נסגר מעצמו. נבדק ב-`supabase/tests/entitlement-corrections.test.ts`.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-8-admin-assisted-reset-and-rate-limit.md`
   summary: The auth.users trigger (`private.guard_auth_user_change`) has no automated test against real Supabase Auth; the DB tests stand Auth in with an owner UPDATE.
@@ -588,3 +589,7 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-9-refund-completion.md`
   summary: No test covers `CONCURRENT_CHANGE` in `admin_complete_refund` when a bind commits between the unlocked read of an unbound request and the credit lock.
   evidence: 3.9 review round 1 (verification-gap). The re-check exists in the code; triggering it needs a paused committing bind, like the 3.8 `admin_cancel_event` item.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-13-entitlement-corrections.md`
+  summary: No test covers `CONCURRENT_CHANGE` in `admin_correct_entitlement` / `admin_settle_parked_purchase` (a bind committing between the unlocked read of the customer and the locks).
+  evidence: 3.13 review round 1 (blind-hunter). The re-check exists in the code; triggering it needs a paused committing transaction, like 3.8 #19 and 3.9 #9.

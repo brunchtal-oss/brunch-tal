@@ -20,6 +20,19 @@ function render(props: Partial<React.ComponentProps<typeof TaskRow>> = {}) {
 }
 
 describe("TaskRow", () => {
+  it("story 3.13: a child button sits in the row, above the link", () => {
+    const html = render({
+      children: (
+        <div className="relative z-10">
+          <button type="button">טופל</button>
+        </div>
+      ),
+    })
+    expect(html).toContain("<button")
+    expect(html).toContain("טופל")
+    expect(html.match(/<a /g)).toHaveLength(1)
+  })
+
   it("is one link (the title) to where the item is handled", () => {
     const html = render()
     expect(html.match(/<a /g)).toHaveLength(1)

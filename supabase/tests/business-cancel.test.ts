@@ -429,8 +429,10 @@ describe("cancel a session", { timeout: 60_000 }, () => {
         }),
       ])
       const items = await attention(db, f)
+      // Only this session's: dev may hold other pending choices.
       const pending = items.filter(
-        (i: { kind: string }) => i.kind === "choice_pending"
+        (i: { kind: string; event_id?: string }) =>
+          i.kind === "choice_pending" && i.event_id === ev.id
       )
       expect(pending).toEqual([
         expect.objectContaining({

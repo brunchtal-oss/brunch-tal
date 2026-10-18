@@ -115,6 +115,18 @@ const ROWS: Record<AttentionKind, AttentionRow> = {
     since: SINCE,
     customer_id: "55555555-5555-4555-8555-555555555555",
   },
+  correction_affected: {
+    kind: "correction_affected",
+    id: "b2",
+    customer_label: "Noa",
+    since: SINCE,
+    customer_id: "44444444-4444-4444-8444-444444444444",
+    entitlement_id: "66666666-6666-4666-8666-666666666666",
+    event_id: EVENT,
+    concept_name: "שישי מיוחד",
+    starts_at: "2026-10-16T07:00:00Z",
+    field: "allowed_weekdays",
+  },
   push_failed: {
     kind: "push_failed",
     id: "push_failed",
@@ -212,6 +224,14 @@ describe("toAttentionItem", () => {
         chip: "תקוע",
         tone: "warning",
       },
+      correction_affected: {
+        href: `/admin/sessions/${EVENT}`,
+        title: "הרשמה שלא מתאימה לכרטיסייה אחרי תיקון (Noa)",
+        detail:
+          "בראנץ׳ שישי מיוחד 16.10. ההרשמה נשארה כפי שהיא. אפשר לבטל או להעביר אותה, או לסמן שטופל",
+        chip: "לבדיקה",
+        tone: "warning",
+      },
       push_failed: {
         href: "/admin/notifications",
         title: "3 התראות פוש לא נשלחו השבוע",
@@ -277,13 +297,35 @@ describe("toAttentionItem", () => {
       event_status: "cancelled",
     })
     expect(item.detail).toBe(
-      "שילמה לבראנץ׳ שישי מיוחד 16.10 והמפגש בוטל. צריך לסגור איתה החזר או זיכוי ידנית"
+      "שילמה לבראנץ׳ שישי מיוחד 16.10 והמפגש בוטל. אפשר להציע לה החזר או זיכוי"
     )
     expect(item.chip).toEqual({ tone: "expired", label: "בוטל" })
+    // Story 3.13: the offer of a refund or a credit, on the entitlement.
+    expect(item.action).toEqual({
+      kind: "settle",
+      entitlementId: "e1",
+      name: "Noa",
+    })
+    const placed = toAttentionItem({
+      ...ROWS.paid_without_place,
+      event_status: "published",
+    })
+    expect(placed.chip).toEqual({ tone: "warning", label: "צריך מקום" })
+    expect(placed.action).toBeUndefined()
+  })
+
+  it("story 3.13: a booking that no longer fits its card after a correction has the button טופל and opens its session", () => {
+    expect(toAttentionItem(ROWS.correction_affected).action).toEqual({
+      kind: "handled",
+      bookingId: "b2",
+      name: "Noa",
+    })
     expect(
-      toAttentionItem({ ...ROWS.paid_without_place, event_status: "published" })
-        .chip
-    ).toEqual({ tone: "warning", label: "צריך מקום" })
+      toAttentionItem({
+        ...ROWS.correction_affected,
+        customer_id: null,
+      }).href
+    ).toBe(`/admin/sessions/${EVENT}`)
   })
 
   it("skips a kind this screen does not know", () => {

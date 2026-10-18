@@ -1,6 +1,8 @@
 import { TaskRow } from "@/components/admin/task-row"
+import { ResultNoticeHost } from "@/components/shared/result-notice"
 import { adminCopy } from "@/lib/copy/admin"
 
+import { AttentionActionButton } from "../attention/attention-action"
 import {
   HOME_ATTENTION_LIMIT,
   toAttentionItems,
@@ -26,7 +28,9 @@ export async function AttentionList() {
       title={copy.attention}
       aside={items.length > 0 ? <CubeCounter count={items.length} /> : null}
     >
-      <AttentionRows items={items} limit={HOME_ATTENTION_LIMIT} inCube />
+      <ResultNoticeHost className="flex flex-col gap-3">
+        <AttentionRows items={items} limit={HOME_ATTENTION_LIMIT} inCube />
+      </ResultNoticeHost>
       {items.length > HOME_ATTENTION_LIMIT && (
         <HomeLink href="/admin/attention">
           {copy.attentionAll(items.length)}
@@ -40,9 +44,9 @@ export async function AttentionList() {
 export async function AllAttentionItems() {
   const items = toAttentionItems(await loadAttentionItems())
   return (
-    <div className="flex flex-col gap-3">
+    <ResultNoticeHost className="flex flex-col gap-3">
       <AttentionRows items={items} />
-    </div>
+    </ResultNoticeHost>
   )
 }
 
@@ -69,9 +73,13 @@ export function AttentionRows({
         {copy.attentionCount(items.length)}
       </p>
       <ul className={inCube ? cubeRows : "flex flex-col"}>
-        {items.slice(0, limit ?? items.length).map(({ key, ...item }) => (
-          <TaskRow key={key} {...item} />
-        ))}
+        {items
+          .slice(0, limit ?? items.length)
+          .map(({ key, action, ...item }) => (
+            <TaskRow key={key} {...item}>
+              {action && <AttentionActionButton action={action} />}
+            </TaskRow>
+          ))}
       </ul>
     </>
   )

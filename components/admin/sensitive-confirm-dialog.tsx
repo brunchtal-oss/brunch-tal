@@ -37,7 +37,13 @@ export type SensitiveConfirmProps = {
   choice?: React.ReactNode
   choiceMissing?: string | null
   notice?: React.ReactNode
-  reason?: { label: string; value: string; onChange: (value: string) => void }
+  // maxLength: the RPC's limit (default 500; story 3.13: 2000).
+  reason?: {
+    label: string
+    value: string
+    onChange: (value: string) => void
+    maxLength?: number
+  }
   // A message Tal edits before it is sent (story 3.8: the notice's body,
   // prefilled from its template). hint: a line above the field (the
   // notice's title). Required: the caller passes choiceMissing while empty.
@@ -148,7 +154,7 @@ export function SensitiveConfirmPanel({
           <Textarea
             id={`${id}-reason`}
             value={reason.value}
-            maxLength={500}
+            maxLength={reason.maxLength ?? 500}
             onChange={(event) => reason.onChange(event.target.value)}
             className="min-h-20 text-base"
           />

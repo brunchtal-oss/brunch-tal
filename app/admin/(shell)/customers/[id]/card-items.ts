@@ -64,6 +64,8 @@ export type CardEntitlement = {
   is_expiring: boolean
   is_used_up: boolean
   pinned_event_id: string | null
+  // Story 3.13: a correction moved the expiry later than it was.
+  is_extended?: boolean
   entries: CardEntry[]
 }
 
@@ -229,6 +231,8 @@ export type BalanceItem = {
   summary: string
   until: string
   expiresOn: string
+  // Story 3.13: "(כולל הארכה)" after the expiry.
+  extended: boolean
   chip: { tone: StatusTone; label: string } | null
   entries: EntryLine[]
 }
@@ -253,6 +257,7 @@ export function toBalanceItem(row: CardEntitlement): BalanceItem {
     summary: copy.balanceSummary(row.used, row.reserved, row.available),
     until: copy.validUntil(formatDayMonth(row.expires_on)),
     expiresOn: row.expires_on,
+    extended: row.is_extended === true,
     chip: balanceChip(row),
     entries: entryLines(row),
   }
