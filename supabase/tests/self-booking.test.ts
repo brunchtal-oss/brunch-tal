@@ -850,7 +850,9 @@ describe("pg_proc and views", () => {
     expect(views).toEqual([])
   })
 
-  it("only private.book_core inserts bookings", async () => {
+  // admin_settle_parked_purchase (3.13) writes one already-cancelled booking
+  // (no seat, no funding choice), the row a business cancel would have left.
+  it("only private.book_core inserts bookings (and 3.13's cancelled settle row)", async () => {
     const rows = await sql<{ name: string }>(
       `select n.nspname || '.' || p.proname as name
        from pg_proc p
@@ -859,6 +861,9 @@ describe("pg_proc and views", () => {
          and p.prosrc ~* 'insert[[:space:]]+into[[:space:]]+public[.]bookings[[:space:]]'
        order by 1`
     )
-    expect(rows.map((row) => row.name)).toEqual(["private.book_core"])
+    expect(rows.map((row) => row.name)).toEqual([
+      "private.book_core",
+      "public.admin_settle_parked_purchase",
+    ])
   })
 })

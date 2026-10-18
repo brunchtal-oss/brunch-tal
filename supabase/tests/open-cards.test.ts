@@ -272,6 +272,8 @@ describe("admin_list_open_cards", { timeout: 60_000 }, () => {
         reserved: 1,
         used: 3,
         is_expiring: false,
+        // Story 3.13: never corrected.
+        is_extended: false,
       })
       expect(open.entries.map((e) => e.status)).toEqual([
         "completed",

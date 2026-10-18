@@ -678,6 +678,106 @@ export type Database = {
           },
         ]
       }
+      entitlement_correction_bookings: {
+        Row: {
+          booking_id: string
+          correction_id: string
+          handled_at: string | null
+          handled_by: string | null
+        }
+        Insert: {
+          booking_id: string
+          correction_id: string
+          handled_at?: string | null
+          handled_by?: string | null
+        }
+        Update: {
+          booking_id?: string
+          correction_id?: string
+          handled_at?: string | null
+          handled_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entitlement_correction_bookings_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entitlement_correction_bookings_correction_id_fkey"
+            columns: ["correction_id"]
+            isOneToOne: false
+            referencedRelation: "entitlement_corrections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      entitlement_corrections: {
+        Row: {
+          actor_id: string | null
+          actor_kind: string
+          created_at: string
+          entitlement_id: string
+          field: string
+          id: string
+          new_value: Json
+          old_value: Json
+          reason: string | null
+          related_event_id: string | null
+          week_start: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_kind: string
+          created_at?: string
+          entitlement_id: string
+          field: string
+          id?: string
+          new_value: Json
+          old_value: Json
+          reason?: string | null
+          related_event_id?: string | null
+          week_start?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          actor_kind?: string
+          created_at?: string
+          entitlement_id?: string
+          field?: string
+          id?: string
+          new_value?: Json
+          old_value?: Json
+          reason?: string | null
+          related_event_id?: string | null
+          week_start?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entitlement_corrections_entitlement_id_fkey"
+            columns: ["entitlement_id"]
+            isOneToOne: false
+            referencedRelation: "entitlement_balances"
+            referencedColumns: ["entitlement_id"]
+          },
+          {
+            foreignKeyName: "entitlement_corrections_entitlement_id_fkey"
+            columns: ["entitlement_id"]
+            isOneToOne: false
+            referencedRelation: "entitlements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entitlement_corrections_related_event_id_fkey"
+            columns: ["related_event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       entitlement_movements: {
         Row: {
           action: string
@@ -1811,6 +1911,18 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_correct_entitlement: {
+        Args: {
+          p_confirmed: boolean
+          p_entitlement_id: string
+          p_field: string
+          p_idempotency_key: string
+          p_reason: string
+          p_related_event_id: string
+          p_value: Json
+        }
+        Returns: Json
+      }
       admin_create_concept: {
         Args: { p_concept: Json; p_idempotency_key: string }
         Returns: Json
@@ -1895,6 +2007,10 @@ export type Database = {
       admin_get_customer: { Args: { p_customer_id: string }; Returns: Json }
       admin_get_customer_account: {
         Args: { p_customer_id: string }
+        Returns: Json
+      }
+      admin_get_entitlement: {
+        Args: { p_entitlement_id: string }
         Returns: Json
       }
       admin_get_event_details: { Args: { p_event_id: string }; Returns: Json }
@@ -2000,6 +2116,10 @@ export type Database = {
         Args: { p_content: Json; p_key: string; p_slug: string }
         Returns: Json
       }
+      admin_set_correction_booking_handled: {
+        Args: { p_booking_id: string }
+        Returns: Json
+      }
       admin_set_event_image: {
         Args: { p_event_id: string; p_media_id: string }
         Returns: Json
@@ -2045,6 +2165,15 @@ export type Database = {
         Returns: Json
       }
       admin_set_work_task_order: { Args: { p_ids: string[] }; Returns: Json }
+      admin_settle_parked_purchase: {
+        Args: {
+          p_confirmed: boolean
+          p_entitlement_id: string
+          p_idempotency_key: string
+          p_reason: string
+        }
+        Returns: Json
+      }
       admin_update_business_settings: {
         Args: {
           p_changes: Json
@@ -2209,6 +2338,10 @@ export type Database = {
         Args: { p_refund_request_id: string }
         Returns: Json
       }
+      preview_admin_correct_entitlement: {
+        Args: { p_entitlement_id: string; p_field: string; p_value: Json }
+        Returns: Json
+      }
       preview_admin_delete_event: {
         Args: { p_event_id: string }
         Returns: Json
@@ -2227,6 +2360,10 @@ export type Database = {
       }
       preview_admin_set_product_price: {
         Args: { p_price_agorot: number; p_product_id: string }
+        Returns: Json
+      }
+      preview_admin_settle_parked_purchase: {
+        Args: { p_entitlement_id: string }
         Returns: Json
       }
       preview_book_session: { Args: { p_event_id: string }; Returns: Json }

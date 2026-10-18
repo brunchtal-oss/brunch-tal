@@ -29,6 +29,7 @@ import {
 import { parseCustomerCredits, toCustomerCreditItem } from "./credit-items"
 import { CreditsSection } from "./credits-section"
 import { CustomerNotes } from "./customer-notes"
+import { entitlementHref } from "./entitlements/[entitlementId]/entitlement-items"
 import { loadAccount, loadCard, loadCredits } from "./load-card"
 
 const copy = adminCopy.customers.card
@@ -154,7 +155,11 @@ async function CustomerCardContent({
           <ul className="flex flex-col gap-3">
             {balances.map((item) =>
               item.variant === "card" ? (
-                <BalancePlate key={item.key} item={item} />
+                <BalancePlate
+                  key={item.key}
+                  item={item}
+                  href={entitlementHref(card.profile.id, item.key)}
+                />
               ) : (
                 <SinglePlate key={item.key} item={item} />
               )
@@ -199,7 +204,7 @@ async function CustomerCardContent({
 // One entitlement on a muted plate: the product and its state, the meter,
 // one summary line and the validity. A card opens in place (a native
 // disclosure) to one line per entry.
-function BalancePlate({ item }: { item: BalanceItem }) {
+function BalancePlate({ item, href }: { item: BalanceItem; href: string }) {
   return (
     <li
       className={cn(
@@ -231,8 +236,20 @@ function BalancePlate({ item }: { item: BalanceItem }) {
         <p className="text-[15px] text-muted-foreground">
           <time dateTime={formatLocalDate(item.expiresOn)}>
             <bdi className="whitespace-nowrap">{item.until}</bdi>
+            {item.extended && (
+              <span className="ms-1 whitespace-nowrap">{copy.extended}</span>
+            )}
           </time>
         </p>
+        {/* Story 3.13: the card's page (extend, fix the balance or the
+            terms). */}
+        <Link
+          href={href}
+          aria-label={copy.entitlementLinkFor(item.productName)}
+          className="inline-flex min-h-11 items-center self-start text-[15px] underline underline-offset-[3px]"
+        >
+          {copy.entitlementLink}
+        </Link>
       </div>
       {item.entries.length > 0 ? (
         <details className="group">

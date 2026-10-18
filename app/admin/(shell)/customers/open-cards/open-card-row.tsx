@@ -52,6 +52,9 @@ export function OpenCardRow({ item }: { item: OpenCardItem }) {
           </time>
           <time dateTime={formatLocalDate(item.expiresOn)}>
             <bdi className="whitespace-nowrap">{item.until}</bdi>
+            {item.extended && (
+              <span className="ms-1 whitespace-nowrap">{copy.extended}</span>
+            )}
           </time>
         </p>
       </div>
@@ -67,6 +70,15 @@ export function OpenCardRow({ item }: { item: OpenCardItem }) {
       {!item.bookHref && (
         <p className="text-[15px] text-muted-foreground">{copy.notJoined}</p>
       )}
+      {/* Story 3.13: the card's page (extend, fix the balance or the
+          terms), also for a purchase not bound yet. */}
+      <Link
+        href={item.detailsHref}
+        aria-label={copy.detailsFor(item.name)}
+        className="inline-flex min-h-11 items-center self-start text-[15px] underline underline-offset-[3px]"
+      >
+        {copy.details}
+      </Link>
       {item.bookHref && item.profileHref && (
         <div className="grid grid-cols-2 gap-2">
           <Link
