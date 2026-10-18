@@ -3,14 +3,16 @@ import { adminCopy } from "@/lib/copy/admin"
 import { formatLocalDate } from "@/lib/time"
 
 import { AttendeeCancel } from "./attendee-cancel"
+import { AttendeeMove } from "./attendee-move"
 import type { EventDetails } from "./load-details"
 
 const copy = adminCopy.sessions
 
 // "מי מגיעה" (story 3.4) on the session's details (the summary-card sits
 // above the actions there, user decision 2026-10-08). Bookings by confirmation time.
-// cancellable: each row gets Tal's cancel (story 3.6; the session's details
-// while it has not ended, never the morning view).
+// cancellable: each row gets Tal's move (story 3.10, not a place held for a
+// new customer) and cancel (story 3.6; the session's details while it has
+// not ended, never the morning view).
 export function AttendeeList({
   details,
   cancellable = false,
@@ -39,16 +41,28 @@ export function AttendeeList({
                 onDay={onDay}
                 action={
                   cancellable ? (
-                    <AttendeeCancel
-                      bookingId={attendee.bookingId}
-                      name={
-                        attendee.pendingJoin
-                          ? copy.pendingJoin
-                          : (attendee.name ?? copy.detailsRemoved)
-                      }
-                      conceptName={details.conceptName}
-                      startsAt={details.startsAt}
-                    />
+                    <div className="flex flex-wrap items-start justify-end gap-2">
+                      {/* Story 3.10: a booking without a customer is never
+                          moved (it waits for her to join). */}
+                      {!attendee.pendingJoin && (
+                        <AttendeeMove
+                          bookingId={attendee.bookingId}
+                          name={attendee.name ?? copy.detailsRemoved}
+                          conceptName={details.conceptName}
+                          startsAt={details.startsAt}
+                        />
+                      )}
+                      <AttendeeCancel
+                        bookingId={attendee.bookingId}
+                        name={
+                          attendee.pendingJoin
+                            ? copy.pendingJoin
+                            : (attendee.name ?? copy.detailsRemoved)
+                        }
+                        conceptName={details.conceptName}
+                        startsAt={details.startsAt}
+                      />
+                    </div>
                   ) : undefined
                 }
               />

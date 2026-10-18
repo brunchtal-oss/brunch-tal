@@ -782,6 +782,37 @@ export const adminCopy = {
       confirm: "ביטול ההרשמה",
       done: (name: string) => `ההרשמה של ${name} בוטלה והמקום התפנה`,
     },
+    // Moving a booking from "מי מגיעה" (story 3.10); the dialog's title is
+    // in lib/admin/sensitive-actions.ts (booking_move).
+    move: {
+      button: "הזזה",
+      buttonLabel: (name: string) => `הזזת ההרשמה של ${name}`,
+      description:
+        "ההרשמה תבוטל כאן ותירשם למפגש שתבחרי, מאותה זכות. הלקוחה תקבל הודעה באזור האישי.",
+      customer: "לקוחה",
+      from: "מהמפגש",
+      targets: "לאיזה מפגש",
+      // A target that is not one of the credit's options (pinned or
+      // credit-funded); Tal may still choose it (user decision 2026-10-18).
+      outsideOptions: "מחוץ לחלופות הזיכוי",
+      // A pinned or credit-funded booking: after the move it is funded by
+      // a credit (wording: user decision 2026-10-18, phone check).
+      pinnedNote:
+        "העברת ההרשמה תיחשב לביטול ושימוש בזיכוי. ביטול בהמשך יחזיר זיכוי למפגש אחר, ללא החזר כספי בהתאם למדיניות הביטולים.",
+      choiceRequired: "צריך לבחור מפגש כדי להמשיך",
+      empty: "אין מפגש שאפשר להעביר אליו את ההרשמה",
+      // Hours from the booking's policy_snapshot; null when unreadable.
+      withinWindow: (hours: number | null) =>
+        hours === null
+          ? "המפגש קרוב מדי, ולכן הלקוחה לא יכולה לשנות תאריך בעצמה."
+          : `המפגש בעוד פחות מ־${hours} שעות, ולכן הלקוחה לא יכולה לשנות תאריך בעצמה.`,
+      reason: "סיבה (לא חובה)",
+      checkbox: (name: string) =>
+        `אני מאשרת את הזזת ההרשמה של ${name}, ושההזזה תירשם ביומן הפעולות`,
+      confirm: "הזזת ההרשמה",
+      done: (name: string, date: string) =>
+        `ההרשמה של ${name} הועברה ל-${date}`,
+    },
     // Story 3.8: Tal cancels the whole session or moves it (the dialogs'
     // titles are in lib/admin/sensitive-actions.ts: event_cancel,
     // event_reschedule). The notice's body is prefilled from the template
@@ -887,6 +918,21 @@ export const adminCopy = {
       MANUAL_HANDLING_REQUIRED:
         "ההרשמה מומנה משני סוגי כניסה, ולכן את הביטול שלה עושים ידנית",
       BOOKING_NOT_CANCELLABLE: "ההרשמה כבר לא פעילה. כדאי לרענן את הדף",
+    } as Record<string, string>,
+    // A refusal of the move (story 3.10), worded for Tal; any other code
+    // keeps errorMessage.
+    moveRefusal: {
+      MANUAL_HANDLING_REQUIRED:
+        "ההרשמה מומנה משני סוגי כניסה, ולכן אי אפשר להזיז אותה כאן",
+      ALREADY_BOOKED: "הלקוחה כבר רשומה למפגש הזה. בחרי מפגש אחר",
+      MOVE_TARGET_NOT_ALLOWED: "אי אפשר להעביר את ההרשמה למפגש הזה",
+      BOOKING_NOT_MOVABLE:
+        "אי אפשר להזיז את ההרשמה: היא כבר לא פעילה או שאין לה לקוחה",
+      EVENT_ENDED: "המפגש כבר הסתיים, ולכן אי אפשר להזיז את ההרשמה",
+      EVENT_FULL: "המפגש מלא. כדי להעביר אליו צריך קודם להעלות את המכסה",
+      ENTITLEMENT_EXPIRED_ON_DATE: "הזכות של הלקוחה אינה בתוקף ביום המפגש",
+      NO_MATCHING_ENTITLEMENT: "הזכות של הלקוחה לא מתאימה למפגש הזה",
+      CONCURRENT_CHANGE: "ההרשמה השתנתה בינתיים. כדאי לרענן את הדף",
     } as Record<string, string>,
   },
   // value-change-row (story 2.6; EXPERIENCE › Component Patterns).
@@ -1359,6 +1405,7 @@ export const adminCopy = {
         purchase_repeat: "רכישה נוספת",
         booking_confirmed: "ההרשמה אושרה",
         booking_confirmed_couple: "אישור הרשמה זוגית",
+        booking_moved: "הזזת הרשמה",
         reminder: "תזכורת לפני מפגש",
         waitlist_spot: "התפנה מקום",
         booking_cancelled: "ביטול הרשמה מכרטיסייה",
@@ -1386,6 +1433,7 @@ export const adminCopy = {
         units: "כניסות",
         customer: "שם הלקוחה",
         amount: "סכום",
+        from_date: "תאריך קודם",
       } as Record<string, string>,
       samples: {
         date: "12.11",
@@ -1399,6 +1447,7 @@ export const adminCopy = {
         units: "3",
         customer: "נועה לוי",
         amount: "180 ₪",
+        from_date: "05.11",
       } as Record<string, string>,
       fields: {
         title: "כותרת",
@@ -1780,6 +1829,7 @@ export const adminCopy = {
       approve_payment: "אישור תשלום",
       admin_book_customer: "רישום לקוחה למפגש",
       admin_cancel_booking: "ביטול הרשמה",
+      admin_move_booking: "הזזת הרשמה",
       admin_complete_refund: "אישור החזר",
       admin_cancel_event: "ביטול מפגש",
       admin_delete_event: "מחיקת מפגש",
@@ -1795,6 +1845,7 @@ export const adminCopy = {
       book_session: "הרשמה למפגש",
       book_sessions: "הרשמה למפגשים",
       cancel_booking: "ביטול הרשמה",
+      move_booking: "הזזת הרשמה",
       complete_event: "סיום מפגש",
       migrate_identity_match: "התאמת זהות",
       refresh_returned_entitlements: "עדכון כניסות שחזרו",
@@ -1864,6 +1915,8 @@ export const adminCopy = {
       booked_by: "נרשמה על ידי",
       confirmed_at: "מועד אישור",
       cancelled_at: "מועד ביטול",
+      // Story 3.10: the booking a moved booking became.
+      moved_to_booking_id: "הועברה להרשמה",
       // Story 3.9: a refund request's completion.
       refunded_on: "תאריך ההחזר",
       requested_at: "מועד הבקשה",

@@ -589,6 +589,12 @@
   summary: No test covers `CONCURRENT_CHANGE` in `admin_complete_refund` when a bind commits between the unlocked read of an unbound request and the credit lock.
   evidence: 3.9 review round 1 (verification-gap). The re-check exists in the code; triggering it needs a paused committing bind, like the 3.8 `admin_cancel_event` item.
 
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-10-move-a-booking.md`
+  summary: בכרטיס הלקוחה באדמין הרשמה שהוזזה מוצגת "בוטלה", וביומן הפעולות השדה "הועברה להרשמה" מציג מזהה גולמי; טל לא רואה "הועברה ל-{תאריך}".
+  evidence: רק `get_my_bookings` של הלקוחה מחזיר `moved_to_starts_at`; `admin_get_customer` ו-`card-items.ts` (`copy.bookingStatus[row.status]`) לא מכירים את `moved_to_booking_id`. התיקון דורש שינוי ב-RPC של האדמין (ביקורת 3.10, ממצא 11).
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-10-move-a-booking.md`
+  summary: "מחוץ לחלון לא נקרא שום RPC" בהזזה נבדק רק על הפונקציה הטהורה `moveTapAction`, לא על לחיצה בכפתור.
+  evidence: אין בפרויקט בדיקות רכיב אינטראקטיביות (אין testing-library). השרת עדיין מחזיר `can_move: false`, כך שהמסך נכון גם בלי הבדיקה המקומית; נבדק בטלפון (ביקורת 3.10, ממצא 12).
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-17-delete-a-session.md`
   summary: `private.hide_unused_media` (called by session delete, concept delete and set image) hides every published or copying media row not in `private.used_media_ids()`, so an image uploaded but not attached yet may be hidden and its public file deleted when Tal deletes something else.
   evidence: 3.17 review round 1 (edge-case, maybe-false, medium if true). Pre-existing function behaviour; settle by checking whether an upload can sit in `published`/`copying` before it is attached (the upload and publish flow of `20261005193920_media_upload_and_publish.sql`).

@@ -4,8 +4,10 @@ import {
   adminCancelBookingAction,
   adminCancelEventAction,
   adminDeleteEventAction,
+  adminMoveBookingAction,
   adminRescheduleEventAction,
   previewAdminCancelAction,
+  previewAdminMoveAction,
   previewCancelEventAction,
   previewDeleteEventAction,
   previewRescheduleEventAction,
@@ -20,8 +22,20 @@ vi.mock("@/lib/rpc", () => ({
 vi.mock("@/lib/server/privileged/media", () => ({
   deletePublicMedia: (...args: unknown[]) => deletePublicMedia(...args),
 }))
+// The move's preview also reads the booking's policy_snapshot (display
+// only); `from` is not enumerable, so the client still equals { session: true }.
 vi.mock("@/lib/supabase/server", () => ({
-  createClient: async () => ({ session: true }),
+  createClient: async () => {
+    const client = { session: true }
+    const row = { data: { policy_snapshot: { cancel_window_hours: 48 } } }
+    const query = {
+      select: () => query,
+      eq: () => query,
+      maybeSingle: async () => row,
+    }
+    Object.defineProperty(client, "from", { value: () => query })
+    return client
+  },
 }))
 
 const BOOKING_ID = "33333333-3333-4333-8333-333333333333"
@@ -271,6 +285,85 @@ describe("the session's cancel and time change (story 3.8)", () => {
         idempotencyKey: KEY,
       })
     ).resolves.toEqual({ ok: false, code: "INVALID_INPUT" })
+  })
+})
+
+describe("story 3.10: moving a booking", () => {
+  const TARGET = "44444444-4444-4444-8444-444444444444"
+
+  it("the preview: the server's plan with the targets", async () => {
+    callRpc.mockResolvedValue({
+      ok: true,
+      data: {
+        ok: true,
+        funding: "pinned",
+        customer_name: "Dana",
+        within_window: true,
+        targets: [
+          {
+            event_id: TARGET,
+            starts_at: "2026-11-12T08:00:00+00:00",
+            concept_name: "Mothers",
+            outside_options: true,
+          },
+        ],
+      },
+    })
+    const result = await previewAdminMoveAction({ bookingId: BOOKING_ID })
+    expect(callRpc).toHaveBeenCalledWith(
+      { session: true },
+      "preview_admin_move_booking",
+      { p_booking_id: BOOKING_ID }
+    )
+    expect(result).toMatchObject({
+      ok: true,
+      data: {
+        ok: true,
+        customerName: "Dana",
+        withinWindow: true,
+        cancelWindowHours: 48,
+        targets: [{ eventId: TARGET, outsideOptions: true }],
+      },
+    })
+    await expect(previewAdminMoveAction({ bookingId: "x" })).resolves.toEqual({
+      ok: false,
+      code: "INVALID_INPUT",
+    })
+  })
+
+  it("the move: the target, the confirmation, the key and a reason only when written", async () => {
+    callRpc.mockResolvedValue({ ok: true, data: {} })
+    await expect(
+      adminMoveBookingAction({
+        bookingId: BOOKING_ID,
+        targetEventId: TARGET,
+        reason: "  ",
+        confirmed: true,
+        idempotencyKey: KEY,
+      })
+    ).resolves.toEqual({ ok: true, data: undefined })
+    expect(callRpc).toHaveBeenCalledWith(
+      { session: true },
+      "admin_move_booking",
+      {
+        p_booking_id: BOOKING_ID,
+        p_target_event_id: TARGET,
+        p_confirmed: true,
+        p_idempotency_key: KEY,
+        p_reason: undefined,
+      }
+    )
+    callRpc.mockReset()
+    await expect(
+      adminMoveBookingAction({
+        bookingId: BOOKING_ID,
+        targetEventId: "nope",
+        reason: "",
+        confirmed: true,
+        idempotencyKey: KEY,
+      })
+    ).resolves.toEqual({ ok: false, code: "INVALID_INPUT" })
+    expect(callRpc).not.toHaveBeenCalled()
   })
 })
 

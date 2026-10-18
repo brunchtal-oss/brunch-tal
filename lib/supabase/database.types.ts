@@ -255,6 +255,7 @@ export type Database = {
           event_id: string
           guest_details: string | null
           id: string
+          moved_to_booking_id: string | null
           party_size: number
           payment_id: string | null
           policy_snapshot: Json
@@ -269,6 +270,7 @@ export type Database = {
           event_id: string
           guest_details?: string | null
           id?: string
+          moved_to_booking_id?: string | null
           party_size: number
           payment_id?: string | null
           policy_snapshot: Json
@@ -283,6 +285,7 @@ export type Database = {
           event_id?: string
           guest_details?: string | null
           id?: string
+          moved_to_booking_id?: string | null
           party_size?: number
           payment_id?: string | null
           policy_snapshot?: Json
@@ -301,6 +304,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_moved_to_booking_id_fkey"
+            columns: ["moved_to_booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
             referencedColumns: ["id"]
           },
           {
@@ -1923,6 +1933,16 @@ export type Database = {
         Args: { p_event_ids: string[] }
         Returns: Json
       }
+      admin_move_booking: {
+        Args: {
+          p_booking_id: string
+          p_confirmed: boolean
+          p_idempotency_key: string
+          p_reason?: string
+          p_target_event_id: string
+        }
+        Returns: Json
+      }
       admin_move_prep_day: {
         Args: {
           p_event_id: string
@@ -2153,6 +2173,14 @@ export type Database = {
       }
       mark_notifications_read: { Args: { p_ids?: string[] }; Returns: Json }
       mark_notifications_unread: { Args: { p_ids: string[] }; Returns: Json }
+      move_booking: {
+        Args: {
+          p_booking_id: string
+          p_idempotency_key: string
+          p_target_event_id: string
+        }
+        Returns: Json
+      }
       preview_admin_approve_payment: {
         Args: {
           p_amount_agorot: number
@@ -2189,6 +2217,10 @@ export type Database = {
         Args: { p_topic_id: string }
         Returns: Json
       }
+      preview_admin_move_booking: {
+        Args: { p_booking_id: string }
+        Returns: Json
+      }
       preview_admin_reschedule_event: {
         Args: { p_ends_at: string; p_event_id: string; p_starts_at: string }
         Returns: Json
@@ -2199,6 +2231,7 @@ export type Database = {
       }
       preview_book_session: { Args: { p_event_id: string }; Returns: Json }
       preview_book_sessions: { Args: { p_items: string[] }; Returns: Json }
+      preview_move_booking: { Args: { p_booking_id: string }; Returns: Json }
       rate_limit_hit: {
         Args: { p_bucket: string; p_keys: string[] }
         Returns: Json
