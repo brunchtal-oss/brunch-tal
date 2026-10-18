@@ -37,6 +37,7 @@ import {
   WhenFields,
 } from "../../session-fields"
 import { rescheduleRefusal } from "../session-cancel"
+import { SessionDelete } from "../session-delete"
 import { RescheduleDialog, type NewWhen } from "./reschedule-dialog"
 
 const copy = adminCopy.sessions
@@ -61,9 +62,13 @@ const DRAFT_KEYS: Record<EditorField, readonly (keyof SessionDraft)[]> = {
 export function SessionEditor({
   row,
   imagePreviewUrl = null,
+  cancellable = false,
 }: {
   row: SessionRow
   imagePreviewUrl?: string | null
+  // Published and not started (the server's clock, display only): the
+  // delete's refusal may link to the cancel (story 3.17).
+  cancellable?: boolean
 }) {
   const [draft, setDraft] = useState<SessionDraft>(() => draftFromRow(row))
   // A new date or time moves the close on the server (trigger); after the
@@ -267,6 +272,16 @@ export function SessionEditor({
       <ImageBox row={row} previewUrl={imagePreviewUrl} />
 
       <DuplicateBox row={row} />
+
+      {/* Story 3.17: last, far from the fields. */}
+      <section className="border-t border-border pt-8">
+        <SessionDelete
+          eventId={row.id}
+          conceptName={row.concept_name}
+          startsAt={row.starts_at}
+          cancellable={cancellable}
+        />
+      </section>
     </div>
   )
 }
