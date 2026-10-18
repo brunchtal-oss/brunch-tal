@@ -358,7 +358,7 @@
   target: 3.6
   summary: אחרי ביטול הרשמה, לבדוק שהבית ו-`/me/purchases` (`get_my_entitlements`) זהים למסך הכרטיסיות הפתוחות של טל (4.3). באותו סיפור להוסיף לבית את הקישור "לכל ההרשמות שלי" ל-`/me/bookings`, ואת פעולות הביטול וההזזה בכרטיס "המפגש הקרוב".
   evidence: ‏4.12 נבנה לפני 3.6 ו-4.3. אין עדיין ביטול, `/me/bookings` או מסך כרטיסיות פתוחות (Never של spec 4.12).
-  status: החלק של 3.6 נסגר ב-3.6 (2026-10-06): בבית יש ביטול (או "צרי קשר") מתחת לכרטיס "המפגש הקרוב" והקישור "לכל ההרשמות שלי" ל-`/me/bookings`, והיתרה אחרי ביטול נבדקה מול `get_my_entitlements` ב-`supabase/tests/cancel-booking.test.ts`. ההזזה (3.10) וההשוואה למסך הכרטיסיות הפתוחות (4.3) נשארות לסיפורים שלהן. ההשוואה נסגרה ב-4.3 (2026-10-13): ב-`supabase/tests/open-cards.test.ts`, הבדיקה "a booking on the card cancelled: its entry is gone, one more free; numbers still equal on all three" משווה את `admin_list_open_cards` ל-`get_my_entitlements` ול-`admin_get_customer` לפני הביטול ואחריו.
+  status: החלק של 3.6 נסגר ב-3.6 (2026-10-06): בבית יש ביטול (או "צרי קשר") מתחת לכרטיס "המפגש הקרוב" והקישור "לכל ההרשמות שלי" ל-`/me/bookings`, והיתרה אחרי ביטול נבדקה מול `get_my_entitlements` ב-`supabase/tests/cancel-booking.test.ts`. ההזזה (3.10) וההשוואה למסך הכרטיסיות הפתוחות (4.3) נשארות לסיפורים שלהן. ההשוואה נסגרה ב-4.3 (2026-10-13): ב-`supabase/tests/open-cards.test.ts`, הבדיקה "a booking on the card cancelled: its entry is gone, one more free; numbers still equal on all three" משווה את `admin_list_open_cards` ל-`get_my_entitlements` ול-`admin_get_customer` לפני הביטול ואחריו. ההזזה נסגרה ב-3.10 (2026-10-18, החלטת המשתמשת): הכפתור "הזזה למועד אחר" נמצא רק בעמוד המפגש, ליד "ביטול", ולא בבית או ב-`/me/bookings`.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-4-12-personal-area-home-and-entitlements.md`
   target: 3.12
@@ -593,3 +593,13 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-13-entitlement-corrections.md`
   summary: No test covers `CONCURRENT_CHANGE` in `admin_correct_entitlement` / `admin_settle_parked_purchase` (a bind committing between the unlocked read of the customer and the locks).
   evidence: 3.13 review round 1 (blind-hunter). The re-check exists in the code; triggering it needs a paused committing transaction, like 3.8 #19 and 3.9 #9.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-10-move-a-booking.md`
+  summary: בכרטיס הלקוחה באדמין הרשמה שהוזזה מוצגת "בוטלה", וביומן הפעולות השדה "הועברה להרשמה" מציג מזהה גולמי; טל לא רואה "הועברה ל-{תאריך}".
+  evidence: רק `get_my_bookings` של הלקוחה מחזיר `moved_to_starts_at`; `admin_get_customer` ו-`card-items.ts` (`copy.bookingStatus[row.status]`) לא מכירים את `moved_to_booking_id`. התיקון דורש שינוי ב-RPC של האדמין (ביקורת 3.10, ממצא 11).
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-10-move-a-booking.md`
+  summary: "מחוץ לחלון לא נקרא שום RPC" בהזזה נבדק רק על הפונקציה הטהורה `moveTapAction`, לא על לחיצה בכפתור.
+  evidence: אין בפרויקט בדיקות רכיב אינטראקטיביות (אין testing-library). השרת עדיין מחזיר `can_move: false`, כך שהמסך נכון גם בלי הבדיקה המקומית; נבדק בטלפון (ביקורת 3.10, ממצא 12).
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-17-delete-a-session.md`
+  summary: `private.hide_unused_media` (called by session delete, concept delete and set image) hides every published or copying media row not in `private.used_media_ids()`, so an image uploaded but not attached yet may be hidden and its public file deleted when Tal deletes something else.
+  evidence: 3.17 review round 1 (edge-case, maybe-false, medium if true). Pre-existing function behaviour; settle by checking whether an upload can sit in `published`/`copying` before it is attached (the upload and publish flow of `20261005193920_media_upload_and_publish.sql`).

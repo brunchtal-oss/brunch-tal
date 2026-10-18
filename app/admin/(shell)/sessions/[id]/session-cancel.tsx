@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useEffectEvent, useState } from "react"
 import { useRouter } from "next/navigation"
 
 import { SensitiveConfirmDialog } from "@/components/admin/sensitive-confirm-dialog"
@@ -22,6 +22,14 @@ const sessionsCopy = adminCopy.sessions
 const MESSAGE_MAX = 1000
 
 type ReadyPlan = Extract<CancelEventPlan, { ok: true }>
+
+// The anchor of the session cancel on the details page (story 3.17: the
+// delete's refusal links to it); arriving with it opens the dialog.
+export const CANCEL_ANCHOR = "cancel-event"
+
+export function isCancelHash(hash: string): boolean {
+  return hash === `#${CANCEL_ANCHOR}`
+}
 
 export function eventRefusal(code: ErrorCode): string {
   return sessionsCopy.eventRefusal[code] ?? errorMessage(code)
@@ -124,6 +132,25 @@ export function SessionCancel({
       setLoading(false)
     }
   }
+
+  // Story 3.17: the page opened with #cancel-event (from the editor) or the
+  // hash changed to it (the delete's refusal on this page) runs the same
+  // open; the hash is then cleared so a refresh does not open it again.
+  const openFromHash = useEffectEvent(() => {
+    if (!isCancelHash(window.location.hash)) return
+    window.history.replaceState(
+      window.history.state,
+      "",
+      window.location.pathname + window.location.search
+    )
+    void open()
+  })
+  useEffect(() => {
+    const onHash = () => openFromHash()
+    onHash()
+    window.addEventListener("hashchange", onHash)
+    return () => window.removeEventListener("hashchange", onHash)
+  }, [])
 
   async function confirm() {
     if (pending) return

@@ -37,6 +37,9 @@ export type SensitiveConfirmProps = {
   choice?: React.ReactNode
   choiceMissing?: string | null
   notice?: React.ReactNode
+  // "start": the notice reads start-aligned across the full width (story
+  // 3.17: two sentences); by default it is centred like every inline-notice.
+  noticeAlign?: "center" | "start"
   // maxLength: the RPC's limit (default 500; story 3.13: 2000).
   reason?: {
     label: string
@@ -77,6 +80,7 @@ export function SensitiveConfirmPanel({
   choice,
   choiceMissing = null,
   notice,
+  noticeAlign = "center",
   reason,
   message,
   checkboxLabel,
@@ -119,7 +123,16 @@ export function SensitiveConfirmPanel({
 
       {choice}
 
-      {notice && <InlineNotice tone="warning">{notice}</InlineNotice>}
+      {notice && (
+        <InlineNotice
+          tone="warning"
+          className={
+            noticeAlign === "start" ? "items-stretch text-start" : undefined
+          }
+        >
+          {notice}
+        </InlineNotice>
+      )}
 
       {message && (
         <Field>

@@ -105,6 +105,13 @@ export const shellCopy = {
       privacy: "מדיניות פרטיות",
       accessibility: "הצהרת נגישות",
     },
+    // /sessions/[id] of a session that is gone, never published or already
+    // started (story 3.17).
+    sessionNotFound: {
+      title: "המפגש לא נמצא",
+      body: "ייתכן שהמפגש הוסר או שהקישור שגוי.",
+      toSessions: "לכל המפגשים",
+    },
     // A public page with no published section yet.
     emptyPage: "התוכן של העמוד הזה עוד בהכנה",
     emptyPageWhatsapp: "לשאלות אפשר לפנות בוואטסאפ",

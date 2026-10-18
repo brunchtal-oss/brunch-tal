@@ -46,6 +46,9 @@ export type CancelBookingProps = {
   // past it; null when it cannot be read.
   cancelWindowHours: number | null
   contactHref: string | null
+  // Story 3.10: past the window the caller shows the closed notice shared
+  // with the move button; without it this component shows its own.
+  onClosed?: () => void
   className?: string
 }
 
@@ -73,6 +76,7 @@ export function CancelBooking({
   canSelfCancel,
   cancelWindowHours,
   contactHref,
+  onClosed,
   className,
 }: CancelBookingProps) {
   const router = useRouter()
@@ -147,7 +151,8 @@ export function CancelBooking({
           size="lg"
           onClick={() => {
             if (!canSelfCancel) {
-              setClosedShown(true)
+              if (onClosed) onClosed()
+              else setClosedShown(true)
               return
             }
             setKey(newIdempotencyKey())
@@ -247,26 +252,44 @@ export function CancelBooking({
         </SheetContent>
       </Sheet>
       {closedShown && (
-        <InlineNotice
-          tone="info"
-          className="w-full"
-          actions={
-            contactHref ? (
-              <a
-                href={contactHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={cn(LINK, "py-3")}
-              >
-                {customerCopy.contactPhrase}
-              </a>
-            ) : undefined
-          }
-        >
-          {copy.closed(cancelWindowHours)}
-        </InlineNotice>
+        <SelfServiceClosedNotice
+          cancelWindowHours={cancelWindowHours}
+          contactHref={contactHref}
+        />
       )}
     </>
+  )
+}
+
+// Past the self-cancel window: why she cannot cancel or move by herself,
+// and the contact phrase (no "Tal"). Shown only after a tap on cancel or on
+// move (user decisions 2026-10-06, 2026-10-18).
+export function SelfServiceClosedNotice({
+  cancelWindowHours,
+  contactHref,
+}: {
+  cancelWindowHours: number | null
+  contactHref: string | null
+}) {
+  return (
+    <InlineNotice
+      tone="info"
+      className="w-full"
+      actions={
+        contactHref ? (
+          <a
+            href={contactHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn(LINK, "py-3")}
+          >
+            {customerCopy.closedContact}
+          </a>
+        ) : undefined
+      }
+    >
+      {copy.closed(cancelWindowHours)}
+    </InlineNotice>
   )
 }
 

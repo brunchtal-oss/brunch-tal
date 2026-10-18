@@ -64,10 +64,19 @@ export const ERROR_MESSAGES = {
   INTRO_NOT_ELIGIBLE: "בראנץ׳ היכרות מיועד רק ללקוחה חדשה",
   // A row changed between the read and the lock (AD-6).
   CONCURRENT_CHANGE: "משהו השתנה בינתיים. כדאי לרענן את הדף ולנסות שוב",
-  // Tal saves the time of a session with bookings as a plain edit (story
-  // 3.2); since 3.8 the editor sends it to the time change with its notice.
+  // Deleting a session (story 3.17): any bookings row, a cancelled one or a
+  // place held for a new customer included; a purchase pinned to it that is
+  // not placed; a session that ended or was cancelled. The cancel offer is
+  // the delete's link, shown only while the session can be cancelled.
+  // admin_update_event also raises EVENT_HAS_BOOKINGS for a time change of
+  // a session with bookings, but the editor sends that to the time change
+  // (3.8) and never shows this text.
   EVENT_HAS_BOOKINGS:
-    "יש נרשמות למפגש, ולכן שינוי המועד עובר דרך חלון האישור ושליחת הודעה לנרשמות",
+    "אי אפשר למחוק מפגש שיש בו הרשמות, גם הרשמה שבוטלה, כי היא שומרת את ההיסטוריה של הלקוחה.",
+  EVENT_HAS_PURCHASES:
+    "אי אפשר למחוק את המפגש: לקוחה שילמה על מקום בו ועוד לא שובצה. צריך לטפל ברכישה שלה קודם.",
+  EVENT_NOT_DELETABLE:
+    "אי אפשר למחוק מפגש שהסתיים או בוטל. הוא נשאר בהיסטוריה.",
   // Tal cancels a session that is not published or already started (3.8).
   EVENT_NOT_CANCELLABLE:
     "אפשר לבטל רק מפגש שפורסם ועוד לא התחיל. כדאי לרענן את הדף",
@@ -118,6 +127,12 @@ export const ERROR_MESSAGES = {
   BOOKING_NOT_CANCELLABLE: "ההרשמה הזו כבר לא פעילה. כדאי לרענן את הדף",
   SELF_CANCEL_CLOSED: "לא ניתן לבטל עצמאית כל כך קרוב למפגש. צרי קשר",
   MANUAL_HANDLING_REQUIRED: "את הביטול הזה עושים ידנית. צרי קשר ונטפל בו",
+  // Moving a booking (story 3.10): the session is not one she may move to
+  // (not published, another kind, the same session, or not one of her
+  // credit's options); the booking cannot be moved (not hers, no longer
+  // confirmed, or without a customer).
+  MOVE_TARGET_NOT_ALLOWED: "אי אפשר לעבור למפגש הזה",
+  BOOKING_NOT_MOVABLE: "אי אפשר להזיז את ההרשמה הזו",
   // Settings and notification templates (story 4.7). The row changed since
   // the screen read it (another tab or device saved first).
   STALE_VERSION: "הנתונים השתנו בינתיים. צריך לרענן את הדף",
@@ -147,7 +162,7 @@ export const ERROR_MESSAGES = {
   // Raised by the adapter (never by SQL).
   INVALID_CREDENTIALS: "המייל או הסיסמה לא תואמים",
   // Correct password, but no active customer profile and not an admin.
-  ACCOUNT_NOT_ACTIVE: "החשבון הזה עוד לא פעיל. אפשר לפנות לטל",
+  ACCOUNT_NOT_ACTIVE: "החשבון הזה עוד לא פעיל. צרי קשר",
   PASSWORD_TOO_SHORT: "הסיסמה צריכה להיות באורך 8 תווים לפחות",
   PASSWORDS_DONT_MATCH: "הסיסמאות לא תואמות",
   FIELD_REQUIRED: "צריך למלא את השדה הזה",
