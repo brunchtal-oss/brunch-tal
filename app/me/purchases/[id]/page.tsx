@@ -17,6 +17,7 @@ import {
   creditChip,
   creditChipTone,
   entitlementName,
+  entryTotal,
   pastStatus,
 } from "../../purchase-items"
 import { buildHistory } from "./history"
@@ -103,6 +104,7 @@ async function EntitlementContent({
   })
   const past = pastStatus(entitlement)
   const isCard = entitlement.kind === "card"
+  const total = entryTotal(entitlement)
   // Story 3.7: a pinned purchase that became a credit or a refund request.
   const chip = creditChip(entitlement)
 
@@ -147,27 +149,16 @@ async function EntitlementContent({
         </div>
         {isCard && (
           <div className="mt-2 flex flex-col gap-2">
-            {entitlement.originalUnits > 0 &&
-              entitlement.originalUnits <= METER_MAX && (
-                <EntryMeter
-                  used={entitlement.used}
-                  reserved={entitlement.reserved}
-                  total={entitlement.originalUnits}
-                />
-              )}
+            {total > 0 && total <= METER_MAX && (
+              <EntryMeter
+                used={entitlement.used}
+                reserved={entitlement.reserved}
+                total={total}
+              />
+            )}
             <p className="flex flex-wrap gap-x-4 text-base">
-              <bdi>
-                {customerCopy.usedOf(
-                  entitlement.used,
-                  entitlement.originalUnits
-                )}
-              </bdi>
-              <bdi>
-                {customerCopy.bookedOf(
-                  entitlement.reserved,
-                  entitlement.originalUnits
-                )}
-              </bdi>
+              <bdi>{customerCopy.usedOf(entitlement.used, total)}</bdi>
+              <bdi>{customerCopy.bookedOf(entitlement.reserved, total)}</bdi>
             </p>
           </div>
         )}

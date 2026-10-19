@@ -99,6 +99,14 @@ export function parseMyEntitlements(data: unknown): MyEntitlement[] {
  * Open: active, not expired (or expired before it was bound, shown with its
  * note, story 2.4) and not used up.
  */
+// The entries a card's meter shows: used, booked and still free. A balance
+// correction (story 3.13) makes this differ from original_units.
+export function entryTotal(
+  e: Pick<MyEntitlement, "used" | "reserved" | "available">
+): number {
+  return e.used + e.reserved + Math.max(e.available, 0)
+}
+
 export function isOpen(e: MyEntitlement): boolean {
   return (
     e.status === "active" &&
