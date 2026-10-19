@@ -13,6 +13,7 @@ import { PasswordInput } from "@/components/auth/password-input"
 import { ContactText } from "@/components/shared/contact-text"
 import { PhotoConsentQuestions } from "@/components/shared/photo-consent-fieldset"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { OnlineButton } from "@/components/shared/online-button"
 import { Button } from "@/components/ui/button"
 import { buttonClass } from "@/components/shared/button-class"
 import {
@@ -692,7 +693,7 @@ export function JoinForm({
           </Alert>
         )}
 
-        <Button
+        <OnlineButton
           type="submit"
           size="lg"
           className={BUTTON}
@@ -701,7 +702,7 @@ export function JoinForm({
         >
           {pending && <Spinner aria-hidden />}
           {joinCopy.submit}
-        </Button>
+        </OnlineButton>
         <Button
           type="button"
           variant="outline"

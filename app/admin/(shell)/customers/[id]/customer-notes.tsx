@@ -4,7 +4,7 @@ import { useId, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 
 import { InlineNotice } from "@/components/shared/inline-notice"
-import { Button } from "@/components/ui/button"
+import { OnlineButton } from "@/components/shared/online-button"
 import { buttonClass } from "@/components/shared/button-class"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Spinner } from "@/components/ui/spinner"
@@ -126,7 +126,7 @@ export function CustomerNotes({
             </p>
           )}
         </Field>
-        <Button
+        <OnlineButton
           type="submit"
           size="lg"
           aria-busy={pending || undefined}
@@ -135,7 +135,7 @@ export function CustomerNotes({
         >
           {pending && <Spinner aria-hidden />}
           {copy.addNote}
-        </Button>
+        </OnlineButton>
       </form>
 
       {notes.length === 0 ? (
@@ -202,7 +202,7 @@ function NoteRow({
         >
           <p className="font-semibold">{copy.deleteQuestion}</p>
           <div className="flex flex-wrap gap-2">
-            <Button
+            <OnlineButton
               type="button"
               variant="destructive"
               size="lg"
@@ -213,7 +213,7 @@ function NoteRow({
             >
               {pending && <Spinner aria-hidden />}
               {copy.delete}
-            </Button>
+            </OnlineButton>
             <button
               type="button"
               className={cn(OUTLINE)}

@@ -169,6 +169,11 @@ async function EntitlementContent({
                 <p className="text-base font-semibold break-words">
                   <bdi>{item.change}</bdi>
                 </p>
+                {item.week && (
+                  <p className="text-[15px] break-words">
+                    <bdi>{item.week}</bdi>
+                  </p>
+                )}
                 {item.session && (
                   <p className="text-[15px] break-words">
                     <bdi>{item.session}</bdi>

@@ -12,7 +12,7 @@ import {
 } from "@/components/admin/edit-kit"
 import { whatsappShareHref } from "@/components/admin/link-share"
 import { useAnnounce, useWorkAction } from "@/components/admin/use-work-action"
-import { Button } from "@/components/ui/button"
+import { OnlineButton, useOnlineGuard } from "@/components/shared/online-button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
 import { Spinner } from "@/components/ui/spinner"
@@ -124,6 +124,7 @@ function ShoppingRow({
   const announce = useAnnounce()
   const { pending, error, run } = useWorkAction()
   const [open, setOpen] = useState(false)
+  const guard = useOnlineGuard()
   const line = copy.itemLine(item.body, item.quantity)
 
   return (
@@ -147,6 +148,7 @@ function ShoppingRow({
             )
           }}
           className="mt-2.5 size-6 rounded-[4px] border-[1.5px] border-muted-foreground bg-card"
+          {...guard}
         />
         <label
           htmlFor={`${id}-bought`}
@@ -384,7 +386,7 @@ export function AddItemsForm({
           {problem}
         </p>
       </Field>
-      <Button
+      <OnlineButton
         type="submit"
         size="lg"
         aria-busy={pending || undefined}
@@ -393,7 +395,7 @@ export function AddItemsForm({
       >
         {pending && <Spinner aria-hidden />}
         {copy.add}
-      </Button>
+      </OnlineButton>
     </form>
   )
 }

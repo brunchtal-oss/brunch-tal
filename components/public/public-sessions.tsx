@@ -28,9 +28,13 @@ const LINK =
 export function PublicSessionList({
   sessions,
   whatsappHref,
+  statusOf,
 }: {
   sessions: PublicSession[]
   whatsappHref: string | null
+  // A row's status-chip, streamed in by the page ("נרשמת" for a signed-in
+  // customer, story 5.21); none for a guest.
+  statusOf?: (sessionId: string) => React.ReactNode
 }) {
   if (sessions.length === 0) {
     return <NoSessions whatsappHref={whatsappHref} />
@@ -45,6 +49,7 @@ export function PublicSessionList({
               conceptName={session.concept_name}
               photo={session.photo}
               startsAt={session.starts_at}
+              status={statusOf?.(session.id)}
             />
           </li>
         ))}

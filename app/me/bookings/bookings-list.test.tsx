@@ -120,3 +120,40 @@ describe("my bookings: a refunded credit", () => {
     expect(html).not.toContain(customerCopy.bookingsEmpty)
   })
 })
+
+// Story 5.21 (fix 7): the companion's note is on the session page, not
+// under the card here.
+describe("my bookings: a couple booking", () => {
+  it("shows the card without the companion's note", async () => {
+    callRpc.mockImplementation(async (_client: unknown, name: string) =>
+      name === "get_my_credits"
+        ? { ok: true, data: [] }
+        : {
+            ok: true,
+            data: {
+              upcoming: [
+                {
+                  booking_id: "b1",
+                  event_id: "e1",
+                  status: "confirmed",
+                  starts_at: "2026-12-10T07:30:00Z",
+                  concept_name: "concept-a",
+                  can_self_cancel: true,
+                  funding: "card",
+                  product_name: "",
+                  party_size: 2,
+                  guest_details: "צמחונית",
+                  guest_details_editable: true,
+                },
+              ],
+              past: [],
+            },
+          }
+    )
+    const html = renderToStaticMarkup(await Bookings())
+    expect(html).toContain("concept-a")
+    expect(html).not.toContain(customerCopy.companion.label)
+    expect(html).not.toContain("צמחונית")
+    expect(html).not.toContain('id="booking-b1"')
+  })
+})

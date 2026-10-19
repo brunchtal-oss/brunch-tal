@@ -9,6 +9,7 @@ import {
   AlertDialogDescription,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { OnlineButton } from "@/components/shared/online-button"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Field, FieldLabel } from "@/components/ui/field"
@@ -209,7 +210,7 @@ export function SensitiveConfirmPanel({
       )}
 
       <div className="flex flex-col gap-2">
-        <Button
+        <OnlineButton
           type="button"
           size="lg"
           variant={destructive ? "destructive" : "default"}
@@ -224,7 +225,7 @@ export function SensitiveConfirmPanel({
         >
           {pending && <Spinner aria-hidden />}
           {confirmLabel}
-        </Button>
+        </OnlineButton>
         <p
           id={hintId}
           aria-live="polite"

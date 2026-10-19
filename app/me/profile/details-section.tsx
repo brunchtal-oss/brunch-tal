@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from "react"
 
 import { InlineNotice } from "@/components/shared/inline-notice"
+import { OnlineButton } from "@/components/shared/online-button"
 import { Button } from "@/components/ui/button"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
@@ -216,7 +217,7 @@ export function FormButtons({
 }) {
   return (
     <div className="flex flex-wrap gap-3">
-      <Button
+      <OnlineButton
         type="submit"
         size="lg"
         className="h-12 min-w-32 text-base"
@@ -224,7 +225,7 @@ export function FormButtons({
       >
         {pending && <Spinner aria-hidden />}
         {pending ? copy.saving : copy.save}
-      </Button>
+      </OnlineButton>
       <Button
         type="button"
         variant="outline"

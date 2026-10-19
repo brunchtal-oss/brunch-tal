@@ -8,6 +8,8 @@ import type { NotificationView } from "@/lib/notifications/shared"
 import { formatNotificationTime } from "@/lib/time"
 import { cn } from "@/lib/utils"
 
+import { OnlineNativeButton } from "./online-button"
+
 const copy = shellCopy.notifications
 
 // notification-item (DESIGN › notification-item, EXPERIENCE ›
@@ -89,7 +91,7 @@ export function NotificationItem({
           {formatNotificationTime(item.createdAt, now)}
         </time>
       </Link>
-      <button
+      <OnlineNativeButton
         type="button"
         onClick={onToggle}
         disabled={pending}
@@ -101,7 +103,7 @@ export function NotificationItem({
         ) : (
           <MailIcon aria-hidden strokeWidth={1.5} className="size-5" />
         )}
-      </button>
+      </OnlineNativeButton>
     </li>
   )
 }

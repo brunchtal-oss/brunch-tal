@@ -60,6 +60,29 @@ function expectNoTime(html: string) {
 }
 
 describe("PublicSessionList", () => {
+  it("story 5.21: a guest's list has no chip; the page's chip shows on its row", () => {
+    const guest = renderToStaticMarkup(
+      <PublicSessionList
+        sessions={[session(1), session(2)]}
+        whatsappHref={WA}
+      />
+    )
+    expect(guest).not.toContain(customerCopy.booked)
+    const customer = renderToStaticMarkup(
+      <PublicSessionList
+        sessions={[session(1), session(2)]}
+        whatsappHref={WA}
+        statusOf={(id) =>
+          id === session(2).id ? <b>{customerCopy.booked}</b> : null
+        }
+      />
+    )
+    expect(customer.match(new RegExp(customerCopy.booked, "g"))).toHaveLength(1)
+    expect(customer.indexOf(customerCopy.booked)).toBeGreaterThan(
+      customer.indexOf("concept-2")
+    )
+  })
+
   it("shows a session-row per session linking to its public page, in order", () => {
     const html = renderToStaticMarkup(
       <PublicSessionList

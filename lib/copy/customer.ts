@@ -177,6 +177,9 @@ export const customerCopy = {
     saved: "הפרטים נשמרו",
     birthDateFuture: "תאריך הלידה לא יכול להיות בעתיד",
     linksLabel: "עוד באזור האישי",
+    // The first row there, to the push card at the top of
+    // /me/notifications (story 5.21).
+    notificationsRow: "התראות",
     installGuide: "התקנת האפליקציה",
   },
   // Cancellation credits and refund requests (story 3.7, wording from the
@@ -285,9 +288,10 @@ export const customerCopy = {
   // decision 2026-10-13).
   bookingCancelled: "בוטל",
   bookingHeld: "התקיים",
-  // The companion's dietary note under an upcoming couple booking (story
-  // 3.5, wording from the spec). Editable until the session's registration
-  // closes; after it, read-only with closedNote and contactPhrase.
+  // The companion's dietary note of a couple booking, on its session page
+  // (story 3.5, wording from the spec; moved there in 5.21, fix 7).
+  // Editable until the session's registration closes; after it, read-only
+  // with closedNote and contactPhrase.
   companion: {
     label: "הגבלות תזונה או אלרגיות של המלווה",
     empty: "לא נמסרו",
@@ -295,7 +299,10 @@ export const customerCopy = {
     add: "הוספה",
     save: "שמירה",
     saved: "נשמר",
-    closedNote: "אפשר לשנות דרך",
+    // User's wording, 5.21 phone check (2026-10-20); contactPhrase follows
+    // as the link.
+    closedNote:
+      "ההרשמה נסגרה וההכנות בעיצומן, לכן לא ניתן לעדכן כעת הגבלות תזונה. אם יש עדכון חשוב,",
   },
   // A cancelled session's page (story 3.5); its first line is
   // EVENT_CANCELLED in lib/errors.ts.

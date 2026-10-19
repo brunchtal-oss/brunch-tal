@@ -4,7 +4,9 @@ import { describe, expect, it, vi } from "vitest"
 import { customerCopy } from "@/lib/copy/customer"
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }))
-vi.mock("./actions", () => ({ setGuestDetailsAction: vi.fn() }))
+vi.mock("../../bookings/actions", () => ({
+  setGuestDetailsAction: vi.fn(),
+}))
 
 const { CompanionNote, companionAnchor } = await import("./companion-note")
 
@@ -44,7 +46,7 @@ describe("the companion's note (story 3.5)", () => {
     expect(html).toContain(">עריכה<")
   })
 
-  it("after the registration close: read-only, with 'אפשר לשנות דרך צרי קשר'", () => {
+  it("after the registration close: read-only, with the closed note and 'צרי קשר'", () => {
     const html = render("צמחונית", false)
     expect(html).toContain("צמחונית")
     expect(html).not.toContain("<button")

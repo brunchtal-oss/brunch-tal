@@ -4,7 +4,7 @@ import { startTransition, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 
 import { InlineNotice } from "@/components/shared/inline-notice"
-import { Button } from "@/components/ui/button"
+import { OnlineButton } from "@/components/shared/online-button"
 import { Spinner } from "@/components/ui/spinner"
 import { adminCopy } from "@/lib/copy/admin"
 import { errorMessage, type ErrorCode } from "@/lib/errors"
@@ -220,7 +220,7 @@ export function ProductCreateForm({
         <InlineNotice tone="error">{errorMessage(serverError)}</InlineNotice>
       )}
 
-      <Button
+      <OnlineButton
         type="submit"
         size="lg"
         className="h-12 text-base"
@@ -229,7 +229,7 @@ export function ProductCreateForm({
       >
         {pending && <Spinner aria-hidden />}
         {copy.create.submit}
-      </Button>
+      </OnlineButton>
     </form>
   )
 }

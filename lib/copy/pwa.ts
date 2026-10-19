@@ -33,4 +33,7 @@ export const pwaCopy = {
     retry: "לנסות שוב",
   },
   footerLink: "התקנת האפליקציה",
+  // The shells' banner while offline (story 5.21, OfflineBanner).
+  offlineHint:
+    "אין חיבור כרגע. אפשר לצפות בעמוד, אבל לא לשמור, להירשם או לבטל עד שהחיבור יחזור",
 } as const

@@ -4,7 +4,7 @@ import { useActionState } from "react"
 
 import { PasswordInput } from "@/components/auth/password-input"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Button } from "@/components/ui/button"
+import { OnlineButton } from "@/components/shared/online-button"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { authCopy } from "@/lib/copy/auth"
@@ -60,14 +60,14 @@ export function LoginForm({ next }: { next: string | null }) {
         </Alert>
       )}
 
-      <Button
+      <OnlineButton
         type="submit"
         size="lg"
         className="h-12 text-base"
         disabled={pending}
       >
         {pending ? authCopy.login.submitting : authCopy.login.submit}
-      </Button>
+      </OnlineButton>
 
       <details className="text-sm">
         <summary className="cursor-pointer text-primary underline-offset-4 hover:underline">

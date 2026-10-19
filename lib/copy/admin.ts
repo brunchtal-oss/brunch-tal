@@ -1456,6 +1456,8 @@ export const adminCopy = {
         entitlement_changed: "עדכון תוקף הכרטיסייה",
         entitlement_units_changed: "עדכון יתרה בכרטיסייה",
         entitlement_terms_changed: "עדכון תנאי הכרטיסייה",
+        // Story 3.14: a week with no fitting brunch extended the card.
+        entitlement_auto_extended: "הארכה אוטומטית של כרטיסייה",
         card_expiring: "כרטיסייה עומדת לפוג",
         broadcast: "הודעה כללית",
         admin_card_expiring: "כרטיסייה של לקוחה עומדת לפוג",
@@ -1642,6 +1644,11 @@ export const adminCopy = {
       // Never "{שדה}: {ישן} ← {חדש}" (user decision 2026-10-18).
       historyChange: (field: string, from: string, to: string) =>
         `${field}: היה ${from}, עכשיו ${to}`,
+      // Story 3.14: a system correction (job_auto_extend) and its week.
+      historyAutoExtend: (from: string, to: string) =>
+        `הארכה אוטומטית: היה ${from}, עכשיו ${to}`,
+      historyWeek: (start: string, end: string) =>
+        `שבוע ${start}–${end} בלי בראנץ׳ מתאים`,
       historyWho: (actor: string, date: string) => `${actor}, ${date}`,
       historyReason: (reason: string) => `סיבה: ${reason}`,
       historySession: (title: string) => `מפגש: ${title}`,
@@ -2012,6 +2019,8 @@ export const adminCopy = {
       unitsRemoved: (count: number) =>
         count === 1 ? "הופחתה כניסה אחת" : `הופחתו ${count} כניסות`,
       parkedSettled: "התקבל זיכוי, והלקוחה תבחר בין זיכוי להחזר",
+      // Story 3.14: one row per extended week.
+      autoExtended: "הכרטיסייה הוארכה בשבוע, כי לא היה בראנץ׳ מתאים",
       // Story 3.16.
       creditOptionsChanged: "החלופות לזיכוי עודכנו",
       creditRefunded: (amount: string) =>
@@ -2058,6 +2067,8 @@ export const adminCopy = {
       admin_correct_entitlement: "תיקון בכרטיסייה",
       admin_settle_parked_purchase: "הצעת החזר או זיכוי על מפגש שבוטל",
       admin_set_correction_booking_handled: "סימון הרשמה שטופלה אחרי תיקון",
+      // Story 3.14.
+      job_auto_extend: "הארכה אוטומטית",
       // Story 3.16.
       admin_change_credit_options: "שינוי חלופות לזיכוי",
       admin_refund_credit: "החזר במקום זיכוי",

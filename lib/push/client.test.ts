@@ -4,6 +4,7 @@ import {
   isIos,
   platformOf,
   pushStateOf,
+  shouldOffer,
   urlBase64ToUint8Array,
   type PushEnv,
 } from "./client"
@@ -86,5 +87,33 @@ describe("urlBase64ToUint8Array", () => {
     const key =
       "BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U"
     expect(urlBase64ToUint8Array(key)).toHaveLength(65)
+  })
+})
+
+// Story 5.21: the push offer after a booking, once per device.
+describe("shouldOffer", () => {
+  const storage = (value: string | null) => ({ getItem: () => value })
+
+  it("asks only while the device is 'ask' and was never offered", () => {
+    expect(shouldOffer("ask", storage(null))).toBe(true)
+    expect(shouldOffer("ask", storage("1"))).toBe(false)
+  })
+
+  it.each(["off", "denied", "unsupported", "ios-install", "on"] as const)(
+    "never when the device is %s",
+    (state) => {
+      expect(shouldOffer(state, storage(null))).toBe(false)
+    }
+  )
+
+  it("storage that is missing or throws: no offer", () => {
+    expect(shouldOffer("ask", null)).toBe(false)
+    expect(
+      shouldOffer("ask", {
+        getItem: () => {
+          throw new Error("blocked")
+        },
+      })
+    ).toBe(false)
   })
 })

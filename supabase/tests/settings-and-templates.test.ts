@@ -622,7 +622,7 @@ describe("admin_update_notification_template", { timeout: 30_000 }, () => {
     })
   })
 
-  it("the admin reads all 22 templates (policy and grant)", async () => {
+  it("the admin reads all 23 templates (policy and grant)", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)
       const types = await as(db, f.admin, async () => {
@@ -631,7 +631,7 @@ describe("admin_update_notification_template", { timeout: 30_000 }, () => {
         )
         return rows.map((row) => row.type as string)
       })
-      expect(types).toHaveLength(22)
+      expect(types).toHaveLength(23)
     })
   })
 
@@ -659,7 +659,7 @@ describe("the template contract", { timeout: 60_000 }, () => {
          from public.notification_templates
          order by type`
       )
-      expect(rows).toHaveLength(22)
+      expect(rows).toHaveLength(23)
     })
   })
 
@@ -935,6 +935,36 @@ describe("the template contract", { timeout: 60_000 }, () => {
         expect(sent, type).toHaveLength(1)
         expectRendered(sent[0])
       }
+    })
+  })
+
+  // Story 3.14: the job extends a card by a week with no fitting brunch.
+  it("entitlement_auto_extended renders in the real flow", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      await fillAllFields(db, f, "entitlement_auto_extended")
+      const r = await grant(db, f, f.card)
+      const { rows } = await db.query(
+        "select id from public.entitlements where payment_id = $1",
+        [r.payment_id]
+      )
+      // A week in 2099 with no session, ended by p_today.
+      await db.query(
+        "update public.entitlements set valid_from = '2099-03-01', expires_on = '2099-03-05' where id = $1",
+        [rows[0].id]
+      )
+      const { rows: run } = await db.query(
+        "select private.job_auto_extend('2099-03-08'::date, array[$1]::uuid[]) as n",
+        [rows[0].id]
+      )
+      expect(run[0].n).toBe(1)
+      const sent = await notifications(
+        db,
+        f.customerA,
+        "entitlement_auto_extended"
+      )
+      expect(sent).toHaveLength(1)
+      expectRendered(sent[0])
     })
   })
 

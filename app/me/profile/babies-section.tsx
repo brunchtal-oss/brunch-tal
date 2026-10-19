@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from "react"
 
 import { InlineNotice } from "@/components/shared/inline-notice"
+import { OnlineButton } from "@/components/shared/online-button"
 import { Button } from "@/components/ui/button"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
@@ -203,7 +204,7 @@ export function BabiesSection({
                         </InlineNotice>
                       )}
                       <div className="flex flex-wrap gap-3">
-                        <Button
+                        <OnlineButton
                           id={`baby-delete-confirm-${baby.id}`}
                           type="button"
                           size="lg"
@@ -213,7 +214,7 @@ export function BabiesSection({
                         >
                           {pending && <Spinner aria-hidden />}
                           {pending ? copy.deleting : copy.confirmDeleteYes}
-                        </Button>
+                        </OnlineButton>
                         <Button
                           type="button"
                           variant="outline"

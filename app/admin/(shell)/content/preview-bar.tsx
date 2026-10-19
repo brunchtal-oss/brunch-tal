@@ -5,7 +5,8 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 
 import { InlineNotice } from "@/components/shared/inline-notice"
-import { buttonVariants, Button } from "@/components/ui/button"
+import { OnlineButton } from "@/components/shared/online-button"
+import { buttonVariants } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { adminCopy } from "@/lib/copy/admin"
 import { errorMessage } from "@/lib/errors"
@@ -129,7 +130,7 @@ export function PreviewBar({
             {copy.backToEdit}
           </Link>
           {showPublish && (
-            <Button
+            <OnlineButton
               type="button"
               onClick={isBlocked ? undefined : publish}
               aria-busy={busy || undefined}
@@ -141,7 +142,7 @@ export function PreviewBar({
             >
               {busy && <Spinner aria-hidden />}
               {copy.publish}
-            </Button>
+            </OnlineButton>
           )}
         </div>
       </div>

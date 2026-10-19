@@ -34,7 +34,17 @@
   target: 3.6, ‏3.13/3.14
   summary: ב-2.12 יש תבנית אחת לכל סוג. ‏3.6 מחליט על נוסח לכל מקרה ב-`booking_cancelled` (זיכוי, החזר, ביטול בלי החזר), ו-3.13/3.14 ב-`entitlement_changed` (הארכה, החזרת כניסה, תיקון). אפשרות: שדה `{outcome}` שהקורא מעצב, או תבניות נוספות בטבלה.
   evidence: החלטת המשתמשת ב-2.12: תבנית אחת לסוג, ונוסח לכל מקרה נדחה לסיפורים שיוצרים את ההתראות.
-  status: החלק של 3.6 נסגר ב-3.6 (2026-10-06, החלטת המשתמשת): תבנית לכל מקרה. ‏`booking_cancelled` (כרטיסייה) בנוסח קבוע, ו-`booking_cancelled_pinned` חדשה למוצמדת, עם המשתנים `{date}` ו-`{expires_on}`. ‏3.7 מוסיף את מקרי הזיכוי וההחזר, ו-3.13/3.14 את `entitlement_changed`. החלק של 3.7 נסגר ב-3.7 (2026-10-10, החלטת המשתמשת): `booking_cancelled_pinned` היא עכשיו "זיכוי" (גם ביטול חוזר של הרשמה ממומנת מזיכוי), ו-`booking_cancelled_refund` חדשה לבקשת החזר; שתיהן רק עם `{date}`. החלק של 3.13 נסגר ב-3.13 (2026-10-18, החלטת המשתמשת): תבנית לכל מקרה של תיקון. ‏`entitlement_changed` (תוקף, בנוסח חדש), ‏`entitlement_units_changed` (יתרה) ו-`entitlement_terms_changed` (ימים או סוג מפגש), כולן עם `{expires_on}` ו-`{units}`. ההארכה האוטומטית (3.14) תשתמש ב-`entitlement_changed`.
+  status: החלק של 3.6 נסגר ב-3.6 (2026-10-06, החלטת המשתמשת): תבנית לכל מקרה. ‏`booking_cancelled` (כרטיסייה) בנוסח קבוע, ו-`booking_cancelled_pinned` חדשה למוצמדת, עם המשתנים `{date}` ו-`{expires_on}`. ‏3.7 מוסיף את מקרי הזיכוי וההחזר, ו-3.13/3.14 את `entitlement_changed`. החלק של 3.7 נסגר ב-3.7 (2026-10-10, החלטת המשתמשת): `booking_cancelled_pinned` היא עכשיו "זיכוי" (גם ביטול חוזר של הרשמה ממומנת מזיכוי), ו-`booking_cancelled_refund` חדשה לבקשת החזר; שתיהן רק עם `{date}`. החלק של 3.13 נסגר ב-3.13 (2026-10-18, החלטת המשתמשת): תבנית לכל מקרה של תיקון. ‏`entitlement_changed` (תוקף, בנוסח חדש), ‏`entitlement_units_changed` (יתרה) ו-`entitlement_terms_changed` (ימים או סוג מפגש), כולן עם `{expires_on}` ו-`{units}`. החלק של 3.14 נסגר ב-3.14 (2026-10-19, החלטת המשתמשת): ההארכה האוטומטית שולחת סוג חדש, `entitlement_auto_extended` (לא `entitlement_changed`), עם `{expires_on}` ו-`{units}`, התראה אחת לכרטיסייה בכל הרצה.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-14-auto-extend-empty-weeks.md`
+  target: 5.10
+  summary: התזמון של ההארכה האוטומטית: ‏`cron.schedule` שמריץ `select private.job_auto_extend();` כל שעה (AD-11). הפונקציה קיימת מ-3.14, בלי grant, ובטוחה להרצה כפולה (`week_start` ייחודי לזכות).
+  evidence: ‏3.14 בנה את הפונקציה בלבד; התזמון וההתראות לפני תפוגה שייכים ל-5.10 (ה-spec של 3.14, Never).
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-14-auto-extend-empty-weeks.md`
+  target: 5.10
+  summary: בדיקה של הקריאה המתוזמנת עצמה: ‏`job_auto_extend()` בלי פרמטרים (התאריך של היום וכל הכרטיסיות), וכרטיסייה אחת שנכשלת לא עוצרת את האחרות ולא משאירה כתיבה חלקית.
+  evidence: ביקורת 3.14 (verification-gap, לא אומת): כל הבדיקות של 3.14 מעבירות תאריך ורשימת כרטיסיות, ובלוק השגיאה לכל כרטיסייה לא נבדק (גם לא ב-`job_complete_events`). הרצה על כל הכרטיסיות שייכת לסיפור שמפעיל את התזמון.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-12-notification-core.md`
   target: 5.8
@@ -243,6 +253,7 @@
   target: 5.21 (החלטת המשתמשת 2026-10-10)
   summary: השבתת כל הכפתורים שמשנים נתונים כשאין חיבור, כולל באדמין (UX memlog, review fixes). בהדגמה רק `/offline`, ופעולה שנשלחת בלי רשת נכשלת בשגיאה הקיימת.
   evidence: מסמך ההיקף 2026-10-04: אופליין מלא ומצב קריאה בלבד לא נכנסים ל-5.9.
+  status: נסגר ב-5.21 (2026-10-19). ‏`useOnline` (‏`lib/use-online.ts`), ‏`OfflineBanner` בכל מעטפת עם כתיבה (`/me`, ‏`/admin`, מסכי ההתחברות), ו-`OnlineButton` / ‏`useOnlineGuard` / ‏`OnlineNativeButton` בכל כפתור שמשנה נתונים, כולל באדמין. ‏`useWorkAction().run` ו-`saveWithKey` לא שולחים כשאין חיבור. בלי תור ובלי מצב קריאה בלבד.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-9-pwa-install-and-offline.md`
   target: 2.10
@@ -432,6 +443,7 @@
   target: 5.21 (החלטת המשתמשת 2026-10-10)
   summary: לקוחה מחוברת ב-`/sessions` (הרשימה הציבורית) רואה `status-chip` על מפגש שהיא רשומה אליו, כמו ב-`/me/sessions`. צריך לקרוא את ההרשמות שלה ברכיב דינמי בתוך `Suspense`, בלי לשבור את המטמון של הרשימה.
   evidence: ‏spec 5.16 (Always) השאיר את ה-chips ל-5.7, ו-5.7 הוציא אותם (Never). היום הרשימה הציבורית זהה לאורחת וללקוחה.
+  status: נסגר ב-5.21 (2026-10-19). הרשימה נשארת על הלקוח הציבורי. כל שורה מקבלת `BookedChip` בתוך `Suspense` משלה (`components/public/booked-chip.tsx`), שקורא פעם אחת לבקשה (React `cache`) את התפקיד ואת ההרשמות שלה. ‏"נרשמת" רק ללקוחה; לאורחת ולאדמין אין chip.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-5-privacy-and-accessibility.md`
   target: 6.9
@@ -467,6 +479,7 @@
   target: 5.21 (לא נבנה בסבב העיצוב; החלטת המשתמשת 2026-10-10)
   summary: הגדרות ההתראות בפרופיל (שורה עם קישור לכרטיס הפוש) והצעת הפוש אחרי הרשמה ראשונה מוצלחת ("המקום שלך שמור", EXPERIENCE). ב-5.8 הכרטיס במרכזי ההתראות של `/me` ו-`/admin` הוא המקום היחיד.
   evidence: החלטת המשתמשת 2026-10-06 באישור spec 5.8 (החלטה 2).
+  status: נסגר ב-5.21 (2026-10-19). שורת "התראות" ראשונה ב"עוד באזור האישי" בפרופיל, לכרטיס שב-`/me/notifications`. ההצעה (`PushOffer`, תצוגת השאלה של `PushCard`) מתחת לשיא ההרשמה, גם בהרשמה למפגש אחד וגם לכמה מועדים כשכולם נשמרו, פעם אחת למכשיר (`push-offered` ב-localStorage) ורק במצב `ask`.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-8-push-pipeline-and-permission.md`
   target: 5.10

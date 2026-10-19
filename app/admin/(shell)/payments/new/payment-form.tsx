@@ -14,7 +14,7 @@ import { LinkShare } from "@/components/admin/link-share"
 import { RadioCardGroup } from "@/components/admin/radio-card"
 import { SensitiveConfirmDialog } from "@/components/admin/sensitive-confirm-dialog"
 import { InlineNotice } from "@/components/shared/inline-notice"
-import { Button } from "@/components/ui/button"
+import { OnlineButton } from "@/components/shared/online-button"
 import { buttonClass } from "@/components/shared/button-class"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -675,7 +675,7 @@ export function PaymentForm({
 
       {error && <InlineNotice tone="error">{errorMessage(error)}</InlineNotice>}
 
-      <Button
+      <OnlineButton
         type="submit"
         size="lg"
         className={BUTTON}
@@ -684,7 +684,7 @@ export function PaymentForm({
       >
         {pending && <Spinner aria-hidden />}
         {submitLabel}
-      </Button>
+      </OnlineButton>
 
       {product && amountAgorot !== null && (
         <SensitiveConfirmDialog

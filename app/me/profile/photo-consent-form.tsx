@@ -8,7 +8,7 @@ import {
   PhotoConsentFieldset,
   PhotoConsentNote,
 } from "@/components/shared/photo-consent-fieldset"
-import { Button } from "@/components/ui/button"
+import { OnlineButton } from "@/components/shared/online-button"
 import { Spinner } from "@/components/ui/spinner"
 import {
   photoConsentQuestion,
@@ -121,7 +121,7 @@ export function PhotoConsentForm({
         defaultValue={consent}
       />
       {error && <InlineNotice tone="error">{errorMessage(error)}</InlineNotice>}
-      <Button
+      <OnlineButton
         type="submit"
         size="lg"
         className="h-12 min-w-32 self-start text-base"
@@ -129,7 +129,7 @@ export function PhotoConsentForm({
       >
         {pending && <Spinner aria-hidden />}
         {pending ? copy.saving : copy.save}
-      </Button>
+      </OnlineButton>
     </form>
   )
 }

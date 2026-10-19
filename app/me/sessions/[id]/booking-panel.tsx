@@ -7,6 +7,8 @@ import { XIcon } from "lucide-react"
 
 import { buttonClass } from "@/components/shared/button-class"
 import { InlineNotice } from "@/components/shared/inline-notice"
+import { PushOffer } from "@/components/shared/push-offer"
+import { OnlineButton } from "@/components/shared/online-button"
 import { Button } from "@/components/ui/button"
 import {
   Sheet,
@@ -18,6 +20,7 @@ import { Spinner } from "@/components/ui/spinner"
 import { customerCopy as copy } from "@/lib/copy/customer"
 import { errorMessage, type ErrorCode } from "@/lib/errors"
 import { newIdempotencyKey } from "@/lib/idempotency"
+import { claimPushOffer } from "@/lib/push/client"
 import {
   formatDayMonth,
   formatLocalDate,
@@ -31,6 +34,7 @@ import {
   SelfServiceClosedNotice,
 } from "../../bookings/cancel-booking"
 import { MoveBooking } from "../../bookings/move-booking"
+import { registerPush, unregisterPush } from "../../notifications/actions"
 import { bookSessionAction } from "../actions"
 import { blockedAction, type BookingPreview } from "./booking-preview"
 
@@ -68,6 +72,8 @@ export function BookingPanel({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<ErrorCode | null>(null)
   const [done, setDone] = useState(false)
+  // Story 5.21: the push offer under the climax, once per device.
+  const [offerPush, setOfferPush] = useState(false)
   const titleRef = useRef<HTMLHeadingElement>(null)
   const climaxRef = useRef<HTMLHeadingElement>(null)
 
@@ -89,6 +95,9 @@ export function BookingPanel({
         <Link href="/me" className={cn(LINK, "self-start py-3")}>
           {copy.toMyBalance}
         </Link>
+        {offerPush && (
+          <PushOffer register={registerPush} unregister={unregisterPush} />
+        )}
       </section>
     )
   }
@@ -199,6 +208,7 @@ export function BookingPanel({
       const result = await bookSessionAction({ eventId, idempotencyKey: key })
       if (result.ok) {
         setOpen(false)
+        setOfferPush(claimPushOffer())
         setDone(true)
         // The chip ("נרשמת") and the preview come from the server again.
         router.refresh()
@@ -303,7 +313,7 @@ export function BookingPanel({
             {errorMessage(error)}
           </InlineNotice>
         )}
-        <Button
+        <OnlineButton
           type="button"
           size="lg"
           onClick={confirm}
@@ -313,7 +323,7 @@ export function BookingPanel({
         >
           {busy && <Spinner aria-hidden />}
           {copy.book}
-        </Button>
+        </OnlineButton>
       </SheetContent>
     </Sheet>
   )

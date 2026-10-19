@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 
-import { Button } from "@/components/ui/button"
 import { shellCopy } from "@/lib/copy/shell"
 import { errorMessage, type ActionResult } from "@/lib/errors"
 import {
@@ -15,6 +14,7 @@ import {
 import { announceUnreadDelta, requestUnreadRefresh } from "./bell-button"
 import { InlineNotice } from "./inline-notice"
 import { NotificationItem } from "./notification-item"
+import { OnlineButton } from "./online-button"
 
 const copy = shellCopy.notifications
 
@@ -207,7 +207,7 @@ export function NotificationList({
     <div className="flex flex-col gap-3">
       {error && <InlineNotice tone="error">{error}</InlineNotice>}
       {unreadIds.length > 0 && (
-        <Button
+        <OnlineButton
           type="button"
           variant="outline"
           onClick={() => void markAll()}
@@ -215,7 +215,7 @@ export function NotificationList({
           className="min-h-11 self-start border-foreground bg-transparent px-4 text-base font-semibold"
         >
           {copy.markAllRead}
-        </Button>
+        </OnlineButton>
       )}
       <ul aria-label={copy.listLabel} className="flex flex-col">
         {items.map((item) => {
