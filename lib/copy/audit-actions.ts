@@ -201,6 +201,26 @@ export const SHOWN_AUDIT_ACTIONS: Record<string, readonly AuditRule[]> = {
           : results.choseCredit,
     },
   ],
+  // Story 3.16: Tal changed a credit's alternatives, or replaced it with a
+  // refund request (its amount: the request row of the same operation).
+  admin_change_credit_options: [
+    {
+      entity: "cancellation_credits",
+      result: () => results.creditOptionsChanged,
+    },
+  ],
+  admin_refund_credit: [
+    {
+      entity: "cancellation_credits",
+      result: (row) => {
+        const request = related(row, "refund_requests")[0]
+        const amount = request
+          ? money(afterValues(request.changes).amount_agorot)
+          : null
+        return amount === null ? null : results.creditRefunded(amount)
+      },
+    },
+  ],
   // Sessions.
   admin_create_event: [{ entity: "events" }],
   admin_duplicate_event: [{ entity: "events" }],

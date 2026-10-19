@@ -31,6 +31,10 @@ export const SENSITIVE_ACTIONS = {
   // A purchase paid without a place in a session the business cancelled
   // (3.13): the customer chooses a refund or a credit.
   parked_settle: "האם להציע ללקוחה החזר או זיכוי?",
+  // A credit (3.16, source §6-7): its alternatives (also how Tal extends
+  // it), or a refund instead of it.
+  credit_options: "האם לשנות את החלופות של הזיכוי?",
+  credit_refund: "האם להחליף את הזיכוי בהחזר כספי?",
 } as const
 
 export type SensitiveAction = keyof typeof SENSITIVE_ACTIONS

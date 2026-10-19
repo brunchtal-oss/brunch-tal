@@ -331,15 +331,18 @@ describe("the other parts", () => {
 
   it("a booking links to its session", () => {
     expect(
-      toBookingItem({
-        booking_id: "b1",
-        event_id: "ev1",
-        concept_name: "אמהות",
-        starts_at: MON_12,
-        status: "completed",
-        party_size: 2,
-        created_at: "2026-10-01T07:00:00Z",
-      })
+      toBookingItem(
+        {
+          booking_id: "b1",
+          event_id: "ev1",
+          concept_name: "אמהות",
+          starts_at: MON_12,
+          status: "completed",
+          party_size: 2,
+          created_at: "2026-10-01T07:00:00Z",
+        },
+        "c1"
+      )
     ).toEqual({
       key: "b1",
       href: "/admin/sessions/ev1",
@@ -350,7 +353,30 @@ describe("the other parts", () => {
       status: copy.bookingStatus.completed,
       tone: "pending",
       couple: true,
+      creditHref: null,
     })
+  })
+
+  it("a cancelled booking with a credit links to it on the card (story 3.16)", () => {
+    const row = {
+      booking_id: "b2",
+      event_id: "ev2",
+      concept_name: "אמהות",
+      starts_at: MON_12,
+      status: "cancelled" as const,
+      party_size: 1,
+      created_at: "2026-10-01T07:00:00Z",
+      credit_id: "cr1",
+    }
+    expect(toBookingItem(row, "c1").creditHref).toBe(
+      "/admin/customers/c1#credit-cr1"
+    )
+    expect(
+      toBookingItem({ ...row, status: "confirmed" }, "c1").creditHref
+    ).toBeNull()
+    expect(
+      toBookingItem({ ...row, credit_id: null }, "c1").creditHref
+    ).toBeNull()
   })
 
   it("a purchase: the product, then amount, method and day", () => {

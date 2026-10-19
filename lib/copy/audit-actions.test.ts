@@ -427,6 +427,28 @@ describe("result sentences", () => {
     ).toBe("הכרטיסייה הוארכה בשבוע, כי לא היה בראנץ׳ מתאים")
     expect(actions.job_auto_extend).toBe("הארכה אוטומטית")
     expect(shownPairs()).toContain("job_auto_extend/entitlements")
+    // Story 3.16.
+    expect(
+      result({
+        action: "admin_change_credit_options",
+        entity_type: "cancellation_credits",
+      })
+    ).toBe("החלופות לזיכוי עודכנו")
+    expect(
+      result({
+        action: "admin_refund_credit",
+        entity_type: "cancellation_credits",
+        related: [
+          rel("refund_requests", created({ amount_agorot: 18000 }), null),
+        ],
+      })
+    ).toBe("הזיכוי הוחלף בבקשת החזר של 180 ₪")
+    expect(
+      result({
+        action: "admin_refund_credit",
+        entity_type: "cancellation_credits",
+      })
+    ).toBeNull()
   })
 
   it("a shown action without a result sentence shows its name only", () => {

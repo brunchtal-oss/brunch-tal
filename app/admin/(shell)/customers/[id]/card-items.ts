@@ -77,6 +77,9 @@ export type CardBooking = {
   status: keyof typeof copy.bookingStatus
   party_size: number
   created_at: string
+  // Story 3.16: the credit whose origin is this booking, else the credit
+  // that funded it; null for none.
+  credit_id?: string | null
 }
 
 export type CardPayment = {
@@ -323,6 +326,9 @@ export type BookingItem = {
   status: string
   tone: StatusTone
   couple: boolean
+  // Story 3.16: a cancelled booking with a credit links to it on the card
+  // ("לזיכוי"); null otherwise.
+  creditHref: string | null
 }
 
 const BOOKING_TONES: Record<CardBooking["status"], StatusTone> = {
@@ -331,7 +337,10 @@ const BOOKING_TONES: Record<CardBooking["status"], StatusTone> = {
   cancelled: "expired",
 }
 
-export function toBookingItem(row: CardBooking): BookingItem {
+export function toBookingItem(
+  row: CardBooking,
+  customerId: string
+): BookingItem {
   return {
     key: row.booking_id,
     href: `/admin/sessions/${row.event_id}`,
@@ -341,6 +350,10 @@ export function toBookingItem(row: CardBooking): BookingItem {
     status: copy.bookingStatus[row.status] ?? row.status,
     tone: BOOKING_TONES[row.status] ?? "pending",
     couple: row.party_size === 2,
+    creditHref:
+      row.status === "cancelled" && row.credit_id
+        ? `/admin/customers/${encodeURIComponent(customerId)}#credit-${row.credit_id}`
+        : null,
   }
 }
 

@@ -99,6 +99,16 @@ export const ERROR_MESSAGES = {
   NOT_A_CARD: "אפשר לתקן רק כרטיסייה פעילה",
   NO_CHANGE: "זה כבר הערך הנוכחי, אין מה לשנות",
   NOT_PARKED: "הרכישה הזו כבר טופלה או שהמפגש לא בוטל. כדאי לרענן את הדף",
+  // Credit adjustments (story 3.16): the credit is no longer active (a
+  // refund was requested, it was refunded or used); a business cancel
+  // still waiting for her choice (alternatives only); it funds a confirmed
+  // booking. INVALID_INPUT of admin_change_credit_options carries
+  // detail.field events | reason; of admin_refund_credit, reason.
+  CREDIT_NOT_ACTIVE: "הזיכוי הזה כבר לא פעיל. כדאי לרענן את הדף",
+  CREDIT_CHOICE_PENDING:
+    "הלקוחה עוד לא בחרה בין זיכוי להחזר. אפשר לשנות חלופות אחרי שתבחר זיכוי",
+  CREDIT_IN_USE:
+    "הזיכוי משמש להרשמה עתידית. כדי לשנות אותו צריך קודם לבטל את ההרשמה",
   // Tal lowers the capacity below the places already taken (story 3.2).
   CAPACITY_BELOW_BOOKED:
     "המכסה נמוכה ממספר המקומות שכבר תפוסים. אפשר להוריד אותה רק עד מספר התפוסים",

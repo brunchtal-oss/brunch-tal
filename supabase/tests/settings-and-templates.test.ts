@@ -622,7 +622,7 @@ describe("admin_update_notification_template", { timeout: 30_000 }, () => {
     })
   })
 
-  it("the admin reads all 21 templates (policy and grant)", async () => {
+  it("the admin reads all 23 templates (policy and grant)", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)
       const types = await as(db, f.admin, async () => {
@@ -631,7 +631,7 @@ describe("admin_update_notification_template", { timeout: 30_000 }, () => {
         )
         return rows.map((row) => row.type as string)
       })
-      expect(types).toHaveLength(21)
+      expect(types).toHaveLength(23)
     })
   })
 
@@ -659,7 +659,7 @@ describe("the template contract", { timeout: 60_000 }, () => {
          from public.notification_templates
          order by type`
       )
-      expect(rows).toHaveLength(21)
+      expect(rows).toHaveLength(23)
     })
   })
 
@@ -885,6 +885,52 @@ describe("the template contract", { timeout: 60_000 }, () => {
             [rows[0].id, field, value, randomUUID()]
           )
         )
+        const sent = await notifications(db, f.customerA, type)
+        expect(sent, type).toHaveLength(1)
+        expectRendered(sent[0])
+      }
+    })
+  })
+
+  // Story 3.16: Tal changes a credit's alternatives, then refunds it.
+  it("credit_options_changed and credit_refund_requested render in the real flow", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      for (const type of [
+        "credit_options_changed",
+        "credit_refund_requested",
+      ]) {
+        await fillAllFields(db, f, type)
+      }
+      const origin = await insertEvent(db, f, 5)
+      const pick = await insertEvent(db, f, 9)
+      await insertEvent(db, f, 6)
+      const r = await grant(db, f, f.single, { eventId: origin })
+      const { rows } = await db.query(
+        "select id from public.bookings where payment_id = $1",
+        [r.payment_id]
+      )
+      const cancelled = await as(db, f.customerA, async () => {
+        const { rows: c } = await db.query(
+          "select public.cancel_booking($1, $2, 'credit') as r",
+          [rows[0].id, randomUUID()]
+        )
+        return c[0].r
+      })
+      await as(db, f.admin, async () => {
+        await db.query(
+          "select public.admin_change_credit_options($1, $2::uuid[], null, true, $3)",
+          [cancelled.credit_id, [pick], randomUUID()]
+        )
+        await db.query(
+          "select public.admin_refund_credit($1, null, true, $2)",
+          [cancelled.credit_id, randomUUID()]
+        )
+      })
+      for (const type of [
+        "credit_options_changed",
+        "credit_refund_requested",
+      ]) {
         const sent = await notifications(db, f.customerA, type)
         expect(sent, type).toHaveLength(1)
         expectRendered(sent[0])

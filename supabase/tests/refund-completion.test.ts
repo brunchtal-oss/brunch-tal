@@ -773,6 +773,12 @@ describe("admin lists", { timeout: 60_000 }, () => {
           refunded_on: f.today,
           reference: null,
         },
+        // Story 3.16: a refund request has no alternatives.
+        options_count: expect.any(Number),
+        options: [],
+        in_use: false,
+        exhausted: false,
+        in_use_booking: null,
       })
       expect(credits[0]).toMatchObject({
         status: "refund_requested",

@@ -461,6 +461,8 @@ describe("admin_get_customer", () => {
         status: "confirmed",
         party_size: 1,
         created_at: expect.any(String),
+        // Story 3.16: no credit came from or funded it.
+        credit_id: null,
       })
       expect(r.payments).toEqual([
         {

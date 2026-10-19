@@ -621,3 +621,7 @@
   target: 5.20
   summary: להפסיק לרשום ביומן את הפעולות המוסתרות (`HIDDEN_AUDIT_ACTIONS` ב-`lib/copy/audit-actions.ts`, כ-35 פונקציות: דף העבודה, פתקים ונושאים, טיוטות, תמונות ושלבים טכניים), כשאף סיפור לא רץ במקביל.
   evidence: החלטת המשתמשת 2026-10-18. היומן הקצר מסנן אותן בקריאה בלבד (`p_shown` של `admin_list_audit`), והן עדיין נכתבות ל-`audit_log`. שינוי בכותבים נוגע בפונקציות שסיפורים אחרים עורכים.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-16-admin-credit-adjustments.md`
+  summary: `supabase/tests/notifications.test.ts` "hold the approved seed" compares the whole template table with a SEED list that stopped at 18 templates, so it fails on every `test:db` run (the table has 20 before 3.16, 23 with 3.14 and 3.16).
+  evidence: verification-gap review of 3.16; `settings-and-templates.test.ts` already counts 20+. Settle by updating the SEED list (or narrowing the test to the original 18 types) in the fixes round.

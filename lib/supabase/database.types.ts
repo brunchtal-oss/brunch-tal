@@ -603,6 +603,7 @@ export type Database = {
       }
       credit_options: {
         Row: {
+          added_by: string
           assigned_at: string
           credit_id: string
           event_id: string
@@ -612,6 +613,7 @@ export type Database = {
           state: string
         }
         Insert: {
+          added_by?: string
           assigned_at?: string
           credit_id: string
           event_id: string
@@ -621,6 +623,7 @@ export type Database = {
           state?: string
         }
         Update: {
+          added_by?: string
           assigned_at?: string
           credit_id?: string
           event_id?: string
@@ -1892,6 +1895,16 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_change_credit_options: {
+        Args: {
+          p_confirmed: boolean
+          p_credit_id: string
+          p_event_ids: string[]
+          p_idempotency_key: string
+          p_reason: string
+        }
+        Returns: Json
+      }
       admin_change_phone: {
         Args: {
           p_customer_id: string
@@ -2037,6 +2050,10 @@ export type Database = {
         Returns: Json
       }
       admin_list_bookable_events: { Args: never; Returns: Json }
+      admin_list_credit_candidates: {
+        Args: { p_credit_id: string }
+        Returns: Json
+      }
       admin_list_customer_bookable_events: {
         Args: { p_customer_id: string }
         Returns: Json
@@ -2079,6 +2096,15 @@ export type Database = {
       }
       admin_publish_event: {
         Args: { p_event_id: string; p_idempotency_key: string }
+        Returns: Json
+      }
+      admin_refund_credit: {
+        Args: {
+          p_confirmed: boolean
+          p_credit_id: string
+          p_idempotency_key: string
+          p_reason: string
+        }
         Returns: Json
       }
       admin_remove_prep_day: {
@@ -2339,6 +2365,10 @@ export type Database = {
         Args: { p_event_id: string }
         Returns: Json
       }
+      preview_admin_change_credit_options: {
+        Args: { p_credit_id: string; p_event_ids: string[] }
+        Returns: Json
+      }
       preview_admin_complete_refund: {
         Args: { p_refund_request_id: string }
         Returns: Json
@@ -2357,6 +2387,10 @@ export type Database = {
       }
       preview_admin_move_booking: {
         Args: { p_booking_id: string }
+        Returns: Json
+      }
+      preview_admin_refund_credit: {
+        Args: { p_credit_id: string }
         Returns: Json
       }
       preview_admin_reschedule_event: {

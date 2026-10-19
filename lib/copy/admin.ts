@@ -1447,6 +1447,9 @@ export const adminCopy = {
         booking_cancelled_pinned: "ביטול הרשמה עם זיכוי",
         booking_cancelled_refund: "ביטול הרשמה עם בקשת החזר",
         refund_completed: "ההחזר בוצע",
+        // Story 3.16: Tal changed a credit, or replaced it with a refund.
+        credit_options_changed: "עדכון חלופות הזיכוי",
+        credit_refund_requested: "החזר במקום זיכוי",
         event_changed: "שינוי במפגש",
         event_cancelled: "ביטול מפגש",
         // Story 3.13: one template per correction of a card.
@@ -1691,6 +1694,62 @@ export const adminCopy = {
           `הוחזר ${amount} ב-${date}`,
         reference: (value: string) => `אסמכתה: ${value}`,
         couple: "זוגי",
+        // Story 3.16: an active credit's alternatives and Tal's two
+        // actions on it.
+        optionsTitle: "מפגשים חלופיים",
+        // "בראנץ׳ {concept} · {weekday} {DD.MM}".
+        optionLine: (concept: string, day: string) =>
+          `בראנץ׳ ${concept} · ${day}`,
+        exhausted:
+          "כל המפגשים החלופיים עברו. אפשר להוסיף מפגשים ב״שינוי חלופות״",
+        // A credit that funds a confirmed booking (moving it keeps the
+        // credit in use): "{inUseLead}<the session, a link>{inUseTail}", or
+        // inUse when the booking is not known.
+        inUse:
+          "הזיכוי משמש להרשמה עתידית. כדי לשנות אותו צריך קודם לבטל את ההרשמה",
+        inUseLead: "הזיכוי משמש להרשמה ל:",
+        inUseTail: "כדי לשנות אותו צריך קודם לבטל את ההרשמה.",
+        change: "שינוי חלופות",
+        refund: "החזר במקום זיכוי",
+        changeFor: (title: string) => `שינוי חלופות: ${title}`,
+        refundFor: (title: string) => `החזר במקום זיכוי: ${title}`,
+        // The edit box of "שינוי חלופות".
+        editHint: "אפשר להחליף מפגשים או להוסיף עוד",
+        noCandidates: "אין כרגע מפגשים מתאימים עם מקום פנוי",
+        pickOne: "צריך לבחור לפחות מפגש אחד",
+        pickMax: "אפשר לבחור עד 10 מפגשים",
+        reason: "סיבה (לא חובה)",
+        next: "המשך",
+        cancel: "ביטול",
+        // The dialogs.
+        customer: "לקוחה",
+        creditRow: "זיכוי",
+        // The change dialog: the sessions it adds, and those it removes.
+        added: "מפגשים שנוספו",
+        removed: "מפגשים שהוסרו",
+        amount: "סכום ההחזר",
+        reasonRow: "סיבה",
+        changeDescription:
+          "הלקוחה תוכל להירשם עם הזיכוי רק למפגשים שבחרת, ותקבל הודעה על העדכון.",
+        refundDescription:
+          "הזיכוי ייסגר ותיפתח בקשת החזר שתופיע בתשלומים וב״לטיפול״. הלקוחה תקבל הודעה.",
+        changeCheckbox: (name: string) =>
+          `אני מאשרת לשנות את החלופות של הזיכוי של ${name}`,
+        refundCheckbox: (amount: string, name: string) =>
+          `אני מאשרת להחליף את הזיכוי של ${name} בהחזר של ${amount}`,
+        changeConfirm: "שינוי החלופות",
+        refundConfirm: "פתיחת בקשת החזר",
+        changeDone: "החלופות עודכנו והלקוחה קיבלה הודעה",
+        refundDone: "נפתחה בקשת החזר והלקוחה קיבלה הודעה",
+        // A refusal of INVALID_INPUT, by detail.field.
+        refusal: {
+          events:
+            "אחד המפגשים כבר לא מתאים (מלא, נסגר או שהיא רשומה אליו). כדאי לרענן את הדף",
+          reason: "הסיבה ארוכה מדי",
+        } as Record<string, string>,
+        noChange: "אלה כבר המפגשים החלופיים של הזיכוי",
+        // The booking history: a cancelled booking's credit.
+        creditLink: "לזיכוי",
       },
       // "נוצלו 2 · שוריינו 1 · פנויות 1"
       balanceSummary: (used: number, booked: number, free: number) =>
@@ -1962,6 +2021,10 @@ export const adminCopy = {
       parkedSettled: "התקבל זיכוי, והלקוחה תבחר בין זיכוי להחזר",
       // Story 3.14: one row per extended week.
       autoExtended: "הכרטיסייה הוארכה בשבוע, כי לא היה בראנץ׳ מתאים",
+      // Story 3.16.
+      creditOptionsChanged: "החלופות לזיכוי עודכנו",
+      creditRefunded: (amount: string) =>
+        `הזיכוי הוחלף בבקשת החזר של ${amount}`,
     },
     // Values.
     masked: "השתנה",
@@ -2006,6 +2069,9 @@ export const adminCopy = {
       admin_set_correction_booking_handled: "סימון הרשמה שטופלה אחרי תיקון",
       // Story 3.14.
       job_auto_extend: "הארכה אוטומטית",
+      // Story 3.16.
+      admin_change_credit_options: "שינוי חלופות לזיכוי",
+      admin_refund_credit: "החזר במקום זיכוי",
       choose_credit_outcome: "בחירה בין זיכוי להחזר",
       bind_purchase: "שיוך רכישה",
       join_complete: "השלמת הצטרפות",
