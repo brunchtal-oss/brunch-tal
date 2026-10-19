@@ -745,6 +745,13 @@ export const adminCopy = {
       close: "סגירה",
     },
     noBookableSessions: "אין מפגש פתוח לרישום",
+    // Story 3.19 (user decision 2026-10-18): the open sessions her
+    // entitlements can't fund are hidden; one line says how many.
+    hiddenSessions: (n: number) =>
+      n === 1
+        ? "מפגש אחד לא מוצג כי אין לה זכות שמתאימה לו"
+        : `${n} מפגשים לא מוצגים כי אין לה זכות שמתאימה להם`,
+    noFundableSessions: "אין מפגש פתוח שהזכויות שלה מתאימות לו",
     // A refusal on the manual booking screen, worded for Tal (lib/errors.ts
     // speaks to the customer). Any other code keeps errorMessage.
     bookRefusal: {

@@ -1920,6 +1920,10 @@ export type Database = {
         Returns: Json
       }
       admin_list_bookable_events: { Args: never; Returns: Json }
+      admin_list_customer_bookable_events: {
+        Args: { p_customer_id: string }
+        Returns: Json
+      }
       admin_list_customer_credits: {
         Args: { p_customer_id: string }
         Returns: Json

@@ -13,7 +13,7 @@ import { createClient } from "@/lib/supabase/server"
 import { formatLocalDate, formatSessionDate } from "@/lib/time"
 
 import { toBookableEvents } from "../../payments/new/event-options"
-import { markBooked } from "./book-items"
+import { bookListView, markBooked, parseCustomerBookable } from "./book-items"
 import {
   loadBookedEventIds,
   loadBookingCustomer,
@@ -29,7 +29,9 @@ export const metadata: Metadata = {
 
 // Manual booking from the customer's side (story 3.4): after a card is
 // approved ("לרישום לתאריך"), or later from her card (4.2). The open
-// sessions (admin_list_bookable_events) with {occupied}/{capacity}. A
+// sessions she can be booked for (admin_list_customer_bookable_events,
+// story 3.19) with {occupied}/{capacity}, and a line with how many were
+// hidden; none she can be booked for: a notice with "הוספת תשלום". A
 // session she is already booked for shows "רשומה" (story 4.3, user
 // decision 2026-10-13); every other row is a checkbox, and several dates
 // are booked at once (MultiBooking). /admin/sessions/[id]/book stays for a
@@ -83,12 +85,16 @@ async function BookCustomerContent({
   }
 
   const [result, bookedIds, freeEntries] = await Promise.all([
-    callRpc(await createClient(), "admin_list_bookable_events"),
+    callRpc(await createClient(), "admin_list_customer_bookable_events", {
+      p_customer_id: customer.id,
+    }),
     loadBookedEventIds(customer.id),
     loadFreeEntries(customer.id),
   ])
   if (!result.ok) throw new Error("bookable sessions failed")
-  const events = markBooked(toBookableEvents(result.data), bookedIds)
+  const listed = parseCustomerBookable(result.data)
+  const events = markBooked(toBookableEvents(listed.events), bookedIds)
+  const view = bookListView(events.length, listed.hidden)
 
   return (
     <section aria-labelledby="choose-heading" className="flex flex-col gap-3">
@@ -103,14 +109,33 @@ async function BookCustomerContent({
       >
         {copy.chooseSession}
       </h2>
-      {events.length === 0 ? (
+      {view === "noSessions" ? (
         <p className="text-base text-muted-foreground">
           {copy.noBookableSessions}
         </p>
+      ) : view === "noFundable" ? (
+        <InlineNotice
+          tone="warning"
+          actions={
+            <Link
+              href={`/admin/payments/new/existing/${customer.id}`}
+              className={buttonClass({
+                variant: "outline",
+                size: "lg",
+                className: "h-11 text-base",
+              })}
+            >
+              {copy.addPayment}
+            </Link>
+          }
+        >
+          {copy.noFundableSessions}
+        </InlineNotice>
       ) : (
         <MultiBooking
           customer={{ id: customer.id, name: customer.name }}
           freeEntries={freeEntries}
+          hiddenCount={listed.hidden}
           rows={events.map((event) => {
             const party = event.kind === "couple" ? 2 : 1
             return {
