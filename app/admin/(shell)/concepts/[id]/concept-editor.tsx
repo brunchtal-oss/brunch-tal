@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 
 import { SensitiveConfirmDialog } from "@/components/admin/sensitive-confirm-dialog"
 import { InlineNotice } from "@/components/shared/inline-notice"
+import { OnlineButton } from "@/components/shared/online-button"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { adminCopy } from "@/lib/copy/admin"
@@ -132,7 +133,7 @@ function FieldsForm({ row }: { row: ConceptRow }) {
         notes
       />
       <NoticeLine notice={notice} />
-      <Button
+      <OnlineButton
         type="submit"
         size="lg"
         className="h-12 self-start px-6 text-base"
@@ -141,7 +142,7 @@ function FieldsForm({ row }: { row: ConceptRow }) {
       >
         {pending && <Spinner aria-hidden />}
         {copy.save}
-      </Button>
+      </OnlineButton>
     </form>
   )
 }
@@ -201,7 +202,7 @@ function ImageBox({
       />
       <NoticeLine notice={notice} />
       {changed && (
-        <Button
+        <OnlineButton
           type="button"
           size="lg"
           className="h-12 self-start px-6 text-base"
@@ -211,7 +212,7 @@ function ImageBox({
         >
           {pending && <Spinner aria-hidden />}
           {copy.image.save}
-        </Button>
+        </OnlineButton>
       )}
     </section>
   )
@@ -262,7 +263,7 @@ function ArchiveBox({
       <p className="text-[15px] text-muted-foreground">{copy.archiveNote}</p>
       {error && <InlineNotice tone="error">{errorMessage(error)}</InlineNotice>}
       {done && <InlineNotice tone="success">{done}</InlineNotice>}
-      <Button
+      <OnlineButton
         type="button"
         variant="outline"
         size="lg"
@@ -273,7 +274,7 @@ function ArchiveBox({
       >
         {pending && <Spinner aria-hidden />}
         {archived ? copy.restore : copy.archive}
-      </Button>
+      </OnlineButton>
     </section>
   )
 }

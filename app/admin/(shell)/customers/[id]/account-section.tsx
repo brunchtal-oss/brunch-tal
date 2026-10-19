@@ -9,7 +9,7 @@ import {
   ValueChangeRow,
 } from "@/components/admin/value-change-row"
 import { InlineNotice } from "@/components/shared/inline-notice"
-import { Button } from "@/components/ui/button"
+import { OnlineButton } from "@/components/shared/online-button"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"
@@ -235,7 +235,7 @@ export function ResetLinkView({
           </time>
         </p>
       )}
-      <Button
+      <OnlineButton
         type="button"
         variant="outline"
         size="lg"
@@ -246,7 +246,7 @@ export function ResetLinkView({
       >
         {pending && <Spinner aria-hidden />}
         {view.resetButton}
-      </Button>
+      </OnlineButton>
       {error && <InlineNotice tone="error">{errorMessage(error)}</InlineNotice>}
       {issued &&
         (issued.link ? (

@@ -83,4 +83,17 @@ describe("saveWithKey", () => {
     const saved = await saveWithKey(async () => null, KEY)
     expect(saved).toEqual({ result: null, nextKey: KEY })
   })
+
+  // Story 5.21: offline nothing is sent, and the next save reuses the key.
+  it("offline: does not call the save and keeps the key", async () => {
+    vi.stubGlobal("navigator", { onLine: false })
+    try {
+      const onSave = vi.fn(async () => ({ ok: true }) as const)
+      const saved = await saveWithKey(onSave, KEY)
+      expect(onSave).not.toHaveBeenCalled()
+      expect(saved).toEqual({ result: null, nextKey: KEY })
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
 })

@@ -6,7 +6,9 @@ import { useRouter } from "next/navigation"
 import { CheckIcon, XIcon } from "lucide-react"
 
 import { InlineNotice } from "@/components/shared/inline-notice"
+import { PushOffer } from "@/components/shared/push-offer"
 import { StatusChip } from "@/components/shared/status-chip"
+import { OnlineButton } from "@/components/shared/online-button"
 import { Button } from "@/components/ui/button"
 import {
   Sheet,
@@ -18,6 +20,7 @@ import { Spinner } from "@/components/ui/spinner"
 import { customerCopy as copy } from "@/lib/copy/customer"
 import { errorMessage, type ErrorCode } from "@/lib/errors"
 import { newIdempotencyKey } from "@/lib/idempotency"
+import { claimPushOffer } from "@/lib/push/client"
 import {
   formatAccessibleDate,
   formatDayMonth,
@@ -26,6 +29,7 @@ import {
 } from "@/lib/time"
 import { cn } from "@/lib/utils"
 
+import { registerPush, unregisterPush } from "../../notifications/actions"
 import { bookSessionsAction } from "../actions"
 import {
   parseBookResults,
@@ -63,6 +67,9 @@ export function SessionSelector({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<ErrorCode | null>(null)
   const [results, setResults] = useState<DateResult[] | null>(null)
+  // Story 5.21: the push offer under the climax (every date saved), once
+  // per device.
+  const [offerPush, setOfferPush] = useState(false)
   const titleRef = useRef<HTMLHeadingElement>(null)
   const resultsRef = useRef<HTMLHeadingElement>(null)
   const counterId = useId()
@@ -80,7 +87,14 @@ export function SessionSelector({
   const full = current.length >= available
 
   if (results) {
-    return <Results results={results} byId={byId} headingRef={resultsRef} />
+    return (
+      <Results
+        results={results}
+        byId={byId}
+        headingRef={resultsRef}
+        offerPush={offerPush}
+      />
+    )
   }
 
   function toggle(session: SelectableSession) {
@@ -106,6 +120,9 @@ export function SessionSelector({
       const parsed = result.ok ? parseBookResults(result.data) : null
       if (parsed) {
         setOpen(false)
+        setOfferPush(
+          parsed.length > 0 && parsed.every((r) => r.ok) && claimPushOffer()
+        )
         setResults(parsed)
       } else {
         failure = result.ok ? "SERVER_ERROR" : result.code
@@ -312,7 +329,7 @@ export function SessionSelector({
                   {errorMessage(error)}
                 </InlineNotice>
               )}
-              <Button
+              <OnlineButton
                 type="button"
                 size="lg"
                 onClick={confirm}
@@ -322,7 +339,7 @@ export function SessionSelector({
               >
                 {busy && <Spinner aria-hidden />}
                 {copy.book}
-              </Button>
+              </OnlineButton>
             </SheetContent>
           </Sheet>
           <Link href="/me/sessions" className={cn(LINK, "py-3 text-[15px]")}>
@@ -342,10 +359,12 @@ function Results({
   results,
   byId,
   headingRef,
+  offerPush,
 }: {
   results: DateResult[]
   byId: Map<string, SelectableSession>
   headingRef: React.RefObject<HTMLHeadingElement | null>
+  offerPush: boolean
 }) {
   const heading = resultsHeading(results)
 
@@ -412,6 +431,9 @@ function Results({
           {copy.allSessions}
         </Link>
       </div>
+      {offerPush && (
+        <PushOffer register={registerPush} unregister={unregisterPush} />
+      )}
     </section>
   )
 }

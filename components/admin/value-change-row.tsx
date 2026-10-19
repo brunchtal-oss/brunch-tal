@@ -4,11 +4,12 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 
 import { InlineNotice } from "@/components/shared/inline-notice"
-import { Button } from "@/components/ui/button"
+import { OnlineButton } from "@/components/shared/online-button"
 import { Spinner } from "@/components/ui/spinner"
 import { adminCopy } from "@/lib/copy/admin"
 import { errorMessage, type ActionResult, type ErrorCode } from "@/lib/errors"
 import { newIdempotencyKey } from "@/lib/idempotency"
+import { isOffline } from "@/lib/use-online"
 
 const copy = adminCopy.valueChange
 
@@ -113,7 +114,7 @@ export function ValueChangeRow({
             <InlineNotice tone="error">{errorMessage(error)}</InlineNotice>
           )}
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-            <Button
+            <OnlineButton
               type="button"
               variant="outline"
               size="lg"
@@ -124,7 +125,7 @@ export function ValueChangeRow({
             >
               {pending && <Spinner aria-hidden />}
               {copy.save}
-            </Button>
+            </OnlineButton>
             {/* button-link (DESIGN): ink text, underlined, 44px target. */}
             <button
               type="button"
@@ -151,6 +152,8 @@ export async function saveWithKey(
   onSave: (idempotencyKey: string) => Promise<ValueSaveResult | null>,
   key: string
 ): Promise<{ result: ValueSaveResult | null; nextKey: string }> {
+  // Offline nothing is sent (story 5.21): the same key for the next save.
+  if (isOffline()) return { result: null, nextKey: key }
   try {
     const result = await onSave(key)
     return { result, nextKey: result ? newIdempotencyKey() : key }

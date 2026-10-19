@@ -1,10 +1,11 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { XIcon } from "lucide-react"
 
 import { InlineNotice } from "@/components/shared/inline-notice"
+import { OnlineButton } from "@/components/shared/online-button"
 import { Button } from "@/components/ui/button"
 import {
   Sheet,
@@ -19,7 +20,7 @@ import { errorMessage, type ErrorCode } from "@/lib/errors"
 import { newIdempotencyKey } from "@/lib/idempotency"
 import { cn } from "@/lib/utils"
 
-import { setGuestDetailsAction } from "./actions"
+import { setGuestDetailsAction } from "../../bookings/actions"
 
 const copy = customerCopy.companion
 const LINK = "font-semibold underline underline-offset-[3px]"
@@ -31,13 +32,14 @@ export function companionAnchor(bookingId: string): string {
   return `booking-${bookingId}`
 }
 
-// The companion's dietary note under an upcoming couple booking (story
-// 3.5). The saved text, or "לא נמסרו". While the server says it is editable
+// The companion's dietary note of a couple booking (story 3.5), on the
+// session page under the booking (story 5.21, fix 7: under the card in
+// /me/bookings it was missed). The saved text, or "לא נמסרו". While the server says it is editable
 // (confirmed, couple, before the session's registration close),
 // "עריכה" ("הוספה" when empty) opens a bottom-sheet with one textarea and
 // "שמירה"; the result is an inline-notice ("נשמר"). After the close it is
-// read-only, with "אפשר לשנות דרך צרי קשר". The section's id is the target
-// of booking_confirmed_couple (/me/bookings#booking-<id>). No optimistic
+// read-only, with the closed note and "צרי קשר". The section's id is the target
+// of booking_confirmed_couple (/me/sessions/<event>#booking-<id>). No optimistic
 // result: the view shows what the server returned (router.refresh), the
 // button is busy until it answers, and a new idempotency key on each
 // opening and after a failure (AD-5).
@@ -62,10 +64,19 @@ export function CompanionNote({
   // The registration closed while the page was open: read-only from now on.
   const [closed, setClosed] = useState(false)
   const titleRef = useRef<HTMLHeadingElement>(null)
+  const sectionRef = useRef<HTMLElement>(null)
   const labelId = `companion-label-${bookingId}`
   const fieldId = `companion-field-${bookingId}`
 
   const canEdit = editable && !closed
+
+  // The couple notification opens #booking-<id>, but the section streams in
+  // after the page, so the browser's own hash scroll can miss it.
+  useEffect(() => {
+    if (window.location.hash === `#${companionAnchor(bookingId)}`) {
+      sectionRef.current?.scrollIntoView({ block: "start" })
+    }
+  }, [bookingId])
 
   async function save() {
     if (busy) return
@@ -112,15 +123,16 @@ export function CompanionNote({
 
   return (
     <section
+      ref={sectionRef}
       id={companionAnchor(bookingId)}
       aria-labelledby={labelId}
       className="flex scroll-mt-24 flex-col gap-2 rounded-lg bg-muted px-4 py-3"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 flex-col gap-1">
-          <h4 id={labelId} className="text-[15px] text-muted-foreground">
+          <h2 id={labelId} className="text-[15px] text-muted-foreground">
             {copy.label}
-          </h4>
+          </h2>
           <p
             className={cn(
               "text-base break-words whitespace-pre-line",
@@ -200,7 +212,7 @@ export function CompanionNote({
                   {errorMessage(error)}
                 </InlineNotice>
               )}
-              <Button
+              <OnlineButton
                 type="button"
                 size="lg"
                 onClick={save}
@@ -210,7 +222,7 @@ export function CompanionNote({
               >
                 {busy && <Spinner aria-hidden />}
                 {copy.save}
-              </Button>
+              </OnlineButton>
             </SheetContent>
           </Sheet>
         )}

@@ -8,6 +8,7 @@ import { ChevronDownIcon, ChevronUpIcon, PlusIcon } from "lucide-react"
 import { ImageUploadField } from "@/components/admin/image-upload-field"
 import { RadioCardGroup } from "@/components/admin/radio-card"
 import { InlineNotice } from "@/components/shared/inline-notice"
+import { OnlineButton } from "@/components/shared/online-button"
 import { Button } from "@/components/ui/button"
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
@@ -560,7 +561,7 @@ export function ContentEditor({
 
       <div className="flex flex-col gap-3 sm:flex-row-reverse sm:justify-end">
         {(canPublish || blocked) && (
-          <Button
+          <OnlineButton
             type="button"
             size="lg"
             onClick={blocked ? undefined : publish}
@@ -571,10 +572,10 @@ export function ContentEditor({
           >
             {busyWith === "publish" && <Spinner aria-hidden />}
             {copy.publish}
-          </Button>
+          </OnlineButton>
         )}
         {previewHref && (
-          <Button
+          <OnlineButton
             type="button"
             size="lg"
             variant="outline"
@@ -585,9 +586,9 @@ export function ContentEditor({
           >
             {busyWith === "preview" && <Spinner aria-hidden />}
             {copy.preview}
-          </Button>
+          </OnlineButton>
         )}
-        <Button
+        <OnlineButton
           id="save-draft"
           type="submit"
           size="lg"
@@ -598,7 +599,7 @@ export function ContentEditor({
         >
           {busyWith === "save" && <Spinner aria-hidden />}
           {copy.saveDraft}
-        </Button>
+        </OnlineButton>
       </div>
 
       {dirty && (
@@ -622,6 +623,7 @@ export function ContentEditor({
             confirmLabel={copy.undo.discardConfirm}
             cancelLabel={copy.undo.cancel}
             busy={busyWith === "discard"}
+            writes
             onConfirm={discard}
             onCancel={() => {
               setConfirmingDiscard(false)
@@ -805,6 +807,7 @@ function InlineConfirm({
   confirmLabel,
   cancelLabel,
   busy = false,
+  writes = false,
   onConfirm,
   onCancel,
 }: {
@@ -814,9 +817,12 @@ function InlineConfirm({
   confirmLabel: string
   cancelLabel: string
   busy?: boolean
+  // The confirm asks the server to change something (offline guard, 5.21).
+  writes?: boolean
   onConfirm: () => void
   onCancel: () => void
 }) {
+  const Confirm = writes ? OnlineButton : Button
   return (
     <div
       role="group"
@@ -832,7 +838,7 @@ function InlineConfirm({
       </p>
       {detail && <p className="text-[15px] text-pretty">{detail}</p>}
       <div className="flex flex-wrap gap-3">
-        <Button
+        <Confirm
           type="button"
           onClick={() => {
             if (!busy) onConfirm()
@@ -843,7 +849,7 @@ function InlineConfirm({
         >
           {busy && <Spinner aria-hidden />}
           {confirmLabel}
-        </Button>
+        </Confirm>
         <Button
           type="button"
           variant="outline"

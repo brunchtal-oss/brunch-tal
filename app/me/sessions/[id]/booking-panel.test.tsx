@@ -9,6 +9,10 @@ import type { BookingPreview } from "./booking-preview"
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }))
 vi.mock("../actions", () => ({ bookSessionAction: vi.fn() }))
+vi.mock("../../notifications/actions", () => ({
+  registerPush: vi.fn(),
+  unregisterPush: vi.fn(),
+}))
 vi.mock("../../bookings/actions", () => ({
   cancelBookingAction: vi.fn(),
   moveBookingAction: vi.fn(),

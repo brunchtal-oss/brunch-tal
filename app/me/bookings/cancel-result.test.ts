@@ -10,7 +10,6 @@ import {
   parseMyBookings,
   pastBookingStatus,
   returnsText,
-  type MyBooking,
 } from "./cancel-result"
 import type { MyCredit } from "./credits"
 
@@ -162,24 +161,7 @@ describe("parseMyBookings", () => {
     expect(isCoupleBooking({ partySize: 2, status: "cancelled" })).toBe(false)
   })
 
-  it("story 3.5: the contact link is needed for an exhausted credit or a read-only couple note", () => {
-    const booking = (
-      partySize: number,
-      guestDetailsEditable: boolean
-    ): MyBooking => ({
-      bookingId: "b1",
-      eventId: "e1",
-      status: "confirmed",
-      startsAt: "2026-10-12T07:00:00+00:00",
-      conceptName: "Mothers",
-      canSelfCancel: true,
-      funding: "pinned",
-      productName: "",
-      partySize,
-      guestDetails: null,
-      guestDetailsEditable,
-      movedToStartsAt: null,
-    })
+  it("story 5.21: the contact link is needed only for an exhausted credit", () => {
     const credit = (exhausted: boolean): MyCredit => ({
       creditId: "c1",
       status: "active",
@@ -195,13 +177,10 @@ describe("parseMyBookings", () => {
       cancelledStartsAt: null,
       optionsCount: 2,
     })
-    // A read-only couple note, no exhausted credit: needs contact.
-    expect(needsContact([], [booking(2, false)])).toBe(true)
-    expect(needsContact([credit(true)], [])).toBe(true)
-    expect(needsContact([credit(false)], [booking(2, true)])).toBe(false)
-    // A single booking has no note, editable or not.
-    expect(needsContact([], [booking(1, false)])).toBe(false)
-    expect(needsContact([], [])).toBe(false)
+    expect(needsContact([credit(true)])).toBe(true)
+    // A read-only couple note is on the session page now (fix 7).
+    expect(needsContact([credit(false)])).toBe(false)
+    expect(needsContact([])).toBe(false)
   })
 
   it("a past booking is cancelled or took place", () => {

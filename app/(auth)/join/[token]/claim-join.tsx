@@ -12,6 +12,7 @@ import Link from "next/link"
 import { ContactText } from "@/components/shared/contact-text"
 import { SignOutButton } from "@/components/shared/sign-out-button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { OnlineButton } from "@/components/shared/online-button"
 import { Button } from "@/components/ui/button"
 import { buttonClass } from "@/components/shared/button-class"
 import { Spinner } from "@/components/ui/spinner"
@@ -228,7 +229,7 @@ export function ClaimScreen({
         </Alert>
       )}
 
-      <Button
+      <OnlineButton
         type="submit"
         size="lg"
         className={BUTTON}
@@ -237,7 +238,7 @@ export function ClaimScreen({
       >
         {pending && <Spinner aria-hidden />}
         {pending ? joinCopy.claimPending : joinCopy.claimSubmit}
-      </Button>
+      </OnlineButton>
     </form>
   )
 }

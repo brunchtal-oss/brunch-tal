@@ -1,3 +1,4 @@
+import { OfflineBanner } from "@/components/shared/offline-banner"
 import { SkipLink } from "@/components/shared/skip-link"
 
 // Auth shell (AD-2): no navigation, one narrow column. /login, /admin/login,
@@ -17,6 +18,7 @@ export default function AuthLayout({
         tabIndex={-1}
         className="mx-auto flex min-h-svh w-full max-w-sm flex-col gap-6 px-6 pt-16 pb-10"
       >
+        <OfflineBanner />
         {children}
       </main>
     </>

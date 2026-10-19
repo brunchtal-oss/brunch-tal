@@ -253,6 +253,7 @@
   target: 5.21 (החלטת המשתמשת 2026-10-10)
   summary: השבתת כל הכפתורים שמשנים נתונים כשאין חיבור, כולל באדמין (UX memlog, review fixes). בהדגמה רק `/offline`, ופעולה שנשלחת בלי רשת נכשלת בשגיאה הקיימת.
   evidence: מסמך ההיקף 2026-10-04: אופליין מלא ומצב קריאה בלבד לא נכנסים ל-5.9.
+  status: נסגר ב-5.21 (2026-10-19). ‏`useOnline` (‏`lib/use-online.ts`), ‏`OfflineBanner` בכל מעטפת עם כתיבה (`/me`, ‏`/admin`, מסכי ההתחברות), ו-`OnlineButton` / ‏`useOnlineGuard` / ‏`OnlineNativeButton` בכל כפתור שמשנה נתונים, כולל באדמין. ‏`useWorkAction().run` ו-`saveWithKey` לא שולחים כשאין חיבור. בלי תור ובלי מצב קריאה בלבד.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-9-pwa-install-and-offline.md`
   target: 2.10
@@ -442,6 +443,7 @@
   target: 5.21 (החלטת המשתמשת 2026-10-10)
   summary: לקוחה מחוברת ב-`/sessions` (הרשימה הציבורית) רואה `status-chip` על מפגש שהיא רשומה אליו, כמו ב-`/me/sessions`. צריך לקרוא את ההרשמות שלה ברכיב דינמי בתוך `Suspense`, בלי לשבור את המטמון של הרשימה.
   evidence: ‏spec 5.16 (Always) השאיר את ה-chips ל-5.7, ו-5.7 הוציא אותם (Never). היום הרשימה הציבורית זהה לאורחת וללקוחה.
+  status: נסגר ב-5.21 (2026-10-19). הרשימה נשארת על הלקוח הציבורי. כל שורה מקבלת `BookedChip` בתוך `Suspense` משלה (`components/public/booked-chip.tsx`), שקורא פעם אחת לבקשה (React `cache`) את התפקיד ואת ההרשמות שלה. ‏"נרשמת" רק ללקוחה; לאורחת ולאדמין אין chip.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-5-privacy-and-accessibility.md`
   target: 6.9
@@ -477,6 +479,7 @@
   target: 5.21 (לא נבנה בסבב העיצוב; החלטת המשתמשת 2026-10-10)
   summary: הגדרות ההתראות בפרופיל (שורה עם קישור לכרטיס הפוש) והצעת הפוש אחרי הרשמה ראשונה מוצלחת ("המקום שלך שמור", EXPERIENCE). ב-5.8 הכרטיס במרכזי ההתראות של `/me` ו-`/admin` הוא המקום היחיד.
   evidence: החלטת המשתמשת 2026-10-06 באישור spec 5.8 (החלטה 2).
+  status: נסגר ב-5.21 (2026-10-19). שורת "התראות" ראשונה ב"עוד באזור האישי" בפרופיל, לכרטיס שב-`/me/notifications`. ההצעה (`PushOffer`, תצוגת השאלה של `PushCard`) מתחת לשיא ההרשמה, גם בהרשמה למפגש אחד וגם לכמה מועדים כשכולם נשמרו, פעם אחת למכשיר (`push-offered` ב-localStorage) ורק במצב `ask`.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-8-push-pipeline-and-permission.md`
   target: 5.10

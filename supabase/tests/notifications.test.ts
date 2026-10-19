@@ -176,7 +176,7 @@ const SEED = [
     true,
     "template",
     "ההרשמה אושרה",
-    "{date} · {time} · בראנץ׳ {concept}. אפשר להוסיף בהרשמות שלך הגבלות תזונה או אלרגיות של המלווה",
+    "{date} · {time} · בראנץ׳ {concept}. אפשר להוסיף בעמוד המפגש הגבלות תזונה או אלרגיות של המלווה",
   ],
   // Story 3.10: a booking moved to another session.
   [

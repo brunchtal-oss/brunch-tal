@@ -13,6 +13,7 @@ import {
 } from "@/components/admin/edit-kit"
 import { RadioCardGroup } from "@/components/admin/radio-card"
 import { useAnnounce, useWorkAction } from "@/components/admin/use-work-action"
+import { useOnlineGuard } from "@/components/shared/online-button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
@@ -96,6 +97,7 @@ export function TaskItem({
   const announce = useAnnounce()
   const { pending, error, run } = useWorkAction()
   const [open, setOpen] = useState(false)
+  const guard = useOnlineGuard()
 
   return (
     <li className="flex flex-col gap-1">
@@ -118,6 +120,7 @@ export function TaskItem({
             )
           }}
           className="mt-2.5 size-6 rounded-[4px] border-[1.5px] border-muted-foreground bg-card"
+          {...guard}
         />
         <label
           htmlFor={`${id}-done`}

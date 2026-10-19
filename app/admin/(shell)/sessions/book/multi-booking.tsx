@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { CheckIcon, XIcon } from "lucide-react"
 
 import { InlineNotice } from "@/components/shared/inline-notice"
+import { OnlineButton } from "@/components/shared/online-button"
 import { StatusChip } from "@/components/shared/status-chip"
 import { Button } from "@/components/ui/button"
 import {
@@ -403,7 +404,7 @@ export function MultiBooking({
                     {refusalMessage(error)}
                   </InlineNotice>
                 )}
-                <Button
+                <OnlineButton
                   type="button"
                   size="lg"
                   onClick={confirm}
@@ -413,7 +414,7 @@ export function MultiBooking({
                 >
                   {busy && <Spinner aria-hidden />}
                   {many.confirm}
-                </Button>
+                </OnlineButton>
               </SheetContent>
             </Sheet>
           </div>

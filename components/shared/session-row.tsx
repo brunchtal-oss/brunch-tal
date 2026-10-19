@@ -67,8 +67,13 @@ export function SessionRow({
               </span>
             </Link>
           </Heading>
+          {/* With statusText the link already says it; a chip streamed in
+              on its own (public /sessions, story 5.21) is read as is. */}
           {status && (
-            <span aria-hidden className="flex shrink-0 whitespace-nowrap">
+            <span
+              aria-hidden={statusText ? true : undefined}
+              className="flex shrink-0 whitespace-nowrap empty:hidden"
+            >
               {status}
             </span>
           )}

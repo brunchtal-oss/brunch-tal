@@ -18,6 +18,7 @@ import {
   useWorkAction,
 } from "@/components/admin/use-work-action"
 import { InlineNotice } from "@/components/shared/inline-notice"
+import { OnlineButton, useOnlineGuard } from "@/components/shared/online-button"
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -329,6 +330,9 @@ function AddDayButton({
   const { pending, error, run } = useWorkAction()
   const keys = useKeyFor()
   const next = nextPrepDay(prepDays, addableDays)
+  const guard = useOnlineGuard({
+    "aria-describedby": next ? undefined : reasonId,
+  })
 
   // A fragment inside the tools row: the button in the row, the reason and
   // the error last, on a line of their own under it (order-last basis-full).
@@ -359,6 +363,7 @@ function AddDayButton({
             }
           )
         }}
+        {...guard}
       >
         {pending && <Spinner aria-hidden />}
         {copy.addDay}
@@ -468,6 +473,7 @@ function AddedDay({
   const keys = useKeyFor()
   const [asking, setAsking] = useState(false)
   const [moving, setMoving] = useState(false)
+  const guard = useOnlineGuard()
   const tasks = tasksOnDay(dishes, day.offset)
   const name = dayDate(day)
 
@@ -519,6 +525,7 @@ function AddedDay({
           disabled={pending}
           onClick={() => (tasks > 0 ? setAsking(true) : remove())}
           className="inline-flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
+          {...guard}
         >
           <XIcon aria-hidden strokeWidth={1.5} className="size-[18px]" />
         </button>
@@ -549,7 +556,7 @@ function AddedDay({
             <AlertDialogCancel className="h-11 text-base" disabled={pending}>
               {copy.cancel}
             </AlertDialogCancel>
-            <Button
+            <OnlineButton
               type="button"
               className="h-11 text-base"
               aria-busy={pending || undefined}
@@ -558,7 +565,7 @@ function AddedDay({
             >
               {pending && <Spinner aria-hidden />}
               {copy.removeDay}
-            </Button>
+            </OnlineButton>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -636,7 +643,7 @@ function MoveDayPanel({
           }}
         />
         <p className="text-[15px] text-muted-foreground">{copy.moveDayNote}</p>
-        <Button
+        <OnlineButton
           type="submit"
           size="lg"
           aria-busy={pending || undefined}
@@ -645,7 +652,7 @@ function MoveDayPanel({
         >
           {pending && <Spinner aria-hidden />}
           {copy.moveDay}
-        </Button>
+        </OnlineButton>
       </form>
       <ErrorNotice code={error} />
     </WorkPanel>

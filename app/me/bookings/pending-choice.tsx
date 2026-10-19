@@ -7,6 +7,7 @@ import { XIcon } from "lucide-react"
 import { InlineNotice } from "@/components/shared/inline-notice"
 import { useAnnounce } from "@/components/shared/result-notice"
 import { StatusChip } from "@/components/shared/status-chip"
+import { OnlineButton } from "@/components/shared/online-button"
 import { Button } from "@/components/ui/button"
 import {
   Sheet,
@@ -168,7 +169,7 @@ export function PendingChoiceCard({
               {errorMessage(error)}
             </InlineNotice>
           )}
-          <Button
+          <OnlineButton
             type="button"
             size="lg"
             onClick={confirm}
@@ -179,7 +180,7 @@ export function PendingChoiceCard({
           >
             {busy && <Spinner aria-hidden />}
             {copy.confirm}
-          </Button>
+          </OnlineButton>
         </SheetContent>
       </Sheet>
     </section>

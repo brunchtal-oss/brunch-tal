@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation"
 
 import type { ActionResult } from "@/lib/errors"
 import { newIdempotencyKey } from "@/lib/idempotency"
+import { isOffline } from "@/lib/use-online"
 
 // One admin write (the work sheet of story 4.9, the notes of 4.11): no
 // optimistic update. The control stays locked (pending) from the call until
@@ -25,7 +26,8 @@ export function useWorkAction() {
   const [error, setError] = useState<string | null>(null)
 
   function run(call: () => Promise<ActionResult>, onOk?: () => void) {
-    if (pending) return
+    // Offline nothing is sent (story 5.21); the banner says why.
+    if (pending || isOffline()) return
     setError(null)
     startTransition(async () => {
       let result: ActionResult

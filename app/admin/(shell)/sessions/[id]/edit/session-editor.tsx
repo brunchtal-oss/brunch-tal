@@ -8,6 +8,7 @@ import {
   ValueChangeRow,
 } from "@/components/admin/value-change-row"
 import { InlineNotice } from "@/components/shared/inline-notice"
+import { OnlineButton } from "@/components/shared/online-button"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { adminCopy } from "@/lib/copy/admin"
@@ -347,7 +348,7 @@ function ImageBox({
         </InlineNotice>
       )}
       {changed && (
-        <Button
+        <OnlineButton
           type="button"
           size="lg"
           className="h-12 self-start px-6 text-base"
@@ -357,7 +358,7 @@ function ImageBox({
         >
           {pending && <Spinner aria-hidden />}
           {copy.image.save}
-        </Button>
+        </OnlineButton>
       )}
     </section>
   )
@@ -398,7 +399,7 @@ function PublishBox({ eventId }: { eventId: string }) {
     <section className="flex flex-col gap-3">
       <InlineNotice tone="info">{copy.publishNote}</InlineNotice>
       {error && <InlineNotice tone="error">{errorMessage(error)}</InlineNotice>}
-      <Button
+      <OnlineButton
         type="button"
         size="lg"
         className="h-12 self-start px-6 text-base"
@@ -408,7 +409,7 @@ function PublishBox({ eventId }: { eventId: string }) {
       >
         {pending && <Spinner aria-hidden />}
         {copy.publish}
-      </Button>
+      </OnlineButton>
     </section>
   )
 }
@@ -504,7 +505,7 @@ function DuplicateBox({ row }: { row: SessionRow }) {
       />
       {error && <InlineNotice tone="error">{errorMessage(error)}</InlineNotice>}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <Button
+        <OnlineButton
           type="submit"
           size="lg"
           className="h-11 px-4 text-base"
@@ -513,7 +514,7 @@ function DuplicateBox({ row }: { row: SessionRow }) {
         >
           {pending && <Spinner aria-hidden />}
           {copy.duplicateSubmit}
-        </Button>
+        </OnlineButton>
         <button
           type="button"
           disabled={pending}

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 
 import { SensitiveConfirmDialog } from "@/components/admin/sensitive-confirm-dialog"
 import { InlineNotice } from "@/components/shared/inline-notice"
+import { OnlineButton } from "@/components/shared/online-button"
 import { useAnnounce } from "@/components/shared/result-notice"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
@@ -70,7 +71,7 @@ function HandledButton({
 
   return (
     <div className="relative z-10 flex flex-col items-start gap-2 pt-1">
-      <Button
+      <OnlineButton
         type="button"
         variant="outline"
         size="lg"
@@ -81,7 +82,7 @@ function HandledButton({
       >
         {pending && <Spinner aria-hidden />}
         {copy.handled}
-      </Button>
+      </OnlineButton>
       {error && <InlineNotice tone="error">{errorMessage(error)}</InlineNotice>}
     </div>
   )

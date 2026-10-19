@@ -163,15 +163,9 @@ export function isCoupleBooking(b: Pick<MyBooking, "partySize" | "status">) {
 
 /**
  * Whether /me/bookings needs the contact link (WhatsApp): an exhausted
- * credit (story 3.7), or a couple booking whose note can no longer be
- * changed (story 3.5).
+ * credit (story 3.7). The companion's note, with its own contact phrase,
+ * moved to the session page (story 5.21, fix 7).
  */
-export function needsContact(
-  credits: MyCredit[],
-  upcoming: MyBooking[]
-): boolean {
-  return (
-    credits.some(isExhaustedCredit) ||
-    upcoming.some((b) => isCoupleBooking(b) && !b.guestDetailsEditable)
-  )
+export function needsContact(credits: MyCredit[]): boolean {
+  return credits.some(isExhaustedCredit)
 }

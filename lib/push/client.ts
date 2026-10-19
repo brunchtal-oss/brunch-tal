@@ -96,6 +96,38 @@ export function writeChoice(choice: "off" | null): void {
   window.dispatchEvent(new Event(PUSH_CHANGE_EVENT))
 }
 
+/**
+ * The push offer after a booking (story 5.21): shown once per device
+ * (the permission is per device too), and only while the device is still
+ * "ask". "לא עכשיו" or a denial already keeps it away (state "off" /
+ * "denied"). Storage that throws: no offer.
+ */
+const OFFERED_KEY = "push-offered"
+
+export function shouldOffer(
+  state: PushState,
+  storage: Pick<Storage, "getItem"> | null
+): boolean {
+  if (state !== "ask" || !storage) return false
+  try {
+    return storage.getItem(OFFERED_KEY) !== "1"
+  } catch {
+    return false
+  }
+}
+
+/** Whether to show the offer now; marks this device as offered. */
+export function claimPushOffer(): boolean {
+  try {
+    const storage = window.localStorage
+    if (!shouldOffer(currentPushState(), storage)) return false
+    storage.setItem(OFFERED_KEY, "1")
+    return true
+  } catch {
+    return false
+  }
+}
+
 function standalone(): boolean {
   return (
     window.matchMedia("(display-mode: standalone)").matches ||

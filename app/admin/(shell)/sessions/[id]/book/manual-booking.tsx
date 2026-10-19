@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 
 import { InlineNotice } from "@/components/shared/inline-notice"
-import { Button } from "@/components/ui/button"
 import { buttonClass } from "@/components/shared/button-class"
+import { OnlineButton } from "@/components/shared/online-button"
 import { Spinner } from "@/components/ui/spinner"
 import { adminCopy } from "@/lib/copy/admin"
 import { type ErrorCode } from "@/lib/errors"
@@ -175,7 +175,7 @@ export function ManualBooking({
           <InlineNotice tone="error">{refusalMessage(error)}</InlineNotice>
         </div>
       )}
-      <Button
+      <OnlineButton
         type="button"
         size="lg"
         className="h-12 text-base"
@@ -185,7 +185,7 @@ export function ManualBooking({
       >
         {busy && <Spinner aria-hidden />}
         <bdi>{copy.bookCustomer(customer.name)}</bdi>
-      </Button>
+      </OnlineButton>
     </div>
   )
 }

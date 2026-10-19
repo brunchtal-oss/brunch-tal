@@ -4,7 +4,7 @@ import { startTransition, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 
 import { InlineNotice } from "@/components/shared/inline-notice"
-import { Button } from "@/components/ui/button"
+import { OnlineButton } from "@/components/shared/online-button"
 import { Spinner } from "@/components/ui/spinner"
 import { adminCopy } from "@/lib/copy/admin"
 import { errorMessage, type ErrorCode } from "@/lib/errors"
@@ -275,7 +275,7 @@ export function SessionCreateForm({
         <div className="grid grid-cols-2 gap-3">
           {/* The draft comes first: Enter in a field saves a draft, never
               publishes. */}
-          <Button
+          <OnlineButton
             type="submit"
             name="intent"
             value="draft"
@@ -287,8 +287,8 @@ export function SessionCreateForm({
           >
             {pending === "draft" && <Spinner aria-hidden />}
             {copy.create.submit}
-          </Button>
-          <Button
+          </OnlineButton>
+          <OnlineButton
             type="submit"
             name="intent"
             value="publish"
@@ -299,7 +299,7 @@ export function SessionCreateForm({
           >
             {pending === "publish" && <Spinner aria-hidden />}
             {copy.create.publish}
-          </Button>
+          </OnlineButton>
         </div>
       </div>
     </form>
