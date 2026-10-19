@@ -1,6 +1,11 @@
 import { adminCopy } from "@/lib/copy/admin"
 import { isErrorCode, type ErrorCode } from "@/lib/errors"
-import { formatSessionDate, formatShortDate } from "@/lib/time"
+import {
+  formatDayMonth,
+  formatSessionDate,
+  formatShortDate,
+  isPlainDate,
+} from "@/lib/time"
 
 import { entryLines, type CardEntry, type EntryLine } from "../../card-items"
 
@@ -63,6 +68,9 @@ export type EntitlementCorrection = {
   related_event_id: string | null
   related_concept_name: string | null
   related_starts_at: string | null
+  // An automatic extension's local week (its Sunday, YYYY-MM-DD); null
+  // for Tal's corrections (story 3.14).
+  week_start: string | null
 }
 
 export type EntitlementPage = {
@@ -193,18 +201,52 @@ export type HistoryItem = {
   at: string
   reason: string | null
   session: string | null
+  // An automatic extension: "שבוע {DD.MM}–{DD.MM} בלי בראנץ׳ מתאים".
+  week: string | null
+}
+
+// The week line of an automatic extension: Sunday to Saturday of the
+// week the server recorded (display only, AD-8). Anything else: null.
+export function weekLine(weekStart: unknown): string | null {
+  if (typeof weekStart !== "string" || !isPlainDate(weekStart)) return null
+  const end = new Date(`${weekStart}T12:00:00Z`)
+  end.setUTCDate(end.getUTCDate() + 6)
+  try {
+    return copy.historyWeek(
+      formatDayMonth(weekStart),
+      formatDayMonth(end.toISOString().slice(0, 10))
+    )
+  } catch {
+    return null
+  }
 }
 
 // Newest first, as the server ordered them; "{שדה}: היה {ישן}, עכשיו
-// {חדש}" (never an arrow).
+// {חדש}" (never an arrow). The system's correction (story 3.14) reads
+// "הארכה אוטומטית: היה {ישן}, עכשיו {חדש}" with its week (only when it
+// has one; any other system correction reads as a regular one).
 export function historyItems(page: EntitlementPage): HistoryItem[] {
-  return page.corrections.map((c) => ({
+  return page.corrections.map((c) => historyItem(c))
+}
+
+function historyItem(c: EntitlementCorrection): HistoryItem {
+  const week =
+    c.actor_kind === "system" && c.week_start != null
+      ? weekLine(c.week_start)
+      : null
+  return {
     key: c.correction_id,
-    change: copy.historyChange(
-      copy.fields[c.field] ?? c.field,
-      formatFieldValue(c.field, c.old_value),
-      formatFieldValue(c.field, c.new_value)
-    ),
+    change:
+      week !== null
+        ? copy.historyAutoExtend(
+            formatFieldValue(c.field, c.old_value),
+            formatFieldValue(c.field, c.new_value)
+          )
+        : copy.historyChange(
+            copy.fields[c.field] ?? c.field,
+            formatFieldValue(c.field, c.old_value),
+            formatFieldValue(c.field, c.new_value)
+          ),
     who: copy.historyWho(
       adminCopy.audit.actors[c.actor_kind] ?? c.actor_kind,
       formatShortDate(c.created_at)
@@ -217,7 +259,8 @@ export function historyItems(page: EntitlementPage): HistoryItem[] {
             `${adminCopy.sessions.sessionTitle(c.related_concept_name)} ${formatSessionDate(c.related_starts_at)}`
           )
         : null,
-  }))
+    week,
+  }
 }
 
 // The session picker of a balance fix: this card's bookings, newest first.

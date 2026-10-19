@@ -256,13 +256,41 @@ const SEED = [
     "אם נרשמת עם כרטיסייה, הכניסה חזרה אלייך. אם שילמת על המפגש בנפרד, ראי פרטים באזור האישי",
     2,
   ],
+  // Story 3.13: reworded, and one template per correction of a card.
   [
     "entitlement_changed",
     "customer",
     true,
     "template",
+    "תוקף הכרטיסייה עודכן",
+    "הכרטיסייה שלך בתוקף עד {expires_on}, ונשארו בה {units} כניסות פנויות. הפרטים באזור האישי",
+    2,
+  ],
+  [
+    "entitlement_units_changed",
+    "customer",
+    true,
+    "template",
+    "היתרה בכרטיסייה עודכנה",
+    "יש לך עכשיו {units} כניסות פנויות בכרטיסייה, בתוקף עד {expires_on}. הפרטים באזור האישי",
+  ],
+  [
+    "entitlement_terms_changed",
+    "customer",
+    true,
+    "template",
     "עדכון בכרטיסייה שלך",
-    "בתוקף עד {expires_on}, עם {units} כניסות פנויות. הפרטים באזור האישי",
+    "השתנו הימים או סוג המפגשים שאפשר להירשם אליהם עם הכרטיסייה. הפרטים באזור האישי",
+  ],
+  // Story 3.14: a week with no fitting brunch extended the card.
+  [
+    "entitlement_auto_extended",
+    "customer",
+    true,
+    "template",
+    "הכרטיסייה הוארכה",
+    "לא היו בראנצ׳ים בשבוע שעבר ולכן הארכנו לך את תוקף הכרטיסייה!\nהכרטיסייה שלך בתוקף עד {expires_on}, ונשארו בה {units} כניסות פנויות.",
+    2,
   ],
   [
     "card_expiring",
@@ -294,7 +322,7 @@ const SEED = [
 }))
 
 describe("notification templates", () => {
-  it("hold the approved seed: 18 templates, recipient, channel, mode and wording", async () => {
+  it("hold the approved seed: 21 templates, recipient, channel, mode and wording", async () => {
     const rows = await sql(
       `select type, recipient_kind, push, body_mode, title, body, version
        from public.notification_templates
@@ -316,7 +344,7 @@ describe("notification templates", () => {
     )
   })
 
-  it("accept only the 18 types, each with its fixed recipient kind and body", async () => {
+  it("accept only the listed types, each with its fixed recipient kind and body", async () => {
     await inRollback(async (db) => {
       const statements = [
         `insert into public.notification_templates
