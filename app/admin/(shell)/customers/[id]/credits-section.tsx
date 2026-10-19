@@ -4,6 +4,7 @@ import { adminCopy } from "@/lib/copy/admin"
 
 import { RefundComplete } from "../../payments/refund-complete"
 import type { CustomerCreditItem } from "./credit-items"
+import { CreditManage } from "./credit-manage"
 
 const copy = adminCopy.customers.card.credits
 
@@ -14,6 +15,9 @@ const copy = adminCopy.customers.card.credits
 // refund, and "סימון שההחזר בוצע" on an open request (the same dialog as
 // /admin/payments). The host stays mounted across the refresh (the credit
 // stays in the list, now refunded), so "ההחזר נרשם" stays on screen.
+// Story 3.16: an active credit also lists its alternatives and offers
+// "שינוי חלופות" and "החזר במקום זיכוי" (CreditManage), or says why not.
+// The plate's id is the booking history's "לזיכוי" target.
 export function CreditsSection({
   items,
   customerName,
@@ -54,6 +58,30 @@ export function CreditsSection({
                 <p className="text-[13px] text-muted-foreground">
                   <bdi>{item.reference}</bdi>
                 </p>
+              )}
+              {item.options.length > 0 && (
+                <div className="flex flex-col gap-1 pt-2">
+                  <p className="text-[13px] text-muted-foreground">
+                    {copy.optionsTitle}
+                  </p>
+                  <ul className="flex flex-col gap-1">
+                    {item.options.map((option) => (
+                      <li key={option.key} className="text-base">
+                        <time dateTime={option.startsAt}>
+                          <bdi>{option.line}</bdi>
+                        </time>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {item.manage && (
+                <CreditManage
+                  creditId={item.key}
+                  title={item.title}
+                  customerName={customerName}
+                  manage={item.manage}
+                />
               )}
               {item.openRefundId && (
                 <div className="pt-2">

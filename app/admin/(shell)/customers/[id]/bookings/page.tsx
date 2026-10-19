@@ -21,7 +21,8 @@ export const metadata: Metadata = {
 
 // A customer's booking history (story 4.2, phone check, user decision
 // 2026-10-07): every booking, latest session first, each linking to its
-// session. From admin_get_customer.
+// session. From admin_get_customer. Story 3.16: a cancelled booking with a
+// credit also links "לזיכוי" to that credit on the card.
 export default function CustomerBookingsPage({
   params,
 }: {
@@ -60,7 +61,7 @@ async function BookingsContent({
       ) : (
         <ul className="flex flex-col gap-4">
           {card.bookings.map((row) => {
-            const item = toBookingItem(row)
+            const item = toBookingItem(row, card.profile.id)
             return (
               <li key={item.key} className="flex flex-col gap-1">
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -78,6 +79,15 @@ async function BookingsContent({
                   </time>
                   {item.couple && <>, {copy.couple}</>}
                 </p>
+                {/* Story 3.16: its credit on the card ("זיכויים והחזרים"). */}
+                {item.creditHref && (
+                  <Link
+                    href={item.creditHref}
+                    className="inline-flex min-h-11 items-center self-start text-[15px] underline underline-offset-[3px]"
+                  >
+                    {copy.credits.creditLink}
+                  </Link>
+                )}
               </li>
             )
           })}

@@ -2,10 +2,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import {
   addCustomerNoteAction,
+  changeCreditOptionsAction,
   changeEmailAction,
   changePhoneAction,
   deleteCustomerNoteAction,
   issueResetLinkAction,
+  listCreditCandidatesAction,
+  previewChangeCreditOptionsAction,
+  previewRefundCreditAction,
+  refundCreditAction,
 } from "./actions"
 
 const callRpc = vi.fn()
@@ -198,5 +203,126 @@ describe("the account section's actions (story 2.8)", () => {
     await expect(
       issueResetLinkAction({ customerId: ID, idempotencyKey: KEY })
     ).resolves.toEqual({ ok: false, code: "RESET_TARGET_INVALID" })
+  })
+})
+
+describe("the credit actions (story 3.16)", () => {
+  const EVENT = "44444444-4444-4444-8444-444444444444"
+  const OTHER = "55555555-5555-4555-8555-555555555555"
+  const CHANGE = {
+    creditId: ID,
+    eventIds: [EVENT, OTHER],
+    reason: "  ",
+    confirmed: true,
+    idempotencyKey: KEY,
+  }
+
+  it("change: the ids and a blank reason as null reach the RPC", async () => {
+    callRpc.mockResolvedValue({ ok: true, data: { credit_id: ID } })
+    await expect(changeCreditOptionsAction(CHANGE)).resolves.toEqual({
+      ok: true,
+      data: undefined,
+    })
+    expect(callRpc).toHaveBeenLastCalledWith(
+      { session: true },
+      "admin_change_credit_options",
+      {
+        p_credit_id: ID,
+        p_event_ids: [EVENT, OTHER],
+        p_reason: null,
+        p_confirmed: true,
+        p_idempotency_key: KEY,
+      }
+    )
+  })
+
+  it("change: no session, a repeated one, more than 10 or a bad id never reach the RPC", async () => {
+    for (const eventIds of [
+      [],
+      [EVENT, EVENT],
+      Array.from({ length: 11 }, () => crypto.randomUUID()),
+      ["x"],
+    ]) {
+      await expect(
+        changeCreditOptionsAction({ ...CHANGE, eventIds })
+      ).resolves.toEqual(INVALID)
+    }
+    await expect(
+      changeCreditOptionsAction({ ...CHANGE, reason: "x".repeat(2001) })
+    ).resolves.toEqual(INVALID)
+    expect(callRpc).not.toHaveBeenCalled()
+  })
+
+  it("the previews and the candidates parse the server's answer", async () => {
+    callRpc.mockResolvedValue({
+      ok: true,
+      data: [{ event_id: EVENT, starts_at: "s", is_option: true }],
+    })
+    await expect(listCreditCandidatesAction({ creditId: ID })).resolves.toEqual(
+      {
+        ok: true,
+        data: [
+          { eventId: EVENT, startsAt: "s", conceptName: "", isOption: true },
+        ],
+      }
+    )
+    callRpc.mockResolvedValue({
+      ok: true,
+      data: { ok: false, code: "CREDIT_IN_USE" },
+    })
+    await expect(
+      previewChangeCreditOptionsAction({ creditId: ID, eventIds: [EVENT] })
+    ).resolves.toEqual({
+      ok: true,
+      data: { ok: false, code: "CREDIT_IN_USE", field: null },
+    })
+    callRpc.mockResolvedValue({
+      ok: true,
+      data: { ok: true, customer_label: "נועה", amount_agorot: 18000 },
+    })
+    await expect(previewRefundCreditAction({ creditId: ID })).resolves.toEqual({
+      ok: true,
+      data: { ok: true, customerLabel: "נועה", amountAgorot: 18000 },
+    })
+  })
+
+  it("refund: the trimmed reason and the key; a refusal passes through", async () => {
+    callRpc.mockResolvedValue({ ok: false, code: "CREDIT_NOT_ACTIVE" })
+    await expect(
+      refundCreditAction({
+        creditId: ID,
+        reason: " ביקשה ",
+        confirmed: true,
+        idempotencyKey: KEY,
+      })
+    ).resolves.toEqual({ ok: false, code: "CREDIT_NOT_ACTIVE" })
+    expect(callRpc).toHaveBeenLastCalledWith(
+      { session: true },
+      "admin_refund_credit",
+      {
+        p_credit_id: ID,
+        p_reason: "ביקשה",
+        p_confirmed: true,
+        p_idempotency_key: KEY,
+      }
+    )
+    callRpc.mockClear()
+    await expect(
+      refundCreditAction({
+        creditId: ID,
+        reason: "x".repeat(2001),
+        confirmed: true,
+        idempotencyKey: KEY,
+      })
+    ).resolves.toEqual(INVALID)
+    expect(callRpc).not.toHaveBeenCalled()
+    await expect(
+      refundCreditAction({
+        creditId: "x",
+        reason: "",
+        confirmed: true,
+        idempotencyKey: KEY,
+      })
+    ).resolves.toEqual(INVALID)
   })
 })

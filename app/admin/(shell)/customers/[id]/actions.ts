@@ -7,6 +7,15 @@ import { changeEmail } from "@/lib/server/privileged/account"
 import { createClient } from "@/lib/supabase/server"
 
 import { NOTE_MAX } from "./card-items"
+import {
+  MAX_CREDIT_OPTIONS,
+  parseCreditCandidates,
+  parseCreditChangePlan,
+  parseCreditRefundPlan,
+  type CreditCandidate,
+  type CreditChangePlan,
+  type CreditRefundPlan,
+} from "./credit-items"
 
 // The internal notes of the customer card (story 4.2): add and delete only
 // (user decision 2026-10-07). Each RPC runs with the admin's own session
@@ -142,4 +151,120 @@ export async function issueResetLinkAction(input: {
       linkExpiresAt: issued.link_expires_at,
     },
   }
+}
+
+// ---------------------------------------------------------------------------
+// Story 3.16: a credit's alternatives, or a refund instead of it (two
+// sensitive actions, AD-7). The RPCs check the admin, the credit and every
+// session again; these check only the shape.
+// ---------------------------------------------------------------------------
+
+const REASON_MAX = 2000
+// The generated Args type marks every parameter as non-null; an empty
+// reason is sent as null.
+const NO_REASON = null as unknown as string
+
+function isEventIds(value: unknown): value is string[] {
+  return (
+    Array.isArray(value) &&
+    value.length >= 1 &&
+    value.length <= MAX_CREDIT_OPTIONS &&
+    value.every(isUuid) &&
+    new Set(value).size === value.length
+  )
+}
+
+function isReason(value: unknown): value is string {
+  return typeof value === "string" && value.length <= REASON_MAX
+}
+
+export async function listCreditCandidatesAction(input: {
+  creditId: string
+}): Promise<ActionResult<CreditCandidate[]>> {
+  if (!isUuid(input?.creditId)) return INVALID
+  const result = await callRpc(
+    await createClient(),
+    "admin_list_credit_candidates",
+    { p_credit_id: input.creditId }
+  )
+  if (!result.ok) return result
+  return { ok: true, data: parseCreditCandidates(result.data) }
+}
+
+export async function previewChangeCreditOptionsAction(input: {
+  creditId: string
+  eventIds: string[]
+}): Promise<ActionResult<CreditChangePlan>> {
+  if (!isUuid(input?.creditId) || !isEventIds(input.eventIds)) return INVALID
+  const result = await callRpc(
+    await createClient(),
+    "preview_admin_change_credit_options",
+    { p_credit_id: input.creditId, p_event_ids: input.eventIds }
+  )
+  if (!result.ok) return result
+  return { ok: true, data: parseCreditChangePlan(result.data) }
+}
+
+export async function changeCreditOptionsAction(input: {
+  creditId: string
+  eventIds: string[]
+  reason: string
+  confirmed: boolean
+  idempotencyKey: string
+}): Promise<ActionResult> {
+  if (
+    !isUuid(input?.creditId) ||
+    !isEventIds(input.eventIds) ||
+    !isReason(input.reason) ||
+    typeof input.confirmed !== "boolean" ||
+    !isUuid(input.idempotencyKey)
+  ) {
+    return INVALID
+  }
+  return done(
+    await callRpc(await createClient(), "admin_change_credit_options", {
+      p_credit_id: input.creditId,
+      p_event_ids: input.eventIds,
+      p_reason: input.reason.trim() || NO_REASON,
+      p_confirmed: input.confirmed,
+      p_idempotency_key: input.idempotencyKey,
+    })
+  )
+}
+
+export async function previewRefundCreditAction(input: {
+  creditId: string
+}): Promise<ActionResult<CreditRefundPlan>> {
+  if (!isUuid(input?.creditId)) return INVALID
+  const result = await callRpc(
+    await createClient(),
+    "preview_admin_refund_credit",
+    { p_credit_id: input.creditId }
+  )
+  if (!result.ok) return result
+  return { ok: true, data: parseCreditRefundPlan(result.data) }
+}
+
+export async function refundCreditAction(input: {
+  creditId: string
+  reason: string
+  confirmed: boolean
+  idempotencyKey: string
+}): Promise<ActionResult> {
+  if (
+    !isUuid(input?.creditId) ||
+    !isReason(input.reason) ||
+    typeof input.confirmed !== "boolean" ||
+    !isUuid(input.idempotencyKey)
+  ) {
+    return INVALID
+  }
+  return done(
+    await callRpc(await createClient(), "admin_refund_credit", {
+      p_credit_id: input.creditId,
+      p_reason: input.reason.trim() || NO_REASON,
+      p_confirmed: input.confirmed,
+      p_idempotency_key: input.idempotencyKey,
+    })
+  )
 }
