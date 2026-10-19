@@ -19,7 +19,8 @@ import type {
 
 const copy = adminCopy.audit
 
-// The log's rows and "טעינת עוד" (story 4.5). The first page comes from
+// The log's operations and "טעינת עוד" (story 4.5; one concise item per
+// operation since spec-audit-log-concise). The first page comes from
 // the server; each "טעינת עוד" appends the next 50. The page keys this
 // component by its filters, so a new filter starts from its first page.
 export function AuditList({
@@ -98,9 +99,7 @@ export function AuditEntries({ items }: { items: readonly AuditItem[] }) {
             </p>
             <p className="text-base font-semibold break-words">{item.action}</p>
             <About item={item} className="text-[15px] text-muted-foreground" />
-            {item.changes.length > 0 && (
-              <Changes changes={item.changes} className="mt-1" />
-            )}
+            <Details item={item} className="mt-1" />
             {item.reason && (
               <p className="text-[15px] [overflow-wrap:anywhere] break-words">
                 {copy.reason(item.reason)}
@@ -127,7 +126,7 @@ export function AuditEntries({ items }: { items: readonly AuditItem[] }) {
               {copy.columns.about}
             </th>
             <th scope="col" className="py-2 pe-4 text-start font-normal">
-              {copy.columns.changes}
+              {copy.columns.details}
             </th>
             <th scope="col" className="py-2 text-start font-normal">
               {copy.columns.reason}
@@ -146,7 +145,7 @@ export function AuditEntries({ items }: { items: readonly AuditItem[] }) {
                 <About item={item} className="flex-col gap-0.5" />
               </td>
               <td className="py-3 pe-4">
-                <Changes changes={item.changes} />
+                <Details item={item} />
               </td>
               <td className="py-3 [overflow-wrap:anywhere] break-words">
                 {item.reason ?? ""}
@@ -159,40 +158,43 @@ export function AuditEntries({ items }: { items: readonly AuditItem[] }) {
   )
 }
 
+// What the operation was about: the customer, the session, and a product,
+// concept, content section or template.
 function About({ item, className }: { item: AuditItem; className?: string }) {
-  if (!item.customer && !item.session) return null
+  if (!item.customer && !item.session && !item.subject) return null
   return (
     <p className={`flex flex-wrap gap-x-3 break-words ${className ?? ""}`}>
       {item.customer && <bdi>{item.customer}</bdi>}
       {item.session && <bdi>{item.session}</bdi>}
+      {item.subject && <bdi>{item.subject}</bdi>}
     </p>
   )
 }
 
-// "{שדה}: {ערך}": the value after the action only (user decision
-// 2026-10-14); a removed value shows "—". A partial refund's amount reads
-// "{הוחזר} מתוך {התבקש}" (toChange).
-function Changes({
-  changes,
-  className,
-}: {
-  changes: readonly AuditChange[]
-  className?: string
-}) {
+// One result sentence, and for an edit only the changed fields
+// ("{שדה}: {חדש} (במקום {קודם})"). Nothing for an action shown by name.
+function Details({ item, className }: { item: AuditItem; className?: string }) {
+  if (!item.result && item.changes.length === 0) return null
   return (
-    <ul className={`flex flex-col gap-1 text-[15px] ${className ?? ""}`}>
+    <div className={`flex flex-col gap-1 text-[15px] ${className ?? ""}`}>
+      {item.result && (
+        <p className="[overflow-wrap:anywhere] break-words">{item.result}</p>
+      )}
+      {item.changes.length > 0 && <Changes changes={item.changes} />}
+    </div>
+  )
+}
+
+function Changes({ changes }: { changes: readonly AuditChange[] }) {
+  return (
+    <ul className="flex flex-col gap-1">
       {changes.map((change) => (
         <li key={change.key} className="[overflow-wrap:anywhere] break-words">
-          <ChangeText change={change} />
+          {change.text}
         </li>
       ))}
     </ul>
   )
-}
-
-function ChangeText({ change }: { change: AuditChange }) {
-  const value = change.kind === "delete" ? adminCopy.audit.none : change.after
-  return <span>{`${change.field}: ${value}`}</span>
 }
 
 // empty-state (DESIGN › empty-state): the sentence and one action.

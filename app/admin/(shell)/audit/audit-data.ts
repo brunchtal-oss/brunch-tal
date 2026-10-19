@@ -1,16 +1,33 @@
 import { adminCopy } from "@/lib/copy/admin"
+import {
+  auditRuleOf,
+  beforeValues,
+  sessionLabelOf,
+  type AuditChangeRow,
+  type AuditRow,
+} from "@/lib/copy/audit-actions"
 import { formatAgorot } from "@/lib/money"
 import {
   formatClockTime,
+  formatDayMonth,
   formatShortDate,
   formatTime,
   isPlainDate,
 } from "@/lib/time"
 
-// The audit log viewer (story 4.5): the URL's filters, the RPC's rows
-// (admin_list_audit) and what each row shows. Pure. Which rows match, their
-// order, the names and which keys are dropped are decided in SQL; this only
-// words them.
+export type {
+  AuditChangeRow,
+  AuditEventRef,
+  AuditRelatedRow,
+  AuditRow,
+} from "@/lib/copy/audit-actions"
+
+// The audit log viewer (story 4.5; concise since spec-audit-log-concise):
+// the URL's filters, the RPC's operations (admin_list_audit) and what each
+// one shows: action, subject, when, who, one result sentence, and for an
+// edit only the changed fields. Pure. Which rows are listed (the whitelist
+// in lib/copy/audit-actions.ts), their order, the names and which keys are
+// dropped are decided in SQL; this only words them.
 
 const copy = adminCopy.audit
 
@@ -36,34 +53,11 @@ export type AuditFilters = {
 
 export type AuditCursor = { createdAt: string; id: string }
 
-export type AuditChangeRow = { key: string; before: unknown; after: unknown }
-
-export type AuditRow = {
-  id: string
-  created_at: string
-  actor_kind: string
-  action: string
-  entity_type: string
-  customer: { id: string; name: string | null } | null
-  event: { id: string; title: string; local_date: string } | null
-  changes: AuditChangeRow[]
-  reason: string | null
-}
-
 export type AuditPage = { rows: AuditRow[]; has_more: boolean }
 
-// One change as the screen shows it: "{field}: {before} ← {after}"; an add
-// has only the new value, a delete only the old one.
-export type AuditChange =
-  | {
-      key: string
-      field: string
-      kind: "change"
-      before: string
-      after: string
-    }
-  | { key: string; field: string; kind: "add"; after: string }
-  | { key: string; field: string; kind: "delete"; before: string }
+// One changed field of an edit, worded: "{שדה}: {חדש} (במקום {קודם})", or
+// "{שדה}: {חדש}" when it had no value.
+export type AuditChange = { key: string; text: string }
 
 export type AuditItem = {
   id: string
@@ -73,6 +67,10 @@ export type AuditItem = {
   action: string
   customer: string | null
   session: string | null
+  // A product, concept, content section or template; null otherwise.
+  subject: string | null
+  result: string | null
+  // Only for an edit (the rule's edit flag); empty otherwise.
   changes: AuditChange[]
   reason: string | null
 }
@@ -180,6 +178,7 @@ const TECHNICAL_KEYS = new Set([
   "privacy_policy_version",
   "waitlist_cycle",
   "revision",
+  "version",
   "provider",
   "task_order",
   "sort_order",
@@ -199,14 +198,31 @@ export function isTechnicalKey(key: string): boolean {
   )
 }
 
-// A change worth a line: not a technical key, not null on both sides (an
-// inserted row carries every column), and not only ids.
-export function isShownChange(change: AuditChangeRow): boolean {
-  if (isTechnicalKey(change.key)) return false
-  const values = [change.before, change.after].filter(
-    (value) => value !== null && value !== undefined
+function isEmptyValue(value: unknown): boolean {
+  return (
+    value === null ||
+    value === undefined ||
+    (typeof value === "string" && value.trim() === "") ||
+    (Array.isArray(value) && value.length === 0)
   )
-  if (values.length === 0) return false
+}
+
+// An edited field worth a line: its value changed, not a technical key,
+// not masked ("<changed>" says nothing), not empty on both sides, and not
+// only ids.
+export function isChangedField(change: AuditChangeRow): boolean {
+  if (isTechnicalKey(change.key)) return false
+  if (change.before === MASKED || change.after === MASKED) return false
+  if (isEmptyValue(change.before) && isEmptyValue(change.after)) return false
+  if (
+    JSON.stringify(change.before ?? null) ===
+    JSON.stringify(change.after ?? null)
+  ) {
+    return false
+  }
+  const values = [change.before, change.after].filter(
+    (value) => !isEmptyValue(value)
+  )
   return !values.every((value) => isUuid(value))
 }
 
@@ -279,11 +295,6 @@ export function formatValue(
     if (CLOCK.test(value)) return formatClockTime(value)
     return cut(value)
   }
-  // A deleted session's removed credit options (story 3.17,
-  // [{credit_id, state}]): how many, not their ids.
-  if (key === "credit_options" && Array.isArray(value)) {
-    return String(value.length)
-  }
   if (key === "allowed_weekdays") {
     const days = weekdaysText(value)
     if (days !== null) return days
@@ -302,116 +313,89 @@ export function formatValue(
   return readable(value)
 }
 
-export function toChange(
-  change: AuditChangeRow,
-  entityType?: string
-): AuditChange {
-  const field = fieldLabel(change.key)
-  const before = change.before ?? null
-  const after = change.after ?? null
-  if (before === null && after !== null) {
-    return {
-      key: change.key,
-      field,
-      kind: "add",
-      after: formatValue(change.key, after, entityType),
-    }
-  }
-  if (after === null && before !== null) {
-    return {
-      key: change.key,
-      field,
-      kind: "delete",
-      before: formatValue(change.key, before, entityType),
-    }
-  }
-  // A refund completed for less than was asked: "100 ₪ מתוך 128 ₪".
-  const partial =
-    entityType === "refund_requests" &&
-    change.key === "amount_agorot" &&
-    typeof before === "number" &&
-    typeof after === "number" &&
-    after < before
-  return {
-    key: change.key,
-    field,
-    kind: "change",
-    before: formatValue(change.key, before, entityType),
-    after: partial
-      ? copy.outOf(
-          formatValue(change.key, after, entityType),
-          formatValue(change.key, before, entityType)
-        )
-      : formatValue(change.key, after, entityType),
-  }
+// The fields of an edit whose value changed, worded. A template's type is
+// its subject, not a field; an entitlement's expires_at repeats its
+// expires_on.
+export function changedFields(row: AuditRow): AuditChange[] {
+  const keys = new Set(row.changes.map((change) => change.key))
+  return row.changes
+    .filter(isChangedField)
+    .filter(
+      (change) =>
+        !(row.entity_type === "notification_templates" && change.key === "type")
+    )
+    .filter(
+      (change) => !(change.key === "expires_at" && keys.has("expires_on"))
+    )
+    .map((change) => {
+      const field = fieldLabel(change.key)
+      const after = formatValue(
+        change.key,
+        change.after ?? null,
+        row.entity_type
+      )
+      return {
+        key: change.key,
+        text: isEmptyValue(change.before)
+          ? copy.added(field, after)
+          : copy.changed(
+              field,
+              after,
+              formatValue(change.key, change.before, row.entity_type)
+            ),
+      }
+    })
 }
 
-// A deleted session (admin_delete_event, story 3.17): its after is empty,
-// so the row shows these lines from before instead of every column: the
-// concept, the session's date, "נמחק", then each work sheet count and the
-// removed credit options only when above 0.
-const DELETED_EVENT_COUNTS = [
-  "work_dishes_count",
-  "work_tasks_count",
-  "shopping_items_count",
-  "credit_options",
-] as const
-
-function beforeOf(row: AuditRow): Record<string, unknown> {
-  return Object.fromEntries(
-    row.changes.map((change) => [change.key, change.before])
-  )
-}
-
-function deletedEventDate(before: Record<string, unknown>): string | null {
-  if (!isInstant(before.starts_at)) return null
+function sessionOf(row: AuditRow): string | null {
+  if (row.event) return sessionLabelOf(row.event)
+  if (row.action !== "admin_delete_event") return null
+  // A deleted session (story 3.17): its concept and date from before.
+  const before = beforeValues(row.changes)
+  if (typeof before.concept_name !== "string" || !isInstant(before.starts_at)) {
+    return null
+  }
   try {
-    return formatShortDate(before.starts_at as string)
+    return copy.sessionLabel(
+      before.concept_name,
+      formatDayMonth(before.starts_at as string)
+    )
   } catch {
     return null
   }
 }
 
-export function deletedEventChanges(row: AuditRow): AuditChange[] {
-  const before = beforeOf(row)
-  const line = (key: string, field: string, after: string): AuditChange => ({
-    key,
-    field,
-    kind: "add",
-    after,
-  })
-  const lines: AuditChange[] = []
-  if (typeof before.concept_name === "string") {
-    lines.push(
-      line("concept_name", fieldLabel("concept_name"), before.concept_name)
-    )
-  }
-  const date = deletedEventDate(before)
-  if (date) lines.push(line("starts_at", copy.deletedEvent.date, date))
-  lines.push(line("status", fieldLabel("status"), copy.deletedEvent.status))
-  for (const key of DELETED_EVENT_COUNTS) {
-    const value = before[key]
-    const n = Array.isArray(value)
-      ? value.length
-      : typeof value === "number"
-        ? value
-        : 0
-    if (n > 0) lines.push(line(key, fieldLabel(key), String(n)))
-  }
-  return lines
+function labelIn(labels: Record<string, string>, key: string): string | null {
+  return Object.hasOwn(labels, key) ? labels[key] : null
 }
 
-// The session label of a deleted session's row (its event is gone).
-function deletedEventSession(row: AuditRow): string | null {
-  const before = beforeOf(row)
-  const date = deletedEventDate(before)
-  return typeof before.concept_name === "string" && date
-    ? copy.sessionLabel(before.concept_name, date)
-    : null
+// What a product, concept, content section or template row is about, by
+// its existing admin names; an unknown one has no subject.
+function subjectOf(row: AuditRow): string | null {
+  const subject = row.subject
+  if (typeof subject !== "string" || subject.trim() === "") return null
+  switch (row.entity_type) {
+    case "products":
+    case "concepts":
+      return subject
+    case "content_sections": {
+      const section = labelIn(adminCopy.content.sections, subject)
+      if (!section) return null
+      const page = labelIn(
+        adminCopy.content.pages as Record<string, string>,
+        subject.split("/")[0]
+      )
+      return page ? copy.subjectSection(page, section) : section
+    }
+    case "notification_templates":
+      return labelIn(adminCopy.settings.templates.types, subject)
+    default:
+      return null
+  }
 }
 
 export function toAuditItem(row: AuditRow): AuditItem {
-  const deletedEvent = row.action === "admin_delete_event"
+  const rule = auditRuleOf(row.action, row.entity_type)
   return {
     id: row.id,
     createdAt: row.created_at,
@@ -422,19 +406,10 @@ export function toAuditItem(row: AuditRow): AuditItem {
     actor: actorLabel(row.actor_kind),
     action: actionLabel(row.action),
     customer: row.customer ? (row.customer.name ?? copy.anonymous) : null,
-    session: row.event
-      ? copy.sessionLabel(
-          row.event.title,
-          formatShortDate(row.event.local_date)
-        )
-      : deletedEvent
-        ? deletedEventSession(row)
-        : null,
-    changes: deletedEvent
-      ? deletedEventChanges(row)
-      : row.changes
-          .filter(isShownChange)
-          .map((change) => toChange(change, row.entity_type)),
+    session: sessionOf(row),
+    subject: subjectOf(row),
+    result: rule?.result?.(row) ?? null,
+    changes: rule?.edit ? changedFields(row) : [],
     reason: row.reason && row.reason.trim() !== "" ? row.reason : null,
   }
 }
