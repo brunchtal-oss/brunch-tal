@@ -97,7 +97,7 @@ context:
 - [x] `components/public/public-sessions.tsx` + `BookedChip` -- chip; test: list read uses only `createPublicClient`, guest renders no chip.
 - [x] Session main: `git mv` companion-note(.test).tsx to `app/me/sessions/[id]/`; then page + bookings-list + `needsContact` and their tests.
 - [x] `npx supabase migration new couple_note_on_session` -- SQL above; session main: user runs it in SQL Editor, record in `schema_migrations`, `get_advisors`, `database.types.ts`, update db tests; `test:db` (couple-and-intro, notifications, settings-and-templates, grants) only after asking the user; `npm run demo:seed`.
-- [ ] `AGENTS.md`, `fixes-log.md` row 7 "מצב", `deferred-work.md` (3 items closed), `tickets.toml` done -- docs.
+- [x] `AGENTS.md`, `fixes-log.md` row 7 "מצב", `deferred-work.md` (3 items closed), `tickets.toml` done -- docs.
 
 **Acceptance Criteria:**
 - Given any `/me`, `/admin` or auth screen offline, when she taps a write button, then no request leaves and the banner explains why; given the network returns, then the button works without reload.
