@@ -15,12 +15,12 @@ import {
   formatValue,
   isFilterDate,
   isInstant,
-  isShownChange,
+  isChangedField,
   isTechnicalKey,
   parseAuditParams,
   toAuditItem,
   toAuditView,
-  toChange,
+  changedFields,
   toSessionOptions,
   type AuditRow,
 } from "./audit-data"
@@ -38,8 +38,10 @@ function row(extra: Partial<AuditRow> = {}): AuditRow {
     action: "admin_update_event",
     entity_type: "events",
     customer: null,
-    event: { id: EVENT, title: "בראנץ׳ סתיו", local_date: "2026-10-12" },
+    event: { id: EVENT, title: "סתיו", local_date: "2026-10-12" },
+    subject: null,
     changes: [{ key: "capacity_adults", before: 12, after: 14 }],
+    related: [],
     reason: null,
     ...extra,
   }
@@ -136,30 +138,6 @@ describe("labels", () => {
     expect(fieldLabel("mystery_key")).toBe("mystery_key")
   })
 
-  it("a deleted session (story 3.17) reads in Hebrew, its counts too", () => {
-    expect(actionLabel("admin_delete_event")).toBe("מחיקת מפגש")
-    expect(fieldLabel("concept_name")).toBe("קונספט")
-    expect(fieldLabel("work_dishes_count")).toBe("מנות בדף העבודה")
-    expect(fieldLabel("work_tasks_count")).toBe("משימות בדף העבודה")
-    expect(fieldLabel("shopping_items_count")).toBe("פריטים ברשימת הקניות")
-    expect(fieldLabel("credit_options")).toBe("חלופות זיכוי שהוסרו")
-    expect(formatValue("work_dishes_count", 3)).toBe("3")
-    expect(
-      formatValue("credit_options", [
-        { credit_id: "7f8c2a52-2f0e-4a4c-9d8e-6f1f6a3b2c11", state: "active" },
-        { credit_id: "8a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d", state: "passed" },
-      ])
-    ).toBe("2")
-    expect(
-      toChange({ key: "work_tasks_count", before: 5, after: null }, "events")
-    ).toEqual({
-      key: "work_tasks_count",
-      field: "משימות בדף העבודה",
-      kind: "delete",
-      before: "5",
-    })
-  })
-
   it("a customers export row (story 4.4) reads in Hebrew", () => {
     expect(actionLabel("admin_export_customers")).toBe("ייצוא לקוחות")
     expect(formatValue("scope", "search")).toBe("תוצאות חיפוש")
@@ -236,7 +214,7 @@ describe("formatValue", () => {
   })
 })
 
-describe("which changes are shown (phone check, 2026-10-10)", () => {
+describe("which fields an edit shows (phone check, 2026-10-10)", () => {
   const ID = "55555555-5555-4555-8555-555555555555"
 
   it("hides technical keys; booked_by stays", () => {
@@ -257,50 +235,31 @@ describe("which changes are shown (phone check, 2026-10-10)", () => {
       "privacy_policy_version",
       "waitlist_cycle",
       "revision",
+      "version",
       "provider",
       "task_order",
     ]) {
       expect(isTechnicalKey(key), key).toBe(true)
-      expect(isShownChange({ key, before: null, after: "x" }), key).toBe(false)
+      expect(isChangedField({ key, before: null, after: "x" }), key).toBe(false)
     }
     expect(isTechnicalKey("booked_by")).toBe(false)
     expect(
-      isShownChange({ key: "booked_by", before: null, after: "admin" })
+      isChangedField({ key: "booked_by", before: null, after: "admin" })
     ).toBe(true)
   })
 
-  it("hides a change of ids only, and one null on both sides", () => {
-    expect(isShownChange({ key: "x", before: null, after: ID })).toBe(false)
+  it("hides a change of ids only, one empty on both sides, an unchanged one and a masked one", () => {
+    expect(isChangedField({ key: "x", before: null, after: ID })).toBe(false)
     expect(
-      isShownChange({ key: "x", before: ID, after: ID.replace("5", "6") })
+      isChangedField({ key: "x", before: ID, after: ID.replace("5", "6") })
     ).toBe(false)
-    expect(isShownChange({ key: "x", before: null, after: null })).toBe(false)
-    expect(isShownChange({ key: "x", before: ID, after: "שם" })).toBe(true)
-  })
-
-  it("the row drops them", () => {
-    const item = toAuditItem(
-      row({
-        action: "admin_set_content_draft",
-        changes: [
-          {
-            key: "draft_content",
-            before: null,
-            after: { body: "איפה זה מוצג?" },
-          },
-          { key: "updated_by", before: null, after: ID },
-        ],
-      })
-    )
-    expect(item.action).toBe("שמירת טיוטת תוכן")
-    expect(item.changes).toEqual([
-      {
-        key: "draft_content",
-        field: fieldLabel("draft_content"),
-        kind: "add",
-        after: "איפה זה מוצג?",
-      },
-    ])
+    expect(isChangedField({ key: "x", before: null, after: null })).toBe(false)
+    expect(isChangedField({ key: "x", before: "", after: null })).toBe(false)
+    expect(isChangedField({ key: "x", before: [1], after: [1] })).toBe(false)
+    expect(
+      isChangedField({ key: "x", before: "<changed>", after: "<changed>" })
+    ).toBe(false)
+    expect(isChangedField({ key: "x", before: ID, after: "שם" })).toBe(true)
   })
 })
 
@@ -312,13 +271,11 @@ describe("labels seen in the dev database", () => {
     expect(actionLabel("admin_set_concept_archived")).toBe(
       "העברת קונספט לארכיון"
     )
-    expect(actionLabel("admin_set_concept_image")).toBe("בחירת תמונה לקונספט")
     for (const action of [
       "admin_cancel_event",
       "admin_delete_event",
       "admin_reschedule_event",
       "choose_credit_outcome",
-      "set_booking_guest_details",
     ]) {
       expect(actionLabel(action), action).not.toBe(action)
     }
@@ -436,127 +393,158 @@ describe("the filters' state (phone check, 2026-10-10)", () => {
   })
 })
 
-describe("toChange and toAuditItem", () => {
-  it("a partial refund's amount: what was refunded out of what was asked", () => {
-    expect(
-      toChange(
-        { key: "amount_agorot", before: 12800, after: 10000 },
-        "refund_requests"
-      )
-    ).toMatchObject({ after: "100 ₪ מתוך 128 ₪" })
-    expect(
-      toChange(
-        { key: "amount_agorot", before: 12800, after: 12800 },
-        "refund_requests"
-      )
-    ).toMatchObject({ after: "128 ₪" })
-    // Elsewhere an amount is just the new one.
-    expect(
-      toChange(
-        { key: "amount_agorot", before: 12800, after: 10000 },
-        "payments"
-      )
-    ).toMatchObject({ after: "100 ₪" })
-  })
-
-  it("a change, an add and a delete", () => {
-    expect(toChange({ key: "capacity_adults", before: 12, after: 14 })).toEqual(
-      {
-        key: "capacity_adults",
-        field: "מכסה",
-        kind: "change",
-        before: "12",
-        after: "14",
-      }
+describe("toAuditItem: one concise item per operation", () => {
+  it("an edit: only the changed fields, as {field}: {after} (במקום {before})", () => {
+    const item = toAuditItem(
+      row({
+        reason: "יותר מקום",
+        changes: [
+          { key: "capacity_adults", before: 12, after: 14 },
+          { key: "revision", before: 1, after: 2 },
+        ],
+      })
     )
-    expect(toChange({ key: "body", before: null, after: "חלב" })).toMatchObject(
-      {
-        kind: "add",
-        after: "חלב",
-      }
-    )
-    expect(toChange({ key: "body", before: "חלב", after: null })).toMatchObject(
-      {
-        kind: "delete",
-        before: "חלב",
-      }
-    )
-  })
-
-  it("the row: time, who, action, session, changes, reason", () => {
-    expect(toAuditItem(row({ reason: "יותר מקום" }))).toMatchObject({
+    expect(item).toMatchObject({
       when: "10.10.26 · 12:15",
       actor: "טל",
       action: "עריכת מפגש",
       customer: null,
-      session: "בראנץ׳ סתיו · 12.10.26",
+      session: "בראנץ׳ סתיו 12.10",
+      subject: null,
+      result: null,
       reason: "יותר מקום",
     })
+    expect(item.changes).toEqual([
+      { key: "capacity_adults", text: "מכסה: 14 (במקום 12)" },
+    ])
   })
 
-  it("a deleted session (story 3.17): its own lines from before, the session label from before", () => {
-    const deleted = (counts: Record<string, unknown>) =>
+  it("an added value has no (במקום); unchanged, masked, technical and id fields are dropped", () => {
+    expect(
+      changedFields(
+        row({
+          changes: [
+            { key: "description", before: null, after: "חדש" },
+            { key: "capacity_adults", before: 12, after: 12 },
+            { key: "full_name", before: "<changed>", after: "<changed>" },
+            { key: "updated_at", before: "a", after: "b" },
+            { key: "image_id", before: null, after: EVENT },
+            { key: "allowed_weekdays", before: [], after: null },
+          ],
+        })
+      )
+    ).toEqual([{ key: "description", text: "תיאור: חדש" }])
+  })
+
+  it("a removed value reads as a dash, with what it was", () => {
+    expect(
+      changedFields(
+        row({ changes: [{ key: "description", before: "ישן", after: null }] })
+      )
+    ).toEqual([{ key: "description", text: "תיאור: — (במקום ישן)" }])
+  })
+
+  it("no field list unless the rule is an edit", () => {
+    const item = toAuditItem(
+      row({
+        action: "admin_create_event",
+        changes: [
+          { key: "capacity_adults", before: null, after: 12 },
+          { key: "status", before: null, after: "draft" },
+        ],
+      })
+    )
+    expect(item.action).toBe("יצירת מפגש")
+    expect(item.result).toBeNull()
+    expect(item.changes).toEqual([])
+  })
+
+  it("an entitlement's correction: expires_at repeats expires_on; a template's type is its subject", () => {
+    expect(
+      changedFields(
+        row({
+          action: "admin_correct_entitlement",
+          entity_type: "entitlements",
+          event: null,
+          changes: [
+            { key: "expires_on", before: "2026-11-01", after: "2026-11-15" },
+            {
+              key: "expires_at",
+              before: "2026-10-31T22:00:00+00:00",
+              after: "2026-11-14T22:00:00+00:00",
+            },
+          ],
+        })
+      ).map((c) => c.text)
+    ).toEqual(["בתוקף עד: 15.11.26 (במקום 01.11.26)"])
+    const template = toAuditItem(
+      row({
+        action: "admin_update_notification_template",
+        entity_type: "notification_templates",
+        event: null,
+        subject: "reminder",
+        changes: [
+          { key: "type", before: null, after: "reminder" },
+          { key: "title", before: "ישן", after: "חדש" },
+          { key: "version", before: 1, after: 2 },
+        ],
+      })
+    )
+    expect(template.subject).toBe("תזכורת לפני מפגש")
+    expect(template.changes.map((c) => c.text)).toEqual([
+      "כותרת: חדש (במקום ישן)",
+    ])
+  })
+
+  it("subjects: a product's or concept's name, a content section by its admin names; unknown is none", () => {
+    const subject = (entity_type: string, value: string | null) =>
+      toAuditItem(row({ entity_type, event: null, subject: value })).subject
+    expect(subject("products", "כרטיסייה אישית")).toBe("כרטיסייה אישית")
+    expect(subject("concepts", "יווני")).toBe("יווני")
+    expect(subject("content_sections", "how-it-works/faq")).toBe(
+      "איך זה עובד · שאלות נפוצות"
+    )
+    expect(subject("content_sections", "about/main")).toBe("אודות")
+    expect(subject("content_sections", "nope/none")).toBeNull()
+    expect(subject("notification_templates", "nope")).toBeNull()
+    expect(subject("events", "x")).toBeNull()
+    expect(subject("products", null)).toBeNull()
+  })
+
+  it("a deleted session (story 3.17): the session label from before, a short result", () => {
+    const deleted = (options: unknown[]) =>
       toAuditItem(
         row({
           action: "admin_delete_event",
           event: null,
           changes: [
-            { key: "concept_name", before: "בראנץ׳ סתיו", after: null },
+            { key: "concept_name", before: "סתיו", after: null },
             {
               key: "starts_at",
               before: "2026-10-12T07:00:00+00:00",
               after: null,
             },
-            { key: "status", before: "published", after: null },
             { key: "capacity_adults", before: 12, after: null },
-            { key: "description", before: "תיאור", after: null },
-            ...Object.entries(counts).map(([key, before]) => ({
-              key,
-              before,
-              after: null,
-            })),
+            { key: "work_tasks_count", before: 5, after: null },
+            { key: "credit_options", before: options, after: null },
           ],
         })
       )
-    const full = deleted({
-      work_dishes_count: 2,
-      work_tasks_count: 5,
-      shopping_items_count: 0,
-      credit_options: [{ credit_id: CUSTOMER, state: "active" }],
-    })
+    const full = deleted([
+      { credit_id: CUSTOMER, state: "active" },
+      { credit_id: EVENT, state: "active" },
+    ])
     expect(full.action).toBe("מחיקת מפגש")
-    expect(full.session).toBe("בראנץ׳ סתיו · 12.10.26")
-    expect(
-      full.changes.map((c) => `${c.field}: ${c.kind === "add" ? c.after : ""}`)
-    ).toEqual([
-      "קונספט: בראנץ׳ סתיו",
-      "תאריך המפגש: 12.10.26",
-      "סטטוס: נמחק",
-      "מנות בדף העבודה: 2",
-      "משימות בדף העבודה: 5",
-      "חלופות זיכוי שהוסרו: 1",
-    ])
-    const empty = deleted({
-      work_dishes_count: 0,
-      work_tasks_count: 0,
-      shopping_items_count: 0,
-      credit_options: [],
-    })
-    expect(empty.changes.map((c) => c.field)).toEqual([
-      "קונספט",
-      "תאריך המפגש",
-      "סטטוס",
-    ])
-    // Other actions keep their rendering.
-    expect(toAuditItem(row()).changes.map((c) => c.field)).not.toContain(
-      "תאריך המפגש"
-    )
+    expect(full.session).toBe("בראנץ׳ סתיו 12.10")
+    expect(full.result).toBe("הוסרו 2 חלופות זיכוי")
+    expect(full.changes).toEqual([])
+    expect(deleted([]).result).toBeNull()
   })
 
   it("an anonymized customer", () => {
     expect(
       toAuditItem(row({ customer: { id: CUSTOMER, name: null } })).customer
-    ).toBe(copy.anonymous)
+    ).toBe("לקוחה שפרטיה הוסרו")
   })
 
   it("the next cursor is the last row's created_at and id, only with has_more", () => {
@@ -570,17 +558,22 @@ describe("toChange and toAuditItem", () => {
 })
 
 describe("review fixes", () => {
-  it("drops a change that is null on both sides (an inserted row's empty columns)", () => {
+  it("an edit drops a field that is empty on both sides (an inserted row's empty columns)", () => {
     const item = toAuditItem(
       row({
+        action: "admin_update_product",
+        entity_type: "products",
+        event: null,
         changes: [
           { key: "note", before: null, after: null },
           { key: "reference", before: undefined, after: null },
-          { key: "amount_agorot", before: null, after: 47200 },
+          { key: "description", before: "", after: null },
+          { key: "price_agorot", before: null, after: 47200 },
         ],
       })
     )
-    expect(item.changes.map((c) => c.key)).toEqual(["amount_agorot"])
+    expect(item.changes.map((c) => c.key)).toEqual(["price_agorot"])
+    expect(item.changes[0].text).toBe("מחיר: 472 ₪")
   })
 
   it("isFilterDate: a real day from the year 2000 only", () => {
@@ -615,11 +608,18 @@ describe("review fixes", () => {
     expect(formatValue("body", "published")).toBe("published")
     expect(formatValue("status", "toString")).toBe("toString")
     expect(
-      toChange({ key: "status", before: "draft", after: "published" })
-    ).toMatchObject({
-      before: adminCopy.audit.values.status.draft,
-      after: adminCopy.audit.values.status.published,
-    })
+      changedFields(
+        row({
+          changes: [{ key: "status", before: "draft", after: "published" }],
+        })
+      )[0].text
+    ).toBe(
+      copy.changed(
+        "סטטוס",
+        adminCopy.audit.valuesByEntity.events.status.published,
+        adminCopy.audit.valuesByEntity.events.status.draft
+      )
+    )
   })
 
   it("paired keys have distinct field names", () => {

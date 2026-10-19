@@ -1878,8 +1878,8 @@ export const adminCopy = {
       when: "מתי",
       who: "מי",
       action: "פעולה",
-      about: "לקוחה ומפגש",
-      changes: "מה השתנה",
+      about: "על מה",
+      details: "פרטים",
       reason: "סיבה",
     },
     // Who, by actor_kind (user decision 2026-10-10).
@@ -1888,84 +1888,99 @@ export const adminCopy = {
       customer: "הלקוחה",
       system: "המערכת",
     } as Record<string, string>,
-    anonymous: "לקוחה אנונימית",
+    anonymous: "לקוחה שפרטיה הוסרו",
     // "{date} · {hour}"
     when: (date: string, time: string) => `${date} · ${time}`,
-    sessionLabel: (concept: string, date: string) => `${concept} · ${date}`,
+    // "בראנץ׳ {קונספט} {DD.MM}"
+    sessionLabel: (concept: string, dayMonth: string) =>
+      `בראנץ׳ ${concept} ${dayMonth}`,
     reason: (text: string) => `סיבה: ${text}`,
-    // A partial refund: "{הוחזר} מתוך {התבקש}".
-    outOf: (part: string, whole: string) => `${part} מתוך ${whole}`,
-    // A deleted session's row (story 3.17): its own lines, from before.
-    deletedEvent: {
-      date: "תאריך המפגש",
-      status: "נמחק",
+    // A content section: "{עמוד} · {מקטע}".
+    subjectSection: (page: string, section: string) => `${page} · ${section}`,
+    // An edited field: "{שדה}: {ערך חדש} (במקום {ערך קודם})"; one form for
+    // every field's gender and number. An added value has no "(במקום …)".
+    changed: (field: string, after: string, before: string) =>
+      `${field}: ${after} (במקום ${before})`,
+    added: (field: string, after: string) => `${field}: ${after}`,
+    // One result sentence per shown action (lib/copy/audit-actions.ts).
+    results: {
+      paid: (amount: string, product: string) =>
+        `שולמו ${amount} על ${product}`,
+      paidAmount: (amount: string) => `שולמו ${amount}`,
+      refunded: (amount: string) => `הוחזרו ${amount}`,
+      refundedPartial: (part: string, whole: string) =>
+        `הוחזרו ${part} מתוך ${whole}`,
+      booked: (places: number) =>
+        places > 1 ? `נרשמה (${places} מקומות)` : "נרשמה",
+      refundOpened: "נפתחה בקשת החזר",
+      creditReturned: "הזיכוי חזר ללקוחה",
+      credit: (sessions: number) =>
+        sessions === 1
+          ? "התקבל זיכוי למפגש אחד"
+          : sessions === 2
+            ? "התקבל זיכוי לשני מפגשים"
+            : `התקבל זיכוי ל-${sessions} מפגשים`,
+      backToCard: "הכניסה חזרה לכרטיסייה",
+      choseRefund: "נבחר החזר, נפתחה בקשת החזר",
+      choseCredit: "נבחר זיכוי",
+      bookingsCancelled: (count: number) =>
+        count === 1 ? "בוטלה הרשמה אחת" : `בוטלו ${count} הרשמות`,
+      creditOptionsRemoved: (count: number) =>
+        count === 1 ? "הוסרה חלופת זיכוי אחת" : `הוסרו ${count} חלופות זיכוי`,
+      link: (purpose: string, date: string) =>
+        `קישור ${purpose}, בתוקף עד ${date}`,
+      linkPurposes: {
+        join: "להצטרפות",
+        claim: "לצירוף לחשבון קיים",
+        reset: "לאיפוס סיסמה",
+      } as Record<string, string>,
+      emailChanged: "המייל עודכן",
+      emailTaken: "המייל לא עודכן: הוא כבר שייך לחשבון אחר",
+      phoneChanged: "מספר הטלפון עודכן",
+      phoneTaken: "מספר הטלפון לא עודכן: הוא כבר שייך לחשבון אחר",
+      exported: (count: number) =>
+        count === 1 ? "יוצאה לקוחה אחת" : `יוצאו ${count} לקוחות`,
+      consentGiven: "אישרה",
+      consentWithdrawn: "ביטלה את האישור",
+      archived: "הועבר לארכיון",
+      unarchived: "הוחזר מהארכיון",
+      // A moved booking: "הועברה מבראנץ׳ {קונספט} {DD.MM}".
+      movedFrom: (session: string) => `הועברה מ${session}`,
+      unitsAdded: (count: number) =>
+        count === 1 ? "נוספה כניסה אחת" : `נוספו ${count} כניסות`,
+      unitsRemoved: (count: number) =>
+        count === 1 ? "הופחתה כניסה אחת" : `הופחתו ${count} כניסות`,
+      parkedSettled: "התקבל זיכוי, והלקוחה תבחר בין זיכוי להחזר",
     },
     // Values.
     masked: "השתנה",
     yes: "כן",
     no: "לא",
     none: "—",
-    // Every action written by private.audit; an unknown one shows its code.
+    // Every shown action (lib/copy/audit-actions.ts); the hidden ones are
+    // never listed. An unknown one shows its code.
     actions: {
       admin_add_customer_note: "הוספת הערה פנימית",
       admin_delete_customer_note: "מחיקת הערה פנימית",
-      admin_add_note: "הוספת פתק",
-      admin_update_note: "עריכת פתק",
-      admin_delete_note: "מחיקת פתק",
-      admin_set_note_archived: "העברת פתק לארכיון",
-      admin_set_note_done: "סימון פתק כבוצע",
-      admin_set_note_pinned: "נעיצת פתק",
-      admin_set_note_order: "סידור פתקים",
-      admin_add_note_topic: "הוספת נושא",
-      admin_rename_note_topic: "שינוי שם נושא",
-      admin_delete_note_topic: "מחיקת נושא",
-      admin_set_note_topic_order: "סידור נושאים",
-      admin_add_prep_day: "הוספת יום הכנה",
-      admin_remove_prep_day: "הסרת יום הכנה",
-      admin_move_prep_day: "הזזת יום הכנה",
-      admin_add_work_dish: "הוספת מנה",
-      admin_update_work_dish: "עריכת מנה",
-      admin_delete_work_dish: "מחיקת מנה",
-      admin_set_work_dish_order: "סידור מנות",
-      admin_add_work_task: "הוספת משימה",
-      admin_update_work_task: "עריכת משימה",
-      admin_delete_work_task: "מחיקת משימה",
-      admin_set_work_task_done: "סימון משימה כבוצעה",
-      admin_set_work_task_order: "סידור משימות",
-      admin_add_shopping_item: "הוספת פריט לקניות",
-      admin_add_shopping_items: "הוספת פריטים לקניות",
-      admin_update_shopping_item: "עריכת פריט בקניות",
-      admin_delete_shopping_item: "מחיקת פריט מהקניות",
-      admin_set_shopping_item_bought: "סימון פריט כנקנה",
-      admin_set_shopping_item_order: "סידור רשימת הקניות",
       admin_create_concept: "יצירת קונספט",
       admin_update_concept: "עריכת קונספט",
       admin_delete_concept: "מחיקת קונספט",
       admin_set_concept_archived: "העברת קונספט לארכיון",
-      admin_set_concept_image: "בחירת תמונה לקונספט",
       admin_create_event: "יצירת מפגש",
       admin_update_event: "עריכת מפגש",
       admin_publish_event: "פרסום מפגש",
       admin_duplicate_event: "שכפול מפגש",
-      admin_set_event_image: "בחירת תמונה למפגש",
-      admin_create_media: "העלאת תמונה",
-      admin_begin_media_publish: "התחלת פרסום תמונה",
-      admin_finish_media_publish: "פרסום תמונה",
-      media_hidden: "הסתרת תמונה",
       admin_create_product: "יצירת מוצר",
       admin_update_product: "עריכת מוצר",
       admin_set_product_price: "שינוי מחיר מוצר",
-      admin_set_content_draft: "שמירת טיוטת תוכן",
       admin_publish_content: "פרסום תוכן",
       admin_update_business_settings: "שינוי הגדרות",
       admin_export_customers: "ייצוא לקוחות",
       admin_update_notification_template: "עריכת תבנית התראה",
       admin_issue_link: "הפקת קישור",
-      admin_begin_email_change: "התחלת שינוי מייל",
       admin_finish_email_change: "שינוי מייל",
       admin_change_phone: "שינוי מספר טלפון",
       revoke_link: "ביטול קישור",
-      admin_approve_payment: "אישור תשלום",
       approve_payment: "אישור תשלום",
       admin_book_customer: "רישום לקוחה למפגש",
       admin_cancel_booking: "ביטול הרשמה",
@@ -1979,10 +1994,7 @@ export const adminCopy = {
       admin_settle_parked_purchase: "הצעת החזר או זיכוי על מפגש שבוטל",
       admin_set_correction_booking_handled: "סימון הרשמה שטופלה אחרי תיקון",
       choose_credit_outcome: "בחירה בין זיכוי להחזר",
-      set_booking_guest_details: "עדכון פרטי מלווה",
       bind_purchase: "שיוך רכישה",
-      claim_join: "צירוף רכישה לחשבון קיים",
-      join_begin: "התחלת הצטרפות",
       join_complete: "השלמת הצטרפות",
       set_photo_consent: "אישור תמונות אווירה",
       set_personal_photo_consent: "אישור תמונות אישיות",
@@ -1991,8 +2003,6 @@ export const adminCopy = {
       cancel_booking: "ביטול הרשמה",
       move_booking: "הזזת הרשמה",
       complete_event: "סיום מפגש",
-      migrate_identity_match: "התאמת זהות",
-      refresh_returned_entitlements: "עדכון כניסות שחזרו",
       reset_complete: "איפוס סיסמה",
     } as Record<string, string>,
     // Common keys of before/after; an unknown key shows its code.
@@ -2096,12 +2106,6 @@ export const adminCopy = {
       theme_key: "ערכת צבעים",
       generic_paper_key: "רקע",
       deleted_tasks: "משימות שנמחקו",
-      // A deleted session (story 3.17): its concept and what went with it.
-      concept_name: "קונספט",
-      work_dishes_count: "מנות בדף העבודה",
-      work_tasks_count: "משימות בדף העבודה",
-      shopping_items_count: "פריטים ברשימת הקניות",
-      credit_options: "חלופות זיכוי שהוסרו",
       guest_details: "פרטי מלווה",
       note_count: "מספר פתקים",
       payer_label: "שם המשלמת",

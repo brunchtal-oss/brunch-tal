@@ -2031,6 +2031,7 @@ export type Database = {
           p_customer_id?: string
           p_event_id?: string
           p_from?: string
+          p_shown: string[]
           p_to?: string
         }
         Returns: Json
