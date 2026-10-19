@@ -271,6 +271,8 @@ describe("admin_correct_entitlement", { timeout: 60_000 }, () => {
         new_value: later,
         reason: testName("extend"),
         actor_kind: "admin",
+        // Story 3.14: only an automatic extension has a week.
+        week_start: null,
       })
 
       const open = await as(db, f.admin, async () => {

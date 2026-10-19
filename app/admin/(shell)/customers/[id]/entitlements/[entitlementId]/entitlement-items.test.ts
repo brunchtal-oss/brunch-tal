@@ -15,6 +15,7 @@ import {
   sensitiveOf,
   sessionOptions,
   termRows,
+  weekLine,
   type EntitlementPage,
 } from "./entitlement-items"
 
@@ -70,6 +71,7 @@ const PAGE: EntitlementPage = {
       related_event_id: null,
       related_concept_name: null,
       related_starts_at: null,
+      week_start: null,
     },
     {
       correction_id: "c1",
@@ -82,6 +84,7 @@ const PAGE: EntitlementPage = {
       related_event_id: EVENT,
       related_concept_name: "שישי מיוחד",
       related_starts_at: "2026-10-16T07:00:00Z",
+      week_start: null,
     },
   ],
 }
@@ -126,6 +129,65 @@ describe("the page", () => {
     expect(items[1].reason).toBeNull()
     expect(items[1].session).toMatch(/^מפגש: /)
     for (const item of items) expect(item.change).not.toContain("←")
+  })
+
+  it("history: an automatic extension reads its own line, its week and the system", () => {
+    const items = historyItems({
+      ...PAGE,
+      corrections: [
+        {
+          correction_id: "c3",
+          field: "expires_on",
+          old_value: "2026-11-08",
+          new_value: "2026-11-15",
+          reason: null,
+          actor_kind: "system",
+          created_at: "2026-10-19T07:00:00Z",
+          related_event_id: null,
+          related_concept_name: null,
+          related_starts_at: null,
+          week_start: "2026-10-11",
+        },
+      ],
+    })
+    expect(items[0]).toMatchObject({
+      change: "הארכה אוטומטית: היה 08.11.26, עכשיו 15.11.26",
+      week: "שבוע 11.10–17.10 בלי בראנץ׳ מתאים",
+      who: "המערכת, 19.10.26",
+      reason: null,
+      session: null,
+    })
+    expect(items[0].change).not.toContain("←")
+    // A system correction without a week reads as a regular one.
+    const plain = historyItems({
+      ...PAGE,
+      corrections: [
+        {
+          correction_id: "c4",
+          field: "units",
+          old_value: 3,
+          new_value: 2,
+          reason: null,
+          actor_kind: "system",
+          created_at: "2026-10-19T07:00:00Z",
+          related_event_id: null,
+          related_concept_name: null,
+          related_starts_at: null,
+          week_start: null,
+        },
+      ],
+    })
+    expect(plain[0]).toMatchObject({
+      change: "כניסות פנויות: היה 3, עכשיו 2",
+      week: null,
+      who: "המערכת, 19.10.26",
+    })
+    // Tal's corrections have no week line.
+    expect(historyItems(PAGE).every((item) => item.week === null)).toBe(true)
+    expect(weekLine("2026-02-30")).toBeNull()
+    expect(weekLine(null)).toBeNull()
+    // Across a month.
+    expect(weekLine("2026-12-27")).toBe("שבוע 27.12–02.01 בלי בראנץ׳ מתאים")
   })
 
   it("the session picker lists each session once", () => {
