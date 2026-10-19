@@ -23,6 +23,14 @@ export const SENSITIVE_ACTIONS = {
   event_delete: "האם למחוק את המפגש?",
   // Recording a refund Tal paid outside the app (3.9, source §7).
   refund_complete: "האם לאשר החזר?",
+  // Correcting a card (3.13, source §7): its expiry, its balance, and its
+  // weekdays or event kind.
+  entitlement_expiry: "האם לשנות את התוקף?",
+  entitlement_units: "האם לתקן את היתרה?",
+  entitlement_terms: "האם לשנות את תנאי הכרטיסייה?",
+  // A purchase paid without a place in a session the business cancelled
+  // (3.13): the customer chooses a refund or a credit.
+  parked_settle: "האם להציע ללקוחה החזר או זיכוי?",
 } as const
 
 export type SensitiveAction = keyof typeof SENSITIVE_ACTIONS

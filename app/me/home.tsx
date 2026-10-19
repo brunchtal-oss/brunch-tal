@@ -24,7 +24,12 @@ import {
 } from "./bookings/credits"
 import { PendingChoiceCard } from "./bookings/pending-choice"
 import { loadMyEntitlements } from "./load-entitlements"
-import { isEmptyHome, isHomeCard, type SessionRow } from "./purchase-items"
+import {
+  entryTotal,
+  isEmptyHome,
+  isHomeCard,
+  type SessionRow,
+} from "./purchase-items"
 
 // The home (story 4.12; design round, user decisions 2026-10-07/08), each
 // section under a real heading, in this order: a business cancel waiting
@@ -152,7 +157,7 @@ export async function Home() {
                   available={card.available}
                   reserved={card.reserved}
                   used={card.used}
-                  total={card.originalUnits}
+                  total={entryTotal(card)}
                   expiresOn={card.expiresOn}
                   daysLeft={card.daysLeft}
                   isExpiring={card.isExpiring}

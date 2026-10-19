@@ -414,6 +414,38 @@ describe("get_my_entitlements", () => {
     })
   })
 
+  it("story 3.13: after Tal corrects her card, she reads the new expiry and balance, and the adjust movement (her purchase page shows it as תיקון)", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const { entitlement } = await grant(db, f, f.customerA)
+      const { rows: d } = await db.query(
+        "select ((now() at time zone 'Asia/Jerusalem')::date + 90)::text as d"
+      )
+      for (const [field, value] of [
+        ["expires_on", d[0].d],
+        ["units", 2],
+      ] as const) {
+        await asAuthenticated(db, f.admin)
+        await db.query(
+          "select public.admin_correct_entitlement($1, $2, $3::jsonb, null, null, true, $4)",
+          [entitlement, field, JSON.stringify(value), randomUUID()]
+        )
+        await db.query("reset role")
+      }
+      const row = (await mine(db, f.customerA)).find(
+        (r) => r.entitlement_id === entitlement
+      )!
+      expect(row).toMatchObject({ expires_on: d[0].d, available: 2 })
+      await asAuthenticated(db, f.customerA)
+      const { rows } = await db.query(
+        "select action, units from public.entitlement_movements where entitlement_id = $1 and action = 'adjust'",
+        [entitlement]
+      )
+      await db.query("reset role")
+      expect(rows).toEqual([{ action: "adjust", units: -2 }])
+    })
+  })
+
   it("story 3.12: after the completion job the reserved entry is used, and a card used to the last entry is used up", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)

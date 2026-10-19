@@ -1094,8 +1094,24 @@ export const adminCopy = {
         chip: "צריך מקום",
         // Story 3.8: the business cancelled that session.
         cancelledDetail: (concept: string, dayMonth: string) =>
-          `שילמה לבראנץ׳ ${concept} ${dayMonth} והמפגש בוטל. צריך לסגור איתה החזר או זיכוי ידנית`,
+          `שילמה לבראנץ׳ ${concept} ${dayMonth} והמפגש בוטל. אפשר להציע לה החזר או זיכוי`,
         cancelledChip: "בוטל",
+        // Story 3.13: the parked_settle dialog (like a business cancel).
+        settle: "הצעת החזר או זיכוי",
+        settleFor: (name: string) => `הצעת החזר או זיכוי ל${name}`,
+        settleDescription:
+          "הלקוחה תקבל הודעה שהמפגש בוטל ותבחר באזור האישי בין החזר לזיכוי, כמו בביטול מפגש.",
+        settleDescriptionNoCustomer:
+          "הלקוחה עוד לא הצטרפה. ההודעה והבחירה יגיעו אליה כשתצטרף.",
+        settleCustomer: "לקוחה",
+        settleSession: "מפגש",
+        settleAmount: "שולם",
+        settleCheckbox: (name: string) =>
+          `אני מאשרת להציע ל${name} החזר או זיכוי על המפגש שבוטל`,
+        settleConfirm: "הצעת החזר או זיכוי",
+        settleDone: "ההצעה נשלחה ללקוחה",
+        // A purchase not bound yet: she hears about it when she joins.
+        settleDoneNoCustomer: "ההצעה נשמרה ותגיע ללקוחה כשתצטרף",
       },
       pinned_seat_held: {
         title: (name: string) => `מקום שמור למי שלא הצטרפה (${name})`,
@@ -1125,6 +1141,18 @@ export const adminCopy = {
       choice_pending: {
         title: (name: string, concept: string, day: string) =>
           `${name} עוד לא בחרה זיכוי או החזר על בראנץ׳ ${concept} ${day}`,
+      },
+      // A booking that no longer fits its card after Tal corrected it
+      // (story 3.13): to the card's page; "טופל" removes it.
+      correction_affected: {
+        title: (name: string) =>
+          `הרשמה שלא מתאימה לכרטיסייה אחרי תיקון (${name})`,
+        detail: (concept: string, day: string) =>
+          `בראנץ׳ ${concept} ${day}. ההרשמה נשארה כפי שהיא. אפשר לבטל או להעביר אותה, או לסמן שטופל`,
+        chip: "לבדיקה",
+        handled: "טופל",
+        handledFor: (name: string) => `סימון שטופל: ${name}`,
+        handledDone: "סומן שטופל",
       },
       // An email change stuck between its steps for more than 15 minutes
       // (story 2.8): to the customer's card, where saving the same address
@@ -1421,7 +1449,10 @@ export const adminCopy = {
         refund_completed: "ההחזר בוצע",
         event_changed: "שינוי במפגש",
         event_cancelled: "ביטול מפגש",
-        entitlement_changed: "עדכון בכרטיסייה",
+        // Story 3.13: one template per correction of a card.
+        entitlement_changed: "עדכון תוקף הכרטיסייה",
+        entitlement_units_changed: "עדכון יתרה בכרטיסייה",
+        entitlement_terms_changed: "עדכון תנאי הכרטיסייה",
         card_expiring: "כרטיסייה עומדת לפוג",
         broadcast: "הודעה כללית",
         admin_card_expiring: "כרטיסייה של לקוחה עומדת לפוג",
@@ -1512,8 +1543,105 @@ export const adminCopy = {
       // A purchase not bound to an account yet, instead of the two buttons
       // (user decision 2026-10-13; the payments list's wording).
       notJoined: "עוד לא הצטרפה",
+      // Story 3.13: the card's page.
+      details: "פרטים ותיקונים",
+      detailsFor: (name: string) => `פרטים ותיקונים בכרטיסייה של ${name}`,
       empty: "אין כרטיסיות פתוחות כרגע",
+      // Story 3.13: after the expiry, when a correction extended it.
+      extended: "(כולל הארכה)",
       showAll: "להצגת כל הכרטיסיות",
+    },
+    // customers/[id]/entitlements/[entitlementId] (story 3.13): one card,
+    // its terms and Tal's corrections (each a sensitive action).
+    entitlement: {
+      title: "פרטי כרטיסייה",
+      backToCustomer: (name: string) => `לכרטיס של ${name}`,
+      backToOpenCards: "לכרטיסיות הפתוחות",
+      purchased: (date: string) => `נרכשה ${date}`,
+      // A pinned purchase, a revoked or a refunded one.
+      notCorrectable:
+        "אפשר לתקן רק כרטיסייה פעילה. כניסה למפגש מסוים לא משתנה כאן.",
+      termsTitle: "תוקף ותנאים",
+      fields: {
+        expires_on: "בתוקף עד",
+        units: "כניסות פנויות",
+        allowed_weekdays: "ימים",
+        eligible_event_kind: "סוג מפגש",
+      } as Record<string, string>,
+      allDays: "כל הימים",
+      // allowed_weekdays, 0 = Sunday.
+      weekdays: [
+        "ראשון",
+        "שני",
+        "שלישי",
+        "רביעי",
+        "חמישי",
+        "שישי",
+        "שבת",
+      ] as readonly string[],
+      kinds: { regular: "רגיל", couple: "זוגי" } as Record<string, string>,
+      change: "שינוי",
+      changeFor: (field: string) => `שינוי ${field}`,
+      // The edit box under a row.
+      newExpiry: "תאריך חדש",
+      newUnits: "כמה כניסות פנויות יהיו בכרטיסייה",
+      unitsHint: (reserved: number) =>
+        reserved === 0
+          ? "בלי הכניסות שכבר נוצלו"
+          : `בלי הכניסות שכבר נוצלו ובלי ${reserved} ששוריינו להרשמות`,
+      newWeekdays: "הימים שאפשר להירשם בהם",
+      newKind: "סוג המפגשים שאפשר להירשם אליהם",
+      related: "מפגש שהתיקון קשור אליו (לא חובה)",
+      relatedNone: "בלי מפגש",
+      reason: "סיבה (לא חובה)",
+      next: "המשך",
+      cancel: "ביטול",
+      // The dialog.
+      customer: "לקוחה",
+      before: "לפני",
+      after: "אחרי",
+      relatedSession: "מפגש",
+      reasonRow: "סיבה",
+      affectedTitle: "הרשמות שכבר לא יתאימו (הן יישארו כפי שהן)",
+      affectedHint: "הן יופיעו ב״לטיפול״ עד שיבוטלו, יועברו, או שתסמני שטופלו.",
+      descriptions: {
+        expires_on:
+          "הלקוחה תקבל הודעה עם התוקף החדש. כניסות שחזרו לכרטיסייה יהיו זמינות לפי התוקף החדש.",
+        units: "הלקוחה תקבל הודעה עם היתרה החדשה. הרשמות קיימות לא משתנות.",
+        terms: "הלקוחה תקבל הודעה שהתנאים השתנו. הרשמות קיימות לא משתנות.",
+      },
+      checkbox: {
+        expires_on: (name: string) =>
+          `אני מאשרת לשנות את התוקף של הכרטיסייה של ${name}`,
+        units: (name: string) => `אני מאשרת לתקן את היתרה בכרטיסייה של ${name}`,
+        terms: (name: string) =>
+          `אני מאשרת לשנות את התנאים של הכרטיסייה של ${name}`,
+      },
+      confirm: {
+        expires_on: "עדכון התוקף",
+        units: "תיקון היתרה",
+        terms: "שינוי התנאים",
+      },
+      done: "התיקון נשמר והלקוחה קיבלה הודעה",
+      doneNoCustomer: "התיקון נשמר",
+      // A refusal of INVALID_INPUT, by detail.field.
+      refusal: {
+        expires_on: "התאריך צריך להיות תקין ולא לפני תחילת התוקף",
+        units: "מספר הכניסות צריך להיות מספר שלם בין 0 ל-99",
+        allowed_weekdays: "צריך לבחור לפחות יום אחד",
+        eligible_event_kind: "צריך לבחור סוג מפגש",
+        reason: "הסיבה ארוכה מדי",
+        related_event: "המפגש שנבחר לא שייך לכרטיסייה הזו",
+      } as Record<string, string>,
+      noChange: "זה כבר הערך הנוכחי",
+      historyTitle: "היסטוריית תיקונים",
+      historyEmpty: "עוד לא נעשו תיקונים בכרטיסייה",
+      // Never "{שדה}: {ישן} ← {חדש}" (user decision 2026-10-18).
+      historyChange: (field: string, from: string, to: string) =>
+        `${field}: היה ${from}, עכשיו ${to}`,
+      historyWho: (actor: string, date: string) => `${actor}, ${date}`,
+      historyReason: (reason: string) => `סיבה: ${reason}`,
+      historySession: (title: string) => `מפגש: ${title}`,
     },
     card: {
       back: "לכל הלקוחות",
@@ -1559,6 +1687,11 @@ export const adminCopy = {
       balanceSummary: (used: number, booked: number, free: number) =>
         `נוצלו ${used} · שוריינו ${booked} · פנויות ${free}`,
       validUntil: (dayMonth: string) => `בתוקף עד ${dayMonth}`,
+      // Story 3.13: after the expiry, when a correction extended it.
+      extended: "(כולל הארכה)",
+      // The card's page (story 3.13).
+      entitlementLink: "פרטים ותיקונים",
+      entitlementLinkFor: (product: string) => `פרטים ותיקונים: ${product}`,
       expiring: "עומדת לפוג",
       expired: "פגה",
       usedUp: "נוצלה",
@@ -1841,6 +1974,10 @@ export const adminCopy = {
       admin_cancel_event: "ביטול מפגש",
       admin_delete_event: "מחיקת מפגש",
       admin_reschedule_event: "שינוי מועד מפגש",
+      // Story 3.13.
+      admin_correct_entitlement: "תיקון בכרטיסייה",
+      admin_settle_parked_purchase: "הצעת החזר או זיכוי על מפגש שבוטל",
+      admin_set_correction_booking_handled: "סימון הרשמה שטופלה אחרי תיקון",
       choose_credit_outcome: "בחירה בין זיכוי להחזר",
       set_booking_guest_details: "עדכון פרטי מלווה",
       bind_purchase: "שיוך רכישה",
@@ -1971,6 +2108,10 @@ export const adminCopy = {
       post_join_button_label: "כפתור אחרי הצטרפות",
       post_join_message: "הודעה אחרי הצטרפות",
       privacy_consent_at: "מועד אישור מדיניות הפרטיות",
+      // A card correction (story 3.13): the adjust movement and "טופל".
+      action: "סוג תנועה",
+      reason: "סיבה",
+      handled_at: "מועד טיפול",
       // The customers export (story 4.4).
       scope: "היקף",
       columns: "עמודות",
@@ -2019,6 +2160,15 @@ export const adminCopy = {
         reset: "איפוס סיסמה",
       },
       source: { manual: "ידני", online: "אונליין" },
+      // An entitlement movement (story 3.13: Tal's balance fix is adjust).
+      action: {
+        grant: "רכישה",
+        opening_balance: "יתרת פתיחה",
+        reserve: "שריון",
+        release: "שחרור",
+        use: "ניצול",
+        adjust: "תיקון",
+      },
       booked_by: { customer: "הלקוחה", admin: "טל", system: "המערכת" },
       publish_state: {
         draft: "טיוטה",

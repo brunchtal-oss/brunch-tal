@@ -90,6 +90,15 @@ export const ERROR_MESSAGES = {
   // reference.
   REFUND_ALREADY_COMPLETED: "ההחזר הזה כבר נרשם. כדאי לרענן את הדף",
   REFUND_EXCEEDS_PAID: "הסכום גבוה ממה שאפשר להחזיר על התשלום הזה",
+  // Card corrections (story 3.13): a pinned, revoked or refunded
+  // entitlement; the new value is the current one; a purchase that is not
+  // paid without a place in a cancelled session (or was settled already).
+  // INVALID_INPUT of admin_correct_entitlement carries detail.field
+  // expires_on | units | allowed_weekdays | eligible_event_kind | reason |
+  // related_event | field.
+  NOT_A_CARD: "אפשר לתקן רק כרטיסייה פעילה",
+  NO_CHANGE: "זה כבר הערך הנוכחי, אין מה לשנות",
+  NOT_PARKED: "הרכישה הזו כבר טופלה או שהמפגש לא בוטל. כדאי לרענן את הדף",
   // Tal lowers the capacity below the places already taken (story 3.2).
   CAPACITY_BELOW_BOOKED:
     "המכסה נמוכה ממספר המקומות שכבר תפוסים. אפשר להוריד אותה רק עד מספר התפוסים",

@@ -545,6 +545,8 @@ describe("admin_get_customer", () => {
         is_expired: false,
         is_used_up: false,
         pinned_event_id: null,
+        // Story 3.13: never corrected.
+        is_extended: false,
       })
       expect(byId(expired.entitlement)).toMatchObject({
         is_expired: true,

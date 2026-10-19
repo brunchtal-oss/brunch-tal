@@ -226,6 +226,13 @@ describe("the balances", () => {
     })
     expect(toBalanceItem(entitlement({ original_units: 20 })).meter).toBe(false)
   })
+
+  it("story 3.13: is_extended marks the expiry", () => {
+    expect(toBalanceItem(entitlement({ is_extended: true })).extended).toBe(
+      true
+    )
+    expect(toBalanceItem(entitlement()).extended).toBe(false)
+  })
 })
 
 describe("single entitlements (second phone check)", () => {

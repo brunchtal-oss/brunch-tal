@@ -11,6 +11,10 @@ export type TaskRowProps = {
   meta?: string | null
   metaAt?: string | null
   chip?: { tone: StatusTone; label: string } | null
+  // Story 3.13: a button under the row ("טופל", an offer). It must sit
+  // above the title link's overlay (relative z-10), so it is the only part
+  // of the row that does not open the link.
+  children?: React.ReactNode
 }
 
 // DESIGN.md › task-row (story 4.1): a "לטיפול" row with the look of
@@ -37,6 +41,7 @@ export function TaskRow({
   meta,
   metaAt,
   chip,
+  children,
 }: TaskRowProps) {
   return (
     <li className="relative flex min-h-11 flex-col gap-1 border-b border-border py-4 first:border-t">
@@ -83,6 +88,7 @@ export function TaskRow({
           )}
         </p>
       )}
+      {children}
     </li>
   )
 }
