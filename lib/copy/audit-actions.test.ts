@@ -414,6 +414,19 @@ describe("result sentences", () => {
         entity_type: "cancellation_credits",
       })
     ).toBe("התקבל זיכוי, והלקוחה תבחר בין זיכוי להחזר")
+    // Story 3.14: the system extended a card by a week.
+    expect(
+      result({
+        action: "job_auto_extend",
+        actor_kind: "system",
+        entity_type: "entitlements",
+        changes: [
+          { key: "expires_on", before: "2099-03-01", after: "2099-03-08" },
+        ],
+      })
+    ).toBe("הכרטיסייה הוארכה בשבוע, כי לא היה בראנץ׳ מתאים")
+    expect(actions.job_auto_extend).toBe("הארכה אוטומטית")
+    expect(shownPairs()).toContain("job_auto_extend/entitlements")
   })
 
   it("a shown action without a result sentence shows its name only", () => {

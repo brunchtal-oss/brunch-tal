@@ -298,6 +298,10 @@ export const SHOWN_AUDIT_ACTIONS: Record<string, readonly AuditRule[]> = {
   admin_set_correction_booking_handled: [
     { entity: "entitlement_correction_bookings" },
   ],
+  // Story 3.14: one row per extended week (actor: the system).
+  job_auto_extend: [
+    { entity: "entitlements", result: () => results.autoExtended },
+  ],
   // Products.
   admin_create_product: [{ entity: "products" }],
   admin_update_product: [{ entity: "products", edit: true }],

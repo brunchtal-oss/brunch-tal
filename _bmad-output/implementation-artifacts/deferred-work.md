@@ -34,7 +34,17 @@
   target: 3.6, ‏3.13/3.14
   summary: ב-2.12 יש תבנית אחת לכל סוג. ‏3.6 מחליט על נוסח לכל מקרה ב-`booking_cancelled` (זיכוי, החזר, ביטול בלי החזר), ו-3.13/3.14 ב-`entitlement_changed` (הארכה, החזרת כניסה, תיקון). אפשרות: שדה `{outcome}` שהקורא מעצב, או תבניות נוספות בטבלה.
   evidence: החלטת המשתמשת ב-2.12: תבנית אחת לסוג, ונוסח לכל מקרה נדחה לסיפורים שיוצרים את ההתראות.
-  status: החלק של 3.6 נסגר ב-3.6 (2026-10-06, החלטת המשתמשת): תבנית לכל מקרה. ‏`booking_cancelled` (כרטיסייה) בנוסח קבוע, ו-`booking_cancelled_pinned` חדשה למוצמדת, עם המשתנים `{date}` ו-`{expires_on}`. ‏3.7 מוסיף את מקרי הזיכוי וההחזר, ו-3.13/3.14 את `entitlement_changed`. החלק של 3.7 נסגר ב-3.7 (2026-10-10, החלטת המשתמשת): `booking_cancelled_pinned` היא עכשיו "זיכוי" (גם ביטול חוזר של הרשמה ממומנת מזיכוי), ו-`booking_cancelled_refund` חדשה לבקשת החזר; שתיהן רק עם `{date}`. החלק של 3.13 נסגר ב-3.13 (2026-10-18, החלטת המשתמשת): תבנית לכל מקרה של תיקון. ‏`entitlement_changed` (תוקף, בנוסח חדש), ‏`entitlement_units_changed` (יתרה) ו-`entitlement_terms_changed` (ימים או סוג מפגש), כולן עם `{expires_on}` ו-`{units}`. ההארכה האוטומטית (3.14) תשתמש ב-`entitlement_changed`.
+  status: החלק של 3.6 נסגר ב-3.6 (2026-10-06, החלטת המשתמשת): תבנית לכל מקרה. ‏`booking_cancelled` (כרטיסייה) בנוסח קבוע, ו-`booking_cancelled_pinned` חדשה למוצמדת, עם המשתנים `{date}` ו-`{expires_on}`. ‏3.7 מוסיף את מקרי הזיכוי וההחזר, ו-3.13/3.14 את `entitlement_changed`. החלק של 3.7 נסגר ב-3.7 (2026-10-10, החלטת המשתמשת): `booking_cancelled_pinned` היא עכשיו "זיכוי" (גם ביטול חוזר של הרשמה ממומנת מזיכוי), ו-`booking_cancelled_refund` חדשה לבקשת החזר; שתיהן רק עם `{date}`. החלק של 3.13 נסגר ב-3.13 (2026-10-18, החלטת המשתמשת): תבנית לכל מקרה של תיקון. ‏`entitlement_changed` (תוקף, בנוסח חדש), ‏`entitlement_units_changed` (יתרה) ו-`entitlement_terms_changed` (ימים או סוג מפגש), כולן עם `{expires_on}` ו-`{units}`. החלק של 3.14 נסגר ב-3.14 (2026-10-19, החלטת המשתמשת): ההארכה האוטומטית שולחת סוג חדש, `entitlement_auto_extended` (לא `entitlement_changed`), עם `{expires_on}` ו-`{units}`, התראה אחת לכרטיסייה בכל הרצה.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-14-auto-extend-empty-weeks.md`
+  target: 5.10
+  summary: התזמון של ההארכה האוטומטית: ‏`cron.schedule` שמריץ `select private.job_auto_extend();` כל שעה (AD-11). הפונקציה קיימת מ-3.14, בלי grant, ובטוחה להרצה כפולה (`week_start` ייחודי לזכות).
+  evidence: ‏3.14 בנה את הפונקציה בלבד; התזמון וההתראות לפני תפוגה שייכים ל-5.10 (ה-spec של 3.14, Never).
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-14-auto-extend-empty-weeks.md`
+  target: 5.10
+  summary: בדיקה של הקריאה המתוזמנת עצמה: ‏`job_auto_extend()` בלי פרמטרים (התאריך של היום וכל הכרטיסיות), וכרטיסייה אחת שנכשלת לא עוצרת את האחרות ולא משאירה כתיבה חלקית.
+  evidence: ביקורת 3.14 (verification-gap, לא אומת): כל הבדיקות של 3.14 מעבירות תאריך ורשימת כרטיסיות, ובלוק השגיאה לכל כרטיסייה לא נבדק (גם לא ב-`job_complete_events`). הרצה על כל הכרטיסיות שייכת לסיפור שמפעיל את התזמון.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-12-notification-core.md`
   target: 5.8
