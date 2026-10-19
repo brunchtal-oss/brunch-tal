@@ -5,7 +5,7 @@ import { ArrowDownIcon, ArrowUpIcon, XIcon } from "lucide-react"
 
 import { buttonClass } from "@/components/shared/button-class"
 import { InlineNotice } from "@/components/shared/inline-notice"
-import { Button } from "@/components/ui/button"
+import { OnlineButton, useOnlineGuard } from "@/components/shared/online-button"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import {
@@ -167,7 +167,7 @@ export function TextForm({
         )}
       </Field>
       {children}
-      <Button
+      <OnlineButton
         type="submit"
         size="lg"
         aria-busy={pending || undefined}
@@ -176,7 +176,7 @@ export function TextForm({
       >
         <Busy pending={pending} />
         {submitLabel}
-      </Button>
+      </OnlineButton>
     </form>
   )
 }
@@ -193,6 +193,7 @@ export function MoveButtons({
   pending: boolean
   onMove: (delta: -1 | 1) => void
 }) {
+  const guard = useOnlineGuard()
   if (!canUp && !canDown) return null
   return (
     <div className="flex flex-wrap gap-2">
@@ -202,6 +203,7 @@ export function MoveButtons({
           className={OUTLINE}
           aria-disabled={pending || undefined}
           onClick={() => !pending && onMove(-1)}
+          {...guard}
         >
           <ArrowUpIcon aria-hidden strokeWidth={1.5} className="size-5" />
           {copy.moveUp}
@@ -213,6 +215,7 @@ export function MoveButtons({
           className={OUTLINE}
           aria-disabled={pending || undefined}
           onClick={() => !pending && onMove(1)}
+          {...guard}
         >
           <ArrowDownIcon aria-hidden strokeWidth={1.5} className="size-5" />
           {copy.moveDown}
@@ -255,7 +258,7 @@ export function DeleteStep({
     >
       <p className="font-semibold">{question}</p>
       <div className="flex flex-wrap gap-2">
-        <Button
+        <OnlineButton
           type="button"
           variant="destructive"
           size="lg"
@@ -266,7 +269,7 @@ export function DeleteStep({
         >
           <Busy pending={pending} />
           {copy.delete}
-        </Button>
+        </OnlineButton>
         <button
           type="button"
           className={OUTLINE}

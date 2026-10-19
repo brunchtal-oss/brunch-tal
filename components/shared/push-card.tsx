@@ -4,7 +4,6 @@ import { useRef, useState, useSyncExternalStore } from "react"
 import Link from "next/link"
 import { BellOffIcon, BellRingIcon } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
 import { shellCopy } from "@/lib/copy/shell"
 import type { ActionResult } from "@/lib/errors"
 import {
@@ -17,6 +16,8 @@ import {
   type PushRegistration,
   type PushState,
 } from "@/lib/push/client"
+
+import { OnlineButton, OnlineNativeButton } from "./online-button"
 
 const copy = shellCopy.notifications.push
 
@@ -166,7 +167,7 @@ export function PushCardView({
           </p>
         )}
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-          <Button
+          <OnlineButton
             type="button"
             className="h-12 px-6 text-base font-semibold"
             disabled={busy}
@@ -174,7 +175,7 @@ export function PushCardView({
             onClick={onEnable}
           >
             {failed ? copy.retry : copy.enable}
-          </Button>
+          </OnlineButton>
           <button type="button" className={linkButton} onClick={onLater}>
             {copy.later}
           </button>
@@ -205,14 +206,14 @@ export function PushCardView({
           />
           {on ? copy.on : copy.off}
         </p>
-        <button
+        <OnlineNativeButton
           type="button"
           className={linkButton}
           onClick={on ? onTurnOff : onEnable}
           disabled={busy}
         >
           {on ? copy.turnOff : copy.turnOn}
-        </button>
+        </OnlineNativeButton>
       </section>
     )
   }

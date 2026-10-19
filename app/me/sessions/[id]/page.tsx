@@ -20,6 +20,11 @@ import {
 } from "../load-sessions"
 import { sessionStatus } from "../session-status"
 import { BookingPanel } from "./booking-panel"
+import {
+  companionNoteBooking,
+  coupleSessionBookings,
+} from "./companion-booking"
+import { CompanionNote } from "./companion-note"
 import { MovedNotice } from "./moved-notice"
 import { parsePreview, type BookingPreview } from "./booking-preview"
 
@@ -77,21 +82,27 @@ async function SessionContent({
     data as unknown as Parameters<typeof toCustomerSession>[0]
   )
 
-  const [previewResult, availability, contactHref] = await Promise.all([
-    callRpc(supabase, "preview_book_session", { p_event_id: id }),
-    availabilityOf(supabase, [id]),
-    getWhatsappHref(),
-  ])
+  // Story 5.21 (fix 7): on a couple session her bookings are read with the
+  // rest (the companion note); a regular session makes no call.
+  const [previewResult, availability, contactHref, coupleBookings] =
+    await Promise.all([
+      callRpc(supabase, "preview_book_session", { p_event_id: id }),
+      availabilityOf(supabase, [id]),
+      getWhatsappHref(),
+      coupleSessionBookings(supabase, session.kind),
+    ])
   const preview: BookingPreview = previewResult.ok
     ? parsePreview(previewResult.data)
     : { kind: "blocked", code: previewResult.code }
   // The closed notice names the booking's own cancel window
   // (policy_snapshot; RLS: her own booking): past the boundary, or when a
   // move is refused at it (story 3.10).
-  const cancelWindowHours =
-    preview.kind === "booked" && preview.bookingId
-      ? await cancelWindowOf(supabase, preview.bookingId)
-      : null
+  const bookingId = preview.kind === "booked" ? preview.bookingId : null
+  const cancelWindowHours = bookingId
+    ? await cancelWindowOf(supabase, bookingId)
+    : null
+  // The companion note of her couple booking here (no preview change).
+  const coupleBooking = companionNoteBooking(coupleBookings, bookingId)
   const status = sessionStatus({
     booked: preview.kind === "booked",
     availability: availability.get(id),
@@ -129,6 +140,16 @@ async function SessionContent({
           cancelWindowHours={cancelWindowHours}
           contactHref={contactHref}
         />
+        {coupleBooking && (
+          <div className="mt-6">
+            <CompanionNote
+              bookingId={coupleBooking.bookingId}
+              guestDetails={coupleBooking.guestDetails}
+              editable={coupleBooking.guestDetailsEditable}
+              contactHref={contactHref}
+            />
+          </div>
+        )}
       </ResultNoticeHost>
     </>
   )

@@ -280,6 +280,12 @@ body:has([data-whatsapp-bar]) [data-site-footer] {
 [data-site-footer] :focus-visible {
   outline-color: var(--background);
 }
+/* A write button while offline (story 5.21, OnlineButton): dimmed as a
+   disabled button, still focusable, described by the offline banner. */
+[data-offline] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 /* The menu-sheet's scrim: ink at 40%, flat (DESIGN › menu-sheet). */
 [data-slot="sheet-overlay"]:has(~ [data-menu-sheet]) {
   background-color: rgb(46 42 31 / 0.4);

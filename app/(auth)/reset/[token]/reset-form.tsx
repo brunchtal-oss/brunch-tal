@@ -5,7 +5,7 @@ import Link from "next/link"
 
 import { PasswordInput } from "@/components/auth/password-input"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Button } from "@/components/ui/button"
+import { OnlineButton } from "@/components/shared/online-button"
 import { buttonClass } from "@/components/shared/button-class"
 import {
   Field,
@@ -135,14 +135,14 @@ export function ResetForm({
         </Alert>
       )}
 
-      <Button
+      <OnlineButton
         type="submit"
         size="lg"
         className="h-12 text-base"
         disabled={pending}
       >
         {pending ? authCopy.reset.submitting : authCopy.reset.submit}
-      </Button>
+      </OnlineButton>
     </form>
   )
 }

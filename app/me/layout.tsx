@@ -2,6 +2,7 @@ import { Suspense } from "react"
 
 import { AppTopBar } from "@/components/shared/app-top-bar"
 import { BottomTabBar } from "@/components/shared/bottom-tab-bar"
+import { OfflineBanner } from "@/components/shared/offline-banner"
 import { PushReadMark } from "@/components/shared/push-read-mark"
 import { PushSync } from "@/components/shared/push-sync"
 import { RoleGate } from "@/components/shared/role-gate"
@@ -33,6 +34,8 @@ export default function MeLayout({ children }: { children: React.ReactNode }) {
         tabIndex={-1}
         className="mx-auto flex w-full max-w-[720px] flex-col gap-8 px-6 pt-6"
       >
+        {/* Offline (story 5.21): fixed above the top-bar and any sheet. */}
+        <OfflineBanner />
         <Suspense
           fallback={
             <p className="text-muted-foreground">{shellCopy.loading}</p>

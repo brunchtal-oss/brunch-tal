@@ -5,6 +5,7 @@ import Image from "next/image"
 import { ImagePlusIcon } from "lucide-react"
 
 import { InlineNotice } from "@/components/shared/inline-notice"
+import { OnlineButton, useOnlineGuard } from "@/components/shared/online-button"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { adminCopy } from "@/lib/copy/admin"
@@ -200,6 +201,10 @@ export function ImageUploadField({
   const describedBy = [hint ? hintId : null, error ? errorId : null]
     .filter(Boolean)
     .join(" ")
+  // Choosing a file uploads it at once: offline it does nothing (5.21).
+  const chooseGuard = useOnlineGuard({
+    "aria-describedby": describedBy || undefined,
+  })
 
   return (
     <div
@@ -242,6 +247,7 @@ export function ImageUploadField({
           aria-busy={busy || undefined}
           aria-describedby={describedBy || undefined}
           data-focus-error={error ? true : undefined}
+          {...chooseGuard}
           className={cn(
             "flex min-h-32 w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-muted-foreground bg-card p-6 text-center outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
             error && "border-error"
@@ -318,7 +324,7 @@ export function ImageUploadField({
           </div>
 
           <div className="flex flex-wrap gap-3">
-            <Button
+            <OnlineButton
               id={id}
               type="button"
               variant="outline"
@@ -331,7 +337,7 @@ export function ImageUploadField({
             >
               {busy && <Spinner aria-hidden />}
               {copy.replace}
-            </Button>
+            </OnlineButton>
             {removable && (
               <Button
                 type="button"
@@ -355,7 +361,7 @@ export function ImageUploadField({
           tone="error"
           actions={
             pending ? (
-              <Button
+              <OnlineButton
                 type="button"
                 variant="outline"
                 className={OUTLINE}
@@ -364,7 +370,7 @@ export function ImageUploadField({
               >
                 {busy && <Spinner aria-hidden />}
                 {copy.retry}
-              </Button>
+              </OnlineButton>
             ) : undefined
           }
         >

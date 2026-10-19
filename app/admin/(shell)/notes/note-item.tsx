@@ -13,6 +13,7 @@ import {
   WorkPanel,
 } from "@/components/admin/edit-kit"
 import { useAnnounce, useWorkAction } from "@/components/admin/use-work-action"
+import { useOnlineGuard } from "@/components/shared/online-button"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Field, FieldLabel } from "@/components/ui/field"
@@ -62,6 +63,8 @@ export function NoteItem({
   const announce = useAnnounce()
   const { pending, error, run } = useWorkAction()
   const [open, setOpen] = useState(false)
+  // "בוצע" writes at once: offline it is dimmed and described (5.21).
+  const doneGuard = useOnlineGuard()
 
   return (
     <li
@@ -86,6 +89,7 @@ export function NoteItem({
             )
           }}
           className="relative mt-2.5 size-6 rounded-[4px] border-[1.5px] border-muted-foreground bg-card after:absolute after:-inset-2.5 after:content-['']"
+          {...doneGuard}
         />
         <span id={`${id}-done-label`} className="sr-only">
           {copy.done}
@@ -146,6 +150,7 @@ function NotePanel({
   const id = useId()
   const announce = useAnnounce()
   const { pending, error, run } = useWorkAction()
+  const guard = useOnlineGuard()
   const [body, setBody] = useState(note.body)
   const [target, setTarget] = useState(topic.id)
   const [key, setKey] = useState(newIdempotencyKey)
@@ -224,6 +229,7 @@ function NotePanel({
               }
             )
           }}
+          {...guard}
         >
           {note.pinned ? (
             <PinOffIcon aria-hidden strokeWidth={1.5} className="size-5" />
@@ -246,6 +252,7 @@ function NotePanel({
               }
             )
           }}
+          {...guard}
         >
           <ArchiveIcon aria-hidden strokeWidth={1.5} className="size-5" />
           {copy.archive}
@@ -378,6 +385,7 @@ export function AddNote({
 export function ArchivedNoteItem({ note }: { note: Note }) {
   const announce = useAnnounce()
   const { pending, error, run } = useWorkAction()
+  const guard = useOnlineGuard()
   return (
     <li className="flex flex-col gap-1 border-b border-border py-2">
       <div className="flex items-start gap-3">
@@ -402,6 +410,7 @@ export function ArchivedNoteItem({ note }: { note: Note }) {
               () => announce(copy.noteRestored)
             )
           }}
+          {...guard}
         >
           {copy.restore}
         </button>

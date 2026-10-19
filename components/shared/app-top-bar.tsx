@@ -5,6 +5,7 @@ import { signOutAction } from "@/lib/auth/sign-out"
 import { shellCopy } from "@/lib/copy/shell"
 import { cn } from "@/lib/utils"
 
+import { OnlineNativeButton } from "./online-button"
 import { PushEndpointField } from "./push-endpoint-field"
 import { Wordmark } from "./wordmark"
 
@@ -56,7 +57,7 @@ export function AppTopBar({
           {bell}
           <form action={signOutAction}>
             <PushEndpointField />
-            <button
+            <OnlineNativeButton
               type="submit"
               aria-label={shellCopy.signOut}
               className="inline-flex size-11 items-center justify-center rounded-[4px] text-primary-foreground hover:bg-primary-foreground/10"
@@ -66,7 +67,7 @@ export function AppTopBar({
                 strokeWidth={1.5}
                 className="size-6 rtl:-scale-x-100"
               />
-            </button>
+            </OnlineNativeButton>
           </form>
         </div>
       </div>

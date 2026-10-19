@@ -562,7 +562,7 @@ describe("booking_confirmed_couple", { timeout: 30_000 }, () => {
       expect(sent).toEqual([
         {
           type: "booking_confirmed_couple",
-          target_path: `/me/bookings#booking-${p.booking}`,
+          target_path: `/me/sessions/${eventId}#booking-${p.booking}`,
           dedupe_key: `booking_confirmed_couple:${f.customerA}:${p.booking}`,
           body: expect.stringContaining(`בראנץ׳ ${concept[0].name}.`),
           jobs: 1,
@@ -570,7 +570,7 @@ describe("booking_confirmed_couple", { timeout: 30_000 }, () => {
       ])
       expect(sent[0].body).toMatch(/^\d{2}\.\d{2} · 10:00 · /)
       expect(sent[0].body).toContain(
-        "אפשר להוסיף בהרשמות שלך הגבלות תזונה או אלרגיות של המלווה"
+        "אפשר להוסיף בעמוד המפגש הגבלות תזונה או אלרגיות של המלווה"
       )
     })
   })
@@ -634,7 +634,7 @@ describe("booking_confirmed_couple", { timeout: 30_000 }, () => {
       expect(await notificationsOf(db, f.customerB)).toEqual([
         expect.objectContaining({
           type: "booking_confirmed_couple",
-          target_path: `/me/bookings#booking-${r.booking_id}`,
+          target_path: `/me/sessions/${eventId}#booking-${r.booking_id}`,
           dedupe_key: `booking_confirmed_couple:${f.customerB}:${r.booking_id}`,
         }),
       ])
@@ -659,7 +659,7 @@ describe("booking_confirmed_couple", { timeout: 30_000 }, () => {
       expect(await notificationsOf(db, f.customerB)).toEqual([
         expect.objectContaining({
           type: "booking_confirmed_couple",
-          target_path: `/me/bookings#booking-${p.booking}`,
+          target_path: `/me/sessions/${eventId}#booking-${p.booking}`,
           jobs: 1,
         }),
       ])
@@ -713,7 +713,7 @@ describe("booking_confirmed_couple", { timeout: 30_000 }, () => {
       ).toEqual([
         expect.objectContaining({
           type: "booking_confirmed_couple",
-          target_path: `/me/bookings#booking-${r.booking_id}`,
+          target_path: `/me/sessions/${option}#booking-${r.booking_id}`,
         }),
       ])
     })

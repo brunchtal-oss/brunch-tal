@@ -12,12 +12,10 @@ import { formatDayMonth, formatWeekday } from "@/lib/time"
 
 import { sessionPhotos } from "../sessions/load-sessions"
 import {
-  isCoupleBooking,
   needsContact,
   parseMyBookings,
   pastBookingStatus,
 } from "./cancel-result"
-import { CompanionNote } from "./companion-note"
 import {
   CreditCard,
   ExhaustedCreditCard,
@@ -57,12 +55,9 @@ export async function Bookings() {
       isOpenRefund(c) ||
       isRefunded(c)
   )
-  // A couple booking (story 3.5): the companion's note under its card.
-  // The contact button of an exhausted credit, or of a companion note that
-  // can no longer be changed (WhatsApp).
-  const contactHref = needsContact(credits, upcoming)
-    ? await getWhatsappHref()
-    : null
+  // The contact button of an exhausted credit (WhatsApp). The companion's
+  // note of a couple booking is on its session page (story 5.21, fix 7).
+  const contactHref = needsContact(credits) ? await getWhatsappHref() : null
   // The cards' photos (user decision 2026-10-08), read like the session
   // screens; no RPC change.
   const photos = await sessionPhotos(supabase, [
@@ -144,14 +139,6 @@ export async function Bookings() {
                     <StatusChip tone="booked">{customerCopy.booked}</StatusChip>
                   }
                 />
-                {isCoupleBooking(b) && (
-                  <CompanionNote
-                    bookingId={b.bookingId}
-                    guestDetails={b.guestDetails}
-                    editable={b.guestDetailsEditable}
-                    contactHref={contactHref}
-                  />
-                )}
               </li>
             ))}
           </ul>

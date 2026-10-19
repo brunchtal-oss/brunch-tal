@@ -112,6 +112,7 @@ async function Profile() {
       <nav aria-label={copy.linksLabel}>
         <ul className="flex flex-col divide-y divide-border border-y border-border">
           {[
+            { href: "/me/notifications", label: copy.notificationsRow },
             { href: "/install", label: copy.installGuide },
             ...visibleLegalNav(legalSlugs, PROFILE_LEGAL),
           ].map((item) => (

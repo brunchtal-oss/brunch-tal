@@ -14,6 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { OnlineButton } from "@/components/shared/online-button"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { adminCopy } from "@/lib/copy/admin"
@@ -286,7 +287,7 @@ export function LinksList({ items }: { items: readonly LinkListItem[] }) {
                 {(item.canRevoke || item.canReplace) && (
                   <div className="flex flex-wrap gap-3">
                     {canSend(item) && (
-                      <Button
+                      <OnlineButton
                         type="button"
                         className={BUTTON}
                         aria-busy={busyWith === "send" || undefined}
@@ -295,10 +296,10 @@ export function LinksList({ items }: { items: readonly LinkListItem[] }) {
                       >
                         {busyWith === "send" && <Spinner aria-hidden />}
                         {adminCopy.payments.sendWhatsapp}
-                      </Button>
+                      </OnlineButton>
                     )}
                     {item.canReplace && (
-                      <Button
+                      <OnlineButton
                         type="button"
                         variant="outline"
                         className={BUTTON}
@@ -308,7 +309,7 @@ export function LinksList({ items }: { items: readonly LinkListItem[] }) {
                       >
                         {busyWith === "replace" && <Spinner aria-hidden />}
                         {copy.replace}
-                      </Button>
+                      </OnlineButton>
                     )}
                     {item.canRevoke && (
                       <Button
@@ -350,7 +351,7 @@ export function LinksList({ items }: { items: readonly LinkListItem[] }) {
             <AlertDialogCancel className={BUTTON} disabled={pending}>
               {copy.confirmBack}
             </AlertDialogCancel>
-            <Button
+            <OnlineButton
               type="button"
               className={BUTTON}
               aria-busy={pending || undefined}
@@ -359,7 +360,7 @@ export function LinksList({ items }: { items: readonly LinkListItem[] }) {
             >
               {pending && <Spinner aria-hidden />}
               {copy.confirmYes}
-            </Button>
+            </OnlineButton>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

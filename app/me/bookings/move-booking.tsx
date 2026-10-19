@@ -6,6 +6,7 @@ import { XIcon } from "lucide-react"
 
 import { RadioCardGroup } from "@/components/admin/radio-card"
 import { InlineNotice } from "@/components/shared/inline-notice"
+import { OnlineButton } from "@/components/shared/online-button"
 import { Button } from "@/components/ui/button"
 import {
   Sheet,
@@ -257,7 +258,7 @@ export function MoveBooking({
             </InlineNotice>
           )}
           {plan && plan.targets.length > 0 && (
-            <Button
+            <OnlineButton
               type="button"
               size="lg"
               onClick={confirm}
@@ -268,7 +269,7 @@ export function MoveBooking({
             >
               {busy && <Spinner aria-hidden />}
               {copy.confirm}
-            </Button>
+            </OnlineButton>
           )}
         </SheetContent>
       </Sheet>

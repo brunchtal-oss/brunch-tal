@@ -68,6 +68,7 @@
 - ערכים עסקיים וטקסט שיווקי לא נכתבים בקוד. הם מגיעים מטבלאות ההגדרות והתוכן. רק מיקרו-קופי של המערכת (כפתורים, שגיאות) נשאר בקוד.
 - RTL: `<html lang="he" dir="rtl">`. משתמשים רק בכיווני Tailwind לוגיים (`ms-`/`me-`/`ps-`/`pe-`/`start-`/`end-`/`text-start`). `npm run lint` חוסם את `ml-`/`mr-`/`left-`/`right-`/`text-left` בכל מקום חוץ מ-`components/ui/`.
 - כתיבה מהמסך: Server Action ב-`actions.ts` שליד הדף בודק רק צורה ← `callRpc` ← RPC שבודק הרשאה וערכים מחדש. ה-Action מחזיר `ActionResult` (`{ ok: true, data }` או `{ ok: false, code }`). מפתח ה-idempotency נוצר במסך (`lib/idempotency.ts`), אחד לכל טעינת טופס או שינוי. דף באזור האישי או באדמין מוגן ב-`lib/auth/require-role.ts`.
+- כל כפתור חדש שמשנה נתונים (Server Action, ‏POST ל-`/api`, פוש, סימון כנקרא, יציאה, העלאה) משתמש ב-`OnlineButton`, ‏`useOnlineGuard` או `OnlineNativeButton` מ-`components/shared/online-button.tsx` (מנגנון האופליין, 5.21): בלי חיבור הוא `aria-disabled`, מתואר בבאנר `offline-hint` ולא שולח. לא לכפתור שרק פותח גיליון, חיפוש, תצוגה מקדימה, ייצוא או ניווט.
 - שגיאה עסקית: ה-RPC זורק `raise exception '<CODE>' using errcode = 'P0001'`, וההודעה בעברית לקוד חדש נכתבת רק ב-`lib/errors.ts`. שאר המיקרו-קופי ב-`lib/copy/*` לפי אזור. פעולה רגישה באדמין (חלון אישור) נרשמת ב-`lib/admin/sensitive-actions.ts`.
 - סוג בלוק תוכן חדש מקבל סכמת zod ב-`lib/content/schema.ts`. העורך בודק מולה לפני שמירה ופרסום, והאתר מדלג על בלוק שלא תואם.
 - לא עורכים את `components/ui/` (קוד shadcn). רכיב שצריך שינוי עוטפים מחוץ לתיקייה. היא מוחרגת מ-Prettier ומכלל ה-RTL.

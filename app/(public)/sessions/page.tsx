@@ -2,6 +2,7 @@ import { Suspense } from "react"
 import type { Metadata } from "next"
 import { connection } from "next/server"
 
+import { BookedChip } from "@/components/public/booked-chip"
 import { PublicPageHeading } from "@/components/public/public-page"
 import { PublicSessionList } from "@/components/public/public-sessions"
 import {
@@ -17,7 +18,8 @@ export const metadata: Metadata = { title }
 
 // /sessions (story 5.16, CAP-1): every published session that has not
 // started, by date, as a session-card linking to /sessions/[id]. Nothing
-// about places and no type label. Dynamic (AD-2): the list is read with the
+// about places and no type label; a signed-in customer sees "נרשמת" on her
+// own sessions (story 5.21). Dynamic (AD-2): the list is read with the
 // anon client inside <Suspense> after connection(); the heading is static. A
 // read error goes to the error boundary.
 export default function PublicSessionsPage() {
@@ -43,10 +45,18 @@ async function SessionsList() {
     listUpcomingPublicSessions(),
     getBusinessDetails(),
   ])
+  const eventIds = sessions.map((s) => s.id).join(",")
+  // Story 5.21: "נרשמת" per row, each in its own <Suspense>, so the list
+  // shows at once and never waits on the session.
   return (
     <PublicSessionList
       sessions={sessions}
       whatsappHref={guestWhatsappHref(details)}
+      statusOf={(id) => (
+        <Suspense fallback={null}>
+          <BookedChip eventId={id} eventIds={eventIds} />
+        </Suspense>
+      )}
     />
   )
 }
