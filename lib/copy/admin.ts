@@ -729,10 +729,10 @@ export const adminCopy = {
       // above the list, and the bar's counter.
       freeEntries: (n: number) =>
         n === 0
-          ? "אין לה כניסות פנויות"
+          ? "אין כניסות פנויות"
           : n === 1
-            ? "יש לה כניסה פנויה אחת"
-            : `יש לה ${n} כניסות פנויות`,
+            ? "כניסה פנויה אחת"
+            : `${n} כניסות פנויות`,
       selectedCount: (selected: number, cap: number) =>
         `נבחרו ${selected} מתוך ${cap}`,
       sheetTitle: (name: string) => `רישום של ${name}`,
@@ -1659,6 +1659,8 @@ export const adminCopy = {
       noBabies: "לא נוספו תינוקות",
       balances: "יתרות ותוקף",
       noBalances: "אין כרטיסיות או כניסות",
+      // Story 3.19 (user decision 2026-10-19): manual booking from her card.
+      book: "לרישום למפגש",
       // Story 3.9: her cancellation credits and refunds, after the
       // balances. Title: the cancelled session "בראנץ׳ {concept} {DD.MM}".
       credits: {

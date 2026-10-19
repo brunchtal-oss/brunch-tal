@@ -23,6 +23,8 @@ import { approve, seedMoney, type MoneyFixture } from "./support/money"
 const LIST = "select public.admin_list_customer_bookable_events($1) as r"
 const ADMIN_BOOK = "select public.admin_book_customer($1, $2, $3) as r"
 const CANCEL = "select public.cancel_booking($1, $2, $3) as r"
+const CORRECT =
+  "select public.admin_correct_entitlement($1, $2, $3::jsonb, $4, $5, $6, $7) as r"
 const SNAPSHOT = `'{"cancel_window_hours": 48, "reminder_lead_hours": 24}'::jsonb`
 
 type Fixture = MoneyFixture & {
@@ -437,6 +439,35 @@ describe("admin_list_customer_bookable_events", { timeout: 30_000 }, () => {
       expect(await ids(db, f, f.customerA)).toEqual({ ids: [open], hidden: 0 })
       // Nothing funds customer B: still only the open session is counted.
       expect(await ids(db, f, f.customerB)).toEqual({ ids: [], hidden: 1 })
+    })
+  })
+
+  it("after an entitlement correction (3.13): the list follows the new expiry", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const card = await insertEntitlement(db, f, f.customerA)
+      // The card expires today + 49: a session on day 52 is hidden.
+      const later = await insertEvent(db, f, { dayOffset: 52 })
+      expect(await ids(db, f, f.customerA)).toEqual({ ids: [], hidden: 1 })
+
+      const { rows } = await db.query("select ($1::date + 56)::text as d", [
+        f.today,
+      ])
+      await as(db, f.admin, () =>
+        db.query(CORRECT, [
+          card.id,
+          "expires_on",
+          JSON.stringify(rows[0].d),
+          null,
+          null,
+          true,
+          randomUUID(),
+        ])
+      )
+      expect(await ids(db, f, f.customerA)).toEqual({
+        ids: [later],
+        hidden: 0,
+      })
     })
   })
 

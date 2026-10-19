@@ -2,7 +2,7 @@
 title: 'Story 3.19: Manual booking improvements (only fundable sessions)'
 type: 'feature'
 created: '2026-10-18'
-status: 'in-review'
+status: 'done'
 baseline_commit: 'd8bc591ea1c6c9a9308f9b6f1e8579590833db4c'
 route: 'full'
 route_source: 'auto'
@@ -93,9 +93,14 @@ context:
 - 2026-10-19 (subagent): built. Migration `20261018215548_manual_booking_fundable.sql` written, NOT applied; `database.types.ts` gets the new function by hand (same shape `generate_typescript_types` gives) -- session main regenerates after applying. 3.13 not merged, so its extra test is not added. `manual-booking-funding.test.ts` not run. Couple-credit row: plan_funding also funds the credit's origin session, so it is listed too (the test asserts the option is listed and another couple session hidden). Page branch extracted as `bookListView` / `parseCustomerBookable` in `book-items.ts`. Build: compiles and typechecks; prerender fails only because the worktree has no `.env.local`.
 - 2026-10-19 (subagent, review fixes): function `volatile` + `perform private.refresh_customer_credits(v_customer)` after the customer check; hidden line carries "הוספת תשלום" unless the `cap === 0` notice shows it; DB tests added (pinned entitlement, cancelled booking only, order) -- not run; render test `multi-booking.test.tsx`.
 
+- 2026-10-19 (session main): merged 3.13 and the audit-log fix. Migration run by the user in the SQL Editor, checked (volatile, definer, grant only to `authenticated`, refreshes credits) and recorded in `schema_migrations`; advisors: only the approved WARNs; regenerated types match. Added the 3.13 test (extended expiry opens a hidden session). `test:db`: manual-booking-funding 16/16; admin-booking, open-cards, couple-and-intro, cancellation-credits, pinned-approval, multi-booking, entitlement-corrections, grants pass. `demo:seed` refused (demo data in the DB, `.demo-data.local.json` missing everywhere; unrelated, nothing changed). lint, typecheck, format, `npm test` (2342), build pass.
+
 ## Spec Change Log
 
 - **2026-10-19, review pass 1 (user decision):** finding 1 (stale credit options). Frozen RPC contract amended by the user: `volatile` and `refresh_customer_credits` before funding, as the previews. Avoids a credit's replacement option staying hidden. KEEP: everything else in the RPC and screen as built.
+
+- **2026-10-19, phone check (user decisions):** (1) the manual booking screen shows the customer's name only, without the phone (the payment form and `/admin/sessions/[id]/book` keep name and phone); (2) the customer card (`/admin/customers/[id]`) gets a "לרישום למפגש" button after the balances, linking to `/admin/sessions/book?customer={id}`, shown only once she is activated (the page comment said 4.2 would add it; it never did). KEEP: everything else as checked on the phone.
+- **2026-10-19, phone check 2 (user decision):** the top of the manual booking screen had four headings with no hierarchy. Now one heading only: her name as the page `h1`, in the old "בחירת מפגש" style (22px, light); "רישום ידני" and "בחירת מפגש" are removed from the screen ("רישום ידני" stays the tab title and the heading of the customer-not-available notice). The free-entries line keeps its size, without "יש לה": "{n} כניסות פנויות", "כניסה פנויה אחת", "אין כניסות פנויות".
 
 ## Review Triage Log
 

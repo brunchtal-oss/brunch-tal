@@ -42,14 +42,11 @@ export default function BookCustomerPage({
   searchParams: Promise<{ customer?: string | string[] }>
 }) {
   return (
-    <>
-      <PageHeading>{copy.manualBooking}</PageHeading>
-      <Suspense
-        fallback={<p className="text-muted-foreground">{shellCopy.loading}</p>}
-      >
-        <BookCustomerContent searchParams={searchParams} />
-      </Suspense>
-    </>
+    <Suspense
+      fallback={<p className="text-muted-foreground">{shellCopy.loading}</p>}
+    >
+      <BookCustomerContent searchParams={searchParams} />
+    </Suspense>
   )
 }
 
@@ -64,23 +61,26 @@ async function BookCustomerContent({
   )
   if (!customer) {
     return (
-      <InlineNotice
-        tone="error"
-        actions={
-          <Link
-            href="/admin/sessions"
-            className={buttonClass({
-              variant: "outline",
-              size: "lg",
-              className: "h-11 text-base",
-            })}
-          >
-            {copy.title}
-          </Link>
-        }
-      >
-        {errorMessage("CUSTOMER_NOT_AVAILABLE")}
-      </InlineNotice>
+      <>
+        <PageHeading>{copy.manualBooking}</PageHeading>
+        <InlineNotice
+          tone="error"
+          actions={
+            <Link
+              href="/admin/sessions"
+              className={buttonClass({
+                variant: "outline",
+                size: "lg",
+                className: "h-11 text-base",
+              })}
+            >
+              {copy.title}
+            </Link>
+          }
+        >
+          {errorMessage("CUSTOMER_NOT_AVAILABLE")}
+        </InlineNotice>
+      </>
     )
   }
 
@@ -97,18 +97,15 @@ async function BookCustomerContent({
   const view = bookListView(events.length, listed.hidden)
 
   return (
-    <section aria-labelledby="choose-heading" className="flex flex-col gap-3">
-      <p className="text-base font-semibold">
-        <bdi>
-          {adminCopy.payments.customerHead(customer.name, customer.phone)}
-        </bdi>
-      </p>
-      <h2
-        id="choose-heading"
+    <section aria-labelledby="customer-heading" className="flex flex-col gap-3">
+      {/* One heading, her name, without the phone (user decisions
+          2026-10-19, story 3.19 phone check). */}
+      <h1
+        id="customer-heading"
         className="font-heading text-[22px] leading-[1.25] font-light"
       >
-        {copy.chooseSession}
-      </h2>
+        <bdi>{customer.name}</bdi>
+      </h1>
       {view === "noSessions" ? (
         <p className="text-base text-muted-foreground">
           {copy.noBookableSessions}
