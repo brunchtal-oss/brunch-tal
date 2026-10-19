@@ -28,9 +28,9 @@ describe("several sessions for one customer", () => {
     expect(selectionCap(20)).toBe(20)
     expect(selectionCap(35)).toBe(20)
     expect(selectionCap(-1)).toBe(0)
-    expect(many.freeEntries(0)).toBe("אין לה כניסות פנויות")
-    expect(many.freeEntries(1)).toBe("יש לה כניסה פנויה אחת")
-    expect(many.freeEntries(4)).toBe("יש לה 4 כניסות פנויות")
+    expect(many.freeEntries(0)).toBe("אין כניסות פנויות")
+    expect(many.freeEntries(1)).toBe("כניסה פנויה אחת")
+    expect(many.freeEntries(4)).toBe("4 כניסות פנויות")
     expect(many.selectedCount(1, 1)).toBe("נבחרו 1 מתוך 1")
   })
 

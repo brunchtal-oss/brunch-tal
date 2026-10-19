@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest"
 
-import { countFreeEntries, markBooked } from "./book-items"
+import { adminCopy } from "@/lib/copy/admin"
+
+import {
+  bookListView,
+  countFreeEntries,
+  markBooked,
+  parseCustomerBookable,
+} from "./book-items"
 
 describe("manual booking rows", () => {
   it("marks the sessions she is already booked for, keeps the order", () => {
@@ -106,5 +113,49 @@ describe("her free entries (the selection cap)", () => {
 
   it("nothing active to fund: 0", () => {
     expect(countFreeEntries(base)).toBe(0)
+  })
+})
+
+describe("only the sessions she can be booked for (story 3.19)", () => {
+  it("the RPC's answer: the rows and the hidden count", () => {
+    expect(
+      parseCustomerBookable({ events: [{ id: "e1" }], hidden: 2 })
+    ).toEqual({ events: [{ id: "e1" }], hidden: 2 })
+  })
+
+  it("a malformed answer: nothing listed, nothing hidden", () => {
+    expect(parseCustomerBookable(null)).toEqual({ events: [], hidden: 0 })
+    expect(parseCustomerBookable([{ id: "e1" }])).toEqual({
+      events: [],
+      hidden: 0,
+    })
+    expect(parseCustomerBookable({ events: "x", hidden: -1 })).toEqual({
+      events: [],
+      hidden: 0,
+    })
+    expect(parseCustomerBookable({ events: [], hidden: 1.5 })).toEqual({
+      events: [],
+      hidden: 0,
+    })
+  })
+
+  it("the view: the list, nothing fundable, or no open session", () => {
+    expect(bookListView(2, 0)).toBe("list")
+    expect(bookListView(1, 3)).toBe("list")
+    expect(bookListView(0, 3)).toBe("noFundable")
+    expect(bookListView(0, 0)).toBe("noSessions")
+  })
+
+  it("the hidden line: one, several", () => {
+    const copy = adminCopy.sessions
+    expect(copy.hiddenSessions(1)).toBe(
+      "מפגש אחד לא מוצג כי אין לה זכות שמתאימה לו"
+    )
+    expect(copy.hiddenSessions(3)).toBe(
+      "3 מפגשים לא מוצגים כי אין לה זכות שמתאימה להם"
+    )
+    expect(copy.noFundableSessions).toBe(
+      "אין מפגש פתוח שהזכויות שלה מתאימות לו"
+    )
   })
 })

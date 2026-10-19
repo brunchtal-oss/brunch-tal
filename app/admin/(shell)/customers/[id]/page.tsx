@@ -4,6 +4,7 @@ import Link from "next/link"
 import { ChevronDownIcon, ChevronLeftIcon } from "lucide-react"
 
 import { EntryMeter } from "@/components/customer/balance-card"
+import { buttonClass } from "@/components/shared/button-class"
 import { PageHeading } from "@/components/shared/page-heading"
 import { StatusChip } from "@/components/shared/status-chip"
 import { adminCopy } from "@/lib/copy/admin"
@@ -165,6 +166,24 @@ async function CustomerCardContent({
               )
             )}
           </ul>
+        )}
+        {/* Story 3.19 (user decision 2026-10-19): the manual booking screen
+            from her card; not before she is activated (it would refuse). */}
+        {!header.notActivated && (
+          <Link
+            href={`/admin/sessions/book?customer=${encodeURIComponent(card.profile.id)}`}
+            className={cn(
+              buttonClass({
+                variant: "outline",
+                size: "lg",
+                className:
+                  "h-auto min-h-11 rounded-[4px] border-foreground bg-transparent px-3 text-[15px] leading-[1.2] font-semibold whitespace-normal text-foreground",
+              }),
+              "mt-3 self-start"
+            )}
+          >
+            {copy.book}
+          </Link>
         )}
       </PageSection>
 

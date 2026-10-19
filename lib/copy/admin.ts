@@ -729,10 +729,10 @@ export const adminCopy = {
       // above the list, and the bar's counter.
       freeEntries: (n: number) =>
         n === 0
-          ? "אין לה כניסות פנויות"
+          ? "אין כניסות פנויות"
           : n === 1
-            ? "יש לה כניסה פנויה אחת"
-            : `יש לה ${n} כניסות פנויות`,
+            ? "כניסה פנויה אחת"
+            : `${n} כניסות פנויות`,
       selectedCount: (selected: number, cap: number) =>
         `נבחרו ${selected} מתוך ${cap}`,
       sheetTitle: (name: string) => `רישום של ${name}`,
@@ -745,6 +745,13 @@ export const adminCopy = {
       close: "סגירה",
     },
     noBookableSessions: "אין מפגש פתוח לרישום",
+    // Story 3.19 (user decision 2026-10-18): the open sessions her
+    // entitlements can't fund are hidden; one line says how many.
+    hiddenSessions: (n: number) =>
+      n === 1
+        ? "מפגש אחד לא מוצג כי אין לה זכות שמתאימה לו"
+        : `${n} מפגשים לא מוצגים כי אין לה זכות שמתאימה להם`,
+    noFundableSessions: "אין מפגש פתוח שהזכויות שלה מתאימות לו",
     // A refusal on the manual booking screen, worded for Tal (lib/errors.ts
     // speaks to the customer). Any other code keeps errorMessage.
     bookRefusal: {
@@ -1652,6 +1659,8 @@ export const adminCopy = {
       noBabies: "לא נוספו תינוקות",
       balances: "יתרות ותוקף",
       noBalances: "אין כרטיסיות או כניסות",
+      // Story 3.19 (user decision 2026-10-19): manual booking from her card.
+      book: "לרישום למפגש",
       // Story 3.9: her cancellation credits and refunds, after the
       // balances. Title: the cancelled session "בראנץ׳ {concept} {DD.MM}".
       credits: {

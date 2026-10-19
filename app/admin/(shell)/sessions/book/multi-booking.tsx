@@ -70,11 +70,16 @@ export function MultiBooking({
   customer,
   rows,
   freeEntries,
+  hiddenCount,
 }: {
   customer: { id: string; name: string }
   rows: BookRow[]
   // Her free entries (loadFreeEntries): the selection cap, never above 20.
   freeEntries: number
+  // The open sessions her entitlements can't fund (story 3.19): a muted
+  // line after the list when above 0, with "הוספת תשלום" unless the
+  // cap === 0 notice already shows it.
+  hiddenCount: number
 }) {
   const router = useRouter()
   const [selected, setSelected] = useState<string[]>([])
@@ -280,6 +285,26 @@ export function MultiBooking({
             )
           })}
         </ul>
+        {hiddenCount > 0 && (
+          <div className="mt-3 flex flex-col items-start gap-2">
+            <p className="text-[15px] text-muted-foreground">
+              {copy.hiddenSessions(hiddenCount)}
+            </p>
+            {/* The cap === 0 notice above already has this button. */}
+            {cap > 0 && (
+              <Link
+                href={`/admin/payments/new/existing/${customer.id}`}
+                className={buttonClass({
+                  variant: "outline",
+                  size: "lg",
+                  className: "h-11 text-base",
+                })}
+              >
+                {copy.addPayment}
+              </Link>
+            )}
+          </div>
+        )}
       </fieldset>
 
       {chosen.length > 0 && (
