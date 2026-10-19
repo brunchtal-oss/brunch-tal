@@ -7,6 +7,7 @@ import {
   creditChip,
   creditChipTone,
   entitlementName,
+  entryTotal,
   isEmptyHome,
   isHomeCard,
   isOpen,
@@ -87,6 +88,14 @@ describe("parseMyEntitlements", () => {
   it("has no validity days without a positive number", () => {
     expect(entitlement({ validity_days: null }).validityDays).toBeNull()
     expect(entitlement({ validity_days: 0 }).validityDays).toBeNull()
+  })
+})
+
+describe("entryTotal", () => {
+  it("counts used, booked and free entries, not original_units, after a balance fix", () => {
+    expect(entryTotal({ used: 0, reserved: 0, available: 3 })).toBe(3)
+    expect(entryTotal({ used: 1, reserved: 1, available: 2 })).toBe(4)
+    expect(entryTotal({ used: 2, reserved: 0, available: -1 })).toBe(2)
   })
 })
 
