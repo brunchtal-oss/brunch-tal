@@ -603,3 +603,8 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-17-delete-a-session.md`
   summary: `private.hide_unused_media` (called by session delete, concept delete and set image) hides every published or copying media row not in `private.used_media_ids()`, so an image uploaded but not attached yet may be hidden and its public file deleted when Tal deletes something else.
   evidence: 3.17 review round 1 (edge-case, maybe-false, medium if true). Pre-existing function behaviour; settle by checking whether an upload can sit in `published`/`copying` before it is attached (the upload and publish flow of `20261005193920_media_upload_and_publish.sql`).
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-audit-log-concise.md`
+  target: 5.20
+  summary: להפסיק לרשום ביומן את הפעולות המוסתרות (`HIDDEN_AUDIT_ACTIONS` ב-`lib/copy/audit-actions.ts`, כ-35 פונקציות: דף העבודה, פתקים ונושאים, טיוטות, תמונות ושלבים טכניים), כשאף סיפור לא רץ במקביל.
+  evidence: החלטת המשתמשת 2026-10-18. היומן הקצר מסנן אותן בקריאה בלבד (`p_shown` של `admin_list_audit`), והן עדיין נכתבות ל-`audit_log`. שינוי בכותבים נוגע בפונקציות שסיפורים אחרים עורכים.

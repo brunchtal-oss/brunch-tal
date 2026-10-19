@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
+import { shownPairs } from "@/lib/copy/audit-actions"
+
 import { loadAuditAction } from "./actions"
 import type { AuditFilters } from "./audit-data"
 
@@ -46,6 +48,7 @@ describe("loadAuditAction (story 4.5)", () => {
       { session: true },
       "admin_list_audit",
       {
+        p_shown: shownPairs(),
         p_event_id: EVENT,
         p_customer_id: CUSTOMER,
         p_from: "2026-10-01",
@@ -56,14 +59,18 @@ describe("loadAuditAction (story 4.5)", () => {
     )
   })
 
-  it("null filters and no cursor: only the dates are sent", async () => {
+  it("null filters and no cursor: only the whitelist and the dates are sent", async () => {
     await loadAuditAction(NO_FILTERS, null)
     const args = callRpc.mock.lastCall?.[2] as Record<string, unknown>
     expect(
       Object.fromEntries(
         Object.entries(args).filter(([, value]) => value !== undefined)
       )
-    ).toEqual({ p_from: "2026-09-10", p_to: "2026-10-10" })
+    ).toEqual({
+      p_shown: shownPairs(),
+      p_from: "2026-09-10",
+      p_to: "2026-10-10",
+    })
   })
 
   it("bad filters -> INVALID_INPUT without the RPC", async () => {

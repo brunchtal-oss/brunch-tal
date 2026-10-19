@@ -1,5 +1,6 @@
 "use server"
 
+import { shownPairs } from "@/lib/copy/audit-actions"
 import type { ActionResult } from "@/lib/errors"
 import { callRpc } from "@/lib/rpc"
 import { createClient } from "@/lib/supabase/server"
@@ -18,7 +19,8 @@ import {
 // The audit log viewer (story 4.5). A read only: the RPC runs with the
 // admin's own session (private.is_admin() inside) and decides everything;
 // this checks only the shape. No idempotency key (nothing is written). The
-// customer filter's search is the payments' searchCustomersAction.
+// customer filter's search is the payments' searchCustomersAction. Only the
+// whitelisted actions are listed (p_shown, lib/copy/audit-actions.ts).
 
 function validFilters(filters: AuditFilters): boolean {
   return (
@@ -49,6 +51,7 @@ export async function loadAuditAction(
     return { ok: false, code: "INVALID_INPUT" }
   }
   const result = await callRpc(await createClient(), "admin_list_audit", {
+    p_shown: shownPairs(),
     p_event_id: filters.eventId ?? undefined,
     p_customer_id: filters.customerId ?? undefined,
     p_from: filters.from,

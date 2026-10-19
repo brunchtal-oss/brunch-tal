@@ -36,8 +36,10 @@ function row(id: string, extra: Partial<AuditRow> = {}): AuditRow {
     action: "admin_update_event",
     entity_type: "events",
     customer: null,
-    event: { id: "e1", title: "בראנץ׳ סתיו", local_date: "2026-10-12" },
+    event: { id: "e1", title: "סתיו", local_date: "2026-10-12" },
+    subject: null,
     changes: [{ key: "capacity_adults", before: 12, after: 14 }],
+    related: [],
     reason: null,
     ...extra,
   }
@@ -57,50 +59,71 @@ function render(rows: AuditRow[], hasMore = false) {
 }
 
 describe("the audit log's screen (story 4.5)", () => {
-  it("a capacity change: who, when, the session, the new value and the reason", () => {
-    const html = render([row("a", { reason: "ביקוש גבוה" })])
-    expect(html).toContain("טל")
-    expect(html).toContain("10.10.26 · 12:15")
-    expect(html).toContain("בראנץ׳ סתיו · 12.10.26")
-    expect(html).toContain("מכסה: 14")
-    expect(html).toContain(copy.reason("ביקוש גבוה"))
-    // A table for the desktop, with headers.
-    expect(html).toContain("<table")
-    expect(html).toContain(`scope="col"`)
-  })
-
-  it("an add shows only the new value, a delete only the old one", () => {
+  it("a capacity change: who, when, the session, only the changed field and the reason", () => {
     const html = render([
       row("a", {
-        action: "admin_add_note",
-        changes: [{ key: "body", before: null, after: "להזמין פרחים" }],
-      }),
-      row("b", {
-        action: "admin_delete_note",
-        changes: [{ key: "body", before: "ישן", after: null }],
+        reason: "ביקוש גבוה",
+        changes: [
+          { key: "capacity_adults", before: 12, after: 14 },
+          { key: "revision", before: 1, after: 2 },
+        ],
       }),
     ])
-    expect(html).toContain("תוכן: להזמין פרחים")
-    expect(html).not.toContain("לפני כן")
-    expect(html).toContain("תוכן: —")
-    expect(html).not.toContain("ישן")
-    expect(html).not.toContain("←")
+    expect(html).toContain("טל")
+    expect(html).toContain("10.10.26 · 12:15")
+    expect(html).toContain("בראנץ׳ סתיו 12.10")
+    expect(html).toContain("מכסה: 14 (במקום 12)")
+    expect(html).not.toContain("גרסה")
+    expect(html).toContain(copy.reason("ביקוש גבוה"))
+    // A table for the desktop, with the concise headers.
+    expect(html).toContain("<table")
+    expect(html).toContain(`scope="col"`)
+    for (const header of ["מתי", "מי", "פעולה", "על מה", "פרטים", "סיבה"]) {
+      expect(html).toContain(`>${header}</th>`)
+    }
   })
 
-  it("a masked value shows השתנה, never <changed>", () => {
+  it("an approval: one result sentence, no field list", () => {
+    const html = render([
+      row("a", {
+        action: "approve_payment",
+        entity_type: "payments",
+        customer: { id: "c1", name: "נועה" },
+        changes: [
+          { key: "amount_agorot", before: null, after: 47200 },
+          {
+            key: "product_snapshot",
+            before: null,
+            after: { name: "כרטיסייה" },
+          },
+          { key: "status", before: null, after: "approved" },
+        ],
+      }),
+    ])
+    expect(html).toContain("אישור תשלום")
+    expect(html).toContain("נועה")
+    expect(html).toContain("שולמו 472 ₪ על כרטיסייה")
+    expect(html).not.toContain("סטטוס")
+    expect(html).not.toContain("<ul")
+  })
+
+  it("a name-only action with masked fields: no field list, never <changed>; an anonymized customer", () => {
     const html = render([
       row("a", {
         actor_kind: "customer",
         action: "join_complete",
+        entity_type: "profiles",
+        event: null,
         customer: { id: "c1", name: null },
         changes: [
           { key: "full_name", before: "<changed>", after: "<changed>" },
         ],
       }),
     ])
-    expect(html).toContain("שם מלא: השתנה<")
+    expect(html).toContain("השלמת הצטרפות")
+    expect(html).not.toContain("שם מלא")
     expect(html).not.toContain("&lt;changed&gt;")
-    expect(html).toContain(copy.anonymous)
+    expect(html).toContain("לקוחה שפרטיה הוסרו")
     expect(html).toContain("הלקוחה")
   })
 
