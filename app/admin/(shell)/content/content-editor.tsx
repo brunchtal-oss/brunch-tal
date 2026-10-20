@@ -9,6 +9,7 @@ import { ImageUploadField } from "@/components/admin/image-upload-field"
 import { RadioCardGroup } from "@/components/admin/radio-card"
 import { InlineNotice } from "@/components/shared/inline-notice"
 import { OnlineButton } from "@/components/shared/online-button"
+import { cubeTitleClass } from "@/components/shared/section-title"
 import { Button } from "@/components/ui/button"
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
@@ -903,7 +904,7 @@ export function ItemList({
       <h2
         id="list-heading"
         tabIndex={-1}
-        className="text-base font-semibold outline-none"
+        className={cn(cubeTitleClass, "outline-none")}
       >
         {copy.itemCount(items.length)}
       </h2>

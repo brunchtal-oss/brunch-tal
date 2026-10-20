@@ -7,6 +7,7 @@ import { CheckIcon, XIcon } from "lucide-react"
 
 import { InlineNotice } from "@/components/shared/inline-notice"
 import { OnlineButton } from "@/components/shared/online-button"
+import { sectionTitleClass } from "@/components/shared/section-title"
 import { StatusChip } from "@/components/shared/status-chip"
 import { Button } from "@/components/ui/button"
 import {
@@ -447,7 +448,7 @@ function Results({
         id="booking-results"
         ref={headingRef}
         tabIndex={-1}
-        className="font-heading text-[22px] leading-[1.25] font-light"
+        className={sectionTitleClass}
       >
         {resultsHeading(results)}
       </h2>

@@ -5,6 +5,7 @@ import { notFound, redirect } from "next/navigation"
 
 import { InlineNotice } from "@/components/shared/inline-notice"
 import { buttonClass } from "@/components/shared/button-class"
+import { sectionTitleClass } from "@/components/shared/section-title"
 import { adminCopy } from "@/lib/copy/admin"
 import { shellCopy } from "@/lib/copy/shell"
 import { errorMessage } from "@/lib/errors"
@@ -84,10 +85,7 @@ async function ManualBookingContent({
         endsAt={details.endsAt}
       />
       <section aria-labelledby="manual-heading" className="flex flex-col gap-6">
-        <h2
-          id="manual-heading"
-          className="font-heading text-[22px] leading-[1.25] font-light"
-        >
+        <h2 id="manual-heading" className={sectionTitleClass}>
           {copy.manualBooking}
         </h2>
         {customerId === undefined ? (

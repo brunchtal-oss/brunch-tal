@@ -1,6 +1,8 @@
 import { AttendeeRow } from "@/components/admin/attendee-row"
+import { sectionTitleClass } from "@/components/shared/section-title"
 import { adminCopy } from "@/lib/copy/admin"
 import { formatLocalDate } from "@/lib/time"
+import { cn } from "@/lib/utils"
 
 import { AttendeeCancel } from "./attendee-cancel"
 import { AttendeeMove } from "./attendee-move"
@@ -24,10 +26,7 @@ export function AttendeeList({
   return (
     <>
       <section aria-labelledby="attendees-heading" className="flex flex-col">
-        <h2
-          id="attendees-heading"
-          className="mb-2 font-heading text-[22px] leading-[1.25] font-light"
-        >
+        <h2 id="attendees-heading" className={cn(sectionTitleClass, "mb-2")}>
           {copy.attendees}
         </h2>
         {details.attendees.length === 0 ? (

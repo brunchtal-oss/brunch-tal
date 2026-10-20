@@ -13,6 +13,7 @@ import {
 import { whatsappShareHref } from "@/components/admin/link-share"
 import { useAnnounce, useWorkAction } from "@/components/admin/use-work-action"
 import { OnlineButton, useOnlineGuard } from "@/components/shared/online-button"
+import { sectionTitleClass } from "@/components/shared/section-title"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
 import { Spinner } from "@/components/ui/spinner"
@@ -64,10 +65,7 @@ export function ShoppingList({
       aria-labelledby="work-shopping"
       className="flex flex-col gap-3 print:hidden"
     >
-      <h2
-        id="work-shopping"
-        className="font-heading text-[22px] leading-[1.25] font-light"
-      >
+      <h2 id="work-shopping" className={sectionTitleClass}>
         {copy.shopping}
       </h2>
       {items.length === 0 ? (

@@ -4,6 +4,7 @@ import Link from "next/link"
 import { ChevronLeftIcon } from "lucide-react"
 
 import { PageHeading } from "@/components/shared/page-heading"
+import { cubeTitleClass } from "@/components/shared/section-title"
 import { getPhotoConsentContent } from "@/lib/content/join-form"
 import { getPublishedPageSlugs } from "@/lib/content/pages"
 import { customerCopy } from "@/lib/copy/customer"
@@ -12,6 +13,7 @@ import { publicLegalNav, visibleLegalNav } from "@/lib/nav"
 import { formatLocalPhone } from "@/lib/phone"
 import { createClient } from "@/lib/supabase/server"
 import { localToday } from "@/lib/time"
+import { cn } from "@/lib/utils"
 
 import { BabiesSection } from "./babies-section"
 import { DetailsSection } from "./details-section"
@@ -31,7 +33,9 @@ const PROFILE_LEGAL = ["privacy", "accessibility"] as const
 // dietary notes to edit, phone and email to read), her babies, the photo
 // consent as a row to its own page (/me/profile/photos, user decision
 // 2026-10-08) and the links. Only her own rows (RLS); the email from the Auth
-// claims. Rendered inside the layout's customer gate.
+// claims. Rendered inside the layout's customer gate. Each part a cube
+// (DESIGN › card; fix 11, user decision 2026-10-20): details, babies, the
+// photos row, then the links.
 export default function ProfilePage() {
   return (
     <>
@@ -96,10 +100,14 @@ async function Profile() {
       />
       {photoContent && (
         // A heading-size link to its own page, in the section's place (user
-        // decision 2026-10-08): the title in display-sm, a chevron after it.
+        // decision 2026-10-08): a cube that is one row, the title in the
+        // cube title's type, a chevron at its end.
         <Link
           href="/me/profile/photos"
-          className="inline-flex min-h-11 items-center gap-2 self-start rounded-lg font-heading text-[22px] leading-[1.25] font-light"
+          className={cn(
+            cubeTitleClass,
+            "flex min-h-12 items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 hover:bg-muted"
+          )}
         >
           {copy.photoTitle}
           <ChevronLeftIcon
@@ -109,8 +117,11 @@ async function Profile() {
           />
         </Link>
       )}
-      <nav aria-label={copy.linksLabel}>
-        <ul className="flex flex-col divide-y divide-border border-y border-border">
+      <nav
+        aria-label={copy.linksLabel}
+        className="rounded-xl border border-border bg-card px-4 py-1"
+      >
+        <ul className="flex flex-col divide-y divide-border">
           {[
             { href: "/me/notifications", label: copy.notificationsRow },
             { href: "/install", label: copy.installGuide },

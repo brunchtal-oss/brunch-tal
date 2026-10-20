@@ -1,4 +1,5 @@
 import { OccupancyBar } from "@/components/admin/occupancy-bar"
+import { cubeTitleClass } from "@/components/shared/section-title"
 import { adminCopy } from "@/lib/copy/admin"
 import { cn } from "@/lib/utils"
 
@@ -47,14 +48,14 @@ export function SessionTile({
             >
               {copy.nextSession}
             </h2>
-            <p className="text-lg leading-[1.35] font-semibold">
+            <p className={cubeTitleClass}>
               <bdi>{session.title}</bdi>
             </p>
             {date}
           </>
         ) : (
           <>
-            <h2 id={headingId} className="text-lg leading-[1.35] font-semibold">
+            <h2 id={headingId} className={cubeTitleClass}>
               <bdi>{session.title}</bdi>
             </h2>
             <div className="flex items-baseline justify-between gap-3">

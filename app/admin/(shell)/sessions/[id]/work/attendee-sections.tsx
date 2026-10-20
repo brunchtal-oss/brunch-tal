@@ -2,6 +2,7 @@ import { Fragment } from "react"
 
 import { attendeeTitle, type Attendee } from "@/components/admin/attendee-row"
 import { babyAge } from "@/components/admin/baby-age"
+import { sectionTitleClass } from "@/components/shared/section-title"
 import { adminCopy } from "@/lib/copy/admin"
 import { formatLocalDate } from "@/lib/time"
 import { cn } from "@/lib/utils"
@@ -46,7 +47,10 @@ export function RegistrantsTable({
     >
       <h2
         id="work-attendees"
-        className="font-heading text-[22px] leading-[1.25] font-light print:text-[15px] print:font-semibold"
+        className={cn(
+          sectionTitleClass,
+          "print:text-[15px] print:font-semibold"
+        )}
       >
         {copy.attendees(attendees.length)}
       </h2>

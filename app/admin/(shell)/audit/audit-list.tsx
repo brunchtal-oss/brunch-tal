@@ -5,6 +5,7 @@ import Link from "next/link"
 
 import { buttonClass } from "@/components/shared/button-class"
 import { InlineNotice } from "@/components/shared/inline-notice"
+import { sectionTitleClass } from "@/components/shared/section-title"
 import { Spinner } from "@/components/ui/spinner"
 import { adminCopy } from "@/lib/copy/admin"
 import { errorMessage, type ErrorCode } from "@/lib/errors"
@@ -201,9 +202,7 @@ function Changes({ changes }: { changes: readonly AuditChange[] }) {
 export function EmptyAudit() {
   return (
     <div className="flex flex-col items-center gap-4 rounded-lg bg-muted px-4 py-6 text-center">
-      <p className="font-heading text-[22px] leading-[1.3] font-light text-balance">
-        {copy.empty}
-      </p>
+      <p className={sectionTitleClass}>{copy.empty}</p>
       <Link
         href="/admin/audit"
         className={buttonClass({

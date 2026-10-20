@@ -1765,8 +1765,8 @@ export const adminCopy = {
       validUntil: (dayMonth: string) => `בתוקף עד ${dayMonth}`,
       // Story 3.13: after the expiry, when a correction extended it.
       extended: "(כולל הארכה)",
-      // The card's page (story 3.13).
-      entitlementLink: "פרטים ותיקונים",
+      // The card's page (story 3.13): the whole plate is the link, named
+      // by this.
       entitlementLinkFor: (product: string) => `פרטים ותיקונים: ${product}`,
       expiring: "עומדת לפוג",
       expired: "פגה",
@@ -1819,7 +1819,9 @@ export const adminCopy = {
       // The account section (story 2.8): email and phone change through
       // Tal, and the reset link she sends herself.
       account: {
-        title: "חשבון",
+        // The pencils after the email and the phone in "פרטים" (fix 9).
+        editEmail: "עריכת המייל",
+        editPhone: "עריכת הטלפון",
         changeEmail: "שינוי מייל",
         emailChanged: "המייל עודכן. מעכשיו נכנסים איתו",
         changePhone: "שינוי מספר טלפון",
@@ -1831,10 +1833,6 @@ export const adminCopy = {
         resetNotShown:
           "הקישור כבר הופק, ואי אפשר להציג אותו שוב. אפשר להפיק קישור חלופי",
         issueReset: "הפקת קישור איפוס",
-        reissueReset: "הפקת קישור חלופי",
-        resetPending: (date: string) => `קישור איפוס ממתין עד ${date}`,
-        resetUsed: (date: string) => `קישור האיפוס מומש ${date}`,
-        resetExpired: "קישור האיפוס פג",
         emailChangeStuck:
           "שינוי המייל לא הושלם. כדי לסיים, שמרי שוב את המייל החדש",
       },
