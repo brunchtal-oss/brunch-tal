@@ -14,6 +14,7 @@ import {
   SESSION_COLUMNS,
   toSessionRow,
 } from "../../load-session"
+import { loadProductChoices } from "../../product-choices"
 import { sessionTitle } from "../../session-draft"
 import { SessionStatusChip } from "../../session-status-chip"
 import { SessionEditor } from "./session-editor"
@@ -72,7 +73,13 @@ async function EditSessionContent({
     row.status === "published" && Date.parse(row.starts_at) > now.getTime()
   // Story 5.4: the saved image's draft file, for the preview.
   const imageId = row.image?.media_id
-  const previews = imageId ? await signedDraftUrls(supabase, [imageId]) : {}
+  const [previews, products] = await Promise.all([
+    imageId
+      ? signedDraftUrls(supabase, [imageId])
+      : Promise.resolve({} as Record<string, string>),
+    // Story 3.18: the "valid products" choices, the selected ones included.
+    loadProductChoices(supabase, row.product_ids ?? []),
+  ])
 
   return (
     <>
@@ -91,6 +98,7 @@ async function EditSessionContent({
         row={row}
         imagePreviewUrl={imageId ? (previews[imageId] ?? null) : null}
         cancellable={cancellable}
+        products={products}
       />
     </>
   )

@@ -16,8 +16,11 @@ import {
   listSummary,
   localDateTime,
   occupancyById,
+  productChoicesFor,
+  productsText,
   sessionTitle,
   type ConceptOption,
+  type ProductChoice,
   type SessionRow,
 } from "./session-draft"
 
@@ -51,6 +54,15 @@ const ROW: SessionRow = {
   status: "draft",
   display_price_agorot: null,
 }
+
+const P_REGULAR = "44444444-4444-4444-8444-444444444444"
+const P_HOLIDAY = "55555555-5555-4555-8555-555555555555"
+const P_COUPLE = "66666666-6666-4666-8666-666666666666"
+const PRODUCTS: ProductChoice[] = [
+  { id: P_REGULAR, name: "בראנץ׳ רגיל", kind: "regular", hidden: false },
+  { id: P_HOLIDAY, name: "בראנץ׳ חג", kind: "regular", hidden: true },
+  { id: P_COUPLE, name: "זוגי", kind: "couple", hidden: false },
+]
 
 describe("sessionTitle", () => {
   it("is always the concept's name", () => {
@@ -155,6 +167,26 @@ describe("createPayload", () => {
     ).toMatchObject({ startTime: "10:00", endTime: "12:00", closesLocal: "x" })
   })
 
+  it("story 3.18: sends the marked products sorted, none = not sent", () => {
+    expect(
+      createPayload({ ...filled, productIds: [P_HOLIDAY, P_REGULAR] })
+    ).toMatchObject({
+      ok: true,
+      event: { product_ids: [P_REGULAR, P_HOLIDAY] },
+    })
+    const none = createPayload({ ...filled, productIds: [] })
+    expect(none.ok && "product_ids" in none.event).toBe(false)
+    expect(draftFieldOf("product_ids")).toBe("products")
+  })
+
+  it("story 3.18: the products stay while the kind does", () => {
+    const marked = { ...filled, productIds: [P_COUPLE] }
+    expect(draftForConcept(GRANDMA, DEFAULTS, marked).productIds).toEqual([
+      P_COUPLE,
+    ])
+    expect(draftForConcept(GREEK, DEFAULTS, marked).productIds).toEqual([])
+  })
+
   it("stops at the first field to fix", () => {
     expect(createPayload({ ...filled, conceptId: "" })).toEqual({
       ok: false,
@@ -223,6 +255,7 @@ describe("fieldChange", () => {
       "capacity",
       "closes",
       "price",
+      "products",
     ] as const) {
       expect(fieldChange(field, ROW, draft), field).toBeNull()
     }
@@ -254,6 +287,54 @@ describe("fieldChange", () => {
     expect(
       fieldChange("price", priced, { ...draftFromRow(priced), priceText: "" })
     ).toMatchObject({ changes: { display_price_agorot: null } })
+  })
+
+  it("story 3.18: products from all to one, and back", () => {
+    expect(
+      fieldChange(
+        "products",
+        ROW,
+        { ...draft, productIds: [P_HOLIDAY] },
+        PRODUCTS
+      )
+    ).toEqual({
+      from: copy.productsAll,
+      to: "בראנץ׳ חג (לא נמכר)",
+      changes: { product_ids: [P_HOLIDAY] },
+    })
+    const marked = { ...ROW, product_ids: [P_REGULAR, P_HOLIDAY] }
+    expect(
+      fieldChange(
+        "products",
+        marked,
+        { ...draftFromRow(marked), productIds: [] },
+        PRODUCTS
+      )
+    ).toEqual({
+      from: "בראנץ׳ חג (לא נמכר), בראנץ׳ רגיל",
+      to: copy.productsAll,
+      changes: { product_ids: [] },
+    })
+    // The same set in another order is no change.
+    expect(
+      fieldChange(
+        "products",
+        marked,
+        { ...draftFromRow(marked), productIds: [P_HOLIDAY, P_REGULAR] },
+        PRODUCTS
+      )
+    ).toBeNull()
+  })
+
+  it("story 3.18: the choices are the session's kind, by name", () => {
+    expect(productChoicesFor("regular", PRODUCTS).map((p) => p.id)).toEqual([
+      P_HOLIDAY,
+      P_REGULAR,
+    ])
+    expect(productChoicesFor("couple", PRODUCTS).map((p) => p.id)).toEqual([
+      P_COUPLE,
+    ])
+    expect(productsText([], PRODUCTS)).toBe(copy.productsAll)
   })
 
   it("kind and description", () => {

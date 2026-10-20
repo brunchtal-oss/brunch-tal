@@ -1,7 +1,8 @@
 // The "session" field of the approval form for a pinned product (story
 // 3.11): the open sessions (admin_list_bookable_events) of the product's kind
 // and on its weekdays. A session without room for the product's party size
-// is shown and cannot be chosen. Pure: rows in, options out; the RPC checks
+// is shown and cannot be chosen. A session that names its eligible products
+// (story 3.18, event_products) is offered only for one of them. Pure: rows in, options out; the RPC checks
 // everything again (private.plan_pinned_placement).
 
 export type BookableEvent = {
@@ -13,9 +14,12 @@ export type BookableEvent = {
   conceptName: string
   occupied: number
   capacity: number
+  // The products the session accepts (story 3.18); empty = every fitting one.
+  productIds: readonly string[]
 }
 
 export type PinnedProductRules = {
+  productId: string
   eventKind: "regular" | "couple"
   // null = every day.
   weekdays: readonly number[] | null
@@ -32,7 +36,10 @@ export function eventOptionsFor(
     .filter(
       (event) =>
         event.kind === product.eventKind &&
-        (product.weekdays === null || product.weekdays.includes(event.weekday))
+        (product.weekdays === null ||
+          product.weekdays.includes(event.weekday)) &&
+        (event.productIds.length === 0 ||
+          event.productIds.includes(product.productId))
     )
     .map((event) => ({
       ...event,
@@ -48,6 +55,7 @@ type BookableEventRow = {
   concept_name: string
   occupied: number
   capacity: number
+  product_ids?: unknown
 }
 
 // The RPC's rows as BookableEvent; a row of an unknown kind is left out.
@@ -64,6 +72,11 @@ export function toBookableEvents(rows: unknown): BookableEvent[] {
             conceptName: row.concept_name,
             occupied: row.occupied,
             capacity: row.capacity,
+            productIds: Array.isArray(row.product_ids)
+              ? row.product_ids.filter(
+                  (id): id is string => typeof id === "string"
+                )
+              : [],
           },
         ]
       : []

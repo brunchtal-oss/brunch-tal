@@ -53,6 +53,7 @@ export async function loadPaymentFormData(): Promise<PaymentFormData> {
       pinned:
         p.validity_mode === "session"
           ? {
+              productId: p.id,
               eventKind:
                 p.eligible_event_kind === "couple" ? "couple" : "regular",
               weekdays: p.allowed_weekdays ?? null,

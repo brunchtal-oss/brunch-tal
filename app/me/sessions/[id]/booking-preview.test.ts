@@ -140,5 +140,7 @@ describe("blockedAction", () => {
     expect(blockedAction("EVENT_FULL")).toBe("all-sessions")
     expect(blockedAction("ENTITLEMENT_EXPIRED_ON_DATE")).toBe("all-sessions")
     expect(blockedAction("EVENT_NOT_BOOKABLE")).toBe("all-sessions")
+    // Story 3.18: no contact action.
+    expect(blockedAction("PRODUCT_NOT_VALID_FOR_EVENT")).toBe("all-sessions")
   })
 })

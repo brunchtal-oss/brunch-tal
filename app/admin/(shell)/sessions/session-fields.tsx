@@ -2,6 +2,7 @@
 
 import { ImageUploadField } from "@/components/admin/image-upload-field"
 import { RadioCardGroup } from "@/components/admin/radio-card"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -10,7 +11,14 @@ import { authCopy } from "@/lib/copy/auth"
 import { errorMessage } from "@/lib/errors"
 
 import { createSessionMediaAction } from "./actions"
-import type { ConceptOption, EventKind, SessionImage } from "./session-draft"
+import {
+  normalizeProductIds,
+  productLabel,
+  type ConceptOption,
+  type EventKind,
+  type ProductChoice,
+  type SessionImage,
+} from "./session-draft"
 
 const copy = adminCopy.sessions
 
@@ -107,6 +115,79 @@ export function SessionField({
         )
       )}
     </Field>
+  )
+}
+
+// The eligible products (story 3.18): a checkbox per product of the
+// session's kind (the WeekdaysField pattern), none marked = every product
+// that fits. A hidden product reads "(לא נמכר)". The hint stays under the
+// field; a refused set (detail.field product_ids) shows the error instead.
+export function ProductsField({
+  name,
+  choices,
+  value,
+  onChange,
+  problem = null,
+}: {
+  name: string
+  choices: readonly ProductChoice[]
+  value: readonly string[]
+  onChange: (value: string[]) => void
+  problem?: FieldProblem
+}) {
+  const hintId = `${name}-hint`
+  const errorId = `${name}-error`
+  return (
+    <fieldset
+      id={name}
+      className="flex flex-col gap-2"
+      aria-describedby={problem ? errorId : hintId}
+      aria-invalid={problem ? true : undefined}
+    >
+      <legend className="mb-2 text-[15px] font-semibold">
+        {copy.fields.products}
+      </legend>
+      {choices.length === 0 ? (
+        <p className="text-base text-muted-foreground">{copy.productsNone}</p>
+      ) : (
+        <div className="flex flex-col gap-y-1">
+          {choices.map((product) => {
+            const id = `${name}-${product.id}`
+            return (
+              <div
+                key={product.id}
+                className="flex min-h-11 items-center gap-3"
+              >
+                <Checkbox
+                  id={id}
+                  checked={value.includes(product.id)}
+                  onCheckedChange={(next) =>
+                    onChange(
+                      next === true
+                        ? normalizeProductIds([...value, product.id])
+                        : value.filter((v) => v !== product.id)
+                    )
+                  }
+                  className="size-6 rounded-[4px] border-[1.5px] border-muted-foreground"
+                />
+                <label htmlFor={id} className="text-base">
+                  <bdi>{productLabel(product)}</bdi>
+                </label>
+              </div>
+            )
+          })}
+        </div>
+      )}
+      {problem ? (
+        <p id={errorId} className="text-[15px] text-error">
+          {errorMessage("INVALID_INPUT")}
+        </p>
+      ) : (
+        <p id={hintId} className="text-[13px] text-muted-foreground">
+          {copy.productsHint}
+        </p>
+      )}
+    </fieldset>
   )
 }
 

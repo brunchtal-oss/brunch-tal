@@ -14,6 +14,7 @@ const event = (overrides: Partial<BookableEvent> = {}): BookableEvent => ({
   conceptName: "Mothers",
   occupied: 5,
   capacity: 12,
+  productIds: [],
   ...overrides,
 })
 
@@ -26,13 +27,23 @@ describe("eventOptionsFor", () => {
     ]
     expect(
       eventOptionsFor(
-        { eventKind: "regular", weekdays: [1, 4], partySize: 1 },
+        {
+          productId: "p-1",
+          eventKind: "regular",
+          weekdays: [1, 4],
+          partySize: 1,
+        },
         events
       ).map((e) => e.id)
     ).toEqual(["monday"])
     expect(
       eventOptionsFor(
-        { eventKind: "regular", weekdays: null, partySize: 1 },
+        {
+          productId: "p-1",
+          eventKind: "regular",
+          weekdays: null,
+          partySize: 1,
+        },
         events
       ).map((e) => e.id)
     ).toEqual(["monday", "sunday"])
@@ -40,15 +51,34 @@ describe("eventOptionsFor", () => {
 
   it("marks a session without room for the party size as full", () => {
     const [twelveOfFourteen] = eventOptionsFor(
-      { eventKind: "couple", weekdays: null, partySize: 2 },
+      { productId: "p-1", eventKind: "couple", weekdays: null, partySize: 2 },
       [event({ kind: "couple", occupied: 12, capacity: 14 })]
     )
     expect(twelveOfFourteen.full).toBe(false)
     const [thirteenOfFourteen] = eventOptionsFor(
-      { eventKind: "couple", weekdays: null, partySize: 2 },
+      { productId: "p-1", eventKind: "couple", weekdays: null, partySize: 2 },
       [event({ kind: "couple", occupied: 13, capacity: 14 })]
     )
     expect(thirteenOfFourteen.full).toBe(true)
+  })
+
+  it("hides a session that does not accept the product (story 3.18)", () => {
+    const events = [
+      event({ id: "all" }),
+      event({ id: "holiday-only", productIds: ["p-holiday"] }),
+      event({ id: "both", productIds: ["p-holiday", "p-1"] }),
+    ]
+    expect(
+      eventOptionsFor(
+        {
+          productId: "p-1",
+          eventKind: "regular",
+          weekdays: null,
+          partySize: 1,
+        },
+        events
+      ).map((e) => e.id)
+    ).toEqual(["all", "both"])
   })
 })
 
@@ -68,6 +98,20 @@ describe("toBookableEvents", () => {
         { id: "ev-2", kind: "other" },
       ])
     ).toEqual([event()])
+    expect(
+      toBookableEvents([
+        {
+          id: "ev-1",
+          starts_at: "2026-10-12T07:00:00Z",
+          kind: "regular",
+          weekday: 1,
+          concept_name: "Mothers",
+          occupied: 5,
+          capacity: 12,
+          product_ids: ["p-holiday"],
+        },
+      ])
+    ).toEqual([event({ productIds: ["p-holiday"] })])
     expect(toBookableEvents(null)).toEqual([])
   })
 })

@@ -23,17 +23,22 @@ import {
   updateEventAction,
 } from "../../actions"
 import {
+  draftFieldOf,
   draftFromRow,
   fieldChange,
   fieldError,
   imageChanged,
+  productChoicesFor,
   rescheduleRequest,
+  type DraftField,
   type EditorField,
+  type ProductChoice,
   type SessionDraft,
   type SessionImage,
   type SessionRow,
 } from "../../session-draft"
 import {
+  ProductsField,
   SessionField,
   SessionImageField,
   WhenFields,
@@ -52,6 +57,7 @@ const DRAFT_KEYS: Record<EditorField, readonly (keyof SessionDraft)[]> = {
   capacity: ["capacityText"],
   closes: ["closesLocal"],
   price: ["priceText"],
+  products: ["productIds"],
 }
 
 // The editor of one session (story 3.1): each field in its own
@@ -60,17 +66,21 @@ const DRAFT_KEYS: Record<EditorField, readonly (keyof SessionDraft)[]> = {
 // Tal sets it for this session). A draft has "publish" on top; every session
 // can be duplicated to a new draft on another date. The concept is fixed.
 // The saved values come from the server after each save (router.refresh);
-// a failure leaves them as they were.
+// a failure leaves them as they were. Story 3.18: the eligible products, a
+// row of their own (names joined with ", "), allowed with bookings.
 export function SessionEditor({
   row,
   imagePreviewUrl = null,
   cancellable = false,
+  products = [],
 }: {
   row: SessionRow
   imagePreviewUrl?: string | null
   // Published and not started (the server's clock, display only): the
   // delete's refusal may link to the cancel (story 3.17).
   cancellable?: boolean
+  // The "valid products" choices (story 3.18), every kind.
+  products?: readonly ProductChoice[]
 }) {
   const [draft, setDraft] = useState<SessionDraft>(() => draftFromRow(row))
   // A new date or time moves the close on the server (trigger); after the
@@ -101,21 +111,27 @@ export function SessionEditor({
     movedRef.current?.scrollIntoView({ block: "center", behavior: "smooth" })
     movedRef.current?.focus({ preventScroll: true })
   }, [moved])
+  // The field an RPC refused (detail.field), shown next to it as in the
+  // create form (story 3.18: product_ids); cleared by the next save or
+  // cancel.
+  const [refusedField, setRefusedField] = useState<DraftField | null>(null)
   const update = (patch: Partial<SessionDraft>) =>
     setDraft((current) => ({ ...current, ...patch }))
   const revert = (keys: readonly (keyof SessionDraft)[]) => {
+    setRefusedField(null)
     const saved = draftFromRow(row)
     update(Object.fromEntries(keys.map((key) => [key, saved[key]])))
   }
 
   const saveField = (field: EditorField) => async (key: string) => {
-    const change = fieldChange(field, row, draft)
+    const change = fieldChange(field, row, draft, products)
     if (!change) return null
     const result = await updateEventAction({
       eventId: row.id,
       changes: change.changes,
       idempotencyKey: key,
     })
+    setRefusedField(result.ok ? null : draftFieldOf(result.detail?.field))
     const request = rescheduleRequest(field, result, draft)
     if (request) {
       setMoved(null)
@@ -132,7 +148,7 @@ export function SessionEditor({
     children: React.ReactNode,
     scope?: React.ReactNode
   ) => {
-    const change = fieldChange(field, row, draft)
+    const change = fieldChange(field, row, draft, products)
     return (
       <ValueChangeRow
         label={label}
@@ -266,6 +282,19 @@ export function SessionEditor({
               problem={fieldError("price", draft)}
               hint={copy.priceEmpty}
               maxLength={12}
+            />
+          )}
+        </li>
+        <li className="py-6">
+          {fieldRow(
+            "products",
+            copy.fields.products,
+            <ProductsField
+              name="products"
+              choices={productChoicesFor(row.kind, products)}
+              value={draft.productIds}
+              onChange={(productIds) => update({ productIds })}
+              problem={refusedField === "products" ? "invalid" : null}
             />
           )}
         </li>

@@ -225,6 +225,7 @@ const EXPECTED_GRANTS = [
   "table public.entitlement_correction_bookings authenticated SELECT",
   "table public.entitlement_corrections authenticated SELECT",
   "table public.entitlements authenticated SELECT",
+  "table public.event_products authenticated SELECT",
   "table public.events anon SELECT",
   "table public.events authenticated SELECT",
   "table public.note_topics authenticated SELECT",

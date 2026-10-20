@@ -7,9 +7,10 @@ import type {
 
 // The columns the session screens read (public.events, admin RLS) with the
 // concept's name (the title, AD-16) and the session's image (story 5.4; the
-// admin reads every media_assets row).
+// admin reads every media_assets row) and its eligible products (story 3.18,
+// event_products, admin RLS).
 export const SESSION_COLUMNS =
-  "id, kind, description, starts_at, ends_at, capacity_adults, registration_closes_at, registration_close_overridden, status, display_price_agorot, concepts(name), image:media_assets!events_image_id_fkey(id, alt_text, focus_x, focus_y)"
+  "id, kind, description, starts_at, ends_at, capacity_adults, registration_closes_at, registration_close_overridden, status, display_price_agorot, concepts(name), image:media_assets!events_image_id_fkey(id, alt_text, focus_x, focus_y), event_products(product_id)"
 
 // The generated row types its checked text columns as string; the table's
 // checks guarantee the narrower values. The concept is never missing
@@ -32,8 +33,9 @@ export function toSessionRow(row: {
     focus_x: number
     focus_y: number
   } | null
+  event_products?: { product_id: string }[] | null
 }): SessionRow {
-  const { concepts, image, ...rest } = row
+  const { concepts, image, event_products, ...rest } = row
   const sessionImage: SessionImage | null = image
     ? {
         media_id: image.id,
@@ -48,6 +50,7 @@ export function toSessionRow(row: {
     status: rest.status as EventStatus,
     concept_name: concepts?.name ?? "",
     image: sessionImage,
+    product_ids: (event_products ?? []).map((p) => p.product_id).sort(),
   }
 }
 
