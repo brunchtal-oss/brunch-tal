@@ -1024,6 +1024,39 @@ export type Database = {
           },
         ]
       }
+      marketing_reminder_texts: {
+        Row: {
+          active: boolean
+          body: string
+          created_at: string
+          id: string
+          last_sent_at: string | null
+          sort_order: number
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          active?: boolean
+          body: string
+          created_at?: string
+          id?: string
+          last_sent_at?: string | null
+          sort_order: number
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          active?: boolean
+          body?: string
+          created_at?: string
+          id?: string
+          last_sent_at?: string | null
+          sort_order?: number
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
       media_assets: {
         Row: {
           alt_text: string | null
@@ -1876,6 +1909,10 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_add_marketing_reminder_text: {
+        Args: { p_body: string; p_idempotency_key: string }
+        Returns: Json
+      }
       admin_add_note: {
         Args: { p_body: string; p_idempotency_key: string; p_topic_id: string }
         Returns: Json
@@ -2324,6 +2361,16 @@ export type Database = {
       }
       admin_update_event: {
         Args: { p_changes: Json; p_event_id: string; p_idempotency_key: string }
+        Returns: Json
+      }
+      admin_update_marketing_reminder_text: {
+        Args: {
+          p_active: boolean
+          p_body: string
+          p_expected_version: number
+          p_idempotency_key: string
+          p_text_id: string
+        }
         Returns: Json
       }
       admin_update_note: {

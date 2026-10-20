@@ -33,13 +33,46 @@ describe("business_settings", () => {
       inactivity_months: 3,
       duplicate_payment_window_days: 7,
     })
-    expect(rows[0].marketing_reminder_schedule).toEqual([
+    expect(Array.isArray(rows[0].marketing_reminder_schedule)).toBe(true)
+  })
+
+  // Story 5.11: Tal edits the schedule on /admin/settings/marketing, so the
+  // seeded value is checked as the column's default.
+  it("the marketing schedule's default: Sun, Tue, Wed 09:00; Mon, Thu 20:00", async () => {
+    const rows = await sql(`
+      select pg_get_expr(d.adbin, d.adrelid)::text as expr
+      from pg_attrdef d
+      join pg_attribute a on a.attrelid = d.adrelid and a.attnum = d.adnum
+      where d.adrelid = 'public.business_settings'::regclass
+        and a.attname = 'marketing_reminder_schedule'`)
+    const expr = rows[0].expr as string
+    const json = expr.slice(expr.indexOf("'") + 1, expr.lastIndexOf("'"))
+    expect(JSON.parse(json)).toEqual([
       { weekday: 0, time: "09:00" },
       { weekday: 1, time: "20:00" },
       { weekday: 2, time: "09:00" },
       { weekday: 3, time: "09:00" },
       { weekday: 4, time: "20:00" },
     ])
+  })
+
+  it("the schedule column accepts only an array", async () => {
+    await inRollback(async (db) => {
+      expect(
+        (
+          await queryError(
+            db,
+            `update public.business_settings set marketing_reminder_schedule = '{}'::jsonb`
+          )
+        )?.code
+      ).toBe("23514")
+      expect(
+        await queryError(
+          db,
+          `update public.business_settings set marketing_reminder_schedule = '[]'::jsonb`
+        )
+      ).toBeNull()
+    })
   })
 
   it.each([

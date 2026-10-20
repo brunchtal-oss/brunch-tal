@@ -238,6 +238,33 @@ export function weekdaysText(value: unknown): string | null {
   return value.map((day: number) => copy.weekdays[day]).join(", ")
 }
 
+// marketing_reminder_schedule (story 5.11): "א׳ 09:00, ב׳ 20:00"; an
+// empty schedule is "—". null when the value is not a schedule.
+export function scheduleText(value: unknown): string | null {
+  if (
+    !Array.isArray(value) ||
+    !value.every(
+      (slot) =>
+        typeof slot === "object" &&
+        slot !== null &&
+        Number.isInteger(slot.weekday) &&
+        slot.weekday >= 0 &&
+        slot.weekday <= 6 &&
+        typeof slot.time === "string" &&
+        CLOCK.test(slot.time)
+    )
+  ) {
+    return null
+  }
+  if (value.length === 0) return copy.none
+  return value
+    .map(
+      (slot: { weekday: number; time: string }) =>
+        `${copy.weekdays[slot.weekday]} ${formatClockTime(slot.time)}`
+    )
+    .join(", ")
+}
+
 // An instant string with its zone, as jsonb gives timestamptz
 // ("2026-10-10T09:15:00.123456+00:00").
 export function isInstant(value: unknown): boolean {
@@ -298,6 +325,10 @@ export function formatValue(
   if (key === "allowed_weekdays") {
     const days = weekdaysText(value)
     if (days !== null) return days
+  }
+  if (key === "marketing_reminder_schedule") {
+    const schedule = scheduleText(value)
+    if (schedule !== null) return schedule
   }
   // An array of codes with known values (the export's columns).
   const known = copy.values[key]

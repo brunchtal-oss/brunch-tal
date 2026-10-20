@@ -13,6 +13,7 @@ import { ExpiringCards } from "./home/expiring-cards"
 import { MonthTotals } from "./home/month-totals"
 import { NextSessions } from "./home/next-sessions"
 import { OpenRefunds } from "./home/open-refunds"
+import { ReminderStrip } from "./home/reminder-strip"
 
 export const metadata: Metadata = {
   title: shellCopy.admin.homeTitle,
@@ -42,7 +43,8 @@ async function Greeting() {
 
 // The admin home (story 4.1, CAP-24; design round, user decision
 // 2026-10-07, EXPERIENCE › Information Architecture), in this order: the h1
-// (the greeting; the <title> stays "בית"), the two actions, a session-tile
+// (the greeting; the <title> stays "בית"), the newest marketing reminder
+// while unread (story 5.11, reminder-strip), the two actions, a session-tile
 // for the next session and one for the session after it, "לכל המפגשים",
 // then a cube each for "לטיפול" (the
 // three newest), the open refund requests (story 3.7, only while there is
@@ -57,6 +59,9 @@ export default function AdminHomePage() {
           <Greeting />
         </Suspense>
       </PageHeading>
+      <Suspense fallback={null}>
+        <ReminderStrip />
+      </Suspense>
       <AdminHomeActions />
       <Suspense fallback={<Loading />}>
         <NextSessions />

@@ -686,3 +686,13 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-4-6-remove-personal-details.md`
   summary: When a removed customer had a join token in `claiming` whose `pending_user_id` is an Auth user other than her own, step 1 revokes the token but nothing deletes that orphan Auth user (it may hold an email or phone).
   evidence: 4.6 review (edge-case), maybe-false, medium if true. Settle by checking `join_begin`/`claim_join`: can a token where she is `customer_id` or `bound_user_id` carry a different `pending_user_id` while claiming, and does `private.revoke_join_token` already clean it.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-11-marketing-reminders.md`
+  target: 5.20
+  summary: ביומן הפעולות, עריכה שרק מפעילה או מכבה נוסח של תזכורת שיווק לא מראה איזה נוסח: ל-`audit_concise` אין subject ל-`marketing_reminder_texts`.
+  evidence: ביקורת 5.11, סבב 1 ‏#8. תיקון: להוסיף ב-`audit_concise` את תחילת ה-`body` כ-subject.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-11-marketing-reminders.md`
+  target: 5.20
+  summary: לשאילתה ב-`ReminderStrip` (`app/admin/(shell)/home/reminder-strip.tsx`), שבוחרת את ה-`marketing_reminder` האחרון, אין בדיקת יחידה.
+  evidence: ביקורת 5.11, סבב 1 ‏#9. תיקון: להעביר את הקריאה ל-loader (כמו `load-home.ts`) ולבדוק אותה שם. בינתיים הבדיקה בטלפון מכסה אותה.

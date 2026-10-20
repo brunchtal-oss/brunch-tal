@@ -1062,6 +1062,9 @@ export const adminCopy = {
     attentionEmpty: "אין כרגע דברים לטיפול",
     // Under the three newest items on the home, to /admin/attention.
     attentionAll: (n: number) => `לכל הדברים לטיפול (${n})`,
+    // The newest marketing reminder while unread (story 5.11).
+    reminderLabel: "תזכורת שיווק",
+    reminderDismiss: "סגירה",
     // The customer: full_name, else the payer label Tal gave, else this.
     newCustomer: "לקוחה חדשה",
     since: (dayMonth: string) => `מאז ${dayMonth}`,
@@ -1238,6 +1241,7 @@ export const adminCopy = {
           expiry_alerts: "התראות על כרטיסיות וזיכויים שעומדים לפוג",
           auto_extend: "הארכה אוטומטית של כרטיסיות",
           cleanup: "מחיקת נתונים ישנים",
+          marketing_reminders: "תזכורות שיווק",
         } as Record<string, string>,
       },
       // The push settings are missing in Vault (story 5.10).
@@ -1424,12 +1428,15 @@ export const adminCopy = {
       alerts: "התראות וספים",
       workSheet: "דף עבודה",
       templates: "תבניות התראות",
+      marketing: "תזכורות שיווק",
     },
-    // The links of the first and last groups.
+    // The link groups: business details, templates, marketing reminders.
     businessLink: "לעריכת פרטי העסק",
     businessNote: "אותם פרטים כמו בתוכן האתר › יצירת קשר",
     templatesLink: "לנוסח ההתראות",
     templatesNote: "הכותרת והטקסט של כל התראה",
+    marketingLink: "ללוח הזמנים ולנוסחים",
+    marketingNote: "מתי מגיעה אלייך תזכורת לעשות שיווק, ובאיזה נוסח",
     fields: {
       close: "סגירת הרשמה",
       closeDays: "ימים לפני המפגש",
@@ -1602,6 +1609,38 @@ export const adminCopy = {
         `השדה {${field}} לא קיים בהתראה הזו. אפשר להוסיף רק שדות מהרשימה`,
       unbalanced: "יש סוגריים מסולסלים שלא נסגרו. כל שדה נכתב כך: {שם}",
       tooLong: (max: number) => `אפשר עד ${max} תווים`,
+    },
+    // /admin/settings/marketing (story 5.11)
+    marketing: {
+      title: "תזכורות שיווק",
+      back: "להגדרות",
+      schedule: "לוח זמנים",
+      // 0 = Sunday.
+      days: [
+        "ראשון",
+        "שני",
+        "שלישי",
+        "רביעי",
+        "חמישי",
+        "שישי",
+        "שבת",
+      ] as readonly string[],
+      timeLabel: (day: string) => `השעה ביום ${day}`,
+      save: "שמירה",
+      cancel: "ביטול",
+      scheduleSaved: "לוח הזמנים נשמר",
+      texts: "נוסחים",
+      active: "פעיל",
+      inactive: "כבוי",
+      next: "הבא בתור",
+      lastSent: (dayMonth: string) => `נשלח לאחרונה ב-${dayMonth}`,
+      neverSent: "עוד לא נשלח",
+      edit: "עריכה",
+      add: "הוספת נוסח",
+      bodyLabel: "נוסח התזכורת",
+      newBodyLabel: "נוסח חדש",
+      activeLabel: "פעיל",
+      noActive: "אין נוסח פעיל, ולכן תזכורות השיווק לא נשלחות",
     },
   },
   // /admin/customers and the customer card (story 4.2, CAP-25; after the
@@ -2186,6 +2225,8 @@ export const adminCopy = {
       waitlistLeft: "יצאה מרשימת ההמתנה",
       // Story 4.6: no details (there are none left).
       detailsRemoved: "הפרטים האישיים של הלקוחה הוסרו",
+      // Story 5.11.
+      marketingTextAdded: "נוסח חדש נוסף למאגר",
     },
     // Values.
     masked: "השתנה",
@@ -2249,6 +2290,9 @@ export const adminCopy = {
       leave_waitlist: "יציאה מרשימת המתנה",
       complete_event: "סיום מפגש",
       reset_complete: "איפוס סיסמה",
+      // Story 5.11.
+      admin_add_marketing_reminder_text: "הוספת נוסח לתזכורות השיווק",
+      admin_update_marketing_reminder_text: "עריכת נוסח לתזכורות השיווק",
     } as Record<string, string>,
     // Common keys of before/after; an unknown key shows its code.
     fields: {
@@ -2367,6 +2411,9 @@ export const adminCopy = {
       row_count: "מספר שורות",
       // The export's category (story 5.13).
       activity: "סינון לפי פעילות",
+      // Marketing reminders (story 5.11).
+      marketing_reminder_schedule: "לוח תזכורות השיווק",
+      last_sent_at: "נשלח לאחרונה",
     } as Record<string, string>,
     // Known values of code columns (their CHECK constraints), per key; an
     // unknown value shows its code.

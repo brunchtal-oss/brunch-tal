@@ -9,6 +9,7 @@ import {
   BUSINESS_DETAILS_HREF,
   scopeOf,
   SettingsEditor,
+  MARKETING_HREF,
   TEMPLATES_HREF,
   TERMS_HREF,
 } from "./settings-editor"
@@ -60,6 +61,7 @@ describe("SettingsEditor", () => {
       copy.groups.alerts,
       copy.groups.workSheet,
       copy.groups.templates,
+      copy.groups.marketing,
     ]
     const positions = groups.map((title) => html.indexOf(title))
     expect(positions.every((p) => p >= 0)).toBe(true)
@@ -69,6 +71,9 @@ describe("SettingsEditor", () => {
     }
     expect(html).toContain(`href="${BUSINESS_DETAILS_HREF}"`)
     expect(html).toContain(`href="${TEMPLATES_HREF}"`)
+    expect(html).toContain(`href="${MARKETING_HREF}"`)
+    expect(html).toContain(copy.marketingLink)
+    expect(html).toContain(copy.marketingNote)
   })
 
   it("shows the saved values in the fields and no change box yet", () => {
