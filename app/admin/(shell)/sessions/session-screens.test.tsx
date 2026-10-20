@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it, vi } from "vitest"
 
 import { adminCopy } from "@/lib/copy/admin"
+import { authCopy } from "@/lib/copy/auth"
 
 import { SessionEditor } from "./[id]/edit/session-editor"
 import { SessionCreateForm } from "./new/session-create-form"
@@ -160,7 +161,8 @@ describe("SessionCreateForm", () => {
     }
     expect(html).toContain('value="14"')
     // No kind field: the kind is the concept's (user decision 2026-10-05).
-    expect(html).not.toContain(copy.fields.kind)
+    // (The products hint mentions the kind: look for the field's legend.)
+    expect(html).not.toContain(`${copy.fields.kind} ${authCopy.required}`)
     // The default hours from the settings; the draft button comes first so
     // Enter never publishes.
     expect(html).toContain('value="10:30"')
@@ -201,6 +203,56 @@ describe("SessionEditor", () => {
     )
     expect(html).not.toContain(copy.publish)
     expect(html).not.toContain(copy.closesByRule)
+  })
+})
+
+// Story 3.18: the eligible products field.
+describe("valid products", () => {
+  const products = [
+    {
+      id: "44444444-4444-4444-8444-444444444444",
+      name: "זוגי רגיל",
+      kind: "couple" as const,
+      hidden: false,
+    },
+    {
+      id: "55555555-5555-4555-8555-555555555555",
+      name: "זוגי חג",
+      kind: "couple" as const,
+      hidden: true,
+    },
+    {
+      id: "66666666-6666-4666-8666-666666666666",
+      name: "כרטיסייה",
+      kind: "regular" as const,
+      hidden: false,
+    },
+  ]
+
+  it("the create form offers the concept's kind only, with the hint", () => {
+    const html = renderToStaticMarkup(
+      <SessionCreateForm
+        concepts={CONCEPTS}
+        capacityDefaults={{ regular: 12, couple: 14 }}
+        timeDefaults={null}
+        closeRule={null}
+        products={products}
+      />
+    )
+    expect(html).toContain(copy.fields.products)
+    expect(html).toContain(copy.productsHint)
+    expect(html).toContain("זוגי רגיל")
+    expect(html).toContain(copy.productHidden("זוגי חג"))
+    expect(html).not.toContain("כרטיסייה")
+  })
+
+  it("the editor has its own row", () => {
+    const html = renderToStaticMarkup(
+      <SessionEditor row={ROW} products={products} />
+    )
+    expect(html).toContain(copy.fields.products)
+    expect(html).toContain("זוגי רגיל")
+    expect(html).not.toContain("כרטיסייה")
   })
 })
 

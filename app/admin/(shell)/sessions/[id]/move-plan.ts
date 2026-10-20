@@ -47,6 +47,7 @@ export const MOVE_REFUSAL_CODES = [
   "EVENT_FULL",
   "ENTITLEMENT_EXPIRED_ON_DATE",
   "NO_MATCHING_ENTITLEMENT",
+  "PRODUCT_NOT_VALID_FOR_EVENT",
   "CONCURRENT_CHANGE",
 ] as const satisfies readonly ErrorCode[]
 

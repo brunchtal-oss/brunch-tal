@@ -17,11 +17,28 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const DATE = /^\d{4}-\d{2}-\d{2}$/
 const TIME = /^([01]\d|2[0-3]):[0-5]\d$/
 
+// Story 3.18: product_ids, when sent, is an array of distinct uuid strings
+// (may be empty). The RPC checks each product's kind.
+function validProductIds(values: Record<string, unknown>): boolean {
+  if (!("product_ids" in values)) return true
+  const ids = values.product_ids
+  return (
+    Array.isArray(ids) &&
+    ids.length <= 100 &&
+    ids.every((id) => typeof id === "string" && UUID.test(id)) &&
+    new Set(ids.map((id) => (id as string).toLowerCase())).size === ids.length
+  )
+}
+
 export async function createEventAction(input: {
   event: Record<string, unknown>
   idempotencyKey: string
 }): Promise<ActionResult<{ eventId: string }>> {
-  if (!isPlainObject(input.event) || !UUID.test(input.idempotencyKey)) {
+  if (
+    !isPlainObject(input.event) ||
+    !validProductIds(input.event) ||
+    !UUID.test(input.idempotencyKey)
+  ) {
     return { ok: false, code: "INVALID_INPUT" }
   }
   const result = await callRpc(await createClient(), "admin_create_event", {
@@ -43,6 +60,7 @@ export async function updateEventAction(input: {
     !UUID.test(input.eventId) ||
     !isPlainObject(input.changes) ||
     "concept_id" in input.changes ||
+    !validProductIds(input.changes) ||
     !UUID.test(input.idempotencyKey)
   ) {
     return { ok: false, code: "INVALID_INPUT" }

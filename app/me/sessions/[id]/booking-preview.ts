@@ -116,7 +116,8 @@ export function parsePreview(data: unknown): BookingPreview {
 }
 
 // The action next to a blocked reason: a WhatsApp contact where Tal can
-// still help (closed, no matching entry), otherwise back to all sessions.
+// still help (closed, no matching entry), otherwise back to all sessions
+// (PRODUCT_NOT_VALID_FOR_EVENT included, story 3.18).
 export function blockedAction(code: ErrorCode): "contact" | "all-sessions" {
   return code === "REGISTRATION_CLOSED" || code === "NO_MATCHING_ENTITLEMENT"
     ? "contact"

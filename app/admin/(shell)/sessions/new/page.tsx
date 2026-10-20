@@ -7,6 +7,7 @@ import { shellCopy } from "@/lib/copy/shell"
 import { createClient } from "@/lib/supabase/server"
 import { formatClockTime } from "@/lib/time"
 
+import { loadProductChoices } from "../product-choices"
 import type { ConceptOption } from "../session-draft"
 import { SessionCreateForm } from "./session-create-form"
 
@@ -33,7 +34,7 @@ export default function NewSessionPage() {
 
 async function NewSessionContent() {
   const supabase = await createClient()
-  const [concepts, settings] = await Promise.all([
+  const [concepts, settings, products] = await Promise.all([
     supabase
       .from("concepts")
       .select("id, name, description, default_kind")
@@ -49,12 +50,15 @@ async function NewSessionContent() {
         "default_capacity_regular, default_capacity_couple, default_session_start_time, default_session_end_time, registration_close_days_before, registration_close_local_time"
       )
       .maybeSingle(),
+    // Story 3.18: the products the "valid products" field offers.
+    loadProductChoices(supabase),
   ])
   if (concepts.error) throw new Error("concepts read failed")
   const options = concepts.data.map((row) => row as ConceptOption)
   return (
     <SessionCreateForm
       concepts={options}
+      products={products}
       capacityDefaults={
         settings.data
           ? {

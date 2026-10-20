@@ -18,6 +18,13 @@ describe("Tal's move (story 3.10)", () => {
     }
   })
 
+  it("story 3.18: an excluded product is worded for Tal", () => {
+    expect(MOVE_REFUSAL_CODES).toContain("PRODUCT_NOT_VALID_FOR_EVENT")
+    expect(moveRefusal("PRODUCT_NOT_VALID_FOR_EVENT")).toBe(
+      "המפגש הזה לא מקבל את המוצר שלה."
+    )
+  })
+
   it("any other code keeps the shared message", () => {
     expect(moveRefusal("SERVER_ERROR")).toBe(ERROR_MESSAGES.SERVER_ERROR)
   })

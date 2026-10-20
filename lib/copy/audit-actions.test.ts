@@ -310,6 +310,27 @@ describe("result sentences", () => {
     ).toBe("הוסרה חלופת זיכוי אחת")
   })
 
+  it("story 3.18: a session's product set, by name, or all", () => {
+    for (const action of ["admin_create_event", "admin_duplicate_event"]) {
+      expect(
+        result({
+          action,
+          entity_type: "event_products",
+          changes: [
+            { key: "product_names", before: [], after: ["בראנץ׳ חג", "רגיל"] },
+          ],
+        })
+      ).toBe("המוצרים התקפים: בראנץ׳ חג, רגיל")
+    }
+    expect(
+      result({
+        action: "admin_update_event",
+        entity_type: "event_products",
+        changes: [{ key: "product_names", before: ["בראנץ׳ חג"], after: [] }],
+      })
+    ).toBe("המוצרים התקפים: כל המוצרים המתאימים (קודם: בראנץ׳ חג)")
+  })
+
   it("customers: a link, an account change, an export, a consent", () => {
     expect(
       result({
