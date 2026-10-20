@@ -1913,6 +1913,14 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_anonymize_customer: {
+        Args: {
+          p_confirmed: boolean
+          p_customer_id: string
+          p_idempotency_key: string
+        }
+        Returns: Json
+      }
       admin_approve_payment: {
         Args: {
           p_amount_agorot: number
@@ -2087,6 +2095,10 @@ export type Database = {
           p_query: string
           p_scope: string
         }
+        Returns: Json
+      }
+      admin_finish_anonymize_customer: {
+        Args: { p_customer_id: string; p_idempotency_key: string }
         Returns: Json
       }
       admin_finish_email_change: {
@@ -2438,6 +2450,10 @@ export type Database = {
           p_idempotency_key: string
           p_target_event_id: string
         }
+        Returns: Json
+      }
+      preview_admin_anonymize_customer: {
+        Args: { p_customer_id: string }
         Returns: Json
       }
       preview_admin_approve_payment: {

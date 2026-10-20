@@ -114,6 +114,7 @@
   target: הסרת פרטים (`admin_anonymize_customer`)
   summary: כשלקוחה מוסרת, קישורי `join` שלה במצב `awaiting_login` צריכים לעבור ל-`conflict` (או לבוטל) באותה עסקה. אחרת אף אחת לא יכולה לשייך אותם, ו-`claim_join` מחזיר `NOT_AUTHORIZED` ("חשבון אחר") עד התפוגה.
   evidence: היום אין RPC שמסיר פרטים, ולכן זה לא קורה. ביקורת 2.3, edge-case 6 ו-blind-hunter.
+  status: נסגר ב-4.6 (2026-10-20): ‏`admin_anonymize_customer` מעביר קישור `join` של הלקוחה במצב `awaiting_login` ל-`conflict` (`bind_conflict`, מופיע ב"לטיפול"), ומבטל את שאר הקישורים החיים שלה. נבדק ב-test:db ‏(2026-10-21).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-4-link-lifecycle-and-mid-join-recovery.md`
   target: 2.6
@@ -129,11 +130,13 @@
   target: הסרת פרטים (`admin_anonymize_customer`)
   summary: תשלום של לקוחה שפרטיה הוסרו: `admin_list_payments` מחזיר את `full_name` בלי בדיקת `anonymized_at` (וכותרת ריקה אם השם ריק), ו-`private.similar_payments` מחזיר null שמוצג באזהרת הכפילות כ"לקוחה חדשה". הסיפור שמסיר פרטים מחליט על נוסח ("לקוחה אנונימית", EXPERIENCE) ומיישר את שתי הפונקציות.
   evidence: ביקורת 2.5, ממצא 8. היום אין RPC שקובע `anonymized_at`, ולכן זה לא קורה.
+  status: נסגר ב-4.6 (2026-10-20): ‏`private.similar_payments_for` מחזיר "לקוחה שפרטיה הוסרו" (נוסח מסמך המקור, לא "לקוחה אנונימית"), ו-`admin_list_payments` מציג את אותו שם, כי ההסרה כותבת אותו ל-`full_name`. נבדק ב-test:db ‏(2026-10-21).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-5-repeat-purchase-and-amount-override.md`
   target: הסרת פרטים (`admin_anonymize_customer`)
   summary: הסרת פרטים מנקה גם את `payments.payer_label` ("שם לזיהוי") בכל התשלומים של הלקוחה.
   evidence: שם פרטי הוא מידע מזהה (AD-19); העמודה נוספה ב-2.5 אחרי הביקורת.
+  status: נסגר ב-4.6 (2026-10-20): ההסרה מאפסת את `payments.payer_label` ואת `payments.note` בכל התשלומים של הלקוחה, וגם בתשלום שממתין לקישור ההצטרפות שלה. נבדק ב-test:db ‏(2026-10-21).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-6-product-catalog-admin.md`
   target: 5.20 (במקום 2.11, החלטת המשתמשת 2026-10-10)
@@ -402,6 +405,7 @@
   target: הסרת פרטים (`admin_anonymize_customer`) או כל RPC שנועל פרופיל ואז משנה תינוקות קיימים
   summary: ‏`private.babies_guard` נועל את שורת התינוק ואחריה את הפרופיל (ב-update וב-delete), בעוד ש-`join_complete` ו-`set_photo_consent` נועלים קודם את הפרופיל. RPC עתידי שינעל פרופיל ואז ימחק או יעדכן תינוקות קיימים עלול להיתקע (deadlock) מול מחיקה של הלקוחה. RPC כזה צריך לנעול את התינוקות לפני הפרופיל, או שה-guard ישתנה.
   evidence: ביקורת 2.10 (blind). היום אין פונקציה כזו (unverified, medium אם תיווצר).
+  status: נסגר ב-4.6 (2026-10-20): ‏`admin_anonymize_customer` נועל את התינוקות לפני הפרופיל, ומחיקה של אדמין לא נכנסת לנעילת הפרופיל של `babies_guard` ול-`LAST_BABY`. נבדק ב-test:db ‏(2026-10-21).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-self-cancel-and-admin-cancel.md`
   summary: ‏`supabase/tests/admin-booking.test.ts` יוצר מפגש בעוד 3 ימים עם כרטיסייה מ-`seedMoney` שתקפה רק בשני ובחמישי, ולכן 4 בדיקות נכשלות ב-`NO_MATCHING_ENTITLEMENT` ברוב ימי השבוע.
@@ -479,6 +483,7 @@
   target: 4.6
   summary: ‏`admin_anonymize_customer` (הסרת פרטים) מוחק גם את המנויים של הלקוחה ב-`push_subscriptions` (ואיתם `notification_deliveries`, ב-cascade), באותה עסקה. מחיקת המשתמשת ב-Auth כבר מוחקת אותם (`on delete cascade`).
   evidence: ‏spec 5.8 (Always, ‏`push_subscriptions`): ההרחבה של הסרת הפרטים נשארת ל-4.6.
+  status: נסגר ב-4.6 (2026-10-20): ההסרה מוחקת את `push_subscriptions` של הלקוחה (ואיתם `notification_deliveries`) באותה עסקה. נבדק ב-test:db ‏(2026-10-21).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-8-push-pipeline-and-permission.md`
   target: 5.21 (לא נבנה בסבב העיצוב; החלטת המשתמשת 2026-10-10)
@@ -506,11 +511,13 @@
   target: 4.6
   summary: הסרת פרטים (`admin_anonymize_customer`) מבטלת את ההרשמות העתידיות של הלקוחה, או ש-`private.job_reminders` מדלג על פרופיל עם `anonymized_at`; אחרת לקוחה שפרטיה הוסרו תקבל תזכורת חדשה אחרי הניקוי.
   evidence: ביקורת 5.17 (edge-case-hunter). ‏`job_reminders` בודק רק `customer_id is not null`; ‏`profiles.anonymized_at` קיים, אבל אין עדיין זרימה שקובעת אותו.
+  status: נסגר ב-4.6 (2026-10-20): הרשמה עתידית חוסמת את ההסרה, ו-`private.job_reminders` מדלג על פרופיל עם `anonymized_at`, וגם `private.enqueue_notification` לא יוצר התראה ללקוחה שפרטיה הוסרו. נבדק ב-test:db ‏(2026-10-21).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-13-two-photo-consents.md`
   target: 4.6
   summary: הסרת פרטים (`admin_anonymize_customer`) מאפסת את שתי ההסכמות לתמונות, גם את `personal_photo_consent`, ‏`_at` ו-`_text_version` שנוספו ב-2.13, ולא רק את `photo_consent*`.
   evidence: ביקורת 2.13 (blind-hunter). עוד אין פונקציית הסרה. בלי זה, לקוחה שפרטיה הוסרו נשארת "אישרה תמונות אישיות".
+  status: נסגר ב-4.6 (2026-10-20): ההסרה מאפסת את שתי ההסכמות לתמונות, כולל `_at` ו-`_text_version`. נבדק ב-test:db ‏(2026-10-21).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-design-testimonials-carousel.md`
   target: לא נבנה (החלטת המשתמשת 2026-10-10)
@@ -599,6 +606,7 @@
   target: 4.6
   summary: `admin_issue_link('reset')` does not refuse a profile in `anonymization_pending`; 4.6 must add it (email and phone change already refuse it).
   evidence: 2.8 review (edge-case-hunter). The state is unreachable until 4.6 writes it.
+  status: Closed in 4.6 (2026-10-20): the reset branch of `admin_issue_link` refuses `anonymization_pending` (`RESET_TARGET_INVALID`). Verified in test:db (2026-10-21).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-8-admin-assisted-reset-and-rate-limit.md`
   summary: AGENTS.md line on 2.8 says a phone change in auth.users is blocked "unless started by admin_begin_email_change" (it is always blocked), and does not mention the SQL Editor switch `set local app.allow_auth_identity_change = 'on'` for an admin's own email.
@@ -643,6 +651,7 @@
   target: 4.6
   summary: `admin_anonymize_customer` deletes the customer's `waitlist_entries` in the same transaction.
   evidence: spec 5.6 (Tasks). `waitlist_entries.customer_id` is `on delete restrict`; Tal's list shows "פרטי הלקוחה הוסרו" for an entry whose profile was anonymized until then.
+  status: Closed in 4.6 (2026-10-20): `admin_anonymize_customer` deletes her `waitlist_entries` in the same transaction. Verified in test:db (2026-10-21).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-6-waitlist.md`
   target: 5.20
@@ -673,3 +682,7 @@
   target: 5.20
   summary: ‏`private.plan_admin_cancel_event` (רשימת בעלות הכרטיסייה שבסיכון בביטול מפגש) מחפשת מפגש אחר לפני התפוגה לפי סוג, יום ותאריכים, בלי `private.event_accepts_product`. בעלת כרטיסייה שהמפגשים שנשארו לה לא מקבלים את המוצר שלה לא מופיעה באזהרה.
   evidence: ביקורת 3.18 (edge-case-hunter). הפונקציה מ-`20261013162639_business_cancel_event.sql` לא הוגדרה מחדש ב-3.18.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-4-6-remove-personal-details.md`
+  summary: When a removed customer had a join token in `claiming` whose `pending_user_id` is an Auth user other than her own, step 1 revokes the token but nothing deletes that orphan Auth user (it may hold an email or phone).
+  evidence: 4.6 review (edge-case), maybe-false, medium if true. Settle by checking `join_begin`/`claim_join`: can a token where she is `customer_id` or `bound_user_id` carry a different `pending_user_id` while claiming, and does `private.revoke_join_token` already clean it.
