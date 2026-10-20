@@ -192,3 +192,41 @@ describe("isFull", () => {
     expect(isFull(details)).toBe(expected)
   })
 })
+
+// Story 5.6: the session's waitlist.
+describe("parseEventDetails: the waitlist", () => {
+  it("maps the waiting customers in order; no name after removal; no list: empty", () => {
+    const details = parseEventDetails({
+      ...RAW,
+      waitlist: [
+        {
+          customer_id: "c7",
+          customer_label: " Noa ",
+          joined_at: "2026-10-05T09:15:00Z",
+          notified: true,
+        },
+        {
+          customer_id: "c8",
+          customer_label: null,
+          joined_at: "2026-10-06T09:15:00Z",
+          notified: false,
+        },
+      ],
+    })
+    expect(details.waitlist).toEqual([
+      {
+        customerId: "c7",
+        name: "Noa",
+        joinedAt: "2026-10-05T09:15:00Z",
+        notified: true,
+      },
+      {
+        customerId: "c8",
+        name: null,
+        joinedAt: "2026-10-06T09:15:00Z",
+        notified: false,
+      },
+    ])
+    expect(parseEventDetails(RAW).waitlist).toEqual([])
+  })
+})

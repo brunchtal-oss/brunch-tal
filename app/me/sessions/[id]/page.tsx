@@ -10,6 +10,7 @@ import { customerCopy } from "@/lib/copy/customer"
 import { shellCopy } from "@/lib/copy/shell"
 import { formatAgorot } from "@/lib/money"
 import { formatDayMonth } from "@/lib/time"
+import { cn } from "@/lib/utils"
 import { callRpc } from "@/lib/rpc"
 import { createClient } from "@/lib/supabase/server"
 
@@ -27,6 +28,8 @@ import {
 import { CompanionNote } from "./companion-note"
 import { MovedNotice } from "./moved-notice"
 import { parsePreview, type BookingPreview } from "./booking-preview"
+import { WaitlistPanel } from "./waitlist-panel"
+import { waitlistShowsFull, waitlistState } from "./waitlist-state"
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -67,7 +70,8 @@ async function SessionContent({
 }) {
   const { id } = await params
   // Story 3.10: arriving here after moving her booking to this session.
-  const { moved } = await searchParams
+  // Story 5.6: from=waitlist, arriving from a waitlist_spot notification.
+  const { moved, from } = await searchParams
   if (!UUID.test(id)) notFound()
   const supabase = await createClient()
   // RLS: a draft is never returned to a customer.
@@ -84,12 +88,14 @@ async function SessionContent({
 
   // Story 5.21 (fix 7): on a couple session her bookings are read with the
   // rest (the companion note); a regular session makes no call.
-  const [previewResult, availability, contactHref, coupleBookings] =
+  // Story 5.6: her active waitlist entry here (RLS: her own rows only).
+  const [previewResult, availability, contactHref, coupleBookings, waiting] =
     await Promise.all([
       callRpc(supabase, "preview_book_session", { p_event_id: id }),
       availabilityOf(supabase, [id]),
       getWhatsappHref(),
       coupleSessionBookings(supabase, session.kind),
+      isWaiting(supabase, id),
     ])
   const preview: BookingPreview = previewResult.ok
     ? parsePreview(previewResult.data)
@@ -107,6 +113,15 @@ async function SessionContent({
     booked: preview.kind === "booked",
     availability: availability.get(id),
   })
+
+  // Story 5.6: the waitlist under the booking panel; full = the preview says
+  // full and the waitlist panel shows it.
+  const waitlist = waitlistState({
+    preview,
+    waiting,
+    fromWaitlist: from === "waitlist",
+  })
+  const full = waitlistShowsFull(preview, waitlist)
 
   return (
     <>
@@ -132,14 +147,27 @@ async function SessionContent({
           arrived={moved === "1" && preview.kind === "booked"}
           message={customerCopy.move.done(formatDayMonth(session.starts_at))}
         />
-        <BookingPanel
-          eventId={session.id}
-          title={customerCopy.sessionTitle(session.concept_name)}
-          startsAt={session.starts_at}
-          preview={preview}
-          cancelWindowHours={cancelWindowHours}
-          contactHref={contactHref}
-        />
+        {/* Story 5.6: on a full session the waitlist panel says it is full
+            (with the link to all sessions), so the panel's own full notice
+            is not shown twice. */}
+        {!full && (
+          <BookingPanel
+            eventId={session.id}
+            title={customerCopy.sessionTitle(session.concept_name)}
+            startsAt={session.starts_at}
+            preview={preview}
+            cancelWindowHours={cancelWindowHours}
+            contactHref={contactHref}
+          />
+        )}
+        <div className={cn(!full && "mt-6", "empty:hidden")}>
+          <WaitlistPanel
+            eventId={session.id}
+            startsAt={session.starts_at}
+            state={waitlist}
+            full={full}
+          />
+        </div>
         {coupleBooking && (
           <div className="mt-6">
             <CompanionNote
@@ -172,4 +200,20 @@ async function cancelWindowOf(
   return typeof hours === "number" && Number.isInteger(hours) && hours > 0
     ? hours
     : null
+}
+
+// Story 5.6: whether she has an active waitlist entry for the session.
+async function isWaiting(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  eventId: string
+): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("waitlist_entries")
+    .select("id")
+    .eq("event_id", eventId)
+    .eq("status", "active")
+    .limit(1)
+    .maybeSingle()
+  if (error) throw new Error("waitlist read failed")
+  return data !== null
 }

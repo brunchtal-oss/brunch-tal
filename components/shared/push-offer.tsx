@@ -14,9 +14,15 @@ import { PushCard } from "./push-card"
 export function PushOffer({
   register,
   unregister,
+  askText,
+  askWhenOff,
+  onChoice,
 }: {
   register: (input: PushRegistration) => Promise<ActionResult>
   unregister: (endpoint: string) => Promise<ActionResult>
+  askText?: string
+  askWhenOff?: boolean
+  onChoice?: (choice: "enable" | "later") => void
 }) {
   return (
     <div data-push-offer="" className="pt-2">
@@ -24,6 +30,9 @@ export function PushOffer({
         surface="customer"
         register={register}
         unregister={unregister}
+        askText={askText}
+        askWhenOff={askWhenOff}
+        onChoice={onChoice}
       />
     </div>
   )

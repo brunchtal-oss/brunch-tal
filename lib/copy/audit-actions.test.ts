@@ -451,6 +451,17 @@ describe("result sentences", () => {
     ).toBeNull()
   })
 
+  it("the waitlist: joined or quit (story 5.6)", () => {
+    expect(
+      result({ action: "join_waitlist", entity_type: "waitlist_entries" })
+    ).toBe("נוספה לרשימת ההמתנה")
+    expect(
+      result({ action: "leave_waitlist", entity_type: "waitlist_entries" })
+    ).toBe("יצאה מרשימת ההמתנה")
+    expect(actions.join_waitlist).toBe("הצטרפות לרשימת המתנה")
+    expect(actions.leave_waitlist).toBe("יציאה מרשימת המתנה")
+  })
+
   it("a shown action without a result sentence shows its name only", () => {
     expect(
       result({ action: "admin_create_event", entity_type: "events" })

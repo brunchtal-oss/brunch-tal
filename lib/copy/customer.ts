@@ -311,4 +311,24 @@ export const customerCopy = {
   // EVENT_CANCELLED in lib/errors.ts.
   cancelledBooked: "היית רשומה למפגש הזה. הפרטים בהרשמות שלך",
   toMyBookings: "להרשמות שלי",
+  // The waitlist (story 5.6): on the session page (after the booking panel)
+  // and as a section of "ההרשמות שלי". No queue: the place goes to whoever
+  // books first.
+  waitlist: {
+    fullOffer:
+      "השולחן מלא הפעם. אפשר להצטרף לרשימת ההמתנה ונעדכן אם יתפנה מקום",
+    join: "להצטרף לרשימת ההמתנה",
+    chip: "ברשימת ההמתנה",
+    explain: "אם יתפנה מקום נשלח לך הודעה",
+    // The push offer under it, while push is not on and this device can
+    // still be asked, until she answers "לא עכשיו" to it.
+    pushAsk: "רוצה לקבל התראה לטלפון כשמתפנה מקום?",
+    leave: "לצאת מרשימת ההמתנה",
+    // Arriving from the waitlist_spot notification while still full.
+    taken: "המקום כבר נתפס. את עדיין ברשימת ההמתנה",
+    joined: "הצטרפת לרשימת ההמתנה",
+    left: (date: string) =>
+      `יצאת מרשימת ההמתנה למפגש ב־${date}. לא נשלח לך עדכון על המפגש הזה`,
+    sectionTitle: "רשימת ההמתנה",
+  },
 } as const

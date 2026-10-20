@@ -4,6 +4,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { customerCopy } from "@/lib/copy/customer"
 
 const callRpc = vi.fn()
+// Story 5.6: the device's connection, per test.
+const net = vi.hoisted(() => ({ online: true }))
+vi.mock("@/lib/use-online", () => ({ useOnline: () => net.online }))
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: async () => ({}) }))
 vi.mock("@/lib/rpc", () => ({
@@ -64,6 +67,7 @@ function answers(credits: unknown[]) {
 
 beforeEach(() => {
   callRpc.mockReset()
+  net.online = true
 })
 
 // Story 3.8: a business cancel waiting for her choice on /me/bookings.
@@ -155,5 +159,49 @@ describe("my bookings: a couple booking", () => {
     expect(html).not.toContain(customerCopy.companion.label)
     expect(html).not.toContain("צמחונית")
     expect(html).not.toContain('id="booking-b1"')
+  })
+})
+
+// Story 5.6: her waitlist entries, a section after the upcoming bookings.
+describe("my bookings: the waitlist", () => {
+  const ENTRY = {
+    event_id: "e7",
+    starts_at: "2026-12-14T07:30:00Z",
+    concept_name: "concept-w",
+    kind: "regular",
+    joined_at: "2026-12-01T07:30:00Z",
+  }
+
+  function withWaitlist(entries: unknown[]) {
+    callRpc.mockImplementation(async (_client: unknown, name: string) =>
+      name === "get_my_credits"
+        ? { ok: true, data: [] }
+        : name === "get_my_waitlist"
+          ? { ok: true, data: entries }
+          : { ok: true, data: { upcoming: [], past: [] } }
+    )
+  }
+
+  it("only a waitlist entry: its section with the pending chip and the leave, not the empty state", async () => {
+    withWaitlist([ENTRY])
+    const html = renderToStaticMarkup(await Bookings())
+    expect(html).toContain(customerCopy.waitlist.sectionTitle)
+    expect(html).toContain("concept-w")
+    expect(html).toContain(customerCopy.waitlist.chip)
+    expect(html).toContain(customerCopy.waitlist.leave)
+    expect(html).toContain('href="/me/sessions/e7"')
+    expect(html).not.toContain(customerCopy.bookingsEmpty)
+  })
+
+  it("offline: the leave is aria-disabled and described by the offline banner", async () => {
+    net.online = false
+    withWaitlist([ENTRY])
+    const html = renderToStaticMarkup(await Bookings())
+    const button = html.match(
+      new RegExp(`<button[^>]*>[^<]*${customerCopy.waitlist.leave}`)
+    )?.[0]
+    expect(button).toBeDefined()
+    expect(button).toContain('aria-disabled="true"')
+    expect(button).toContain("offline-hint")
   })
 })

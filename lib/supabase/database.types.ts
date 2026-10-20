@@ -1638,6 +1638,54 @@ export type Database = {
           },
         ]
       }
+      waitlist_entries: {
+        Row: {
+          closed_at: string | null
+          customer_id: string
+          event_id: string
+          id: string
+          joined_at: string
+          last_notified_cycle: number | null
+          party_size: number
+          status: string
+        }
+        Insert: {
+          closed_at?: string | null
+          customer_id: string
+          event_id: string
+          id?: string
+          joined_at?: string
+          last_notified_cycle?: number | null
+          party_size: number
+          status?: string
+        }
+        Update: {
+          closed_at?: string | null
+          customer_id?: string
+          event_id?: string
+          id?: string
+          joined_at?: string
+          last_notified_cycle?: number | null
+          party_size?: number
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "waitlist_entries_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "waitlist_entries_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       work_dishes: {
         Row: {
           created_at: string
@@ -2317,6 +2365,8 @@ export type Database = {
       get_my_credits: { Args: never; Returns: Json }
       get_my_entitlements: { Args: never; Returns: Json }
       get_my_session_role: { Args: never; Returns: string }
+      get_my_waitlist: { Args: never; Returns: Json }
+      get_taken_waitlist_spots: { Args: { p_ids: string[] }; Returns: string[] }
       issue_reset_token: { Args: { p_user_id: string }; Returns: Json }
       join_begin: {
         Args: {
@@ -2329,6 +2379,14 @@ export type Database = {
       }
       join_complete: {
         Args: { p_idempotency_key: string; p_profile: Json; p_token: string }
+        Returns: Json
+      }
+      join_waitlist: {
+        Args: { p_event_id: string; p_idempotency_key: string }
+        Returns: Json
+      }
+      leave_waitlist: {
+        Args: { p_event_id: string; p_idempotency_key: string }
         Returns: Json
       }
       mark_notifications_read: { Args: { p_ids?: string[] }; Returns: Json }
