@@ -548,6 +548,7 @@ describe("story 5.10: scheduled jobs and push", () => {
       expiry_alerts: "התראות על כרטיסיות וזיכויים שעומדים לפוג",
       auto_extend: "הארכה אוטומטית של כרטיסיות",
       cleanup: "מחיקת נתונים ישנים",
+      marketing_reminders: "תזכורות שיווק",
     }
     for (const [job, name] of Object.entries(names)) {
       expect(
@@ -558,10 +559,10 @@ describe("story 5.10: scheduled jobs and push", () => {
     expect(
       toAttentionItem({
         ...ROWS.job_failed,
-        id: "marketing_reminders",
-        job: "marketing_reminders",
+        id: "some_new_job",
+        job: "some_new_job",
       }).title
-    ).toBe("marketing_reminders: לא עבד בפעם האחרונה")
+    ).toBe("some_new_job: לא עבד בפעם האחרונה")
   })
 
   it("one stuck push reads in the singular", () => {

@@ -341,7 +341,30 @@ describe("admin_update_business_settings", { timeout: 30_000 }, () => {
     [{ cancel_window_hours: 1.5 }, "cancel_window_hours"],
     [{ cancel_window_hours: "24" }, "cancel_window_hours"],
     [{ version: 9 }, "version"],
-    [{ marketing_reminder_schedule: [] }, "marketing_reminder_schedule"],
+    // Story 5.11: the schedule's shape.
+    ...[
+      {},
+      "09:00",
+      [{ weekday: 7, time: "09:00" }],
+      [{ weekday: -1, time: "09:00" }],
+      [{ weekday: 1.5, time: "09:00" }],
+      [{ weekday: "0", time: "09:00" }],
+      [
+        { weekday: 0, time: "09:00" },
+        { weekday: 0, time: "20:00" },
+      ],
+      [{ weekday: 0, time: "9:00" }],
+      [{ weekday: 0, time: "24:00" }],
+      [{ weekday: 0, time: "09:60" }],
+      [{ weekday: 0, time: 900 }],
+      [{ weekday: 0 }],
+      [{ weekday: 0, time: "09:00", note: "x" }],
+      [null],
+      [0, 1, 2, 3, 4, 5, 6, 0].map((weekday) => ({ weekday, time: "09:00" })),
+    ].map((schedule): [Record<string, unknown>, string] => [
+      { marketing_reminder_schedule: schedule },
+      "marketing_reminder_schedule",
+    ]),
     [{ credit_options_count: 0 }, "credit_options_count"],
     [{ default_validity_days: 731 }, "default_validity_days"],
     [{ registration_close_days_before: 8 }, "registration_close_days_before"],
@@ -374,6 +397,39 @@ describe("admin_update_business_settings", { timeout: 30_000 }, () => {
         field,
       })
       expect(await settingsVersion(db)).toBe(version)
+    })
+  })
+
+  it("saves the marketing schedule sorted by weekday; an empty one is accepted (story 5.11)", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const r = await updateSettings(db, f, {
+        marketing_reminder_schedule: [
+          { weekday: 6, time: "23:59" },
+          { weekday: 0, time: "00:00" },
+          { weekday: 3, time: "12:30" },
+        ],
+      })
+      expect(r.marketing_reminder_schedule).toEqual([
+        { weekday: 0, time: "00:00" },
+        { weekday: 3, time: "12:30" },
+        { weekday: 6, time: "23:59" },
+      ])
+      const audit = await auditRows(db, "admin_update_business_settings")
+      expect(audit.at(-1)).toMatchObject({
+        after: {
+          marketing_reminder_schedule: r.marketing_reminder_schedule,
+        },
+      })
+
+      const empty = await updateSettings(db, f, {
+        marketing_reminder_schedule: [],
+      })
+      expect(empty.marketing_reminder_schedule).toEqual([])
+      const { rows } = await db.query(
+        "select marketing_reminder_schedule from public.business_settings"
+      )
+      expect(rows[0].marketing_reminder_schedule).toEqual([])
     })
   })
 

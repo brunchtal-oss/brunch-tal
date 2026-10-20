@@ -1171,6 +1171,8 @@ describe("grants and schedules", { timeout: 30_000 }, () => {
       { jobname: "complete_events", every: "00:05:00", scheduled: true },
       { jobname: "expiry_alerts", every: "01:00:00", scheduled: true },
       { jobname: "invoke_push_worker", every: "00:01:00", scheduled: true },
+      // Story 5.11.
+      { jobname: "marketing_reminders", every: "00:05:00", scheduled: true },
       { jobname: "refresh_credit_options", every: "00:15:00", scheduled: true },
       { jobname: "reminders", every: "00:01:00", scheduled: true },
     ])

@@ -375,6 +375,16 @@ export const SHOWN_AUDIT_ACTIONS: Record<string, readonly AuditRule[]> = {
   admin_update_notification_template: [
     { entity: "notification_templates", edit: true },
   ],
+  // Story 5.11: Tal's marketing reminder texts.
+  admin_add_marketing_reminder_text: [
+    {
+      entity: "marketing_reminder_texts",
+      result: () => results.marketingTextAdded,
+    },
+  ],
+  admin_update_marketing_reminder_text: [
+    { entity: "marketing_reminder_texts", edit: true },
+  ],
   admin_publish_content: [{ entity: "content_sections" }],
   admin_create_concept: [{ entity: "concepts" }],
   admin_update_concept: [{ entity: "concepts", edit: true }],

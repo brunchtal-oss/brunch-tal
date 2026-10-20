@@ -18,6 +18,7 @@ import {
   isChangedField,
   isTechnicalKey,
   parseAuditParams,
+  scheduleText,
   toAuditItem,
   toAuditView,
   changedFields,
@@ -158,6 +159,21 @@ describe("labels", () => {
 })
 
 describe("formatValue", () => {
+  it("the marketing schedule as day letters and times (story 5.11)", () => {
+    expect(
+      formatValue("marketing_reminder_schedule", [
+        { weekday: 0, time: "09:00" },
+        { weekday: 1, time: "20:00" },
+      ])
+    ).toBe("א׳ 09:00, ב׳ 20:00")
+    expect(formatValue("marketing_reminder_schedule", [])).toBe(copy.none)
+    // Not a schedule: null, and formatValue falls back to the values.
+    expect(scheduleText([{ weekday: 7, time: "09:00" }])).toBeNull()
+    expect(scheduleText("09:00")).toBeNull()
+    expect(fieldLabel("marketing_reminder_schedule")).toBe("לוח תזכורות השיווק")
+    expect(fieldLabel("last_sent_at")).toBe("נשלח לאחרונה")
+  })
+
   it("masked, booleans, null", () => {
     expect(formatValue("full_name", "<changed>")).toBe(copy.masked)
     expect(formatValue("done", true)).toBe("כן")

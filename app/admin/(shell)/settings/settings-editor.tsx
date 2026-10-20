@@ -34,6 +34,7 @@ const copy = adminCopy.settings
 export const BUSINESS_DETAILS_HREF = "/admin/content/contact"
 export const TERMS_HREF = "/admin/content/terms"
 export const TEMPLATES_HREF = "/admin/settings/templates"
+export const MARKETING_HREF = "/admin/settings/marketing"
 
 // The draft values behind each row (for its "cancel").
 function draftKeys(field: EditorField): readonly (keyof SettingsDraft)[] {
@@ -65,9 +66,10 @@ export function scopeOf(field: EditorField): React.ReactNode {
 // The settings screen (story 4.7): the defaults in groups, each value in
 // its own value-change-row ("old ← new", no checkbox, user decision
 // 2026-10-06), saved alone with the version this page read; the business
-// details and the templates are links. The saved values come from the
-// server after each save (router.refresh in the row); a failure leaves them
-// as they were and shows its message in the row.
+// details, the templates and the marketing reminders (story 5.11) are
+// links. The saved values come from the server after each save
+// (router.refresh in the row); a failure leaves them as they were and shows
+// its message in the row.
 export function SettingsEditor({ row }: { row: SettingsRow }) {
   const [draft, setDraft] = useState<SettingsDraft>(() => draftFromRow(row))
   const update = (patch: Partial<SettingsDraft>) =>
@@ -224,6 +226,14 @@ export function SettingsEditor({ row }: { row: SettingsRow }) {
         href={TEMPLATES_HREF}
         label={copy.templatesLink}
         note={copy.templatesNote}
+      />
+
+      <LinkGroup
+        id="settings-marketing"
+        title={copy.groups.marketing}
+        href={MARKETING_HREF}
+        label={copy.marketingLink}
+        note={copy.marketingNote}
       />
     </div>
   )
