@@ -81,6 +81,9 @@ const NOT_BEFORE_BIND = [
   // Tal's internal notes on a customer's card (story 4.2): written only
   // for a profile that exists (admin_add_customer_note locks it).
   "customer_notes",
+  // Story 5.6: join_waitlist derives the customer from the caller; a
+  // purchase bound later only ends her entry (private.bind_purchase).
+  "waitlist_entries",
 ]
 
 const CUSTOMER_TABLES = `

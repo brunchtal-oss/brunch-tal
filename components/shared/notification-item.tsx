@@ -79,6 +79,16 @@ export function NotificationItem({
             {item.body}
           </span>
         )}
+        {item.spotTaken && (
+          <span
+            className={cn(
+              "text-[15px] leading-normal font-semibold text-pretty",
+              emphasis && "ps-4"
+            )}
+          >
+            {copy.spotTaken}
+          </span>
+        )}
         <time
           dateTime={item.createdAt}
           // Server and browser may straddle midnight ("היום" / "אתמול").

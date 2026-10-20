@@ -5,6 +5,7 @@ import {
   platformOf,
   pushStateOf,
   shouldOffer,
+  shouldOfferOnWaitlist,
   urlBase64ToUint8Array,
   type PushEnv,
 } from "./client"
@@ -110,6 +111,38 @@ describe("shouldOffer", () => {
     expect(shouldOffer("ask", null)).toBe(false)
     expect(
       shouldOffer("ask", {
+        getItem: () => {
+          throw new Error("blocked")
+        },
+      })
+    ).toBe(false)
+  })
+})
+
+describe("shouldOfferOnWaitlist (story 5.6)", () => {
+  const storage = (value: string | null) => ({ getItem: () => value })
+
+  it("asks while 'ask' or 'off' (also after 'לא עכשיו' in the center)", () => {
+    expect(shouldOfferOnWaitlist("ask", storage(null))).toBe(true)
+    expect(shouldOfferOnWaitlist("off", storage(null))).toBe(true)
+  })
+
+  it("never again after 'לא עכשיו' to this offer", () => {
+    expect(shouldOfferOnWaitlist("ask", storage("1"))).toBe(false)
+    expect(shouldOfferOnWaitlist("off", storage("1"))).toBe(false)
+  })
+
+  it.each(["denied", "unsupported", "ios-install", "on"] as const)(
+    "never when the device is %s",
+    (state) => {
+      expect(shouldOfferOnWaitlist(state, storage(null))).toBe(false)
+    }
+  )
+
+  it("storage that is missing or throws: no offer", () => {
+    expect(shouldOfferOnWaitlist("ask", null)).toBe(false)
+    expect(
+      shouldOfferOnWaitlist("ask", {
         getItem: () => {
           throw new Error("blocked")
         },

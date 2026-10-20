@@ -149,6 +149,23 @@ describe("NotificationItem", () => {
     expect(html).not.toContain("bg-brand-accent")
     expect(html).toContain(`aria-label="${copy.markUnread}"`)
   })
+
+  it("a waitlist_spot whose place was taken says so inside the link (story 5.6)", () => {
+    const taken = renderToStaticMarkup(
+      <NotificationItem
+        item={item({ spotTaken: true })}
+        href="/me/bookings"
+        now={NOW}
+      />
+    )
+    const link = taken.slice(taken.indexOf("<a "), taken.indexOf("</a>"))
+    expect(link).toContain(copy.spotTaken)
+    expect(
+      renderToStaticMarkup(
+        <NotificationItem item={item()} href="/me/bookings" now={NOW} />
+      )
+    ).not.toContain(copy.spotTaken)
+  })
 })
 
 describe("NotificationList", () => {

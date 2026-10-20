@@ -904,3 +904,171 @@ describe(
     })
   }
 )
+
+// Story 5.6: a waitlist_spot job is checked again before it is sent
+// (AD-12): the place is still free, the session still open and in the same
+// cycle, and she still waits. Otherwise skipped, and the in-app
+// notification stays.
+describe("waitlist_spot recheck", { timeout: 30_000 }, () => {
+  // As the owner: a published session (default regular, capacity 1, cycle
+  // 1), A's active entry, and the waitlist_spot of cycle 1 for its party
+  // size (dedupe key event:size:cycle) with its job.
+  async function waitlistJob(
+    db: Db,
+    f: Fixture,
+    {
+      couple = false,
+      capacity = 1,
+    }: { couple?: boolean; capacity?: number } = {}
+  ): Promise<{ job: string; eventId: string }> {
+    const size = couple ? 2 : 1
+    const { rows: events } = await db.query(
+      `insert into public.events (
+         concept_id, kind, starts_at, ends_at, capacity_adults,
+         registration_closes_at, registration_close_overridden, status,
+         waitlist_cycle)
+       select c.id, $1, now() + interval '3 days',
+         now() + interval '3 days 2 hours', $2, now() + interval '2 days',
+         true, 'published', 1
+       from public.concepts c where c.theme_key = $3 limit 1
+       returning id`,
+      [couple ? "couple" : "regular", capacity, couple ? "grandma" : "mothers"]
+    )
+    const eventId = events[0].id as string
+    await db.query(
+      `insert into public.waitlist_entries (customer_id, event_id, party_size, last_notified_cycle)
+       values ($1, $2, $3, 1)`,
+      [f.a, eventId, size]
+    )
+    const { rows } = await db.query(
+      `select private.enqueue_notification(
+         $1, 'waitlist_spot', $2 || ':' || $3 || ':1', '{"date": "12.10"}'::jsonb,
+         '/me/sessions/' || $2 || '?from=waitlist') as id`,
+      [f.a, eventId, String(size)]
+    )
+    const { rows: jobs } = await db.query(
+      "select id from public.notification_jobs where notification_id = $1",
+      [rows[0].id]
+    )
+    return { job: jobs[0].id, eventId }
+  }
+
+  async function expectSkipped(db: Db, job: string): Promise<void> {
+    await isolate(db, [job])
+    expect(mine(await claim(db), [job])).toEqual([])
+    expect(await jobOf(db, job)).toMatchObject({
+      status: "skipped",
+      finished: true,
+    })
+    const { rows } = await db.query(
+      `select count(*)::int as n from public.notifications
+       where id = (select notification_id from public.notification_jobs where id = $1)`,
+      [job]
+    )
+    expect(rows[0].n).toBe(1)
+  }
+
+  it("still current: returned with its target", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      await addSub(db, f.a, "w1")
+      const { job, eventId } = await waitlistJob(db, f)
+      await isolate(db, [job])
+      const claimed = mine(await claim(db), [job])
+      expect(claimed).toHaveLength(1)
+      expect(claimed[0].target_path).toBe(
+        `/me/sessions/${eventId}?from=waitlist`
+      )
+    })
+  })
+
+  it("claimed twice: a returned job is not returned again", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      await addSub(db, f.a, "w1")
+      const { job } = await waitlistJob(db, f)
+      await isolate(db, [job])
+      expect(mine(await claim(db), [job])).toHaveLength(1)
+      expect(mine(await claim(db), [job])).toEqual([])
+    })
+  })
+
+  it("couple (event:2:cycle): one place free -> skipped; two free -> returned", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      await addSub(db, f.a, "w1")
+      // Capacity 3 with one couple booking: one place free.
+      const one = await waitlistJob(db, f, { couple: true, capacity: 3 })
+      await db.query(
+        `insert into public.bookings (
+           customer_id, event_id, party_size, booked_by, policy_snapshot)
+         values ($1, $2, 2, 'admin',
+           '{"cancel_window_hours": 48, "reminder_lead_hours": 24}'::jsonb)`,
+        [f.b, one.eventId]
+      )
+      await expectSkipped(db, one.job)
+
+      // Capacity 4 with no booking: two places free.
+      const two = await waitlistJob(db, f, { couple: true, capacity: 4 })
+      await isolate(db, [two.job])
+      expect(mine(await claim(db), [two.job])).toHaveLength(1)
+    })
+  })
+
+  it("the place was taken -> skipped", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      await addSub(db, f.a, "w1")
+      const { job, eventId } = await waitlistJob(db, f)
+      await db.query(
+        `insert into public.bookings (
+           customer_id, event_id, party_size, booked_by, policy_snapshot)
+         values ($1, $2, 1, 'admin',
+           '{"cancel_window_hours": 48, "reminder_lead_hours": 24}'::jsonb)`,
+        [f.b, eventId]
+      )
+      await expectSkipped(db, job)
+    })
+  })
+
+  it("she is off the list (quit or booked) -> skipped", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      await addSub(db, f.a, "w1")
+      const { job, eventId } = await waitlistJob(db, f)
+      await db.query(
+        `update public.waitlist_entries set status = 'left', closed_at = now()
+         where event_id = $1`,
+        [eventId]
+      )
+      await expectSkipped(db, job)
+    })
+  })
+
+  it("an old cycle -> skipped", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      await addSub(db, f.a, "w1")
+      const { job, eventId } = await waitlistJob(db, f)
+      await db.query(
+        "update public.events set waitlist_cycle = 2 where id = $1",
+        [eventId]
+      )
+      await expectSkipped(db, job)
+    })
+  })
+
+  it("the registration closed -> skipped", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      await addSub(db, f.a, "w1")
+      const { job, eventId } = await waitlistJob(db, f)
+      await db.query(
+        `update public.events set registration_closes_at = now() - interval '1 minute'
+         where id = $1`,
+        [eventId]
+      )
+      await expectSkipped(db, job)
+    })
+  })
+})

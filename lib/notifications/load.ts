@@ -20,6 +20,7 @@ import {
 
 function toView(row: {
   id: string
+  type?: string
   payload: unknown
   target_path: string
   created_at: string
@@ -46,13 +47,31 @@ export async function loadNotifications(
   const supabase = await createClient()
   const { data, error } = await supabase
     .from("notifications")
-    .select("id, payload, target_path, created_at, read_at")
+    .select("id, type, payload, target_path, created_at, read_at")
     .eq("recipient_kind", surface)
     .order("created_at", { ascending: false })
     .order("id", { ascending: false })
     .limit(NOTIFICATION_LIST_LIMIT)
   if (error) throw new Error("notifications.load_failed")
-  return (data ?? []).map(toView)
+  const rows = data ?? []
+  const views = rows.map(toView)
+  // Story 5.6: her waitlist_spot notifications whose place was already
+  // taken say so. A failed check leaves the list as it is.
+  const spotIds = rows
+    .filter((row) => row.type === "waitlist_spot")
+    .map((row) => row.id)
+  if (surface !== "customer" || spotIds.length === 0) return views
+  const taken = await callRpc(supabase, "get_taken_waitlist_spots", {
+    p_ids: spotIds,
+  })
+  if (!taken.ok || !Array.isArray(taken.data)) {
+    console.error("notifications.spots_failed")
+    return views
+  }
+  const takenIds = new Set(taken.data)
+  return views.map((view) =>
+    takenIds.has(view.id) ? { ...view, spotTaken: true } : view
+  )
 }
 
 /**

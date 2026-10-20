@@ -191,6 +191,13 @@ export const SHOWN_AUDIT_ACTIONS: Record<string, readonly AuditRule[]> = {
   admin_cancel_booking: [{ entity: "bookings", result: cancelled }],
   move_booking: [{ entity: "bookings", insertOnly: true, result: moved }],
   admin_move_booking: [{ entity: "bookings", insertOnly: true, result: moved }],
+  // Story 5.6: she joined or left a session's waitlist.
+  join_waitlist: [
+    { entity: "waitlist_entries", result: () => results.waitlistJoined },
+  ],
+  leave_waitlist: [
+    { entity: "waitlist_entries", result: () => results.waitlistLeft },
+  ],
   choose_credit_outcome: [
     {
       entity: "cancellation_credits",

@@ -40,6 +40,15 @@ describe("PushCardView", () => {
     expect(html).not.toContain(copy.askCustomer)
   })
 
+  it("another context's ask line replaces the surface's (story 5.6)", () => {
+    const html = renderToStaticMarkup(
+      <PushCardView state="ask" surface="customer" askText="ask-here" />
+    )
+    expect(html).toContain("ask-here")
+    expect(html).not.toContain(copy.askCustomer)
+    expect(buttons(html)).toEqual([copy.enable, copy.later])
+  })
+
   it("on: one line and 'לכבות'", () => {
     const html = view("on")
     expect(html).toContain(copy.on)

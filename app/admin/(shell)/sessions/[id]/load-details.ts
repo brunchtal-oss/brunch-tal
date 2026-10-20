@@ -23,6 +23,24 @@ export type EventDetails = {
   capacity: number
   occupied: number
   attendees: Attendee[]
+  // Story 5.6: the active waitlist entries, by joining time.
+  waitlist: WaitlistRow[]
+}
+
+// One waiting customer: her name (null after her details were removed),
+// when she joined and whether she was sent a waitlist_spot.
+export type WaitlistRow = {
+  customerId: string
+  name: string | null
+  joinedAt: string
+  notified: boolean
+}
+
+type RawWaitlist = {
+  customer_id: string
+  customer_label?: string | null
+  joined_at: string
+  notified?: boolean
 }
 
 type RawBooking = {
@@ -53,6 +71,7 @@ type RawDetails = {
     occupied: number
   }
   bookings: RawBooking[]
+  waitlist?: RawWaitlist[]
 }
 
 // A blank text is not shown (DESIGN.md › attendee-row: an empty field shows
@@ -92,6 +111,12 @@ export function parseEventDetails(raw: unknown): EventDetails {
         name: baby.name,
         birthDate: baby.birth_date,
       })),
+    })),
+    waitlist: (data.waitlist ?? []).map((w) => ({
+      customerId: w.customer_id,
+      name: text(w.customer_label),
+      joinedAt: w.joined_at,
+      notified: w.notified === true,
     })),
   }
 }

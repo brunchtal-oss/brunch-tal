@@ -468,7 +468,7 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-4-7-business-settings-and-templates.md`
   summary: כל סיפור שמוסיף קורא ל-`enqueue_notification` (5.17 reminder, 5.6 waitlist_spot, 3.8 event_cancelled/event_changed, 3.13 entitlement_changed, 5.10 card_expiring/admin_card_expiring) מעביר את כל `allowed_vars` של הסוג, ומוסיף בדיקת מסד שעורכת את התבנית לכל השדות המותרים ומריצה את הזרימה האמיתית.
   evidence: ביקורת 4.7, ממצא 9 (medium, לא אומת). ‏`allowed_vars` של 9 הסוגים בלי קורא נקבע מראש. קורא שמעביר פחות שדות ייכשל ב-render בתוך העסקה ויבטל אותה.
-  status: ‏reminder בוצע ב-5.17 (‏`allowed_vars` = ‏`date`, ‏`time`, ‏`concept`, ובדיקת "כל השדות" ב-`session-reminders.test.ts`). ‏event_cancelled ו-event_changed בוצעו ב-3.8 (בדיקת "כל השדות" ב-`settings-and-templates.test.ts`, על התצוגה המקדימה ועל ההודעה). ‏entitlement_changed, ‏entitlement_units_changed ו-entitlement_terms_changed בוצעו ב-3.13 (‏`expires_on` ו-`units` בכל קריאה; בדיקת "כל השדות" ב-`settings-and-templates.test.ts` וב-`entitlement-corrections.test.ts`).
+  status: ‏reminder בוצע ב-5.17 (‏`allowed_vars` = ‏`date`, ‏`time`, ‏`concept`, ובדיקת "כל השדות" ב-`session-reminders.test.ts`). ‏event_cancelled ו-event_changed בוצעו ב-3.8 (בדיקת "כל השדות" ב-`settings-and-templates.test.ts`, על התצוגה המקדימה ועל ההודעה). ‏entitlement_changed, ‏entitlement_units_changed ו-entitlement_terms_changed בוצעו ב-3.13 (‏`expires_on` ו-`units` בכל קריאה; בדיקת "כל השדות" ב-`settings-and-templates.test.ts` וב-`entitlement-corrections.test.ts`). ‏waitlist_spot בוצע ב-5.6 (‏`date` בכל קריאה מ-`private.notify_waitlist`; בדיקת "כל השדות" עם ביטול אמיתי ב-`settings-and-templates.test.ts`).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-8-push-pipeline-and-permission.md`
   target: 4.6
@@ -625,3 +625,23 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-16-admin-credit-adjustments.md`
   summary: `supabase/tests/notifications.test.ts` "hold the approved seed" compares the whole template table with a SEED list that stopped at 18 templates, so it fails on every `test:db` run (the table has 20 before 3.16, 23 with 3.14 and 3.16).
   evidence: verification-gap review of 3.16; `settings-and-templates.test.ts` already counts 20+. Settle by updating the SEED list (or narrowing the test to the original 18 types) in the fixes round.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-6-waitlist.md`
+  target: 5.10
+  summary: `private.job_cleanup` sets the active `waitlist_entries` of sessions that started, were cancelled or completed to `closed` (`closed_at = now()`, `for update skip locked`).
+  evidence: spec 5.6 (Tasks). 5.10 was not merged when 5.6 was built, so `job_cleanup` does not exist yet; such entries are already hidden (`get_my_waitlist` and `notify_waitlist` check the session's status and close time; `admin_cancel_event` closes them).
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-6-waitlist.md`
+  target: 4.6
+  summary: `admin_anonymize_customer` deletes the customer's `waitlist_entries` in the same transaction.
+  evidence: spec 5.6 (Tasks). `waitlist_entries.customer_id` is `on delete restrict`; Tal's list shows "פרטי הלקוחה הוסרו" for an entry whose profile was anonymized until then.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-6-waitlist.md`
+  target: 5.20
+  summary: Reopening registration (`admin_update_event` moving `registration_closes_local` later) on a session with free places and active waiters sends no `waitlist_spot`; only a capacity raise or a cancel triggers `notify_waitlist`.
+  evidence: review of 5.6 (blind hunter, edge-case hunter). A place freed after the close is skipped by `notify_waitlist`, and reopening is not a release. Rare; settle by calling `notify_waitlist` with `p_free_before = 0` when the close moves from past to future.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-6-waitlist.md`
+  target: 5.20
+  summary: `app/me/sessions/[id]/page.tsx` has no render test, so its waitlist wiring (her entry, `?from=waitlist`, hiding the BookingPanel's full notice) is covered only by the helper tests and the phone check.
+  evidence: verification-gap review of 5.6. The page never had a test harness; `waitlistState` and `waitlistShowsFull` are tested.

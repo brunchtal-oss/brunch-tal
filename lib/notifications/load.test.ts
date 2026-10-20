@@ -146,6 +146,56 @@ describe("loadNotifications", () => {
   })
 })
 
+describe("loadNotifications: a taken waitlist spot (story 5.6)", () => {
+  const SPOT = "1f2b2c1e-1a2b-4c3d-9e8f-0a1b2c3d4e5f"
+  const rows = [
+    {
+      id: SPOT,
+      type: "waitlist_spot",
+      payload: { title: "t", body: "b" },
+      target_path: "/me/sessions/x?from=waitlist",
+      created_at: "2026-10-06T05:15:00Z",
+      read_at: null,
+    },
+    {
+      id: ID,
+      type: "booking_confirmed",
+      payload: { title: "t2", body: "b2" },
+      target_path: "/me",
+      created_at: "2026-10-06T05:10:00Z",
+      read_at: null,
+    },
+  ]
+
+  it("marks the spots get_taken_waitlist_spots returns", async () => {
+    useQuery({ data: rows, error: null })
+    callRpc.mockResolvedValue({ ok: true, data: [SPOT] })
+    const views = await loadNotifications("customer")
+    expect(callRpc).toHaveBeenCalledWith(
+      expect.objectContaining({ session: true }),
+      "get_taken_waitlist_spots",
+      { p_ids: [SPOT] }
+    )
+    expect(views[0].spotTaken).toBe(true)
+    expect(views[1].spotTaken).toBeUndefined()
+  })
+
+  it("a failed check leaves the list as it is; no call without a spot or for an admin", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {})
+    useQuery({ data: rows, error: null })
+    callRpc.mockResolvedValue({ ok: false, code: "SERVER_ERROR" })
+    const views = await loadNotifications("customer")
+    expect(views.every((v) => v.spotTaken === undefined)).toBe(true)
+
+    callRpc.mockReset()
+    useQuery({ data: [rows[1]], error: null })
+    await loadNotifications("customer")
+    useQuery({ data: rows, error: null })
+    await loadNotifications("admin")
+    expect(callRpc).not.toHaveBeenCalled()
+  })
+})
+
 describe("loadUnreadCount", () => {
   it("counts the surface's unread", async () => {
     const calls = useQuery({ count: 4, error: null })
