@@ -39,6 +39,16 @@ export type CapacityDefaults = Record<EventKind, number> | null
 // when the settings could not be read (the times then start empty).
 export type TimeDefaults = { start: string; end: string } | null
 
+// A product a session may name as eligible (story 3.18): an active one of
+// the session's kind, or a hidden one that is selected or still has an
+// active entitlement.
+export type ProductChoice = {
+  id: string
+  name: string
+  kind: EventKind
+  hidden: boolean
+}
+
 // A session's image (story 5.4), as image-upload-field edits it.
 export type SessionImage = {
   media_id: string
@@ -62,6 +72,9 @@ export type SessionRow = {
   status: EventStatus
   display_price_agorot: number | null
   image?: SessionImage | null
+  // The eligible products (story 3.18, event_products); empty or missing =
+  // every product that fits the session's kind.
+  product_ids?: readonly string[]
 }
 
 // Whether the image in the form differs from the saved one (story 5.4).
@@ -90,10 +103,19 @@ export type SessionDraft = {
   capacityText: string
   priceText: string
   closesLocal: string
+  // Story 3.18: the marked products (ids, sorted); empty = all that fit.
+  productIds: readonly string[]
 }
 
 export type DraftField =
-  "concept" | "date" | "startTime" | "endTime" | "capacity" | "price" | "closes"
+  | "concept"
+  | "date"
+  | "startTime"
+  | "endTime"
+  | "capacity"
+  | "price"
+  | "closes"
+  | "products"
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/
 const TIME = /^([01]\d|2[0-3]):[0-5]\d$/
@@ -138,7 +160,8 @@ export function capacityFor(kind: EventKind, defaults: CapacityDefaults) {
 
 // A new form for a concept: its kind and description, and the capacity of
 // that kind from the settings. The date, times, price and close typed so far
-// stay; a first form takes the default hours from the settings.
+// stay; a first form takes the default hours from the settings. The marked
+// products stay while the kind does (a product fits one kind only).
 export function draftForConcept(
   concept: ConceptOption,
   defaults: CapacityDefaults,
@@ -155,7 +178,50 @@ export function draftForConcept(
     kind: concept.default_kind,
     description: concept.description ?? "",
     capacityText: capacityFor(concept.default_kind, defaults),
+    productIds:
+      base && base.kind === concept.default_kind ? base.productIds : [],
   }
+}
+
+// The product checkboxes of a session of `kind` (story 3.18): its kind's
+// products, active ones and the hidden ones the loader kept, by name.
+export function productChoicesFor(
+  kind: EventKind,
+  products: readonly ProductChoice[]
+): ProductChoice[] {
+  return products
+    .filter((product) => product.kind === kind)
+    .sort(
+      (a, b) => a.name.localeCompare(b.name, "he") || (a.id < b.id ? -1 : 1)
+    )
+}
+
+// A product's label: a hidden one is suffixed " (לא נמכר)".
+export function productLabel(product: ProductChoice): string {
+  return product.hidden ? copy.productHidden(product.name) : product.name
+}
+
+// The value text of a product set: the names joined with ", " (in the
+// choices' order), or "כל המוצרים המתאימים" when none is marked.
+export function productsText(
+  ids: readonly string[],
+  products: readonly ProductChoice[]
+): string {
+  if (ids.length === 0) return copy.productsAll
+  const byId = new Map(products.map((p) => [p.id, p]))
+  return [...ids]
+    .map((id) => byId.get(id))
+    .filter((p): p is ProductChoice => p !== undefined)
+    .sort(
+      (a, b) => a.name.localeCompare(b.name, "he") || (a.id < b.id ? -1 : 1)
+    )
+    .map(productLabel)
+    .join(", ")
+}
+
+// A product set as it is sent and compared: distinct, sorted.
+export function normalizeProductIds(ids: readonly string[]): string[] {
+  return [...new Set(ids)].sort()
 }
 
 // The draft of a saved session (the editor's starting values).
@@ -173,6 +239,7 @@ export function draftFromRow(row: SessionRow): SessionDraft {
         ? ""
         : formatAgorotInput(row.display_price_agorot),
     closesLocal: localDateTime(row.registration_closes_at),
+    productIds: normalizeProductIds(row.product_ids ?? []),
   }
 }
 
@@ -207,6 +274,9 @@ export function fieldError(
     case "closes":
       if (draft.closesLocal === "") return "required"
       return LOCAL.test(draft.closesLocal) ? null : "invalid"
+    case "products":
+      // Any set, none included; the RPC checks each product's kind.
+      return null
   }
 }
 
@@ -258,6 +328,10 @@ export function createPayload(
     }
     event.registration_closes_local = draft.closesLocal
   }
+  // Story 3.18: sent only when some are marked (none = all that fit).
+  if (draft.productIds.length > 0) {
+    event.product_ids = normalizeProductIds(draft.productIds)
+  }
   if (publish) event.publish = true
   return { ok: true, event }
 }
@@ -279,6 +353,8 @@ export function draftFieldOf(field: string | undefined): DraftField | null {
       return "price"
     case "registration_closes_local":
       return "closes"
+    case "product_ids":
+      return "products"
     default:
       return null
   }
@@ -379,12 +455,14 @@ export type FieldChange = {
 } | null
 
 export type EditorField =
-  "when" | "kind" | "description" | "capacity" | "closes" | "price"
+  "when" | "kind" | "description" | "capacity" | "closes" | "price" | "products"
 
+// products: the choices that name the "products" row's values (story 3.18).
 export function fieldChange(
   field: EditorField,
   row: SessionRow,
-  draft: SessionDraft
+  draft: SessionDraft,
+  products: readonly ProductChoice[] = []
 ): FieldChange {
   const saved = draftFromRow(row)
   switch (field) {
@@ -458,6 +536,15 @@ export function fieldChange(
         from: priceText(row.display_price_agorot),
         to: priceText(next),
         changes: { display_price_agorot: next },
+      }
+    }
+    case "products": {
+      const next = normalizeProductIds(draft.productIds)
+      if (next.join(",") === saved.productIds.join(",")) return null
+      return {
+        from: productsText(saved.productIds, products),
+        to: productsText(next, products),
+        changes: { product_ids: next },
       }
     }
   }

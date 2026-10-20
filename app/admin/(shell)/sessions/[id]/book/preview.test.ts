@@ -95,6 +95,8 @@ describe("refusalAction", () => {
     ["EVENT_FULL", "capacity"],
     ["CUSTOMER_ALREADY_BOOKED", null],
     ["EVENT_ENDED", null],
+    // Story 3.18: no payment or capacity action helps.
+    ["PRODUCT_NOT_VALID_FOR_EVENT", null],
   ] as const)("%s -> %s", (code, expected) => {
     expect(refusalAction(code)).toBe(expected)
   })
@@ -106,6 +108,15 @@ describe("refusalMessage", () => {
       "ללקוחה אין זכות שמתאימה למפגש הזה"
     )
     expect(refusalMessage("EVENT_FULL")).not.toBe(errorMessage("EVENT_FULL"))
+  })
+
+  it("story 3.18: an excluded product is worded for Tal", () => {
+    expect(refusalMessage("PRODUCT_NOT_VALID_FOR_EVENT")).toBe(
+      "המפגש הזה לא מקבל את המוצר שלה."
+    )
+    expect(refusalMessage("PRODUCT_NOT_VALID_FOR_EVENT")).not.toBe(
+      errorMessage("PRODUCT_NOT_VALID_FOR_EVENT")
+    )
   })
 
   it("keeps errorMessage for a code already worded for Tal", () => {

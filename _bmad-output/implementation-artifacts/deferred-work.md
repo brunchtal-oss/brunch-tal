@@ -151,6 +151,7 @@
   target: 3.18 (החלטת המשתמשת 2026-10-10)
   summary: "מוצרים תקפים" למפגש (מקור §7): הטבלה `event_products`, שדה סימון במסך המפגש ובדיקה ב-`private.plan_funding` שמוצר שלא סומן לא מממן את המפגש. הבדיקה חלה רק על זכויות חדשות.
   evidence: data-model מגדיר את הטבלה, אבל אף סיפור לא בונה אותה, ו-AD-18 בוחר מימון רק לפי סוג, יום בשבוע והיכרות. נדחה בהחלטת המשתמשת 2026-10-04 (3.1, שאלה 1).
+  status: נבנה ב-3.18 (2026-10-20). ‏`event_products` והשדה "מוצרים תקפים" ביצירה ובעריכה של מפגש. בלי סימון, כל מוצר שמתאים לסוג המפגש תקף בו. בדיקה אחת, `private.event_accepts_product`, בכל מסלולי הזכאות: מימון, מוצר מוצמד, זיכויים, הזזה והארכה אוטומטית. חל רק על הרשמות חדשות.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-1-concepts-and-session-management.md`
   target: 3.2
@@ -312,6 +313,7 @@
   target: 3.18 (החלטת המשתמשת 2026-10-10)
   summary: מחיר ברירת מחדל ממחיר המוצר בעמוד המפגש הציבורי. ב-5.16 מוצג רק `display_price_agorot`, ובלעדיו אין שורת מחיר.
   evidence: החלטת המשתמשת 2026-10-05 (spec 5.16, Intent).
+  status: נסגר, הוחלט שלא לבנות (החלטת המשתמשת 2026-10-20, 3.18). אין מחיר ברירת מחדל: עמוד המפגש (הציבורי ובאזור האישי) מציג מחיר רק כשטל מזינה `display_price_agorot`, כמו היום.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-16-public-session-pages.md`
   target: 5.15
@@ -670,6 +672,16 @@
   target: 6.9
   summary: השהיית פרויקט Supabase חינמי אחרי 7 ימים בלי פעילות עוצרת את כל המשימות המתוזמנות (תזכורות, התראות תפוגה, הארכה אוטומטית, רענון זיכויים, פוש). לפי התיעוד pg_cron לא מובטח כמונע השהיה. להחליט לפני ההשקה (שדרוג או פתרון אחר).
   evidence: ‏spec 5.10 (Always, השהיית פרויקט Free); ‏ARCHITECTURE-SPINE › Deferred. נרשם גם ב-checklist של README.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-18-eligible-products.md`
+  target: 5.20
+  summary: מוצר שסומן כתקף במפגש ואחר כך שונה לו סוג המפגש (`eligible_event_kind` ב-`admin_update_product`) נשאר ב-`event_products` של המפגש. שכפול המפגש נכשל ב-`INVALID_INPUT` על `product_ids`, והעורך לא מציג את המוצר כדי שאפשר יהיה להוריד את הסימון. תיקון: לחסום שינוי סוג למוצר שמסומן במפגש, או לסנן לפי סוג בשכפול ולהציג בעורך מוצר מסומן מסוג אחר.
+  evidence: ביקורת 3.18 (blind-hunter, edge-case-hunter). ‏`save_event_products` בודק סוג, ו-`admin_update_product` מתיר שינוי סוג. נדיר: שינוי סוג של מוצר שכבר בשימוש.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-18-eligible-products.md`
+  target: 5.20
+  summary: ‏`private.plan_admin_cancel_event` (רשימת בעלות הכרטיסייה שבסיכון בביטול מפגש) מחפשת מפגש אחר לפני התפוגה לפי סוג, יום ותאריכים, בלי `private.event_accepts_product`. בעלת כרטיסייה שהמפגשים שנשארו לה לא מקבלים את המוצר שלה לא מופיעה באזהרה.
+  evidence: ביקורת 3.18 (edge-case-hunter). הפונקציה מ-`20261013162639_business_cancel_event.sql` לא הוגדרה מחדש ב-3.18.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-4-6-remove-personal-details.md`
   summary: When a removed customer had a join token in `claiming` whose `pending_user_id` is an Auth user other than her own, step 1 revokes the token but nothing deletes that orphan Auth user (it may hold an email or phone).

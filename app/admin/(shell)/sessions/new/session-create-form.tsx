@@ -18,8 +18,10 @@ import {
   draftFieldOf,
   draftForConcept,
   fieldError,
+  productChoicesFor,
   type CapacityDefaults,
   type ConceptOption,
+  type ProductChoice,
   type TimeDefaults,
   type DraftField,
   type SessionDraft,
@@ -27,6 +29,7 @@ import {
 } from "../session-draft"
 import {
   ConceptField,
+  ProductsField,
   SessionField,
   SessionImageField,
   WhenFields,
@@ -43,6 +46,7 @@ const FIELD_SELECTORS: Record<DraftField, string> = {
   capacity: "#capacity",
   price: "#price",
   closes: "#closes",
+  products: '#products [role="checkbox"]',
 }
 
 // The create form (story 3.1). The concept comes first: it sets the kind
@@ -58,17 +62,21 @@ const FIELD_SELECTORS: Record<DraftField, string> = {
 // key per session (AD-5); a success goes back to the list. Story 5.4: an
 // optional image, saved (published) right after the session is created; if
 // that fails the session exists, so the form goes to its editor, which says
-// the image was not saved and offers to save it again.
+// the image was not saved and offers to save it again. Story 3.18: the
+// eligible products of the concept's kind, none marked by default (= every
+// product that fits); a concept of another kind clears them.
 export function SessionCreateForm({
   concepts,
   capacityDefaults,
   timeDefaults,
   closeRule,
+  products = [],
 }: {
   concepts: readonly ConceptOption[]
   capacityDefaults: CapacityDefaults
   timeDefaults: TimeDefaults
   closeRule: { daysBefore: number; time: string } | null
+  products?: readonly ProductChoice[]
 }) {
   const router = useRouter()
   const [idempotencyKey, setIdempotencyKey] = useState(() =>
@@ -88,6 +96,7 @@ export function SessionCreateForm({
           capacityText: capacityFor("regular", capacityDefaults),
           priceText: "",
           closesLocal: "",
+          productIds: [],
         }
   )
   const [image, setImage] = useState<SessionImage | null>(null)
@@ -260,6 +269,14 @@ export function SessionCreateForm({
         problem={problem("price")}
         hint={copy.priceEmpty}
         maxLength={12}
+      />
+
+      <ProductsField
+        name="products"
+        choices={productChoicesFor(draft.kind, products)}
+        value={draft.productIds}
+        onChange={(productIds) => update({ productIds })}
+        problem={serverError?.field === "products" ? "invalid" : null}
       />
 
       <SessionImageField value={image} onChange={setImage} />

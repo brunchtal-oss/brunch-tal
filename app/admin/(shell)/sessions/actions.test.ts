@@ -112,6 +112,45 @@ describe("updateEventAction", () => {
     ).resolves.toEqual({ ok: false, code: "INVALID_INPUT" })
     expect(callRpc).not.toHaveBeenCalled()
   })
+
+  it("sends a product set, an empty one included (story 3.18)", async () => {
+    callRpc.mockResolvedValue({ ok: true, data: { event_id: EVENT_ID } })
+    for (const ids of [[EVENT_ID], []]) {
+      await expect(
+        updateEventAction({
+          eventId: EVENT_ID,
+          changes: { product_ids: ids },
+          idempotencyKey: KEY,
+        })
+      ).resolves.toEqual({ ok: true, data: undefined })
+    }
+    expect(callRpc).toHaveBeenCalledTimes(2)
+  })
+
+  it("refuses a malformed product set without calling the RPC", async () => {
+    for (const ids of [
+      "nope",
+      [EVENT_ID, EVENT_ID],
+      [EVENT_ID, EVENT_ID.toUpperCase()],
+      ["x"],
+      [1],
+    ]) {
+      await expect(
+        updateEventAction({
+          eventId: EVENT_ID,
+          changes: { product_ids: ids },
+          idempotencyKey: KEY,
+        })
+      ).resolves.toEqual({ ok: false, code: "INVALID_INPUT" })
+      await expect(
+        createEventAction({
+          event: { concept_id: EVENT_ID, product_ids: ids },
+          idempotencyKey: KEY,
+        })
+      ).resolves.toEqual({ ok: false, code: "INVALID_INPUT" })
+    }
+    expect(callRpc).not.toHaveBeenCalled()
+  })
 })
 
 describe("publishEventAction", () => {

@@ -11,6 +11,11 @@ const exportHeaders = {
   email: "מייל",
 }
 
+// Story 3.18: a product set by name, or every fitting product.
+function productNames(names: readonly string[]): string {
+  return names.length === 0 ? "כל המוצרים המתאימים" : names.join(", ")
+}
+
 export const adminCopy = {
   // The two photo consents (story 2.13, user decision 2026-10-07): a line
   // each on the customer card and the session's registrant row, and a short
@@ -627,12 +632,19 @@ export const adminCopy = {
       price: "מחיר תצוגה (לא חובה)",
       when: "מועד",
       closes: "סגירת הרשמה",
+      products: "מוצרים תקפים",
     },
     kinds: { regular: "רגיל", couple: "זוגי" },
+    // The eligible products (story 3.18): none marked = every product that
+    // fits the session's kind. A hidden product is suffixed.
+    productsHint: "בלי סימון, כל מוצר שמתאים לסוג המפגש תקף בו.",
+    productsAll: "כל המוצרים המתאימים",
+    productHidden: (name: string) => `${name} (לא נמכר)`,
+    productsNone: "אין מוצרים שמתאימים לסוג המפגש.",
     // Hints under a field while it holds the value it was filled with.
     fromConcept: "מהקונספט",
     fromSettings: "לפי ההגדרות",
-    priceEmpty: "מחיר תצוגה ריק: מוצג מחיר המוצר",
+    priceEmpty: "בלי מחיר תצוגה, לא מוצג מחיר במפגש",
     closesByRule: "נקבעה לפי ההגדרות",
     closesScope: "שינוי כאן חל רק על המפגש הזה",
     // "{day} · 10:00–12:00" in the date row's "old ← new".
@@ -767,6 +779,8 @@ export const adminCopy = {
       ENTITLEMENT_EXPIRED_ON_DATE: "הזכות של הלקוחה אינה בתוקף ביום המפגש",
       EVENT_FULL: "המפגש מלא. כדי לרשום אותה צריך קודם להעלות את המכסה",
       EVENT_NOT_BOOKABLE: "המפגש לא פורסם, ולכן אי אפשר לרשום אליו",
+      // Story 3.18: the session's eligible products exclude hers.
+      PRODUCT_NOT_VALID_FOR_EVENT: "המפגש הזה לא מקבל את המוצר שלה.",
     } as Record<string, string>,
     // Cancelling a booking from "מי מגיעה" (story 3.6); the dialog's title
     // is in lib/admin/sensitive-actions.ts (booking_cancel).
@@ -947,6 +961,8 @@ export const adminCopy = {
       EVENT_FULL: "המפגש מלא. כדי להעביר אליו צריך קודם להעלות את המכסה",
       ENTITLEMENT_EXPIRED_ON_DATE: "הזכות של הלקוחה אינה בתוקף ביום המפגש",
       NO_MATCHING_ENTITLEMENT: "הזכות של הלקוחה לא מתאימה למפגש הזה",
+      // Story 3.18.
+      PRODUCT_NOT_VALID_FOR_EVENT: "המפגש הזה לא מקבל את המוצר שלה.",
       CONCURRENT_CHANGE: "ההרשמה השתנתה בינתיים. כדאי לרענן את הדף",
     } as Record<string, string>,
   },
@@ -2126,6 +2142,15 @@ export const adminCopy = {
         count === 1 ? "בוטלה הרשמה אחת" : `בוטלו ${count} הרשמות`,
       creditOptionsRemoved: (count: number) =>
         count === 1 ? "הוסרה חלופת זיכוי אחת" : `הוסרו ${count} חלופות זיכוי`,
+      // Story 3.18: a session's eligible products after the change; an edit
+      // adds the set before it.
+      eventProducts: (names: readonly string[]) =>
+        `המוצרים התקפים: ${productNames(names)}`,
+      eventProductsChanged: (
+        names: readonly string[],
+        before: readonly string[]
+      ) =>
+        `המוצרים התקפים: ${productNames(names)} (קודם: ${productNames(before)})`,
       link: (purpose: string, date: string) =>
         `קישור ${purpose}, בתוקף עד ${date}`,
       linkPurposes: {

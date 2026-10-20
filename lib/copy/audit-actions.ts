@@ -133,6 +133,35 @@ const moved = (row: AuditRow) => {
   return label ? results.movedFrom(label) : null
 }
 
+// Story 3.18: the session's product set after the change, by name (sorted
+// in the database); none = every fitting product. An edit adds the set
+// before it.
+function names(value: unknown): string[] | null {
+  return Array.isArray(value)
+    ? value.filter((n): n is string => typeof n === "string")
+    : null
+}
+
+const EVENT_PRODUCTS_RULE: AuditRule = {
+  entity: "event_products",
+  result: (row) => {
+    const after = names(afterValues(row.changes).product_names)
+    return after === null ? null : results.eventProducts(after)
+  },
+}
+
+const EVENT_PRODUCTS_EDIT_RULE: AuditRule = {
+  entity: "event_products",
+  result: (row) => {
+    const after = names(afterValues(row.changes).product_names)
+    const before = names(beforeValues(row.changes).product_names)
+    if (after === null) return null
+    return before === null
+      ? results.eventProducts(after)
+      : results.eventProductsChanged(after, before)
+  },
+}
+
 const consent = (key: string) => (row: AuditRow) => {
   const value = afterValues(row.changes)[key]
   if (value === true) return results.consentGiven
@@ -228,11 +257,14 @@ export const SHOWN_AUDIT_ACTIONS: Record<string, readonly AuditRule[]> = {
       },
     },
   ],
-  // Sessions.
-  admin_create_event: [{ entity: "events" }],
-  admin_duplicate_event: [{ entity: "events" }],
+  // Sessions. Story 3.18: a changed product set is its own row.
+  admin_create_event: [{ entity: "events" }, EVENT_PRODUCTS_RULE],
+  admin_duplicate_event: [{ entity: "events" }, EVENT_PRODUCTS_RULE],
   admin_publish_event: [{ entity: "events" }],
-  admin_update_event: [{ entity: "events", edit: true }],
+  admin_update_event: [
+    { entity: "events", edit: true },
+    EVENT_PRODUCTS_EDIT_RULE,
+  ],
   admin_reschedule_event: [{ entity: "events", edit: true }],
   admin_cancel_event: [
     {

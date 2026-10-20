@@ -59,6 +59,10 @@ export const ERROR_MESSAGES = {
     "הכרטיסייה אינה בתוקף ביום המפגש. אפשר לבחור מפגש מוקדם יותר.",
   NO_MATCHING_ENTITLEMENT:
     "אין לך כרגע כניסה שמתאימה למפגש הזה. ניתן לרכוש כניסה מתאימה",
+  // Story 3.18: the session names its eligible products (event_products) and
+  // the entry that fits every other rule is not one of them. No contact
+  // action next to it (blockedAction).
+  PRODUCT_NOT_VALID_FOR_EVENT: "המפגש הזה לא כלול בכרטיסייה שלך.",
   // Pinned product approval (story 3.11): the session Tal picked does not
   // take this product or this customer. EVENT_FULL and EVENT_NOT_BOOKABLE
   // keep their wording.
