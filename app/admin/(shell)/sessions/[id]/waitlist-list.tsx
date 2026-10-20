@@ -1,8 +1,10 @@
 import Link from "next/link"
 
+import { sectionTitleClass } from "@/components/shared/section-title"
 import { StatusChip } from "@/components/shared/status-chip"
 import { adminCopy } from "@/lib/copy/admin"
 import { formatDayMonth, formatTime } from "@/lib/time"
+import { cn } from "@/lib/utils"
 
 import type { WaitlistRow } from "./load-details"
 
@@ -16,10 +18,7 @@ export function WaitlistList({ waitlist }: { waitlist: WaitlistRow[] }) {
   if (waitlist.length === 0) return null
   return (
     <section aria-labelledby="waitlist-heading" className="flex flex-col">
-      <h2
-        id="waitlist-heading"
-        className="mb-2 font-heading text-[22px] leading-[1.25] font-light"
-      >
+      <h2 id="waitlist-heading" className={cn(sectionTitleClass, "mb-2")}>
         {copy.waitlist.title(waitlist.length)}
       </h2>
       <ul className="flex flex-col border-t border-border">
