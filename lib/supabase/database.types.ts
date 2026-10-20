@@ -326,6 +326,7 @@ export type Database = {
         Row: {
           admin_expiring_days: number
           cancel_window_hours: number
+          credit_expiring_days: number
           credit_options_count: number
           customer_expiring_days: number
           default_capacity_couple: number
@@ -348,6 +349,7 @@ export type Database = {
         Insert: {
           admin_expiring_days?: number
           cancel_window_hours?: number
+          credit_expiring_days?: number
           credit_options_count?: number
           customer_expiring_days?: number
           default_capacity_couple?: number
@@ -370,6 +372,7 @@ export type Database = {
         Update: {
           admin_expiring_days?: number
           cancel_window_hours?: number
+          credit_expiring_days?: number
           credit_options_count?: number
           customer_expiring_days?: number
           default_capacity_couple?: number

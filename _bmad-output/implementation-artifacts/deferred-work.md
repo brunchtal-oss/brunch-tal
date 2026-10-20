@@ -40,11 +40,13 @@
   target: 5.10
   summary: התזמון של ההארכה האוטומטית: ‏`cron.schedule` שמריץ `select private.job_auto_extend();` כל שעה (AD-11). הפונקציה קיימת מ-3.14, בלי grant, ובטוחה להרצה כפולה (`week_start` ייחודי לזכות).
   evidence: ‏3.14 בנה את הפונקציה בלבד; התזמון וההתראות לפני תפוגה שייכים ל-5.10 (ה-spec של 3.14, Never).
+  status: נסגר ב-5.10 (2026-10-20). ‏`cron.schedule('auto_extend', '5 * * * *', 'select private.job_auto_extend()')`, בלי שינוי בפונקציה.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-14-auto-extend-empty-weeks.md`
   target: 5.10
   summary: בדיקה של הקריאה המתוזמנת עצמה: ‏`job_auto_extend()` בלי פרמטרים (התאריך של היום וכל הכרטיסיות), וכרטיסייה אחת שנכשלת לא עוצרת את האחרות ולא משאירה כתיבה חלקית.
   evidence: ביקורת 3.14 (verification-gap, לא אומת): כל הבדיקות של 3.14 מעבירות תאריך ורשימת כרטיסיות, ובלוק השגיאה לכל כרטיסייה לא נבדק (גם לא ב-`job_complete_events`). הרצה על כל הכרטיסיות שייכת לסיפור שמפעיל את התזמון.
+  status: נסגר ב-5.10 (2026-10-20). ‏`scheduled-jobs.test.ts` מריץ `job_auto_extend()` בלי פרמטרים, עם כרטיסייה אחת שהתיקון שלה נדחה: היא נשארת בלי שינוי, בלי תיקון ובלי יומן, והאחרת מוארכת.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-12-notification-core.md`
   target: 5.8
@@ -356,9 +358,10 @@
   status: נסגר ב-4.8 (2026-10-10). ‏`admin_set_concept_image` ושדה התמונה בעורך הקונספט (פרסום, ואז הסתרה של הקודמת).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-4-media-upload-and-publish.md`
-  target: 5.10
+  target: 5.20 (סבב הניקוי המאוחד)
   summary: ניקוי טיוטות יתומות ב-`media-drafts` ושורות `media_assets` במצב `draft` שלא שובצו (העלאה שנזנחה, תמונה שהוחלפה לפני שמירה), וקבצי טיוטה של תמונות שהוסתרו מזמן.
   evidence: ‏5.4 לא מוחק קבצי טיוטה: הם משמשים לתצוגה המקדימה ולפרסום חוזר. ‏`hidden` מוחק רק את הקובץ הציבורי.
+  status: נשאר פתוח (5.10, ‏2026-10-20): מחיקת קבצים ב-Storage דורשת את ה-Storage API ולא נכנסה ל-`job_cleanup` (ה-spec של 5.10, Never). עבר ל-5.20.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-4-media-upload-and-publish.md`
   target: 5.18 / 6.x
@@ -485,6 +488,7 @@
   target: 5.10
   summary: צנרת פוש שלא עובדת (ערכי Vault חסרים או שגויים, ‏`CRON_SECRET` שלא תואם, ‏`app_url` שגוי) לא מופיעה ב"לטיפול": המשימות לא נלקחות, ואחרי 24 שעות נסגרות `skipped`, והענף `push_failed` סופר רק `failed`.
   evidence: ביקורת 5.8 (blind-hunter). ‏AD-22 מונה ב"לטיפול" ערכי Vault חסרים ו-`private.job_*` שנכשל או לא הצליח בזמן; אפשר לגזור גם `queued` ותיקות או `net._http_response` עם 401/5xx.
+  status: נסגר ב-5.10 (2026-10-20). ב"לטיפול": ‏`vault_missing` (‏`app_url` או `cron_secret` חסרים או ריקים), ‏`push_stuck` (משימות `queued` שמועד הניסיון שלהן עבר לפני יותר מ-15 דקות), ו-`job_failed` לכל משימה מתוזמנת שנכשלה, באיחור או לא מוגדרת.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-8-push-pipeline-and-permission.md`
   target: 6.7 (בדיקה בלבד; החלטת המשתמשת 2026-10-10: אולי רק אחרי ההשקה)
@@ -625,11 +629,13 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-16-admin-credit-adjustments.md`
   summary: `supabase/tests/notifications.test.ts` "hold the approved seed" compares the whole template table with a SEED list that stopped at 18 templates, so it fails on every `test:db` run (the table has 20 before 3.16, 23 with 3.14 and 3.16).
   evidence: verification-gap review of 3.16; `settings-and-templates.test.ts` already counts 20+. Settle by updating the SEED list (or narrowing the test to the original 18 types) in the fixes round.
+  status: Closed in 5.10 (2026-10-20): SEED gains `credit_options_changed`, `credit_refund_requested` and `credit_expiring` (24 templates). Not yet run against the database (night run); confirm in the first `test:db`.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-6-waitlist.md`
   target: 5.10
   summary: `private.job_cleanup` sets the active `waitlist_entries` of sessions that started, were cancelled or completed to `closed` (`closed_at = now()`, `for update skip locked`).
   evidence: spec 5.6 (Tasks). 5.10 was not merged when 5.6 was built, so `job_cleanup` does not exist yet; such entries are already hidden (`get_my_waitlist` and `notify_waitlist` check the session's status and close time; `admin_cancel_event` closes them).
+  status: נסגר ב-5.10 (2026-10-20): `job_cleanup` סוגר אותן, עם בדיקת מסד ב-`scheduled-jobs.test.ts`. עוד לא הורץ מול המסד.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-6-waitlist.md`
   target: 4.6
@@ -645,3 +651,13 @@
   target: 5.20
   summary: `app/me/sessions/[id]/page.tsx` has no render test, so its waitlist wiring (her entry, `?from=waitlist`, hiding the BookingPanel's full notice) is covered only by the helper tests and the phone check.
   evidence: verification-gap review of 5.6. The page never had a test harness; `waitlistState` and `waitlistShowsFull` are tested.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-10-scheduled-jobs.md`
+  target: סבב התיקונים
+  summary: שדה בהגדרות העסק ל-`business_settings.credit_expiring_days` (כמה ימים לפני שנסגרת ההרשמה לחלופה האחרונה של זיכוי הלקוחה מקבלת התראה; 1 עד 30, ברירת מחדל 5): מפתח ב-`admin_update_business_settings`, שדה במסך ההגדרות ובדיקה.
+  evidence: החלטת המשתמשת 2026-10-20 (spec 5.10): העמודה נוספה בלי שדה בהגדרות.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-10-scheduled-jobs.md`
+  target: 6.9
+  summary: השהיית פרויקט Supabase חינמי אחרי 7 ימים בלי פעילות עוצרת את כל המשימות המתוזמנות (תזכורות, התראות תפוגה, הארכה אוטומטית, רענון זיכויים, פוש). לפי התיעוד pg_cron לא מובטח כמונע השהיה. להחליט לפני ההשקה (שדרוג או פתרון אחר).
+  evidence: ‏spec 5.10 (Always, השהיית פרויקט Free); ‏ARCHITECTURE-SPINE › Deferred. נרשם גם ב-checklist של README.

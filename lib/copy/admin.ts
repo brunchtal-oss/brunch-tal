@@ -1182,6 +1182,58 @@ export const adminCopy = {
           "ההתראות עצמן נשמרו במרכז ההתראות. אם זה חוזר, צריך לבדוק את הגדרות הפוש של האתר",
         chip: "לא נשלח",
       },
+      // A scheduled job (story 5.10) whose latest run failed, that has not
+      // succeeded in time, or that is not set up: one item per job, by
+      // reason. An unknown job reads as its jobname.
+      job_failed: {
+        // A late job and a missing one read the same for Tal (user decision
+        // 2026-10-20); the reason stays in the item for whoever fixes it.
+        reasons: {
+          failed: {
+            title: (name: string) => `${name}: לא עבד בפעם האחרונה`,
+            detail:
+              "המערכת תנסה שוב לבד. אם ההודעה לא נעלמת עד מחר, צריך לפנות לתמיכה הטכנית",
+            chip: "לא עבד",
+          },
+          late: {
+            title: (name: string) => `${name}: לא פועל כבר זמן מה`,
+            detail: "לבירור יש לפנות לתמיכה הטכנית",
+            chip: "לא פועל",
+          },
+          missing: {
+            title: (name: string) => `${name}: לא פועל כבר זמן מה`,
+            detail: "לבירור יש לפנות לתמיכה הטכנית",
+            chip: "לא פועל",
+          },
+        },
+        jobs: {
+          reminders: "תזכורות ללקוחות לפני מפגש",
+          invoke_push_worker: "שליחת התראות פוש",
+          complete_events: "סגירת מפגשים שהסתיימו",
+          refresh_credit_options: "עדכון מפגשים חלופיים לזיכויים",
+          expiry_alerts: "התראות על כרטיסיות וזיכויים שעומדים לפוג",
+          auto_extend: "הארכה אוטומטית של כרטיסיות",
+          cleanup: "מחיקת נתונים ישנים",
+        } as Record<string, string>,
+      },
+      // The push settings are missing in Vault (story 5.10).
+      vault_missing: {
+        title: () => "שליחת הפוש לא מוגדרת",
+        detail:
+          "חסרות הגדרות שליחה, ולכן התראות פוש לא יוצאות. ההתראות עצמן נשמרות במרכז ההתראות. צריך לפנות לתמיכה הטכנית",
+        chip: "לא מוגדר",
+      },
+      // Push jobs still queued 15 minutes after they were due (story
+      // 5.10): one item for all of them.
+      push_stuck: {
+        title: (count: number) =>
+          count === 1
+            ? "התראת פוש אחת ממתינה ולא נשלחת"
+            : `${count} התראות פוש ממתינות ולא נשלחות`,
+        detail:
+          "ייתכן שהגדרות הפוש של האתר שגויות. ההתראות עצמן נשמרו במרכז ההתראות",
+        chip: "ממתין",
+      },
     },
     expiring: "כרטיסיות שעומדות לפוג",
     // "{n} כניסות שלא נרשמה אליהן · בתוקף עד DD.MM" (free entries: not
@@ -1455,6 +1507,9 @@ export const adminCopy = {
         booking_cancelled_pinned: "ביטול הרשמה עם זיכוי",
         booking_cancelled_refund: "ביטול הרשמה עם בקשת החזר",
         refund_completed: "ההחזר בוצע",
+        // Story 5.10: registration for the credit's last alternative closes
+        // soon.
+        credit_expiring: "זיכוי עומד לפוג",
         // Story 3.16: Tal changed a credit, or replaced it with a refund.
         credit_options_changed: "עדכון חלופות הזיכוי",
         credit_refund_requested: "החזר במקום זיכוי",
@@ -1485,6 +1540,7 @@ export const adminCopy = {
         customer: "שם הלקוחה",
         amount: "סכום",
         from_date: "תאריך קודם",
+        closes_on: "סגירת ההרשמה",
       } as Record<string, string>,
       samples: {
         date: "12.11",
@@ -1499,6 +1555,7 @@ export const adminCopy = {
         customer: "נועה לוי",
         amount: "180 ₪",
         from_date: "05.11",
+        closes_on: "10.11",
       } as Record<string, string>,
       fields: {
         title: "כותרת",
