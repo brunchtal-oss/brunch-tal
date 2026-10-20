@@ -46,6 +46,9 @@ export type AttentionRow = {
   // correction_affected (story 3.13): the card and the corrected field.
   entitlement_id?: string
   field?: string
+  // job_failed (story 5.10): the jobname and why it is listed.
+  job?: string
+  reason?: string
 }
 
 // A button under the row (story 3.13): "טופל" on a booking a correction
@@ -112,6 +115,7 @@ export type HomeData = {
 }
 
 type Reason = keyof typeof copy.items.link_conflict.reasons
+type JobReason = keyof typeof copy.items.job_failed.reasons
 
 function nameOf(label: string | null | undefined): string {
   const trimmed = label?.trim() ?? ""
@@ -127,6 +131,21 @@ function reasonOf(row: AttentionRow): Reason {
   )
     ? (row.conflict_reason as Reason)
     : "bind_conflict"
+}
+
+// An unknown reason reads as failed.
+function jobReasonOf(row: AttentionRow): JobReason {
+  return Object.hasOwn(copy.items.job_failed.reasons, row.reason ?? "")
+    ? (row.reason as JobReason)
+    : "failed"
+}
+
+// The job's name in Hebrew; an unknown job reads as its jobname.
+function jobNameOf(row: AttentionRow): string {
+  const job = row.job ?? row.id
+  return Object.hasOwn(copy.items.job_failed.jobs, job)
+    ? copy.items.job_failed.jobs[job]
+    : job
 }
 
 function sessionHref(row: AttentionRow): string {
@@ -290,6 +309,40 @@ export function toAttentionItem(row: AttentionRow): AttentionItem {
     }
     case "push_failed": {
       const c = copy.items.push_failed
+      return {
+        ...base,
+        href: "/admin/notifications",
+        title: c.title(row.count ?? 1),
+        detail: c.detail,
+        chip: { tone: "warning", label: c.chip },
+      }
+    }
+    case "job_failed": {
+      const c = copy.items.job_failed
+      const reason = jobReasonOf(row)
+      return {
+        ...base,
+        href: "/admin/notifications",
+        title: c.reasons[reason].title(jobNameOf(row)),
+        detail: c.reasons[reason].detail,
+        chip: {
+          tone: reason === "failed" ? "warning" : "error",
+          label: c.reasons[reason].chip,
+        },
+      }
+    }
+    case "vault_missing": {
+      const c = copy.items.vault_missing
+      return {
+        ...base,
+        href: "/admin/notifications",
+        title: c.title(),
+        detail: c.detail,
+        chip: { tone: "error", label: c.chip },
+      }
+    }
+    case "push_stuck": {
+      const c = copy.items.push_stuck
       return {
         ...base,
         href: "/admin/notifications",
