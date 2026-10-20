@@ -8,7 +8,6 @@ import { formatLocalPhone } from "@/lib/phone"
 import {
   formatDayMonth,
   formatSessionDate,
-  formatSessionDateTime,
   formatShortDate,
   formatTime,
 } from "@/lib/time"
@@ -120,15 +119,14 @@ export function cardHeader(profile: CardProfile): CardHeader {
 export type DetailRow = {
   label: string
   value: string | readonly string[]
-  ltr?: boolean
 }
 
-// The details under the balances (the phone is in the header). The photo
+// The "פרטים" cube's rows after the phone and the email (fix 9: those two
+// are ContactRows, with their pencils; the babies follow). The photo
 // consents: a line each, without a date (story 2.13, user decision
 // 2026-10-07).
 export function detailRows(profile: CardProfile): DetailRow[] {
   const rows: DetailRow[] = [
-    { label: copy.email, value: profile.email ?? "", ltr: true },
     {
       label: copy.joined,
       value: profile.activated_at
@@ -155,6 +153,12 @@ export function detailRows(profile: CardProfile): DetailRow[] {
   ]
   return rows.filter((row) => row.value !== "")
 }
+
+// The card's two actions under "פרטים", "הפקת קישור איפוס" and the booking
+// link (phone check, user decision 2026-10-21): button-primary, each half
+// the row; a long label wraps instead of being cut.
+export const ACTION_BUTTON =
+  "h-auto min-h-12 w-full rounded-[4px] px-3 py-2 text-[15px] leading-[1.2] font-semibold whitespace-normal"
 
 export type BabyItem = { key: string; name: string; age: string }
 
@@ -421,36 +425,13 @@ export type AccountView = {
   canChangeEmail: boolean
   canIssueReset: boolean
   stuck: boolean
-  // The latest reset link's line; null when there is none to tell (none
-  // issued, or a revoked one).
-  resetStatus: { text: string; at: string } | null
-  // A pending link is replaced; otherwise a first (or new) link.
-  resetButton: string
 }
 
 export function accountView(account: CardAccount): AccountView {
-  const c = copy.account
-  const link = account.reset_link
-  let resetStatus: AccountView["resetStatus"] = null
-  if (link?.status === "pending") {
-    resetStatus = {
-      text: c.resetPending(formatSessionDateTime(link.expires_at)),
-      at: link.expires_at,
-    }
-  } else if (link?.status === "consumed" && link.consumed_at) {
-    resetStatus = {
-      text: c.resetUsed(formatShortDate(link.consumed_at)),
-      at: link.consumed_at,
-    }
-  } else if (link?.status === "expired") {
-    resetStatus = { text: c.resetExpired, at: link.expires_at }
-  }
   return {
     canChangeEmail: account.is_activated,
     canIssueReset: account.is_activated,
     stuck: account.email_change_stuck,
-    resetStatus,
-    resetButton: link?.status === "pending" ? c.reissueReset : c.issueReset,
   }
 }
 

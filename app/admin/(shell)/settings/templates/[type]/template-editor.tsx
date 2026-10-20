@@ -8,6 +8,7 @@ import {
   type ValueSaveResult,
 } from "@/components/admin/value-change-row"
 import { InlineNotice } from "@/components/shared/inline-notice"
+import { sectionTitleClass } from "@/components/shared/section-title"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -213,10 +214,7 @@ export function TemplateEditor({ row }: { row: TemplateRow }) {
         className="flex flex-col gap-2"
       >
         <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-          <h2
-            id="template-preview"
-            className="font-heading text-[22px] leading-[1.25] font-light"
-          >
+          <h2 id="template-preview" className={sectionTitleClass}>
             {copy.preview}
           </h2>
           <span className="text-[13px] text-muted-foreground">

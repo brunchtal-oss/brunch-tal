@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react"
 
 import { InlineNotice } from "@/components/shared/inline-notice"
 import { OnlineButton } from "@/components/shared/online-button"
+import { cubeTitleClass } from "@/components/shared/section-title"
 import { Button } from "@/components/ui/button"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
@@ -20,9 +21,11 @@ const copy = customerCopy.profile
 
 // The customer's details (story 2.10): name and dietary notes, editable
 // together; phone and email read-only, with no contact line (user
-// decision 2026-10-06). An empty field shows nothing. No
+// decision 2026-10-06). An empty field shows nothing, but the
+// dietary row, which says where to add them. No
 // optimistic update: the view shows what the server returned after the
-// save (revalidatePath).
+// save (revalidatePath). A cube (DESIGN › card) with a cube title (fix 11,
+// user decision 2026-10-20).
 export function DetailsSection({
   fullName,
   dietaryNotes,
@@ -84,12 +87,12 @@ export function DetailsSection({
   const notesError = !!error && field === "dietary_notes"
 
   return (
-    <section aria-labelledby="details-title" className="flex flex-col gap-4">
-      <div className="flex items-baseline justify-between gap-3">
-        <h2
-          id="details-title"
-          className="font-heading text-[22px] leading-[1.25] font-light"
-        >
+    <section
+      aria-labelledby="details-title"
+      className="flex flex-col gap-4 rounded-xl border border-border bg-card p-4"
+    >
+      <div className="flex items-center justify-between gap-3">
+        <h2 id="details-title" className={cubeTitleClass}>
           {copy.detailsTitle}
         </h2>
         {!editing && (
@@ -160,13 +163,19 @@ export function DetailsSection({
           <Row label={copy.fullName}>
             <bdi className="break-words">{fullName}</bdi>
           </Row>
-          {dietaryNotes && (
-            <Row label={copy.dietaryNotes}>
+          {/* Shown when empty too, so she knows where to add them (phone
+              check, user decision 2026-10-21). */}
+          <Row label={copy.dietaryNotes}>
+            {dietaryNotes?.trim() ? (
               <bdi className="break-words whitespace-pre-line">
                 {dietaryNotes}
               </bdi>
-            </Row>
-          )}
+            ) : (
+              <span className="text-muted-foreground">
+                {copy.dietaryNotesEmpty}
+              </span>
+            )}
+          </Row>
         </dl>
       )}
 

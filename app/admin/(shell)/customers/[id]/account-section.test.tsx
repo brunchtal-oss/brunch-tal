@@ -1,10 +1,13 @@
+import { isValidElement, type ReactElement, type ReactNode } from "react"
 import { renderToStaticMarkup } from "react-dom/server"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { adminCopy } from "@/lib/copy/admin"
 
 import {
-  AccountSection,
+  ContactRow,
+  ContactRows,
+  CardActions,
   issueResetWithKey,
   ResetLinkView,
 } from "./account-section"
@@ -42,8 +45,6 @@ const view = (overrides: Partial<AccountView> = {}): AccountView => ({
   canChangeEmail: true,
   canIssueReset: true,
   stuck: false,
-  resetStatus: null,
-  resetButton: copy.issueReset,
   ...overrides,
 })
 
@@ -97,7 +98,6 @@ describe("the reset button", () => {
   it("link null (a repeat) shows that it cannot be shown again", () => {
     const html = renderToStaticMarkup(
       <ResetLinkView
-        view={view()}
         pending={false}
         issued={{ link: null, linkExpiresAt: "2026-10-16T07:00:00Z" }}
         error={null}
@@ -111,10 +111,6 @@ describe("the reset button", () => {
   it("an issued link shows the ready notice, the validity and the share buttons", () => {
     const html = renderToStaticMarkup(
       <ResetLinkView
-        view={view({
-          resetStatus: { text: "status line", at: "2026-10-16T07:00:00Z" },
-          resetButton: copy.reissueReset,
-        })}
         pending={false}
         issued={{
           link: "https://site.test/reset/raw",
@@ -125,48 +121,108 @@ describe("the reset button", () => {
       />
     )
     expect(html).toContain(copy.resetReady)
-    expect(html).toContain("status line")
-    expect(html).toContain(copy.reissueReset)
     expect(html).toContain(adminCopy.payments.sendWhatsapp)
   })
 })
 
-describe("the email and phone rows", () => {
-  it("the email row has its own saved text and sends the new address", async () => {
-    changeEmailAction.mockResolvedValue({ ok: true, data: undefined })
-    renderToStaticMarkup(
-      <AccountSection
-        customerId={CUSTOMER}
-        email="roni@example.test"
-        phone="054-123-4567"
-        view={view()}
-      />
-    )
-    const emailRow = rowProps.find(
-      (p) => p.label === adminCopy.customers.card.email
-    )!
-    expect(emailRow.savedText).toBe("המייל עודכן. מעכשיו נכנסים איתו")
-    const phoneRow = rowProps.find((p) => p.label === copy.phone)!
-    expect(phoneRow.savedText).toBe(copy.phoneChanged)
+// The first <button> in a stateless component's element tree.
+function findButton(node: ReactNode): ReactElement<{
+  onClick: () => void
+}> | null {
+  if (!isValidElement(node)) return null
+  const el = node as ReactElement<{ children?: ReactNode }>
+  if (el.type === "button") return el as never
+  const kids = el.props.children
+  for (const kid of Array.isArray(kids) ? kids : [kids]) {
+    const found = findButton(kid)
+    if (found) return found
+  }
+  return null
+}
 
-    // Unchanged: no new value, so no save.
-    expect(emailRow.newValue).toBeNull()
+const card = adminCopy.customers.card
+
+describe("a contact row's pencil (fix 9)", () => {
+  const row = (open: boolean, onToggle = vi.fn()) => ({
+    id: "card-phone",
+    label: copy.phone,
+    value: "054-123-4567",
+    editLabel: copy.editPhone,
+    open,
+    onToggle,
+    children: <input id="account-phone" />,
   })
 
-  it("stuck: the saved address can be saved again at once", async () => {
+  it("closed: aria-expanded false, the field not rendered, its box hidden", () => {
+    const html = renderToStaticMarkup(<ContactRow {...row(false)} />)
+    expect(html).toContain(`aria-label="${copy.editPhone}"`)
+    expect(html).toContain('aria-expanded="false"')
+    expect(html).toContain('aria-controls="card-phone-edit"')
+    expect(html).toMatch(/id="card-phone-edit" hidden/)
+    expect(html).not.toContain("account-phone")
+  })
+
+  it("open: aria-expanded true and the field under the row", () => {
+    const html = renderToStaticMarkup(<ContactRow {...row(true)} />)
+    expect(html).toContain('aria-expanded="true"')
+    expect(html).not.toMatch(/id="card-phone-edit" hidden/)
+    expect(html).toContain('id="account-phone"')
+  })
+
+  it("a click on the pencil toggles (opens, and again closes)", () => {
+    const onToggle = vi.fn()
+    const button = findButton(ContactRow(row(false, onToggle)))!
+    button.props.onClick()
+    expect(onToggle).toHaveBeenCalledTimes(1)
+    findButton(ContactRow(row(true, onToggle)))!.props.onClick()
+    expect(onToggle).toHaveBeenCalledTimes(2)
+  })
+
+  it("no edit label: no pencil", () => {
+    const html = renderToStaticMarkup(
+      <ContactRow {...row(false)} editLabel={null} />
+    )
+    expect(html).not.toContain("<button")
+  })
+})
+
+describe("the email and phone rows", () => {
+  it("closed at first: both pencils, no field", () => {
+    const html = renderToStaticMarkup(
+      <dl>
+        <ContactRows
+          customerId={CUSTOMER}
+          email="roni@example.test"
+          phone="054-123-4567"
+          view={view()}
+        />
+      </dl>
+    )
+    expect(html).toContain(`aria-label="${copy.editPhone}"`)
+    expect(html).toContain(`aria-label="${copy.editEmail}"`)
+    expect(html).not.toContain('aria-expanded="true"')
+    expect(rowProps).toHaveLength(0)
+  })
+
+  it("stuck: the notice, the email field open, and the saved address can be saved again", async () => {
     changeEmailAction.mockResolvedValue({ ok: true, data: undefined })
     const html = renderToStaticMarkup(
-      <AccountSection
-        customerId={CUSTOMER}
-        email="new@example.test"
-        phone="054-123-4567"
-        view={view({ stuck: true })}
-      />
+      <dl>
+        <ContactRows
+          customerId={CUSTOMER}
+          email="new@example.test"
+          phone="054-123-4567"
+          view={view({ stuck: true })}
+        />
+      </dl>
     )
     expect(html).toContain(copy.emailChangeStuck)
-    const emailRow = rowProps.find(
-      (p) => p.label === adminCopy.customers.card.email
-    )!
+    expect(html).toContain('id="account-email"')
+    expect(html).toMatch(
+      new RegExp(`aria-label="${copy.editEmail}" aria-expanded="true"`)
+    )
+    const emailRow = rowProps.find((p) => p.label === card.email)!
+    expect(emailRow.savedText).toBe("המייל עודכן. מעכשיו נכנסים איתו")
     expect(emailRow.newValue).toBe("new@example.test")
     const onSave = emailRow.onSave as (key: string) => Promise<unknown>
     await expect(onSave(KEY)).resolves.toEqual({ ok: true })
@@ -177,16 +233,57 @@ describe("the email and phone rows", () => {
     })
   })
 
-  it("not activated: only the phone row, no reset button", () => {
+  it("not activated: the phone pencil only, no email pencil", () => {
     const html = renderToStaticMarkup(
-      <AccountSection
+      <dl>
+        <ContactRows
+          customerId={CUSTOMER}
+          email=""
+          phone="054-123-4567"
+          view={view({ canChangeEmail: false, canIssueReset: false })}
+        />
+      </dl>
+    )
+    expect(html).toContain(`aria-label="${copy.editPhone}"`)
+    expect(html).not.toContain(copy.editEmail)
+    expect(html).not.toContain(card.email)
+  })
+})
+
+describe("the card actions", () => {
+  it("activated: the reset button beside the slot", () => {
+    const html = renderToStaticMarkup(
+      <CardActions customerId={CUSTOMER} view={view()}>
+        <a href="/book">book</a>
+      </CardActions>
+    )
+    expect(html).toContain(copy.issueReset)
+    expect(html).toMatch(/grid-cols-2[^>]*><button[^]*<a href="\/book">/)
+  })
+
+  it("not activated: no button row at all", () => {
+    const html = renderToStaticMarkup(
+      <CardActions
         customerId={CUSTOMER}
-        email=""
-        phone="054-123-4567"
         view={view({ canChangeEmail: false, canIssueReset: false })}
       />
     )
-    expect(rowProps.map((p) => p.label)).toEqual([copy.phone])
-    expect(html).not.toContain(copy.issueReset)
+    expect(html).toBe("")
+  })
+
+  it("the button always reads 'issue a reset link', in button-primary, with no status line", () => {
+    const html = renderToStaticMarkup(
+      <ResetLinkView
+        pending={false}
+        issued={null}
+        error={null}
+        onIssue={vi.fn()}
+      >
+        <a href="/book">book</a>
+      </ResetLinkView>
+    )
+    expect(html).toContain(copy.issueReset)
+    expect(html).toContain("bg-primary")
+    expect(html).not.toContain("<time")
   })
 })

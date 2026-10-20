@@ -9,6 +9,7 @@ import {
 } from "@/components/admin/value-change-row"
 import { InlineNotice } from "@/components/shared/inline-notice"
 import { OnlineButton } from "@/components/shared/online-button"
+import { cubeTitleClass } from "@/components/shared/section-title"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { adminCopy } from "@/lib/copy/admin"
@@ -490,7 +491,7 @@ function DuplicateBox({ row }: { row: SessionRow }) {
       noValidate
       className="flex flex-col gap-4 rounded-sm bg-muted px-4 py-4"
     >
-      <h2 className="text-base font-semibold">{copy.duplicateWhen}</h2>
+      <h2 className={cubeTitleClass}>{copy.duplicateWhen}</h2>
       <WhenFields
         idPrefix="duplicate-"
         date={when.date}

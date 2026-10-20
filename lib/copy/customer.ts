@@ -143,11 +143,14 @@ export const customerCopy = {
   entryKept: (dayMonth: string) =>
     `הכניסה של ${dayMonth} לא נוצלה ונשארה ביתרה שלך`,
   // The profile (story 2.10; the tab and the h1 are shellCopy.nav.profile).
-  // An empty field shows nothing; never "טל" in the customer's wording.
+  // An empty field shows nothing (but the dietary row); never "טל" in the customer's wording.
   profile: {
     detailsTitle: "הפרטים שלי",
     fullName: "שם מלא",
     dietaryNotes: "אלרגיות והעדפות תזונתיות",
+    // The dietary row while empty: it stays shown, so she knows where to
+    // add them.
+    dietaryNotesEmpty: "לא צוינו. אפשר להוסיף בלחיצה על עריכה",
     phone: "טלפון",
     email: "מייל",
     babiesTitle: "התינוקות שלי",

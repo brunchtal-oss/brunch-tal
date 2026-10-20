@@ -19,6 +19,7 @@ import {
 } from "@/components/admin/use-work-action"
 import { InlineNotice } from "@/components/shared/inline-notice"
 import { OnlineButton, useOnlineGuard } from "@/components/shared/online-button"
+import { sectionTitleClass } from "@/components/shared/section-title"
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -113,10 +114,7 @@ export function WorkSheetView({
           {/* On the phone "הדפסה" shares the line of "מנות", at the inline
               end; on desktop it is at the end of the tools row. */}
           <div className="flex items-center justify-between gap-3 print:hidden">
-            <h2
-              id="work-dishes"
-              className="font-heading text-[22px] leading-[1.25] font-light"
-            >
+            <h2 id="work-dishes" className={sectionTitleClass}>
               {copy.dishes}
             </h2>
             <span data-print-phone="" className="lg:hidden">
@@ -219,7 +217,7 @@ function PrintHead({
   const day = formatLocalDate(sheet.event.startsAt)
   return (
     <div className="hidden border-b-2 pb-2 print:block">
-      <h2 className="font-heading text-[22px] leading-[1.25] font-light">
+      <h2 className={sectionTitleClass}>
         <bdi>{copy.printTitle(sheet.event.conceptName)}</bdi>
       </h2>
       <p className="text-[13px]">

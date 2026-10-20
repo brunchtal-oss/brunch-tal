@@ -1,13 +1,17 @@
 import Link from "next/link"
 
+import {
+  cubeTitleClass,
+  sectionTitleClass,
+} from "@/components/shared/section-title"
 import { cn } from "@/lib/utils"
 
 // One part of /admin (story 4.1; design round, user decision 2026-10-07):
 // a cube (DESIGN › card: card surface, 1px border, 8px corners, 16px
-// padding), one under the other and never one inside another. The title in
-// body-strong with an optional aside at inline-end (a counter), then the
-// content 12px under it. Rows inside draw a rule above each one but the
-// first (cubeRows).
+// padding), one under the other and never one inside another. The title a
+// cube title (Heebo 20/500, fix 9) with an optional aside at inline-end (a
+// counter), then the content 12px under it. Rows inside draw a rule above
+// each one but the first (cubeRows).
 export function HomeSection({
   id,
   title,
@@ -30,10 +34,7 @@ export function HomeSection({
       )}
     >
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-        <h2
-          id={id}
-          className="text-base leading-[1.35] font-semibold text-balance"
-        >
+        <h2 id={id} className={cubeTitleClass}>
           {title}
         </h2>
         {aside}
@@ -43,27 +44,33 @@ export function HomeSection({
   )
 }
 
-// A section of an admin screen other than the home (the customer card): no
-// cube, an h2 in display-sm (Heebo 22/300) with an optional aside at
-// inline-end, then the content 12px under it.
+// A section of an admin screen other than the home (the customer card): an
+// h2 section title (Heebo 24/500, fix 9) with an optional aside at
+// inline-end, then the content 12px under it. boxed: inside a cube (DESIGN ›
+// card), as the card's "פרטים" (fix 9).
 export function PageSection({
   id,
   title,
   aside,
+  boxed = false,
   children,
 }: {
   id: string
   title: string
   aside?: React.ReactNode
+  boxed?: boolean
   children: React.ReactNode
 }) {
   return (
-    <section aria-labelledby={id} className="flex flex-col gap-3">
+    <section
+      aria-labelledby={id}
+      className={cn(
+        "flex flex-col gap-3",
+        boxed && "rounded-xl border border-border bg-card p-4"
+      )}
+    >
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <h2
-          id={id}
-          className="font-heading text-[22px] leading-[1.25] font-light text-balance"
-        >
+        <h2 id={id} className={sectionTitleClass}>
           {title}
         </h2>
         {aside}

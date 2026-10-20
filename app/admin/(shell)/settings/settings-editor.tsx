@@ -9,6 +9,7 @@ import {
   ValueChangeRow,
   type ValueSaveResult,
 } from "@/components/admin/value-change-row"
+import { sectionTitleClass } from "@/components/shared/section-title"
 import { adminCopy } from "@/lib/copy/admin"
 
 import { updateSettingsAction } from "./actions"
@@ -240,10 +241,7 @@ function Group({
 }) {
   return (
     <section aria-labelledby={id} className="flex flex-col gap-1">
-      <h2
-        id={id}
-        className="font-heading text-[22px] leading-[1.25] font-light text-balance"
-      >
+      <h2 id={id} className={sectionTitleClass}>
         {title}
       </h2>
       <ul className="flex flex-col divide-y divide-border border-b border-border">
@@ -270,10 +268,7 @@ function LinkGroup({
 }) {
   return (
     <section aria-labelledby={id} className="flex flex-col gap-1">
-      <h2
-        id={id}
-        className="font-heading text-[22px] leading-[1.25] font-light text-balance"
-      >
+      <h2 id={id} className={sectionTitleClass}>
         {title}
       </h2>
       <Link

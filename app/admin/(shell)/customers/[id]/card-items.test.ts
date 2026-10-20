@@ -82,9 +82,8 @@ describe("the header and details", () => {
     ).toEqual({ name: "רוני כהן", phone: null, notActivated: true })
   })
 
-  it("email, joined, last activity, diet and the photo consent as text", () => {
+  it("joined, last activity, diet and the photo consent as text", () => {
     expect(detailRows(profile())).toEqual([
-      { label: copy.email, value: "roni@example.test", ltr: true },
       { label: copy.joined, value: "05.10.26" },
       { label: copy.lastActivity, value: "05.10.26" },
       { label: copy.dietary, value: "בלי גלוטן" },
@@ -96,7 +95,7 @@ describe("the header and details", () => {
     ])
   })
 
-  it("not activated, no activity, no diet, declines, no email", () => {
+  it("not activated, no activity, no diet, declines", () => {
     expect(
       detailRows(
         profile({
@@ -119,6 +118,16 @@ describe("the header and details", () => {
         value: [photo.atmosphere.no, photo.personal.yes],
       },
     ])
+  })
+})
+
+describe("the details without the email (fix 9)", () => {
+  it("the email is a contact row of its own, never a detail row", () => {
+    const labels = detailRows(profile()).map((row) => row.label)
+    expect(labels).not.toContain(copy.email)
+    expect(
+      detailRows(profile()).some((row) => row.value === "roni@example.test")
+    ).toBe(false)
   })
 })
 
@@ -427,41 +436,20 @@ describe("the account section (story 2.8)", () => {
     revoked_at: null,
     ...extra,
   })
-  const c = copy.account
 
-  it("no link yet: no status, the first-link button", () => {
+  it("activated: email, reset and not stuck", () => {
+    for (const status of ["pending", "consumed", "expired", "revoked"]) {
+      expect(accountView(account({ reset_link: link(status) }))).toEqual({
+        canChangeEmail: true,
+        canIssueReset: true,
+        stuck: false,
+      })
+    }
     expect(accountView(account())).toEqual({
       canChangeEmail: true,
       canIssueReset: true,
       stuck: false,
-      resetStatus: null,
-      resetButton: c.issueReset,
     })
-  })
-
-  it("a pending link: waiting until its expiry, and a replacement", () => {
-    const view = accountView(account({ reset_link: link("pending") }))
-    expect(view.resetStatus).toEqual({
-      text: "קישור איפוס ממתין עד יום רביעי 14.10 · 10:00",
-      at: "2026-10-14T07:00:00Z",
-    })
-    expect(view.resetButton).toBe("הפקת קישור חלופי")
-  })
-
-  it("a used link shows its day; an expired one says so; a revoked one shows nothing", () => {
-    expect(
-      accountView(
-        account({
-          reset_link: link("consumed", { consumed_at: "2026-10-13T09:00:00Z" }),
-        })
-      ).resetStatus?.text
-    ).toBe("קישור האיפוס מומש 13.10.26")
-    expect(
-      accountView(account({ reset_link: link("expired") })).resetStatus?.text
-    ).toBe("קישור האיפוס פג")
-    const revoked = accountView(account({ reset_link: link("revoked") }))
-    expect(revoked.resetStatus).toBeNull()
-    expect(revoked.resetButton).toBe(c.issueReset)
   })
 
   it("not activated: only the phone; stuck comes from the server", () => {

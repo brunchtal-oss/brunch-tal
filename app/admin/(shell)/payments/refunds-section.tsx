@@ -1,5 +1,6 @@
 import Link from "next/link"
 
+import { cubeTitleClass } from "@/components/shared/section-title"
 import { StatusChip } from "@/components/shared/status-chip"
 import { adminCopy } from "@/lib/copy/admin"
 import { callRpc } from "@/lib/rpc"
@@ -38,10 +39,7 @@ export async function RefundsSection() {
       className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4"
     >
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-        <h2
-          id="refunds-title"
-          className="text-base leading-[1.35] font-semibold"
-        >
+        <h2 id="refunds-title" className={cubeTitleClass}>
           {copy.title}
         </h2>
         {open.length > 0 && (

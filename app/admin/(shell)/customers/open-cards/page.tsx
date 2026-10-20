@@ -4,6 +4,7 @@ import Link from "next/link"
 
 import { buttonClass } from "@/components/shared/button-class"
 import { PageHeading } from "@/components/shared/page-heading"
+import { sectionTitleClass } from "@/components/shared/section-title"
 import { adminCopy } from "@/lib/copy/admin"
 import { shellCopy } from "@/lib/copy/shell"
 import { callRpc } from "@/lib/rpc"
@@ -120,9 +121,7 @@ function Filters({ current }: { current: OpenCardsFilter }) {
 function EmptyOpenCards({ filtered }: { filtered: boolean }) {
   return (
     <div className="flex flex-col items-center gap-4 rounded-lg bg-muted px-4 py-6 text-center">
-      <p className="font-heading text-[22px] leading-[1.3] font-light text-balance">
-        {copy.empty}
-      </p>
+      <p className={sectionTitleClass}>{copy.empty}</p>
       {filtered && (
         <Link
           href={filterHref("all")}

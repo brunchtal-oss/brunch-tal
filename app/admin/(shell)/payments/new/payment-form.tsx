@@ -16,6 +16,7 @@ import { SensitiveConfirmDialog } from "@/components/admin/sensitive-confirm-dia
 import { InlineNotice } from "@/components/shared/inline-notice"
 import { OnlineButton } from "@/components/shared/online-button"
 import { buttonClass } from "@/components/shared/button-class"
+import { cubeTitleClass } from "@/components/shared/section-title"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
   Field,
@@ -794,7 +795,7 @@ function DuplicateWarning({
       aria-labelledby="duplicate-title"
       className="flex flex-col gap-3 rounded-xl bg-warning-tint px-4 py-3 text-[15px] text-warning"
     >
-      <h2 id="duplicate-title" className="text-base font-semibold">
+      <h2 id="duplicate-title" className={cubeTitleClass}>
         {copy.duplicateTitle}
       </h2>
       <p>{copy.duplicateBody(preview.windowDays)}</p>
@@ -952,7 +953,7 @@ export function ApprovedLink({
 
       <div className="flex flex-col gap-4 rounded-xl border border-border bg-card px-4 py-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-base font-semibold">
+          <h2 className={cubeTitleClass}>
             {payerLabel ? copy.linkTitleNamed(payerLabel) : copy.linkTitle}
           </h2>
           <span className="rounded-full bg-pending-tint px-2.5 py-0.5 text-[13px] text-pending">

@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it, vi } from "vitest"
 
+import { cubeTitleClass } from "@/components/shared/section-title"
 import { customerCopy } from "@/lib/copy/customer"
 
 import { BabiesSection } from "./babies-section"
@@ -51,7 +52,7 @@ describe("BabiesSection", () => {
 })
 
 describe("DetailsSection", () => {
-  it("shows phone and email read-only without a contact line, and no empty dietary row", () => {
+  it("shows phone and email read-only without a contact line, and the empty dietary row with its hint", () => {
     const html = renderToStaticMarkup(
       <DetailsSection
         fullName="Dana"
@@ -66,7 +67,8 @@ describe("DetailsSection", () => {
     )
     expect(html).toContain("054-123-4567")
     expect(html).toContain("dana@example.test")
-    expect(html).not.toContain(copy.dietaryNotes)
+    expect(html).toContain(copy.dietaryNotes)
+    expect(html).toContain(copy.dietaryNotesEmpty)
     expect(html).not.toContain("<input")
     expect(html).not.toContain("<a ")
     // Never Tal's name in the customer's wording.
@@ -84,6 +86,35 @@ describe("DetailsSection", () => {
     )
     expect(html).toContain(copy.dietaryNotes)
     expect(html).toContain("vegan")
+    expect(html).not.toContain(copy.dietaryNotesEmpty)
+  })
+})
+
+// Fix 11 (user decision 2026-10-20): details and babies, each its own
+// cube (DESIGN › card) with the cube title.
+describe("the profile's cubes", () => {
+  it("details and babies are separate cubes with the cube title", () => {
+    const details = renderToStaticMarkup(
+      <DetailsSection
+        fullName="Dana"
+        dietaryNotes={null}
+        phone={null}
+        email={null}
+      />
+    )
+    const babies = renderToStaticMarkup(
+      <BabiesSection babies={TWINS} today="2026-10-05" />
+    )
+    for (const html of [details, babies]) {
+      expect(html).toMatch(
+        /^<section [^>]*class="[^"]*rounded-xl border border-border bg-card p-4/
+      )
+      expect(html).toContain(`class="${cubeTitleClass}"`)
+      expect(html.match(/<section/g)).toHaveLength(1)
+    }
+    expect(details).toContain(copy.detailsTitle)
+    expect(details).not.toContain(copy.babiesTitle)
+    expect(babies).toContain(copy.babiesTitle)
   })
 })
 

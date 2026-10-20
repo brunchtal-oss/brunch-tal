@@ -19,6 +19,7 @@ import {
   useWorkAction,
 } from "@/components/admin/use-work-action"
 import { InlineNotice } from "@/components/shared/inline-notice"
+import { sectionTitleClass } from "@/components/shared/section-title"
 import { Button } from "@/components/ui/button"
 import { adminCopy } from "@/lib/copy/admin"
 import { errorMessage, type ErrorCode } from "@/lib/errors"
@@ -104,9 +105,7 @@ export function NotesView({
 function EmptyTopics() {
   return (
     <div className="flex flex-col items-center gap-4 rounded-lg bg-muted px-4 py-6 text-center">
-      <p className="font-heading text-[22px] leading-[1.3] font-light text-balance">
-        {copy.emptyTopics}
-      </p>
+      <p className={sectionTitleClass}>{copy.emptyTopics}</p>
       <AddTopicButton className={PRIMARY_WIDE} />
     </div>
   )
@@ -268,9 +267,7 @@ function TopicSection({
 
       {active.length === 0 ? (
         <div className="flex flex-col items-center gap-4 rounded-lg bg-muted px-4 py-6 text-center">
-          <p className="font-heading text-[22px] leading-[1.3] font-light text-balance">
-            {copy.emptyNotes}
-          </p>
+          <p className={sectionTitleClass}>{copy.emptyNotes}</p>
           <AddNote topicId={topic.id} wide />
         </div>
       ) : (

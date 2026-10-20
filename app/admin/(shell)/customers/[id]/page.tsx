@@ -1,36 +1,35 @@
 import { Suspense } from "react"
 import type { Metadata } from "next"
 import Link from "next/link"
-import { ChevronDownIcon, ChevronLeftIcon } from "lucide-react"
+import { ChevronLeftIcon } from "lucide-react"
 
-import { EntryMeter } from "@/components/customer/balance-card"
 import { buttonClass } from "@/components/shared/button-class"
 import { PageHeading } from "@/components/shared/page-heading"
 import { StatusChip } from "@/components/shared/status-chip"
 import { adminCopy } from "@/lib/copy/admin"
 import { shellCopy } from "@/lib/copy/shell"
-import { formatLocalDate, localToday } from "@/lib/time"
-import { cn } from "@/lib/utils"
+import { localToday } from "@/lib/time"
 
 import { PageSection } from "../../home/home-section"
-import { EntryRow } from "../entry-lines"
-import { AccountSection } from "./account-section"
+import { CardActions, ContactRows } from "./account-section"
+import { BabiesRow } from "./babies-row"
 import { BackLink } from "./back-link"
+import { BalancePlate, SinglePlate } from "./balance-plates"
 import {
   accountView,
   balanceViews,
   cardHeader,
   detailRows,
+  ACTION_BUTTON,
   historyHref,
   toBabyItems,
   toNoteItem,
-  type BalanceItem,
-  type SingleItem,
 } from "./card-items"
 import { parseCustomerCredits, toCustomerCreditItem } from "./credit-items"
 import { CreditsSection } from "./credits-section"
 import { CustomerNotes } from "./customer-notes"
 import { entitlementHref } from "./entitlements/[entitlementId]/entitlement-items"
+import { HistoryDisclosure } from "./history-disclosure"
 import { loadAccount, loadCard, loadCredits } from "./load-card"
 
 const copy = adminCopy.customers.card
@@ -39,15 +38,17 @@ export const metadata: Metadata = {
   title: adminCopy.customers.title,
 }
 
-// The customer card (story 4.2, CAP-25; phone check, user decision
-// 2026-10-07, and the second phone check): the header (name, phone, "not
-// activated") → details (photo consent read only) → the account (story
-// 2.8: email, phone, reset link) → babies → balances
-// and validity: each card opening in place to its entries, then the open
-// singles → credits and refunds (story 3.9, admin_list_customer_credits)
-// → links to the booking and purchase histories → internal notes,
-// marked as Tal's only. No notifications. All
-// values come from admin_get_customer. Rendered inside the admin shell's
+// The customer card (story 4.2, CAP-25; fix 9, user decision 2026-10-19):
+// (1) the header: her name (and "not activated"), then side by side "reset
+// link" (story 2.8) and "book for a session" (story 3.19), the link's
+// status and the issued link under them; (2) "פרטים" in a cube: phone and
+// email (a pencil each opens the 2.8 change), joined, last activity,
+// dietary, photo consents (read only), babies; (3) balances and validity:
+// each card plate one link to its page (story 3.13), opening in place to
+// its entries, then the open singles; (4) credits and refunds (story 3.9,
+// 3.16); (5) the history, closed, to the bookings and purchases pages;
+// (6) internal notes, marked as Tal's only. No notifications. All values
+// come from admin_get_customer. Rendered inside the admin shell's
 // <Suspense> gate.
 export default function CustomerCardPage({
   params,
@@ -90,64 +91,62 @@ async function CustomerCardContent({
         <PageHeading>
           <bdi>{header.name}</bdi>
         </PageHeading>
-        {(header.phone || header.notActivated) && (
-          <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-base text-muted-foreground">
-            {header.phone && <bdi dir="ltr">{header.phone}</bdi>}
-            {header.notActivated && (
-              <StatusChip tone="pending">
-                {adminCopy.customers.notActivated}
-              </StatusChip>
-            )}
-          </p>
+        {header.notActivated && (
+          <StatusChip tone="pending" className="self-start">
+            {adminCopy.customers.notActivated}
+          </StatusChip>
         )}
       </header>
 
-      <PageSection id="card-details" title={copy.details}>
-        <dl className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
-          {detailRows(card.profile).map((row) => (
-            <div key={row.label} className="flex flex-col gap-1">
-              <dt className="text-[13px] text-muted-foreground">{row.label}</dt>
-              <dd className="text-base break-words">
-                {typeof row.value === "string" ? (
-                  <bdi dir={row.ltr ? "ltr" : undefined}>{row.value}</bdi>
-                ) : (
-                  row.value.map((line) => (
-                    <span key={line} className="block">
-                      {line}
-                    </span>
-                  ))
-                )}
-              </dd>
-            </div>
-          ))}
-        </dl>
-      </PageSection>
-
-      <PageSection id="card-account" title={copy.account.title}>
-        <AccountSection
-          customerId={card.profile.id}
-          email={card.profile.email ?? ""}
-          phone={header.phone ?? ""}
-          view={account}
-        />
-      </PageSection>
-
-      <PageSection id="card-babies" title={copy.babies}>
-        {babies.length === 0 ? (
-          <Muted>{copy.noBabies}</Muted>
-        ) : (
-          <ul className="flex flex-col gap-1">
-            {babies.map((baby) => (
-              <li key={baby.key} className="text-base">
-                <bdi className="font-semibold">{baby.name}</bdi>
-                {baby.age && (
-                  <span className="text-muted-foreground">, {baby.age}</span>
-                )}
-              </li>
+      {/* The details with the card's two actions right under them (phone
+          check, user decision 2026-10-21). */}
+      <div className="flex flex-col gap-3">
+        <PageSection id="card-details" title={copy.details} boxed>
+          <dl className="flex flex-col divide-y divide-border [&>div]:py-3 [&>div:first-child]:pt-0 [&>div:last-child]:pb-0">
+            <ContactRows
+              customerId={card.profile.id}
+              email={card.profile.email ?? ""}
+              phone={header.phone ?? ""}
+              view={account}
+            />
+            {detailRows(card.profile).map((row) => (
+              <div key={row.label} className="flex flex-col gap-1">
+                <dt className="text-[13px] text-muted-foreground">
+                  {row.label}
+                </dt>
+                <dd className="text-base break-words">
+                  {typeof row.value === "string" ? (
+                    <bdi>{row.value}</bdi>
+                  ) : (
+                    row.value.map((line) => (
+                      <span key={line} className="block">
+                        {line}
+                      </span>
+                    ))
+                  )}
+                </dd>
+              </div>
             ))}
-          </ul>
+            <BabiesRow babies={babies} />
+            {/* Story 4.6 ("הסרת פרטים") adds its action here, at the bottom
+                of this cube, under a rule. */}
+          </dl>
+        </PageSection>
+
+        {/* Story 3.19 (user decision 2026-10-19): the manual booking screen
+            from her card; neither it nor the reset link before she is
+            activated (both would refuse). */}
+        {!header.notActivated && (
+          <CardActions customerId={card.profile.id} view={account}>
+            <Link
+              href={`/admin/sessions/book?customer=${encodeURIComponent(card.profile.id)}`}
+              className={buttonClass({ size: "lg", className: ACTION_BUTTON })}
+            >
+              {copy.book}
+            </Link>
+          </CardActions>
         )}
-      </PageSection>
+      </div>
 
       <PageSection id="card-balances" title={copy.balances}>
         {balances.length === 0 ? (
@@ -167,40 +166,20 @@ async function CustomerCardContent({
             )}
           </ul>
         )}
-        {/* Story 3.19 (user decision 2026-10-19): the manual booking screen
-            from her card; not before she is activated (it would refuse). */}
-        {!header.notActivated && (
-          <Link
-            href={`/admin/sessions/book?customer=${encodeURIComponent(card.profile.id)}`}
-            className={cn(
-              buttonClass({
-                variant: "outline",
-                size: "lg",
-                className:
-                  "h-auto min-h-11 rounded-[4px] border-foreground bg-transparent px-3 text-[15px] leading-[1.2] font-semibold whitespace-normal text-foreground",
-              }),
-              "mt-3 self-start"
-            )}
-          >
-            {copy.book}
-          </Link>
-        )}
       </PageSection>
 
       <PageSection id="card-credits" title={copy.credits.title}>
         <CreditsSection items={credits} customerName={header.name} />
       </PageSection>
 
-      <PageSection id="card-history" title={copy.history}>
-        <ul className="-mx-3 flex flex-col">
-          <HistoryLink href={historyHref(card.profile.id, "bookings")}>
-            {copy.bookingsLink(card.bookings.length)}
-          </HistoryLink>
-          <HistoryLink href={historyHref(card.profile.id, "purchases")}>
-            {copy.purchasesLink(card.payments.length)}
-          </HistoryLink>
-        </ul>
-      </PageSection>
+      <HistoryDisclosure id="card-history" title={copy.history}>
+        <HistoryLink href={historyHref(card.profile.id, "bookings")}>
+          {copy.bookingsLink(card.bookings.length)}
+        </HistoryLink>
+        <HistoryLink href={historyHref(card.profile.id, "purchases")}>
+          {copy.purchasesLink(card.payments.length)}
+        </HistoryLink>
+      </HistoryDisclosure>
 
       <PageSection
         id="card-notes"
@@ -217,99 +196,6 @@ async function CustomerCardContent({
         />
       </PageSection>
     </>
-  )
-}
-
-// One entitlement on a muted plate: the product and its state, the meter,
-// one summary line and the validity. A card opens in place (a native
-// disclosure) to one line per entry.
-function BalancePlate({ item, href }: { item: BalanceItem; href: string }) {
-  return (
-    <li
-      className={cn(
-        "flex flex-col gap-3 rounded-lg bg-muted px-4 pt-4",
-        item.entries.length > 0 ? "pb-1" : "pb-4"
-      )}
-    >
-      <div className="flex items-start gap-2">
-        <p className="min-w-0 flex-1 text-[17px] leading-[1.35] font-semibold">
-          <bdi className="break-words">{item.productName}</bdi>
-        </p>
-        {item.chip && (
-          <StatusChip tone={item.chip.tone} className="mt-0.5">
-            {item.chip.label}
-          </StatusChip>
-        )}
-      </div>
-      {item.meter && (
-        <EntryMeter
-          used={item.used}
-          reserved={item.reserved}
-          total={item.total}
-        />
-      )}
-      <div className="flex flex-col gap-1">
-        <p className="text-base">
-          <bdi>{item.summary}</bdi>
-        </p>
-        <p className="text-[15px] text-muted-foreground">
-          <time dateTime={formatLocalDate(item.expiresOn)}>
-            <bdi className="whitespace-nowrap">{item.until}</bdi>
-            {item.extended && (
-              <span className="ms-1 whitespace-nowrap">{copy.extended}</span>
-            )}
-          </time>
-        </p>
-        {/* Story 3.13: the card's page (extend, fix the balance or the
-            terms). */}
-        <Link
-          href={href}
-          aria-label={copy.entitlementLinkFor(item.productName)}
-          className="inline-flex min-h-11 items-center self-start text-[15px] underline underline-offset-[3px]"
-        >
-          {copy.entitlementLink}
-        </Link>
-      </div>
-      {item.entries.length > 0 ? (
-        <details className="group">
-          <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 self-start text-[15px] font-semibold underline-offset-4 hover:underline [&::-webkit-details-marker]:hidden">
-            {copy.entriesToggle}
-            <ChevronDownIcon
-              aria-hidden
-              strokeWidth={1.5}
-              className="size-4 transition-transform group-open:rotate-180 motion-reduce:transition-none"
-            />
-          </summary>
-          <ul className="flex flex-col gap-2 pt-1 pb-3">
-            {item.entries.map((line) => (
-              <EntryRow key={line.key} line={line} />
-            ))}
-          </ul>
-        </details>
-      ) : null}
-    </li>
-  )
-}
-
-// A single entitlement not used yet: the product (and "expiring"), then
-// its booked session or "to book" with the validity. No meter or counts.
-function SinglePlate({ item }: { item: SingleItem }) {
-  return (
-    <li className="flex flex-col gap-1 rounded-lg bg-muted p-4">
-      <div className="flex items-start gap-2">
-        <p className="min-w-0 flex-1 text-[17px] leading-[1.35] font-semibold">
-          <bdi className="break-words">{item.productName}</bdi>
-        </p>
-        {item.chip && (
-          <StatusChip tone={item.chip.tone} className="mt-0.5">
-            {item.chip.label}
-          </StatusChip>
-        )}
-      </div>
-      <p className="text-[15px] text-muted-foreground">
-        <bdi>{item.line}</bdi>
-      </p>
-    </li>
   )
 }
 

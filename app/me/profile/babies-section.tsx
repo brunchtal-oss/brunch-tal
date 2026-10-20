@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react"
 
 import { InlineNotice } from "@/components/shared/inline-notice"
 import { OnlineButton } from "@/components/shared/online-button"
+import { cubeTitleClass } from "@/components/shared/section-title"
 import { Button } from "@/components/ui/button"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
@@ -35,7 +36,9 @@ type Failure = { code: ErrorCode; detail?: ErrorDetail }
 // age on the local today, display only) and the birth date; edit opens the
 // row's fields in place, delete asks once in the row. With one baby left
 // there is no delete button (the database refuses it too, LAST_BABY).
-// "+ תינוק נוסף" opens an empty pair of fields.
+// "+ תינוק נוסף" opens an empty pair of fields. A cube of its own beside
+// the details (fix 11: its own add, edit and delete forms; two edit buttons
+// in one cube confuse on a phone), the rows ruled between them.
 export function BabiesSection({
   babies,
   today,
@@ -111,15 +114,15 @@ export function BabiesSection({
   const canDelete = babies.length > 1
 
   return (
-    <section aria-labelledby="babies-title" className="flex flex-col gap-4">
-      <h2
-        id="babies-title"
-        className="font-heading text-[22px] leading-[1.25] font-light"
-      >
+    <section
+      aria-labelledby="babies-title"
+      className="flex flex-col gap-4 rounded-xl border border-border bg-card p-4"
+    >
+      <h2 id="babies-title" className={cubeTitleClass}>
         {copy.babiesTitle}
       </h2>
 
-      <ul className="flex flex-col divide-y divide-border border-y border-border">
+      <ul className="flex flex-col divide-y divide-border [&>li:first-child]:pt-0">
         {babies.map((baby) => {
           const editing = open?.kind === "edit" && open.id === baby.id
           const confirming = open?.kind === "delete" && open.id === baby.id
