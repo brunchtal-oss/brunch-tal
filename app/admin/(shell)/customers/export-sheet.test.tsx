@@ -11,9 +11,7 @@ const copy = adminCopy.customers.export
 function render(props: Partial<Parameters<typeof ExportForm>[0]> = {}) {
   return renderToStaticMarkup(
     <ExportForm
-      search={null}
-      scope="all"
-      onScopeChange={() => {}}
+      shown={null}
       columns={["full_name", "phone", "email"]}
       onColumnsChange={() => {}}
       pending={false}
@@ -25,19 +23,25 @@ function render(props: Partial<Parameters<typeof ExportForm>[0]> = {}) {
 }
 
 describe("ExportForm", () => {
-  it("only 'all' without a search; the three columns, all checked", () => {
+  it("nothing shown: every customer, no scope choice; the three columns, all checked", () => {
     const html = render()
-    expect(html).toContain(copy.scopeAll)
-    expect(html).not.toContain("תוצאות החיפוש")
+    expect(html).toContain("בחרת לייצא את כל הלקוחות")
+    expect(html).not.toContain('type="radio"')
     for (const header of ["שם", "טלפון", "מייל"]) expect(html).toContain(header)
     expect(html.match(/aria-checked="true"/g)).toHaveLength(3)
     expect(html).not.toContain("aria-disabled")
   })
 
-  it("offers the shown search with its count", () => {
-    expect(render({ search: { query: "רונ", count: "200+" } })).toContain(
-      copy.scopeSearch("200+")
-    )
+  it("says what the screen shows: a category or the search with its count", () => {
+    expect(
+      render({ shown: { kind: "category", activity: "inactive" } })
+    ).toContain("בחרת לייצא את כל הלקוחות הלא פעילות")
+    expect(
+      render({ shown: { kind: "category", activity: "active" } })
+    ).toContain("בחרת לייצא את כל הלקוחות הפעילות")
+    expect(
+      render({ shown: { kind: "search", query: "רונ", count: "5" } })
+    ).toContain("בחרת לייצא את תוצאות החיפוש (5)")
   })
 
   it("no column: the button is aria-disabled with the reason", () => {

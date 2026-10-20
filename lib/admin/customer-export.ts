@@ -32,6 +32,13 @@ export const EXPORT_COLUMNS = {
 
 export type ExportColumn = keyof typeof EXPORT_COLUMNS
 export type ExportScope = "all" | "search"
+// The category (story 5.13): "all" = active and inactive. Both scopes carry
+// it: "all" exports the whole category, "search" the matches within it.
+export type ExportActivity = "all" | "active" | "inactive"
+
+function isExportActivity(value: unknown): value is ExportActivity {
+  return value === "all" || value === "active" || value === "inactive"
+}
 
 export const EXPORT_COLUMN_KEYS = Object.keys(
   EXPORT_COLUMNS
@@ -45,6 +52,8 @@ export type ExportParams = {
   scope: ExportScope
   // The trimmed search, only for scope "search".
   query: string | null
+  // The category, for both scopes.
+  activity: ExportActivity
   // In file order.
   columns: ExportColumn[]
 }
@@ -53,8 +62,9 @@ const QUERY_MIN = 2
 const QUERY_MAX = 100
 
 /**
- * `?scope=all|search&q=&cols=full_name,phone,email`. search needs q of 2-100
- * characters after trimming; cols is non-empty, without duplicates, from the
+ * `?scope=all|search&q=&activity=all|active|inactive&cols=full_name,phone,email`.
+ * search needs q of 2-100 characters after trimming; all ignores q. activity
+ * is required for both. cols is non-empty, without duplicates, from the
  * closed list. Anything else is INVALID_INPUT (the RPC checks again).
  */
 export function parseExportParams(
@@ -71,6 +81,9 @@ export function parseExportParams(
     if (query.length < QUERY_MIN || query.length > QUERY_MAX) return invalid
   }
 
+  const activity = params.get("activity")
+  if (!isExportActivity(activity)) return invalid
+
   const raw = (params.get("cols") ?? "").split(",").map((c) => c.trim())
   // An empty cols is [""], not a column.
   if (raw.some((c) => !isExportColumn(c))) return invalid
@@ -78,12 +91,15 @@ export function parseExportParams(
   const chosen = new Set(raw)
   const columns = EXPORT_COLUMN_KEYS.filter((key) => chosen.has(key))
 
-  return { ok: true, data: { scope, query, columns } }
+  return { ok: true, data: { scope, query, activity, columns } }
 }
 
-// The shown search, offered as the sheet's second scope: its trimmed query
-// and the count as the list shows it.
-export type ShownSearch = { query: string; count: string }
+// What the screen asks for, which the sheet exports (story 5.13): a whole
+// category, or a search over every customer with its trimmed query and the
+// count as the list shows it (null while its answer is not shown).
+export type ShownList =
+  | { kind: "category"; activity: ExportActivity }
+  | { kind: "search"; query: string; count: string | null }
 
 /** The list's count as the sheet shows it: "200+" past the limit. */
 export function shownCount(
@@ -94,19 +110,34 @@ export function shownCount(
   return hasMore ? adminCopy.customers.export.moreThan(limit) : String(length)
 }
 
+/** The sheet's line: what the file will hold. Nothing shown = every customer. */
+export function exportLine(shown: ShownList | null): string {
+  const copy = adminCopy.customers.export
+  if (shown?.kind === "search") return copy.chosenSearch(shown.count)
+  return copy.chosen[shown ? shown.activity : "all"]
+}
+
 /**
- * What the sheet asks for: without a shown search always "all" (no q); the
- * search scope sends the shown query.
+ * What the sheet asks for: a category -> scope all with that category; a
+ * search -> scope search with its query over every customer; nothing shown
+ * -> every customer.
  */
 export function exportRequest(
-  search: ShownSearch | null,
-  scope: ExportScope,
+  shown: ShownList | null,
   columns: readonly ExportColumn[]
 ): ExportParams {
-  const chosen = search ? scope : "all"
+  if (shown?.kind === "search") {
+    return {
+      scope: "search",
+      query: shown.query,
+      activity: "all",
+      columns: [...columns],
+    }
+  }
   return {
-    scope: chosen,
-    query: chosen === "search" && search ? search.query : null,
+    scope: "all",
+    query: null,
+    activity: shown ? shown.activity : "all",
     columns: [...columns],
   }
 }
@@ -125,9 +156,15 @@ export async function errorCodeOf(response: Response): Promise<string> {
 export const EXPORT_PATH = "/api/admin/export"
 
 /** The route's address for a choice of the sheet (parseExportParams reads it). */
-export function exportHref({ scope, query, columns }: ExportParams): string {
+export function exportHref({
+  scope,
+  query,
+  activity,
+  columns,
+}: ExportParams): string {
   const params = new URLSearchParams({ scope })
   if (scope === "search") params.set("q", (query ?? "").trim())
+  params.set("activity", activity)
   params.set(
     "cols",
     EXPORT_COLUMN_KEYS.filter((key) => columns.includes(key)).join(",")

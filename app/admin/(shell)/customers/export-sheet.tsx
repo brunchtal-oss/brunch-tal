@@ -5,7 +5,6 @@ import { DownloadIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { TEXT_BUTTON, WorkPanel } from "@/components/admin/edit-kit"
-import { RadioCardGroup } from "@/components/admin/radio-card"
 import { InlineNotice } from "@/components/shared/inline-notice"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -16,10 +15,10 @@ import {
   errorCodeOf,
   exportFileName,
   exportHref,
+  exportLine,
   exportRequest,
   type ExportColumn,
-  type ExportScope,
-  type ShownSearch,
+  type ShownList,
 } from "@/lib/admin/customer-export"
 import { adminCopy } from "@/lib/copy/admin"
 import { errorMessage, type ErrorCode } from "@/lib/errors"
@@ -30,13 +29,12 @@ const copy = adminCopy.customers.export
 type Notice = { ok: true } | { ok: false; code: ErrorCode | string }
 
 // "ייצוא" on /admin/customers (story 4.4, CAP-25; EXPERIENCE › לקוחות ›
-// ייצוא CSV): a bottom sheet with the scope and the closed column list (all
-// checked). The file comes through fetch -> blob -> <a download>, so the
+// ייצוא CSV): a bottom sheet with one line saying what the file holds (what
+// the screen shows, story 5.13) and the closed column list (all checked). The file comes through fetch -> blob -> <a download>, so the
 // button locks while it is prepared and the result stays in an
 // inline-notice inside the sheet.
-export function CustomerExport({ search }: { search: ShownSearch | null }) {
+export function CustomerExport({ shown }: { shown: ShownList | null }) {
   const [open, setOpen] = useState(false)
-  const [scope, setScope] = useState<ExportScope>("all")
   const [columns, setColumns] = useState<ExportColumn[]>([
     ...EXPORT_COLUMN_KEYS,
   ])
@@ -50,10 +48,9 @@ export function CustomerExport({ search }: { search: ShownSearch | null }) {
     setPending(true)
     setNotice(null)
     try {
-      const response = await fetch(
-        exportHref(exportRequest(search, scope, columns)),
-        { cache: "no-store" }
-      )
+      const response = await fetch(exportHref(exportRequest(shown, columns)), {
+        cache: "no-store",
+      })
       if (!response.ok) {
         setNotice({ ok: false, code: await errorCodeOf(response) })
         return
@@ -74,9 +71,7 @@ export function CustomerExport({ search }: { search: ShownSearch | null }) {
         type="button"
         className={cn(TEXT_BUTTON, "gap-2 self-start")}
         onClick={() => {
-          // A fresh sheet: the shown search when there is one, every column,
-          // no old result.
-          setScope(search ? "search" : "all")
+          // A fresh sheet: every column, no old result.
           setColumns([...EXPORT_COLUMN_KEYS])
           setNotice(null)
           setOpen(true)
@@ -92,9 +87,7 @@ export function CustomerExport({ search }: { search: ShownSearch | null }) {
         title={copy.title}
       >
         <ExportForm
-          search={search}
-          scope={search ? scope : "all"}
-          onScopeChange={setScope}
+          shown={shown}
           columns={columns}
           onColumnsChange={setColumns}
           pending={pending}
@@ -118,21 +111,18 @@ function saveBlob(blob: Blob, fileName: string) {
   setTimeout(() => URL.revokeObjectURL(url), 10_000)
 }
 
-// The sheet's body: scope, columns, the result and the one primary button.
+// The sheet's body: what is exported, the columns, the result and the one
+// primary button.
 // Without a column the button is aria-disabled with the reason under it.
 export function ExportForm({
-  search,
-  scope,
-  onScopeChange,
+  shown,
   columns,
   onColumnsChange,
   pending,
   notice,
   onSubmit,
 }: {
-  search: ShownSearch | null
-  scope: ExportScope
-  onScopeChange: (scope: ExportScope) => void
+  shown: ShownList | null
   columns: readonly ExportColumn[]
   onColumnsChange: (columns: ExportColumn[]) => void
   pending: boolean
@@ -142,12 +132,6 @@ export function ExportForm({
   const id = useId()
   const reasonId = `${id}-reason`
   const empty = columns.length === 0
-  const scopes = [
-    { value: "all", label: copy.scopeAll },
-    ...(search
-      ? [{ value: "search", label: copy.scopeSearch(search.count) }]
-      : []),
-  ]
 
   return (
     <form
@@ -157,13 +141,7 @@ export function ExportForm({
         onSubmit()
       }}
     >
-      <RadioCardGroup
-        legend={copy.scopeLegend}
-        name={`${id}-scope`}
-        options={scopes}
-        value={scope}
-        onChange={(value) => onScopeChange(value as ExportScope)}
-      />
+      <p className="text-base font-semibold">{exportLine(shown)}</p>
 
       <fieldset className="flex flex-col gap-1">
         <legend className="mb-2 text-[15px] font-semibold">

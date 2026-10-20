@@ -1535,6 +1535,20 @@ export const adminCopy = {
     notActivated: "לא הופעלה",
     empty: "לא נמצאו לקוחות",
     hasMore: (limit: number) => `מוצגות ${limit} הראשונות. אפשר לחפש`,
+    // A category over the limit (story 5.13): a search would leave it.
+    hasMoreCategory: (limit: number) =>
+      `מוצגות ${limit} הראשונות. בייצוא יופיעו כולן`,
+    // Story 5.13 (CAP-28, user decision 2026-10-20): the three category
+    // buttons under the search, each category's empty text and the row's
+    // chip of an inactive customer.
+    categoriesNav: "רשימות לקוחות",
+    categories: { all: "כל הלקוחות", active: "פעילות", inactive: "לא פעילות" },
+    emptyCategory: {
+      all: "אין עדיין לקוחות",
+      active: "אין לקוחות פעילות",
+      inactive: "אין לקוחות לא פעילות",
+    },
+    inactive: "לא פעילה",
     // The segmented-switch on /admin/customers and its open cards (story
     // 4.3, CAP-42): two links, the current one aria-current.
     switchNav: "תצוגות הלקוחות",
@@ -1838,16 +1852,24 @@ export const adminCopy = {
       },
     },
     // The CSV export (story 4.4, CAP-25, user decisions 2026-10-13): a
-    // bottom sheet with the scope and the closed column list. `headers` are
+    // bottom sheet with what is exported and the closed column list. `headers` are
     // the file's header row, keyed by lib/admin/customer-export.ts.
     export: {
       button: "ייצוא",
       title: "ייצוא לקוחות",
-      // The legends of the two groups in the sheet.
-      scopeLegend: "מה לייצא",
       columnsLegend: "עמודות",
-      scopeAll: "כל הלקוחות",
-      scopeSearch: (count: string) => `תוצאות החיפוש (${count})`,
+      // What the file holds: what the screen shows (story 5.13); nothing
+      // shown is every customer.
+      chosen: {
+        all: "בחרת לייצא את כל הלקוחות",
+        active: "בחרת לייצא את כל הלקוחות הפעילות",
+        inactive: "בחרת לייצא את כל הלקוחות הלא פעילות",
+      },
+      // No count while the search's answer is not shown yet.
+      chosenSearch: (count: string | null) =>
+        count === null
+          ? "בחרת לייצא את תוצאות החיפוש"
+          : `בחרת לייצא את תוצאות החיפוש (${count})`,
       // The shown count when the list has more than its limit.
       moreThan: (limit: number) => `${limit}+`,
       headers: exportHeaders,
@@ -2211,6 +2233,8 @@ export const adminCopy = {
       scope: "היקף",
       columns: "עמודות",
       row_count: "מספר שורות",
+      // The export's category (story 5.13).
+      activity: "סינון לפי פעילות",
     } as Record<string, string>,
     // Known values of code columns (their CHECK constraints), per key; an
     // unknown value shows its code.
@@ -2275,6 +2299,11 @@ export const adminCopy = {
       eligible_event_kind: { regular: "רגיל", couple: "זוגי" },
       default_kind: { regular: "רגיל", couple: "זוגי" },
       scope: { all: "כל הלקוחות", search: "תוצאות חיפוש" },
+      activity: {
+        all: "כל הלקוחות",
+        active: "פעילות",
+        inactive: "לא פעילות",
+      },
       columns: exportHeaders,
     } as Record<string, Record<string, string>>,
     // A table's own wording of a code value (gender and meaning), by

@@ -21,7 +21,7 @@ import {
 } from "./support/db"
 import { approve, seedMoney, type MoneyFixture } from "./support/money"
 
-const LIST = "select public.admin_list_customers($1) as r"
+const LIST = "select public.admin_list_customers($1, $2) as r"
 const GET = "select public.admin_get_customer($1) as r"
 const ADD = "select public.admin_add_customer_note($1, $2, $3) as r"
 const DELETE = "select public.admin_delete_customer_note($1, $2) as r"
@@ -34,6 +34,7 @@ type ListRow = {
   phone_e164: string | null
   activated: boolean
   last_activity_on: string | null
+  inactive: boolean
 }
 type List = { customers: ListRow[]; has_more: boolean }
 
@@ -141,8 +142,18 @@ async function asAdmin<T>(db: Db, f: Fixture, run: () => Promise<T>) {
   }
 }
 
-async function list(db: Db, f: Fixture, query: string | null): Promise<List> {
-  return asAdmin(db, f, async () => (await db.query(LIST, [query])).rows[0].r)
+async function list(
+  db: Db,
+  f: Fixture,
+  query: string | null,
+  // Story 5.13: the category; "all" = active and inactive.
+  activity = "all"
+): Promise<List> {
+  return asAdmin(
+    db,
+    f,
+    async () => (await db.query(LIST, [query, activity])).rows[0].r
+  )
 }
 
 async function ids(
@@ -187,7 +198,7 @@ async function grant(
 }
 
 describe("admin_list_customers: search", () => {
-  it("finds by part of the name; empty or one character is an empty list", async () => {
+  it("finds by part of the name; one character is an empty list, an empty query the whole category", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)
       const roni = await insertCustomer(db, "רוני כהן")
@@ -205,12 +216,26 @@ describe("admin_list_customers: search", () => {
         expect.arrayContaining([roni, ronit])
       )
 
-      // Nothing until she types 2 characters (phone check, 2026-10-07).
-      for (const query of ["ר", " ר ", "", "   ", null]) {
+      // One character: nothing yet (phone check, 2026-10-07).
+      for (const query of ["ר", " ר "]) {
         expect(await list(db, f, query), String(query)).toEqual({
           customers: [],
           has_more: false,
         })
+      }
+      // Story 5.13: an empty query lists the whole category (browse). The
+      // dev database may hold more than 200, so look at the first rows only
+      // when there are fewer.
+      for (const query of ["", "   ", null]) {
+        const all = await list(db, f, query)
+        if (!all.has_more) {
+          expect(
+            all.customers.map((c) => c.id),
+            String(query)
+          ).toEqual(expect.arrayContaining([roni, ronit, dana]))
+        } else {
+          expect(all.customers, String(query)).toHaveLength(200)
+        }
       }
     })
   })
@@ -239,12 +264,14 @@ describe("admin_list_customers: search", () => {
     await inRollback(async (db) => {
       const f = await seed(db)
       await asAuthenticated(db, f.admin)
-      expect(await raised(db, LIST, ["x".repeat(101)])).toEqual({
+      expect(await raised(db, LIST, ["x".repeat(101), "active"])).toEqual({
         code: "P0001",
         message: "INVALID_INPUT",
         detail: { field: "query" },
       })
-      expect(await queryError(db, LIST, [` ${"x".repeat(100)} `])).toBeNull()
+      expect(
+        await queryError(db, LIST, [` ${"x".repeat(100)} `, "active"])
+      ).toBeNull()
     })
   })
 
@@ -290,6 +317,7 @@ describe("admin_list_customers: order", () => {
         phone_e164: null,
         activated: true,
         last_activity_on: "2026-10-05",
+        inactive: false,
       })
       expect(rows.find((r) => r.id === none)?.last_activity_on).toBeNull()
     })
@@ -804,7 +832,7 @@ describe("a customer never reads them", () => {
 
       await asAuthenticated(db, f.customerA)
       for (const [query, params] of [
-        [LIST, [testName("x")]],
+        [LIST, [testName("x"), "active"]],
         [GET, [f.customerA]],
         [ADD, [f.customerA, "x", randomUUID()]],
         [DELETE, [noteId, randomUUID()]],
@@ -833,7 +861,7 @@ describe("a customer never reads them", () => {
     await inRollback(async (db) => {
       await db.query("set local role anon")
       for (const [query, params] of [
-        [LIST, [testName("x")]],
+        [LIST, [testName("x"), "active"]],
         [GET, [randomUUID()]],
         [ADD, [randomUUID(), "x", randomUUID()]],
         [DELETE, [randomUUID(), randomUUID()]],

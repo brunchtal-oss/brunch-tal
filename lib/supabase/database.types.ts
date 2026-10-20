@@ -2048,7 +2048,12 @@ export type Database = {
         Returns: Json
       }
       admin_export_customers: {
-        Args: { p_columns: string[]; p_query: string; p_scope: string }
+        Args: {
+          p_activity: string
+          p_columns: string[]
+          p_query: string
+          p_scope: string
+        }
         Returns: Json
       }
       admin_finish_email_change: {
@@ -2110,7 +2115,10 @@ export type Database = {
         Args: { p_customer_id: string }
         Returns: Json
       }
-      admin_list_customers: { Args: { p_query: string }; Returns: Json }
+      admin_list_customers: {
+        Args: { p_activity: string; p_query: string }
+        Returns: Json
+      }
       admin_list_links: { Args: never; Returns: Json }
       admin_list_open_cards: { Args: { p_filter: string }; Returns: Json }
       admin_list_payments: { Args: never; Returns: Json }

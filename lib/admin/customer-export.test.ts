@@ -6,6 +6,7 @@ import {
   errorCodeOf,
   exportFileName,
   exportHref,
+  exportLine,
   exportRequest,
   parseExportParams,
   shownCount,
@@ -18,54 +19,69 @@ function parse(query: string) {
 }
 
 describe("parseExportParams", () => {
-  it("all with the three columns", () => {
-    expect(parse("scope=all&cols=full_name,phone,email")).toEqual({
+  it("all with its category and the three columns", () => {
+    expect(
+      parse("scope=all&activity=inactive&cols=full_name,phone,email")
+    ).toEqual({
       ok: true,
       data: {
         scope: "all",
         query: null,
+        activity: "inactive",
         columns: ["full_name", "phone", "email"],
       },
     })
   })
 
-  it("search keeps the trimmed query; the columns come in file order", () => {
-    expect(parse("scope=search&q=%20רונ%20&cols=email,full_name")).toEqual({
+  it("search keeps the trimmed query and the category; the columns come in file order", () => {
+    expect(
+      parse("scope=search&q=%20רונ%20&activity=all&cols=email,full_name")
+    ).toEqual({
       ok: true,
-      data: { scope: "search", query: "רונ", columns: ["full_name", "email"] },
+      data: {
+        scope: "search",
+        query: "רונ",
+        activity: "all",
+        columns: ["full_name", "email"],
+      },
     })
   })
 
   it("all ignores q", () => {
-    expect(parse("scope=all&q=x&cols=phone")).toMatchObject({
+    expect(parse("scope=all&q=x&activity=all&cols=phone")).toMatchObject({
       ok: true,
-      data: { query: null },
+      data: { query: null, activity: "all" },
     })
   })
 
   it.each([
     "",
     "cols=full_name",
-    "scope=everything&cols=full_name",
-    "scope=search&cols=full_name",
-    "scope=search&q=ר&cols=full_name",
-    "scope=search&q=%20ר%20&cols=full_name",
-    `scope=search&q=${"א".repeat(101)}&cols=full_name`,
-    "scope=all",
-    "scope=all&cols=",
-    "scope=all&cols=full_name,dietary_notes",
-    "scope=all&cols=full_name,full_name",
-    "scope=all&cols=id",
-    "scope=all&cols=pending_email",
-    "scope=all&cols=full_name,",
+    "scope=everything&activity=all&cols=full_name",
+    "scope=search&activity=all&cols=full_name",
+    "scope=search&q=ר&activity=all&cols=full_name",
+    "scope=search&q=%20ר%20&activity=all&cols=full_name",
+    `scope=search&q=${"א".repeat(101)}&activity=all&cols=full_name`,
+    "scope=search&q=רונ&cols=full_name",
+    "scope=search&q=רונ&activity=bogus&cols=full_name",
+    "scope=search&q=רונ&activity=&cols=full_name",
+    "scope=all&cols=full_name",
+    "scope=all&activity=bogus&cols=full_name",
+    "scope=all&activity=all",
+    "scope=all&activity=all&cols=",
+    "scope=all&activity=all&cols=full_name,dietary_notes",
+    "scope=all&activity=all&cols=full_name,full_name",
+    "scope=all&activity=all&cols=id",
+    "scope=all&activity=all&cols=pending_email",
+    "scope=all&activity=all&cols=full_name,",
   ])("INVALID_INPUT for %j", (query) => {
     expect(parse(query)).toEqual({ ok: false, code: "INVALID_INPUT" })
   })
 
   it("accepts a 100-character query", () => {
-    expect(parse(`scope=search&q=${"א".repeat(100)}&cols=full_name`).ok).toBe(
-      true
-    )
+    expect(
+      parse(`scope=search&q=${"א".repeat(100)}&activity=all&cols=full_name`).ok
+    ).toBe(true)
   })
 })
 
@@ -107,59 +123,100 @@ describe("customersCsv", () => {
 })
 
 describe("exportHref", () => {
-  it("all: no q, the columns in file order; parseExportParams reads it back", () => {
+  it("all: the category, no q, the columns in file order; parseExportParams reads it back", () => {
     const href = exportHref({
       scope: "all",
       query: "ignored",
+      activity: "inactive",
       columns: ["email", "full_name"],
     })
-    expect(href).toBe("/api/admin/export?scope=all&cols=full_name%2Cemail")
+    expect(href).toBe(
+      "/api/admin/export?scope=all&activity=inactive&cols=full_name%2Cemail"
+    )
     expect(parseExportParams(new URL(href, "http://x").searchParams)).toEqual({
       ok: true,
-      data: { scope: "all", query: null, columns: ["full_name", "email"] },
+      data: {
+        scope: "all",
+        query: null,
+        activity: "inactive",
+        columns: ["full_name", "email"],
+      },
     })
   })
 
-  it("search: the trimmed q", () => {
+  it("search: the trimmed q and the category", () => {
     const href = exportHref({
       scope: "search",
       query: " רונ ",
+      activity: "all",
       columns: ["full_name", "phone", "email"],
     })
+    expect(new URL(href, "http://x").searchParams.get("activity")).toBe("all")
     expect(parseExportParams(new URL(href, "http://x").searchParams)).toEqual({
       ok: true,
       data: {
         scope: "search",
         query: "רונ",
+        activity: "all",
         columns: ["full_name", "phone", "email"],
       },
     })
   })
 })
 
-describe("exportRequest", () => {
+describe("exportRequest (story 5.13)", () => {
   const all = ["full_name", "phone", "email"] as const
 
-  it("no shown search: all, without q, whatever the scope", () => {
-    expect(exportRequest(null, "search", all)).toEqual({
+  it("nothing shown: every customer", () => {
+    expect(exportRequest(null, all)).toEqual({
       scope: "all",
       query: null,
+      activity: "all",
       columns: [...all],
     })
   })
 
-  it("a shown search: the search scope sends the shown query", () => {
-    const search = { query: "רונ", count: "3" }
-    expect(exportRequest(search, "search", ["phone"])).toEqual({
-      scope: "search",
-      query: "רונ",
-      columns: ["phone"],
-    })
-    expect(exportRequest(search, "all", ["phone"])).toEqual({
+  it("a category: scope all with that category", () => {
+    expect(
+      exportRequest({ kind: "category", activity: "inactive" }, ["phone"])
+    ).toEqual({
       scope: "all",
       query: null,
+      activity: "inactive",
       columns: ["phone"],
     })
+  })
+
+  it("a search: its query over every customer", () => {
+    expect(
+      exportRequest({ kind: "search", query: "רונ", count: "3" }, ["phone"])
+    ).toEqual({
+      scope: "search",
+      query: "רונ",
+      activity: "all",
+      columns: ["phone"],
+    })
+  })
+})
+
+describe("exportLine (story 5.13)", () => {
+  it("what the file will hold", () => {
+    expect(exportLine(null)).toBe("בחרת לייצא את כל הלקוחות")
+    expect(exportLine({ kind: "category", activity: "all" })).toBe(
+      "בחרת לייצא את כל הלקוחות"
+    )
+    expect(exportLine({ kind: "category", activity: "active" })).toBe(
+      "בחרת לייצא את כל הלקוחות הפעילות"
+    )
+    expect(exportLine({ kind: "category", activity: "inactive" })).toBe(
+      "בחרת לייצא את כל הלקוחות הלא פעילות"
+    )
+    expect(exportLine({ kind: "search", query: "רונ", count: "200+" })).toBe(
+      "בחרת לייצא את תוצאות החיפוש (200+)"
+    )
+    expect(exportLine({ kind: "search", query: "רונ", count: null })).toBe(
+      "בחרת לייצא את תוצאות החיפוש"
+    )
   })
 })
 
