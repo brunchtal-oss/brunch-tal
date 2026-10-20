@@ -239,6 +239,32 @@ const SEED = [
     "ההחזר בוצע",
     "החזר של {amount} על הבראנץ׳ ב-{date} הועבר אלייך",
   ],
+  // Stories 3.16 (a credit changed or refunded by Tal) and 5.10 (a credit
+  // about to expire).
+  [
+    "credit_options_changed",
+    "customer",
+    true,
+    "template",
+    "עדכון בזיכוי שלך",
+    "המפגשים שאפשר להירשם אליהם עם הזיכוי מ־{date} עודכנו. הפרטים באזור האישי",
+  ],
+  [
+    "credit_refund_requested",
+    "customer",
+    true,
+    "template",
+    "בקשת ההחזר התקבלה",
+    "במקום הזיכוי מ־{date} יוחזרו לך {amount}. נעדכן אותך כשההחזר יבוצע",
+  ],
+  [
+    "credit_expiring",
+    "customer",
+    true,
+    "template",
+    "הזיכוי שלך עומד לפוג",
+    "ההרשמה למפגש החלופי האחרון, ב-{date}, נסגרת ב-{closes_on}. זה הזמן להירשם",
+  ],
   [
     "event_changed",
     "customer",
@@ -324,7 +350,7 @@ const SEED = [
 }))
 
 describe("notification templates", () => {
-  it("hold the approved seed: 21 templates, recipient, channel, mode and wording", async () => {
+  it("hold the approved seed: 24 templates, recipient, channel, mode and wording", async () => {
     const rows = await sql(
       `select type, recipient_kind, push, body_mode, title, body, version
        from public.notification_templates

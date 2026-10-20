@@ -134,6 +134,27 @@ const ROWS: Record<AttentionKind, AttentionRow> = {
     since: SINCE,
     count: 3,
   },
+  job_failed: {
+    kind: "job_failed",
+    id: "expiry_alerts",
+    customer_label: null,
+    since: SINCE,
+    job: "expiry_alerts",
+    reason: "failed",
+  },
+  vault_missing: {
+    kind: "vault_missing",
+    id: "vault_missing",
+    customer_label: null,
+    since: SINCE,
+  },
+  push_stuck: {
+    kind: "push_stuck",
+    id: "push_stuck",
+    customer_label: null,
+    since: SINCE,
+    count: 4,
+  },
 }
 
 describe("toAttentionItem", () => {
@@ -238,6 +259,30 @@ describe("toAttentionItem", () => {
         detail:
           "ההתראות עצמן נשמרו במרכז ההתראות. אם זה חוזר, צריך לבדוק את הגדרות הפוש של האתר",
         chip: "לא נשלח",
+        tone: "warning",
+      },
+      job_failed: {
+        href: "/admin/notifications",
+        title: "התראות על כרטיסיות וזיכויים שעומדים לפוג: לא עבד בפעם האחרונה",
+        detail:
+          "המערכת תנסה שוב לבד. אם ההודעה לא נעלמת עד מחר, צריך לפנות לתמיכה הטכנית",
+        chip: "לא עבד",
+        tone: "warning",
+      },
+      vault_missing: {
+        href: "/admin/notifications",
+        title: "שליחת הפוש לא מוגדרת",
+        detail:
+          "חסרות הגדרות שליחה, ולכן התראות פוש לא יוצאות. ההתראות עצמן נשמרות במרכז ההתראות. צריך לפנות לתמיכה הטכנית",
+        chip: "לא מוגדר",
+        tone: "error",
+      },
+      push_stuck: {
+        href: "/admin/notifications",
+        title: "4 התראות פוש ממתינות ולא נשלחות",
+        detail:
+          "ייתכן שהגדרות הפוש של האתר שגויות. ההתראות עצמן נשמרו במרכז ההתראות",
+        chip: "ממתין",
         tone: "warning",
       },
     }
@@ -453,6 +498,62 @@ describe("adminCopy.home", () => {
     for (const text of texts) {
       expect(text).not.toMatch(/רווח|הכנס/)
     }
+  })
+})
+
+describe("story 5.10: scheduled jobs and push", () => {
+  it("a late or missing job: one title, detail and chip for both, with the job's Hebrew name", () => {
+    const late = toAttentionItem({
+      ...ROWS.job_failed,
+      id: "cleanup",
+      job: "cleanup",
+      reason: "late",
+    })
+    expect(late.title).toBe("מחיקת נתונים ישנים: לא פועל כבר זמן מה")
+    expect(late.detail).toBe("לבירור יש לפנות לתמיכה הטכנית")
+    expect(late.chip).toEqual({ tone: "error", label: "לא פועל" })
+    expect(late.key).toBe("job_failed:cleanup")
+
+    const missing = toAttentionItem({
+      ...ROWS.job_failed,
+      id: "reminders",
+      job: "reminders",
+      reason: "missing",
+    })
+    expect(missing.title).toBe("תזכורות ללקוחות לפני מפגש: לא פועל כבר זמן מה")
+    expect(missing.detail).toBe("לבירור יש לפנות לתמיכה הטכנית")
+    expect(missing.chip).toEqual({ tone: "error", label: "לא פועל" })
+  })
+
+  it("every scheduled job has a Hebrew name; an unknown job reads as its jobname", () => {
+    const names = {
+      reminders: "תזכורות ללקוחות לפני מפגש",
+      invoke_push_worker: "שליחת התראות פוש",
+      complete_events: "סגירת מפגשים שהסתיימו",
+      refresh_credit_options: "עדכון מפגשים חלופיים לזיכויים",
+      expiry_alerts: "התראות על כרטיסיות וזיכויים שעומדים לפוג",
+      auto_extend: "הארכה אוטומטית של כרטיסיות",
+      cleanup: "מחיקת נתונים ישנים",
+    }
+    for (const [job, name] of Object.entries(names)) {
+      expect(
+        toAttentionItem({ ...ROWS.job_failed, id: job, job }).title,
+        job
+      ).toBe(`${name}: לא עבד בפעם האחרונה`)
+    }
+    expect(
+      toAttentionItem({
+        ...ROWS.job_failed,
+        id: "marketing_reminders",
+        job: "marketing_reminders",
+      }).title
+    ).toBe("marketing_reminders: לא עבד בפעם האחרונה")
+  })
+
+  it("one stuck push reads in the singular", () => {
+    expect(toAttentionItem({ ...ROWS.push_stuck, count: 1 }).title).toBe(
+      "התראת פוש אחת ממתינה ולא נשלחת"
+    )
   })
 })
 

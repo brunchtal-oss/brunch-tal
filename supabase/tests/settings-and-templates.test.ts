@@ -234,7 +234,7 @@ async function book(db: Db, customer: string, eventId: string) {
 async function notifications(db: Db, customer: string, type: string) {
   const { rows } = await db.query(
     `select payload ->> 'title' as title, payload ->> 'body' as body,
-       (payload ->> 'template_version')::int as version
+       (payload ->> 'template_version')::int as version, dedupe_key
      from public.notifications
      where recipient_id = $1 and type = $2
      order by (payload ->> 'template_version')::int, id`,
@@ -622,7 +622,7 @@ describe("admin_update_notification_template", { timeout: 30_000 }, () => {
     })
   })
 
-  it("the admin reads all 23 templates (policy and grant)", async () => {
+  it("the admin reads all 24 templates (policy and grant)", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)
       const types = await as(db, f.admin, async () => {
@@ -631,7 +631,7 @@ describe("admin_update_notification_template", { timeout: 30_000 }, () => {
         )
         return rows.map((row) => row.type as string)
       })
-      expect(types).toHaveLength(23)
+      expect(types).toHaveLength(24)
     })
   })
 
@@ -659,7 +659,7 @@ describe("the template contract", { timeout: 60_000 }, () => {
          from public.notification_templates
          order by type`
       )
-      expect(rows).toHaveLength(23)
+      expect(rows).toHaveLength(24)
     })
   })
 
@@ -987,6 +987,73 @@ describe("the template contract", { timeout: 60_000 }, () => {
       )
       expect(sent).toHaveLength(1)
       expectRendered(sent[0])
+    })
+  })
+
+  // Story 5.10: the expiry alerts of a card and of a credit.
+  it("card_expiring, admin_card_expiring and credit_expiring render in the real job", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      await db.query(
+        `update public.business_settings
+         set admin_expiring_days = 21, customer_expiring_days = 10,
+             credit_expiring_days = 5`
+      )
+      for (const type of [
+        "card_expiring",
+        "admin_card_expiring",
+        "credit_expiring",
+      ]) {
+        await fillAllFields(db, f, type)
+      }
+      // A card with 10 days left.
+      const r = await grant(db, f, f.card)
+      await db.query(
+        `update public.entitlements
+         set expires_on = (now() at time zone 'Asia/Jerusalem')::date + 10
+         where payment_id = $1`,
+        [r.payment_id]
+      )
+      const { rows: cards } = await db.query(
+        "select id from public.entitlements where payment_id = $1",
+        [r.payment_id]
+      )
+      // A credit whose two options are set, the last one closing in 4 days.
+      const origin = await insertEvent(db, f, 3)
+      await insertEvent(db, f, 4)
+      const last = await insertEvent(db, f, 5)
+      await db.query(
+        "update public.events set registration_closes_at = now() + interval '4 days' where id = $1",
+        [last]
+      )
+      const pinned = await grant(db, f, f.single, { eventId: origin })
+      const { rows } = await db.query(
+        "select id from public.bookings where payment_id = $1",
+        [pinned.payment_id]
+      )
+      await as(db, f.customerA, () =>
+        db.query("select public.cancel_booking($1, $2, 'credit') as r", [
+          rows[0].id,
+          randomUUID(),
+        ])
+      )
+
+      await db.query("select private.job_expiry_alerts()")
+      for (const [recipient, type] of [
+        [f.customerA, "card_expiring"],
+        [f.admin, "admin_card_expiring"],
+        [f.customerA, "credit_expiring"],
+      ]) {
+        // The admin's alerts of this card only (the job also runs on the
+        // rest of the dev database).
+        const sent = (await notifications(db, recipient, type)).filter(
+          (n) =>
+            type !== "admin_card_expiring" ||
+            String(n.dedupe_key).includes(`:${cards[0].id}:`)
+        )
+        expect(sent, type).toHaveLength(1)
+        expectRendered(sent[0])
+      }
     })
   })
 
