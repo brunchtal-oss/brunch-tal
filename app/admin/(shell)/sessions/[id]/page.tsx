@@ -16,6 +16,7 @@ import { detailsSummary, isFull, loadEventDetails } from "./load-details"
 import { CANCEL_ANCHOR, SessionCancel } from "./session-cancel"
 import { SessionDelete } from "./session-delete"
 import { SessionHeader } from "./session-header"
+import { WaitlistList } from "./waitlist-list"
 
 const copy = adminCopy.sessions
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -151,6 +152,8 @@ async function SessionDetailsContent({
           2026-10-08). */}
       <ResultNoticeHost className="mt-4 flex flex-col gap-8">
         <AttendeeList details={details} cancellable={!readOnly} />
+        {/* Story 5.6: who waits for a place, hidden when no one does. */}
+        <WaitlistList waitlist={details.waitlist} />
         {/* Story 3.8: the whole session's cancel, last on the page, far from
             the everyday actions. */}
         {cancellable && (

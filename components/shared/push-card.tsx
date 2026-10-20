@@ -34,10 +34,20 @@ export function PushCard({
   surface,
   register,
   unregister,
+  askText,
+  askWhenOff = false,
+  onChoice,
 }: {
   surface: Surface
   register: (input: PushRegistration) => Promise<ActionResult>
   unregister: (endpoint: string) => Promise<ActionResult>
+  // The ask line in a context other than the center (story 5.6: the
+  // waitlist); the surface's own line otherwise.
+  askText?: string
+  // Story 5.6: ask also when the device is "off" ("לא עכשיו" in the
+  // center), and tell the caller what she chose.
+  askWhenOff?: boolean
+  onChoice?: (choice: "enable" | "later") => void
 }) {
   // null on the server and before hydration: nothing is shown.
   const state = useSyncExternalStore(
@@ -55,6 +65,7 @@ export function PushCard({
   }
 
   async function enable() {
+    onChoice?.("enable")
     setFailed(false)
     setBusy(true)
     let permission = Notification.permission
@@ -84,6 +95,7 @@ export function PushCard({
   }
 
   function later() {
+    onChoice?.("later")
     writeChoice("off")
     refocus()
   }
@@ -105,13 +117,14 @@ export function PushCard({
   return (
     <PushCardView
       ref={ref}
-      state={state}
+      state={askWhenOff && state === "off" ? "ask" : state}
       surface={surface}
       failed={failed && state === "on"}
       busy={busy}
       onEnable={enable}
       onLater={later}
       onTurnOff={turnOff}
+      askText={askText}
     />
   )
 }
@@ -131,6 +144,7 @@ export function PushCardView({
   onEnable,
   onLater,
   onTurnOff,
+  askText,
 }: {
   ref?: React.Ref<HTMLElement>
   state: PushState
@@ -140,6 +154,7 @@ export function PushCardView({
   onEnable?: () => void
   onLater?: () => void
   onTurnOff?: () => void
+  askText?: string
 }) {
   const frame =
     "rounded-lg border border-border bg-card focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
@@ -159,7 +174,7 @@ export function PushCardView({
             strokeWidth={1.5}
             className="mt-0.5 size-5 shrink-0 text-primary"
           />
-          {surface === "admin" ? copy.askAdmin : copy.askCustomer}
+          {askText ?? (surface === "admin" ? copy.askAdmin : copy.askCustomer)}
         </p>
         {failed && (
           <p role="alert" className="text-[15px] leading-normal text-error">

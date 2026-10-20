@@ -55,6 +55,8 @@ export const shellCopy = {
     markUnread: "סימון כלא נקראה",
     markAllRead: "סימון הכול כנקרא",
     empty: "אין התראות כרגע",
+    // Story 5.6: under a waitlist_spot whose place was already taken.
+    spotTaken: "המקום כבר נתפס",
     listLabel: "רשימת ההתראות",
     time: {
       today: (time: string) => `היום, ${time}`,

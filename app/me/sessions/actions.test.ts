@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { bookSessionAction, bookSessionsAction } from "./actions"
+import {
+  bookSessionAction,
+  bookSessionsAction,
+  joinWaitlistAction,
+  leaveWaitlistAction,
+} from "./actions"
 
 const callRpc = vi.fn()
 
@@ -102,5 +107,55 @@ describe("bookSessionsAction", () => {
     await expect(
       bookSessionsAction({ eventIds: [EVENT_ID], idempotencyKey: KEY })
     ).resolves.toEqual({ ok: false, code: "NOT_AUTHORIZED" })
+  })
+})
+
+describe("joinWaitlistAction / leaveWaitlistAction (story 5.6)", () => {
+  it("calls join_waitlist and leave_waitlist with her session and the key", async () => {
+    callRpc.mockResolvedValue({ ok: true, data: { event_id: EVENT_ID } })
+    await expect(
+      joinWaitlistAction({ eventId: EVENT_ID, idempotencyKey: KEY })
+    ).resolves.toEqual({ ok: true, data: undefined })
+    expect(callRpc).toHaveBeenLastCalledWith(
+      { session: true },
+      "join_waitlist",
+      { p_event_id: EVENT_ID, p_idempotency_key: KEY }
+    )
+    await expect(
+      leaveWaitlistAction({ eventId: EVENT_ID, idempotencyKey: KEY })
+    ).resolves.toEqual({ ok: true, data: undefined })
+    expect(callRpc).toHaveBeenLastCalledWith(
+      { session: true },
+      "leave_waitlist",
+      { p_event_id: EVENT_ID, p_idempotency_key: KEY }
+    )
+  })
+
+  it("refuses malformed input without calling the RPC", async () => {
+    for (const action of [joinWaitlistAction, leaveWaitlistAction]) {
+      for (const input of [
+        { eventId: "nope", idempotencyKey: KEY },
+        { eventId: EVENT_ID, idempotencyKey: "nope" },
+        null,
+      ]) {
+        await expect(
+          action(
+            input as unknown as { eventId: string; idempotencyKey: string }
+          )
+        ).resolves.toEqual({ ok: false, code: "INVALID_INPUT" })
+      }
+    }
+    expect(callRpc).not.toHaveBeenCalled()
+  })
+
+  it("passes the RPC's code through", async () => {
+    callRpc.mockResolvedValue({ ok: false, code: "EVENT_NOT_FULL" })
+    await expect(
+      joinWaitlistAction({ eventId: EVENT_ID, idempotencyKey: KEY })
+    ).resolves.toEqual({ ok: false, code: "EVENT_NOT_FULL" })
+    callRpc.mockResolvedValue({ ok: false, code: "NOT_WAITLISTED" })
+    await expect(
+      leaveWaitlistAction({ eventId: EVENT_ID, idempotencyKey: KEY })
+    ).resolves.toEqual({ ok: false, code: "NOT_WAITLISTED" })
   })
 })

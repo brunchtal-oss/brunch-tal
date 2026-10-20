@@ -57,3 +57,45 @@ export async function bookSessionsAction(input: {
     p_idempotency_key: input.idempotencyKey,
   })
 }
+
+// The waitlist (story 5.6). join_waitlist / leave_waitlist run with her own
+// session and check everything again (hers, the session, full, open); these
+// actions check only the shape. One key per page load or change (AD-5).
+function waitlistInput(input: {
+  eventId: string
+  idempotencyKey: string
+}): boolean {
+  return (
+    typeof input?.eventId === "string" &&
+    typeof input.idempotencyKey === "string" &&
+    UUID.test(input.eventId) &&
+    UUID.test(input.idempotencyKey)
+  )
+}
+
+export async function joinWaitlistAction(input: {
+  eventId: string
+  idempotencyKey: string
+}): Promise<ActionResult<undefined>> {
+  if (!waitlistInput(input)) return { ok: false, code: "INVALID_INPUT" }
+  const result = await callRpc(await createClient(), "join_waitlist", {
+    p_event_id: input.eventId,
+    p_idempotency_key: input.idempotencyKey,
+  })
+  if (!result.ok) return result
+  return { ok: true, data: undefined }
+}
+
+// Also used by "ההרשמות שלי" (its waitlist section).
+export async function leaveWaitlistAction(input: {
+  eventId: string
+  idempotencyKey: string
+}): Promise<ActionResult<undefined>> {
+  if (!waitlistInput(input)) return { ok: false, code: "INVALID_INPUT" }
+  const result = await callRpc(await createClient(), "leave_waitlist", {
+    p_event_id: input.eventId,
+    p_idempotency_key: input.idempotencyKey,
+  })
+  if (!result.ok) return result
+  return { ok: true, data: undefined }
+}

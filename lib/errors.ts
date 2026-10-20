@@ -51,6 +51,10 @@ export const ERROR_MESSAGES = {
     "ההרשמה העצמית למפגש הזה נסגרה. צרי קשר לבדיקת מקום פנוי.",
   ALREADY_BOOKED: "את כבר רשומה למפגש הזה",
   EVENT_FULL: "הבראנץ׳ מלא. ניתן לבחור תאריך אחר",
+  // The waitlist (story 5.6): join_waitlist / leave_waitlist.
+  ALREADY_WAITLISTED: "את כבר ברשימת ההמתנה למפגש הזה",
+  EVENT_NOT_FULL: "יש עכשיו מקום במפגש הזה. אפשר להירשם אליו",
+  NOT_WAITLISTED: "את כבר לא ברשימת ההמתנה למפגש הזה",
   ENTITLEMENT_EXPIRED_ON_DATE:
     "הכרטיסייה אינה בתוקף ביום המפגש. אפשר לבחור מפגש מוקדם יותר.",
   NO_MATCHING_ENTITLEMENT:

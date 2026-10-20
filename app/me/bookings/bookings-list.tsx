@@ -10,6 +10,7 @@ import { callRpc } from "@/lib/rpc"
 import { createClient } from "@/lib/supabase/server"
 import { formatDayMonth, formatWeekday } from "@/lib/time"
 
+import { WaitlistButton } from "../sessions/[id]/waitlist-panel"
 import { sessionPhotos } from "../sessions/load-sessions"
 import {
   needsContact,
@@ -33,6 +34,7 @@ import {
   pendingChoiceStartsAt,
 } from "./credits"
 import { PendingChoiceCard } from "./pending-choice"
+import { parseMyWaitlist } from "./waitlist"
 
 // The content of /me/bookings (see page.tsx), its own module so a test
 // can render it.
@@ -40,11 +42,20 @@ export async function Bookings() {
   const supabase = await createClient()
   // The credits first: get_my_credits refreshes the options, so the
   // bookings read after it agree with them.
-  const creditsResult = await callRpc(supabase, "get_my_credits")
+  // Story 5.6: her waitlist entries (a section after the upcoming
+  // bookings) are read alongside.
+  const [[creditsResult, result], waitlistResult] = await Promise.all([
+    callRpc(supabase, "get_my_credits").then(
+      async (credits) =>
+        [credits, await callRpc(supabase, "get_my_bookings")] as const
+    ),
+    callRpc(supabase, "get_my_waitlist"),
+  ])
   if (!creditsResult.ok) throw new Error("get_my_credits failed")
-  const result = await callRpc(supabase, "get_my_bookings")
   if (!result.ok) throw new Error("get_my_bookings failed")
   const { upcoming, past } = parseMyBookings(result.data)
+  if (!waitlistResult.ok) throw new Error("get_my_waitlist failed")
+  const waitlist = parseMyWaitlist(waitlistResult.data)
   const allCredits = parseMyCredits(creditsResult.data)
   // Story 3.8: a business cancel waiting for her choice, at the top.
   const pending = allCredits.filter(isPendingChoice)
@@ -62,6 +73,7 @@ export async function Bookings() {
   // screens; no RPC change.
   const photos = await sessionPhotos(supabase, [
     ...upcoming.map((b) => b.eventId),
+    ...waitlist.map((w) => w.eventId),
     ...credits.flatMap((c) => activeOptions(c).map((o) => o.eventId)),
   ])
 
@@ -69,7 +81,8 @@ export async function Bookings() {
     upcoming.length === 0 &&
     past.length === 0 &&
     credits.length === 0 &&
-    pending.length === 0
+    pending.length === 0 &&
+    waitlist.length === 0
   ) {
     return (
       <section className="flex flex-col items-start gap-4 py-6">
@@ -138,6 +151,49 @@ export async function Bookings() {
                   status={
                     <StatusChip tone="booked">{customerCopy.booked}</StatusChip>
                   }
+                />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* Story 5.6: one card per session she waits for, each with its own
+          leave (EXPERIENCE › מצבי הרשמה ורשימת המתנה). */}
+      {waitlist.length > 0 && (
+        <section
+          aria-labelledby="waitlist-title"
+          className="flex flex-col gap-3"
+        >
+          <h2
+            id="waitlist-title"
+            className="font-heading text-[22px] leading-[1.25] font-light"
+          >
+            {customerCopy.waitlist.sectionTitle}
+          </h2>
+          <ul className="flex flex-col gap-6">
+            {waitlist.map((w) => (
+              <li key={w.eventId} className="flex flex-col gap-3">
+                <SessionCard
+                  href={`/me/sessions/${w.eventId}`}
+                  conceptName={w.conceptName}
+                  photo={photos.get(w.eventId) ?? null}
+                  startsAt={w.startsAt}
+                  headingLevel={3}
+                  layout="horizontal"
+                  showTime
+                  statusText={customerCopy.waitlist.chip}
+                  status={
+                    <StatusChip tone="pending">
+                      {customerCopy.waitlist.chip}
+                    </StatusChip>
+                  }
+                />
+                <WaitlistButton
+                  action="leave"
+                  eventId={w.eventId}
+                  startsAt={w.startsAt}
+                  className="h-11 rounded-[4px] border-foreground px-4 text-base font-semibold"
                 />
               </li>
             ))}

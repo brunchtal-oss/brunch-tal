@@ -693,6 +693,14 @@ export const adminCopy = {
       allergies: "אלרגיות",
     },
     noAttendees: "עוד אין נרשמות",
+    // The session's waitlist (story 5.6), after "מי מגיעה", hidden when
+    // empty.
+    waitlist: {
+      title: (count: number) => `ממתינות (${count})`,
+      // Followed by "{DD.MM HH:MM}" in a <time>.
+      joinedAt: "הצטרפה ב־",
+      notified: "קיבלה הודעה",
+    },
     couple: "×2",
     pendingJoin: "לקוחה חדשה · ממתינה להצטרפות",
     detailsRemoved: "פרטי הלקוחה הוסרו",
@@ -2025,6 +2033,9 @@ export const adminCopy = {
       creditOptionsChanged: "החלופות לזיכוי עודכנו",
       creditRefunded: (amount: string) =>
         `הזיכוי הוחלף בבקשת החזר של ${amount}`,
+      // Story 5.6.
+      waitlistJoined: "נוספה לרשימת ההמתנה",
+      waitlistLeft: "יצאה מרשימת ההמתנה",
     },
     // Values.
     masked: "השתנה",
@@ -2081,6 +2092,9 @@ export const adminCopy = {
       book_sessions: "הרשמה למפגשים",
       cancel_booking: "ביטול הרשמה",
       move_booking: "הזזת הרשמה",
+      // Story 5.6.
+      join_waitlist: "הצטרפות לרשימת המתנה",
+      leave_waitlist: "יציאה מרשימת המתנה",
       complete_event: "סיום מפגש",
       reset_complete: "איפוס סיסמה",
     } as Record<string, string>,

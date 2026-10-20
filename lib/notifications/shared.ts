@@ -13,6 +13,9 @@ export type NotificationView = {
   targetPath: string
   createdAt: string
   read: boolean
+  // Story 5.6: a waitlist_spot whose place was already taken (customer
+  // center only; get_taken_waitlist_spots). Absent otherwise.
+  spotTaken?: boolean
 }
 
 // The most a center shows, newest first.

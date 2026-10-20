@@ -116,6 +116,34 @@ export function shouldOffer(
   }
 }
 
+/**
+ * The push offer while she waits on a waitlist (story 5.6, user decision
+ * 2026-10-20): shown whenever push is not on and can still be asked, also
+ * after "לא עכשיו" in the notification center ("off"), until she answers
+ * "לא עכשיו" to this offer itself. Storage that throws: no offer.
+ */
+const WAITLIST_DECLINED_KEY = "push-waitlist-declined"
+
+export function shouldOfferOnWaitlist(
+  state: PushState,
+  storage: Pick<Storage, "getItem"> | null
+): boolean {
+  if ((state !== "ask" && state !== "off") || !storage) return false
+  try {
+    return storage.getItem(WAITLIST_DECLINED_KEY) !== "1"
+  } catch {
+    return false
+  }
+}
+
+export function declineWaitlistOffer(): void {
+  try {
+    window.localStorage.setItem(WAITLIST_DECLINED_KEY, "1")
+  } catch {
+    // Private mode: the offer may show again.
+  }
+}
+
 /** Whether to show the offer now; marks this device as offered. */
 export function claimPushOffer(): boolean {
   try {

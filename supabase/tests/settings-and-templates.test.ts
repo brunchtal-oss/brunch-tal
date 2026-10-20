@@ -766,6 +766,28 @@ describe("the template contract", { timeout: 60_000 }, () => {
     })
   })
 
+  // Story 5.6: a place frees up in a full session she waits for.
+  it("waitlist_spot renders in the real flow", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      await fillAllFields(db, f, "waitlist_spot")
+      await grant(db, f, f.card)
+      const event = await insertEvent(db, f, 5)
+      const booking = await book(db, f.customerA, event)
+      await db.query(
+        "update public.events set capacity_adults = 1 where id = $1",
+        [event]
+      )
+      await as(db, f.customerB, () =>
+        db.query("select public.join_waitlist($1, $2)", [event, randomUUID()])
+      )
+      await as(db, f.customerA, () => db.query(CANCEL, [booking, randomUUID()]))
+      const sent = await notifications(db, f.customerB, "waitlist_spot")
+      expect(sent).toHaveLength(1)
+      expectRendered(sent[0])
+    })
+  })
+
   // Story 3.5: a couple product approved for a couple session.
   it("booking_confirmed_couple renders in the real flow", async () => {
     await inRollback(async (db) => {
