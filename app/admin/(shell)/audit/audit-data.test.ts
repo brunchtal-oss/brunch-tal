@@ -145,6 +145,9 @@ describe("labels", () => {
       "שם · טלפון · מייל"
     )
     expect(fieldLabel("row_count")).toBe("מספר שורות")
+    expect(fieldLabel("activity")).toBe("סינון לפי פעילות")
+    expect(formatValue("activity", "inactive")).toBe("לא פעילות")
+    expect(formatValue("activity", "all")).toBe("כל הלקוחות")
   })
 
   it("who: Tal, the customer or the system (user decision 2026-10-10)", () => {

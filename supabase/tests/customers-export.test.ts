@@ -19,7 +19,7 @@ import {
 } from "./support/db"
 import { seedMoney, type MoneyFixture } from "./support/money"
 
-const EXPORT = "select public.admin_export_customers($1, $2, $3) as r"
+const EXPORT = "select public.admin_export_customers($1, $2, $3, $4) as r"
 const ALL_COLUMNS = ["full_name", "phone", "email"]
 
 type Row = {
@@ -65,12 +65,15 @@ async function exportRows(
   f: MoneyFixture,
   scope: string,
   query: string | null,
-  columns: string[]
+  columns: string[],
+  // Story 5.13: the category ("all" = active and inactive) for both scopes.
+  activity: string = "all"
 ): Promise<Row[]> {
   return asAdmin(
     db,
     f,
-    async () => (await db.query(EXPORT, [scope, query, columns])).rows[0].r.rows
+    async () =>
+      (await db.query(EXPORT, [scope, query, columns, activity])).rows[0].r.rows
   )
 }
 
@@ -169,6 +172,7 @@ describe("admin_export_customers: scope and columns", () => {
       expect(logs[0].after).toEqual({
         scope: "search",
         columns: ALL_COLUMNS,
+        activity: "all",
         row_count: 0,
       })
     })
@@ -282,6 +286,7 @@ describe("admin_export_customers: the audit row", () => {
         after: {
           scope: "search",
           columns: ["full_name", "phone"],
+          activity: "all",
           row_count: 2,
         },
       })
@@ -290,7 +295,15 @@ describe("admin_export_customers: the audit row", () => {
       expect(text).not.toContain(testName("log_one"))
 
       await exportRows(db, f, "all", null, ["email"])
-      expect(await exportLogs(db, f.admin)).toHaveLength(2)
+      const both = await exportLogs(db, f.admin)
+      expect(both).toHaveLength(2)
+      // One transaction: created_at ties, so find the row by its scope.
+      expect(both.find((r) => r.after.scope === "all")?.after).toEqual({
+        scope: "all",
+        columns: ["email"],
+        activity: "all",
+        row_count: expect.any(Number),
+      })
     })
   })
 })
@@ -300,18 +313,22 @@ describe("admin_export_customers: invalid input", () => {
     await inRollback(async (db) => {
       const f = await seedMoney(db)
       await asAuthenticated(db, f.admin)
-      const cases: Array<[string | null, string | null, string[] | null]> = [
-        [null, null, ALL_COLUMNS],
-        ["everything", null, ALL_COLUMNS],
-        ["search", null, ALL_COLUMNS],
-        ["search", " א ", ALL_COLUMNS],
-        ["search", "א".repeat(101), ALL_COLUMNS],
-        ["all", null, []],
-        ["all", null, null],
-        ["all", null, ["full_name", "dietary_notes"]],
-        ["all", null, ["full_name", "full_name"]],
-        ["all", null, ["id"]],
-        ["all", null, ["full_name", null as unknown as string]],
+      const cases: Array<
+        [string | null, string | null, string[] | null, string | null]
+      > = [
+        [null, null, ALL_COLUMNS, "all"],
+        ["everything", null, ALL_COLUMNS, "all"],
+        ["search", null, ALL_COLUMNS, "all"],
+        ["search", " א ", ALL_COLUMNS, "all"],
+        ["search", "א".repeat(101), ALL_COLUMNS, "all"],
+        ["all", null, ALL_COLUMNS, null],
+        ["all", null, ALL_COLUMNS, "bogus"],
+        ["all", null, [], "all"],
+        ["all", null, null, "all"],
+        ["all", null, ["full_name", "dietary_notes"], "all"],
+        ["all", null, ["full_name", "full_name"], "all"],
+        ["all", null, ["id"], "all"],
+        ["all", null, ["full_name", null as unknown as string], "all"],
       ]
       for (const params of cases) {
         expect(
@@ -331,14 +348,14 @@ describe("admin_export_customers: who may call it", () => {
       const f = await seedMoney(db)
       await asAuthenticated(db, f.customerA)
       expect(
-        await queryError(db, EXPORT, ["all", null, ALL_COLUMNS])
+        await queryError(db, EXPORT, ["all", null, ALL_COLUMNS, "all"])
       ).toMatchObject({ code: "P0001", message: "NOT_AUTHORIZED" })
       await db.query("reset role")
       expect(await exportLogs(db, f.customerA)).toHaveLength(0)
 
       await db.query("set local role anon")
       expect(
-        (await queryError(db, EXPORT, ["all", null, ALL_COLUMNS]))?.code
+        (await queryError(db, EXPORT, ["all", null, ALL_COLUMNS, "all"]))?.code
       ).toBe("42501")
     })
   })

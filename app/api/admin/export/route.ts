@@ -8,8 +8,9 @@ import { callRpc } from "@/lib/rpc"
 import { createClient } from "@/lib/supabase/server"
 import { localToday } from "@/lib/time"
 
-// GET /api/admin/export?scope=all|search&q=&cols=full_name,phone,email
-// (story 4.4, CAP-25): the customers CSV. The session client (RLS and the
+// GET /api/admin/export?scope=all|search&q=&activity=all|active|inactive&
+// cols=full_name,phone,email (story 4.4, CAP-25; activity = the category for
+// both scopes, story 5.13): the customers CSV. The session client (RLS and the
 // RPC's own admin check); admin_export_customers returns the rows and writes
 // the audit row. No session or NOT_AUTHORIZED -> 403; malformed parameters
 // or INVALID_INPUT -> 400; anything else -> 500, each as {code} JSON. Under
@@ -42,12 +43,13 @@ export async function GET(request: Request): Promise<Response> {
 
   const parsed = parseExportParams(new URL(request.url).searchParams)
   if (!parsed.ok) return error(parsed.code, 400)
-  const { scope, query, columns } = parsed.data
+  const { scope, query, activity, columns } = parsed.data
 
   const result = await callRpc(supabase, "admin_export_customers", {
     p_scope: scope,
     p_query: query ?? "",
     p_columns: columns,
+    p_activity: activity,
   })
   if (!result.ok) return error(result.code, statusOf(result.code))
 

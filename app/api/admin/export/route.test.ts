@@ -39,7 +39,9 @@ describe("GET /api/admin/export", () => {
         ],
       },
     })
-    const response = await get("scope=search&q=%20רונ%20&cols=full_name,phone")
+    const response = await get(
+      "scope=search&q=%20רונ%20&activity=all&cols=full_name,phone"
+    )
     expect(response.status).toBe(200)
     expect(response.headers.get("content-type")).toBe("text/csv; charset=utf-8")
     expect(response.headers.get("content-disposition")).toBe(
@@ -54,13 +56,20 @@ describe("GET /api/admin/export", () => {
     expect(callRpc).toHaveBeenCalledWith(
       expect.anything(),
       "admin_export_customers",
-      { p_scope: "search", p_query: "רונ", p_columns: ["full_name", "phone"] }
+      {
+        p_scope: "search",
+        p_query: "רונ",
+        p_columns: ["full_name", "phone"],
+        p_activity: "all",
+      }
     )
   })
 
-  it("scope=all sends an empty query and the three columns in file order", async () => {
+  it("scope=all sends an empty query, the category and the three columns in file order", async () => {
     callRpc.mockResolvedValue({ ok: true, data: { rows: [] } })
-    const response = await get("scope=all&cols=email,full_name,phone")
+    const response = await get(
+      "scope=all&activity=inactive&cols=email,full_name,phone"
+    )
     expect(response.status).toBe(200)
     expect(callRpc).toHaveBeenCalledWith(
       expect.anything(),
@@ -69,6 +78,7 @@ describe("GET /api/admin/export", () => {
         p_scope: "all",
         p_query: "",
         p_columns: ["full_name", "phone", "email"],
+        p_activity: "inactive",
       }
     )
     const text = new TextDecoder("utf-8", { ignoreBOM: true }).decode(
@@ -79,7 +89,7 @@ describe("GET /api/admin/export", () => {
 
   it("no session -> 403 without calling the RPC", async () => {
     getClaims.mockResolvedValue({ data: null })
-    const response = await get("scope=all&cols=full_name")
+    const response = await get("scope=all&activity=all&cols=full_name")
     expect(response.status).toBe(403)
     expect(await response.json()).toEqual({ code: "NOT_AUTHORIZED" })
     expect(callRpc).not.toHaveBeenCalled()
@@ -87,9 +97,11 @@ describe("GET /api/admin/export", () => {
 
   it("malformed parameters -> 400 without calling the RPC", async () => {
     for (const query of [
-      "scope=all&cols=",
-      "scope=all&cols=full_name,dietary_notes",
-      "scope=search&q=ר&cols=full_name",
+      "scope=all&activity=all&cols=",
+      "scope=all&activity=all&cols=full_name,dietary_notes",
+      "scope=search&q=ר&activity=all&cols=full_name",
+      "scope=search&q=רונ&cols=full_name",
+      "scope=all&cols=full_name",
     ]) {
       const response = await get(query)
       expect(response.status, query).toBe(400)
@@ -104,7 +116,7 @@ describe("GET /api/admin/export", () => {
     ["SERVER_ERROR", 500],
   ])("RPC %s -> %i with {code}", async (code, status) => {
     callRpc.mockResolvedValue({ ok: false, code })
-    const response = await get("scope=all&cols=full_name")
+    const response = await get("scope=all&activity=all&cols=full_name")
     expect(response.status).toBe(status)
     expect(response.headers.get("cache-control")).toBe("private, no-store")
     expect(await response.json()).toEqual({ code })
@@ -112,6 +124,8 @@ describe("GET /api/admin/export", () => {
 
   it("an unexpected RPC answer -> 500", async () => {
     callRpc.mockResolvedValue({ ok: true, data: { rows: "nope" } })
-    expect((await get("scope=all&cols=full_name")).status).toBe(500)
+    expect((await get("scope=all&activity=all&cols=full_name")).status).toBe(
+      500
+    )
   })
 })
