@@ -115,6 +115,13 @@ const ROWS: Record<AttentionKind, AttentionRow> = {
     since: SINCE,
     customer_id: "55555555-5555-4555-8555-555555555555",
   },
+  anonymization_stuck: {
+    kind: "anonymization_stuck",
+    id: "77777777-7777-4777-8777-777777777777",
+    customer_label: null,
+    since: SINCE,
+    customer_id: "77777777-7777-4777-8777-777777777777",
+  },
   correction_affected: {
     kind: "correction_affected",
     id: "b2",
@@ -242,6 +249,13 @@ describe("toAttentionItem", () => {
         href: "/admin/customers/55555555-5555-4555-8555-555555555555",
         title: "שינוי המייל של Maya לא הושלם",
         detail: "שינוי המייל לא הושלם. כדי לסיים, שמרי שוב את המייל החדש",
+        chip: "תקוע",
+        tone: "warning",
+      },
+      anonymization_stuck: {
+        href: "/admin/customers/77777777-7777-4777-8777-777777777777",
+        title: "הסרת פרטים לא הושלמה",
+        detail: "אפשר להשלים אותה מהכרטיס",
         chip: "תקוע",
         tone: "warning",
       },

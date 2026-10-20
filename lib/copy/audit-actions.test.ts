@@ -311,6 +311,16 @@ describe("result sentences", () => {
   })
 
   it("customers: a link, an account change, an export, a consent", () => {
+    // Story 4.6: the removal, with no details.
+    expect(
+      result({
+        action: "admin_anonymize_customer",
+        entity_type: "profiles",
+        changes: [
+          { key: "anonymized_at", before: null, after: "2026-10-20T08:00:00Z" },
+        ],
+      })
+    ).toBe("הפרטים האישיים של הלקוחה הוסרו")
     expect(
       result({
         action: "admin_issue_link",

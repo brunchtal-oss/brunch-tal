@@ -1170,6 +1170,14 @@ export const adminCopy = {
         detail: "שינוי המייל לא הושלם. כדי לסיים, שמרי שוב את המייל החדש",
         chip: "תקוע",
       },
+      // A removal of personal details stuck between its steps for more than
+      // 15 minutes (story 4.6): to the card, whose "השלמת ההסרה" finishes
+      // it. No name: it was removed.
+      anonymization_stuck: {
+        title: () => "הסרת פרטים לא הושלמה",
+        detail: "אפשר להשלים אותה מהכרטיס",
+        chip: "תקוע",
+      },
       // Push notifications that failed in the last 7 days (story 5.8): one
       // item for all of them; the notifications themselves are in the
       // centers.
@@ -1887,6 +1895,44 @@ export const adminCopy = {
       cancel: "ביטול",
       noteDeleted: "ההערה נמחקה",
       noteTooLong: (max: number) => `אפשר עד ${max} תווים`,
+      // Story 4.6 (CAP-30): removing her personal details on her request,
+      // at the bottom of the card, after the notes; afterwards the card is a
+      // tombstone.
+      remove: {
+        button: "הסרת פרטים אישיים",
+        description:
+          "הפרטים יימחקו מכל המערכת, והחשבון שלה ייסגר. היא לא תוכל להתחבר יותר.",
+        deleted: "יימחקו",
+        deletedValue:
+          "שם, טלפון, מייל, תינוקות, אלרגיות והעדפות, הסכמות לתמונות, הערות והתראות",
+        kept: "יישארו בלי שם",
+        keptValue: "תשלומים והרשמות. הסכומים בבית ובדוחות לא ישתנו",
+        // What she still had and will not use: "3 כניסות וזיכוי פתוח".
+        forfeit: "יאבדו",
+        entries: (count: number) =>
+          count === 1 ? "כניסה אחת" : `${count} כניסות`,
+        credits: (count: number) =>
+          count === 1 ? "זיכוי פתוח" : `${count} זיכויים פתוחים`,
+        joinForfeits: (first: string, second: string) => `${first} ו${second}`,
+        checkbox: "הלקוחה ביקשה להסיר את פרטיה. אי אפשר לבטל את ההסרה",
+        confirm: "להסיר את הפרטים",
+        // Shown instead of the dialog while something of hers is open.
+        blockedLead:
+          "אי אפשר להסיר את הפרטים עדיין. קודם מטפלים בעניינים הפתוחים שלה:",
+        blockedBookings:
+          "הרשמות עתידיות (מבטלים בעמוד המפגש, עם החזר או זיכוי)",
+        blockedRefunds: "בקשות החזר שממתינות",
+        blockedChoices: "זיכויים שממתינים לבחירה",
+        // "בקשת החזר של {amount}", to its row on the payments screen.
+        refundLine: (amount: string) => `בקשת החזר של ${amount}`,
+        // To the credit on this card.
+        choiceLine: "זיכוי שממתין לבחירה",
+        // The card of a removed customer.
+        tombstoneTitle: "לקוחה שפרטיה הוסרו",
+        removedOn: (date: string) => `הפרטים הוסרו ב-${date}.`,
+        pending: "ההסרה לא הושלמה: החשבון שלה עדיין קיים.",
+        complete: "השלמת ההסרה",
+      },
       // The account section (story 2.8): email and phone change through
       // Tal, and the reset link she sends herself.
       account: {
@@ -2113,6 +2159,8 @@ export const adminCopy = {
       // Story 5.6.
       waitlistJoined: "נוספה לרשימת ההמתנה",
       waitlistLeft: "יצאה מרשימת ההמתנה",
+      // Story 4.6: no details (there are none left).
+      detailsRemoved: "הפרטים האישיים של הלקוחה הוסרו",
     },
     // Values.
     masked: "השתנה",
@@ -2142,6 +2190,8 @@ export const adminCopy = {
       admin_issue_link: "הפקת קישור",
       admin_finish_email_change: "שינוי מייל",
       admin_change_phone: "שינוי מספר טלפון",
+      // Story 4.6.
+      admin_anonymize_customer: "הסרת פרטים אישיים",
       revoke_link: "ביטול קישור",
       approve_payment: "אישור תשלום",
       admin_book_customer: "רישום לקוחה למפגש",

@@ -402,12 +402,20 @@ describe("who is a customer", () => {
       expect(rows[0].activated).toBe(false)
 
       await asAuthenticated(db, f.admin)
-      for (const id of [admin, anonymized, randomUUID()]) {
+      for (const id of [admin, randomUUID()]) {
         expect(await queryError(db, GET, [id]), id).toMatchObject({
           code: "P0001",
           message: "NOT_FOUND",
         })
       }
+      // Story 4.6: an anonymized customer is her tombstone only.
+      expect((await db.query(GET, [anonymized])).rows[0].r).toEqual({
+        profile: {
+          id: anonymized,
+          anonymized_at: expect.any(String),
+          removal_pending: false,
+        },
+      })
       expect(await queryError(db, GET, [pending])).toBeNull()
     })
   })

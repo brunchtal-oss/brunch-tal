@@ -35,6 +35,8 @@ export const SENSITIVE_ACTIONS = {
   // it), or a refund instead of it.
   credit_options: "האם לשנות את החלופות של הזיכוי?",
   credit_refund: "האם להחליף את הזיכוי בהחזר כספי?",
+  // Removing a customer's personal details on her request (4.6, CAP-30).
+  customer_anonymize: "האם להסיר את הפרטים האישיים?",
 } as const
 
 export type SensitiveAction = keyof typeof SENSITIVE_ACTIONS

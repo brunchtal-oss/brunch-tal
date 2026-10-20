@@ -170,6 +170,11 @@ export const ERROR_MESSAGES = {
   // Raised by the auth.users trigger: an email or phone change that Tal did
   // not start (auth.updateUser with the publishable key).
   ACCOUNT_CHANGE_BLOCKED: "אי אפשר לשנות כאן מייל או טלפון. צרי קשר",
+  // Removing a customer's personal details (story 4.6): she still has a
+  // future booking, a refund request waiting or a credit choice pending
+  // (admin_anonymize_customer checks again under its locks).
+  ANONYMIZE_BLOCKED:
+    "אי אפשר להסיר את הפרטים: יש ללקוחה הרשמות עתידיות או עניינים פתוחים",
   // The login and token actions' rate limit (story 2.8), for the IP and the
   // account or token alike; Supabase Auth's own 429 maps here too.
   TOO_MANY_ATTEMPTS: "יותר מדי ניסיונות. אפשר לנסות שוב בעוד 15 דקות",

@@ -10,7 +10,9 @@ import {
   listCreditCandidatesAction,
   previewChangeCreditOptionsAction,
   previewRefundCreditAction,
+  previewRemoveDetailsAction,
   refundCreditAction,
+  removeDetailsAction,
 } from "./actions"
 
 const callRpc = vi.fn()
@@ -21,6 +23,10 @@ const resetLinkFor = vi.fn(
 
 vi.mock("@/lib/server/privileged/account", () => ({
   changeEmail: (...args: unknown[]) => changeEmail(...args),
+}))
+const anonymizeCustomer = vi.fn()
+vi.mock("@/lib/server/privileged/anonymize", () => ({
+  anonymizeCustomer: (...args: unknown[]) => anonymizeCustomer(...args),
 }))
 vi.mock("@/lib/server/join-link", () => ({
   resetLinkFor: (token: string) => resetLinkFor(token),
@@ -324,5 +330,50 @@ describe("the credit actions (story 3.16)", () => {
         idempotencyKey: KEY,
       })
     ).resolves.toEqual(INVALID)
+  })
+})
+
+describe("removing her personal details (story 4.6)", () => {
+  it("the preview sends the customer and parses the plan", async () => {
+    callRpc.mockResolvedValue({
+      ok: true,
+      data: {
+        blockers: { bookings: [], refund_requests: [], pending_choices: [] },
+        forfeits: { entries_left: 3, active_credits: 1 },
+      },
+    })
+    await expect(
+      previewRemoveDetailsAction({ customerId: ID })
+    ).resolves.toEqual({
+      ok: true,
+      data: {
+        blockers: { bookings: [], refund_requests: [], pending_choices: [] },
+        forfeits: { entries_left: 3, active_credits: 1 },
+      },
+    })
+    expect(callRpc).toHaveBeenLastCalledWith(
+      { session: true },
+      "preview_admin_anonymize_customer",
+      { p_customer_id: ID }
+    )
+  })
+
+  it("the removal hands the id and the screen's key to anonymizeCustomer", async () => {
+    anonymizeCustomer.mockResolvedValue({ ok: true, data: undefined })
+    await expect(
+      removeDetailsAction({ customerId: ID, idempotencyKey: KEY })
+    ).resolves.toEqual({ ok: true, data: undefined })
+    expect(anonymizeCustomer).toHaveBeenLastCalledWith(ID, KEY)
+  })
+
+  it("a bad shape never reaches the RPCs", async () => {
+    anonymizeCustomer.mockReset()
+    await expect(
+      previewRemoveDetailsAction({ customerId: "x" })
+    ).resolves.toEqual(INVALID)
+    await expect(
+      removeDetailsAction({ customerId: ID, idempotencyKey: "x" })
+    ).resolves.toEqual(INVALID)
+    expect(anonymizeCustomer).not.toHaveBeenCalled()
   })
 })

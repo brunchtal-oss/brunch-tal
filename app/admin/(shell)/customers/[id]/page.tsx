@@ -30,7 +30,8 @@ import { CreditsSection } from "./credits-section"
 import { CustomerNotes } from "./customer-notes"
 import { entitlementHref } from "./entitlements/[entitlementId]/entitlement-items"
 import { HistoryDisclosure } from "./history-disclosure"
-import { loadAccount, loadCard, loadCredits } from "./load-card"
+import { loadAccount, loadCardOrRemoved, loadCredits } from "./load-card"
+import { RemovedCard, RemoveDetails } from "./remove-details"
 
 const copy = adminCopy.customers.card
 
@@ -70,10 +71,13 @@ async function CustomerCardContent({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  // The three reads at once; loadCard answers a bad id or a non-customer
-  // with notFound() before the others settle.
-  const [card, accountRow, creditRows] = await Promise.all([
-    loadCard(id),
+  // The card first: a bad id or a non-customer is notFound(), and a removed
+  // customer (story 4.6) is her tombstone only, without the account and
+  // credits reads (both refuse a removed profile).
+  const loaded = await loadCardOrRemoved(id)
+  if ("removed" in loaded) return <RemovedCard profile={loaded.removed} />
+  const { card } = loaded
+  const [accountRow, creditRows] = await Promise.all([
     loadAccount(id),
     // Story 3.9: her credits and refunds (admin_list_customer_credits).
     loadCredits(id),
@@ -128,8 +132,6 @@ async function CustomerCardContent({
               </div>
             ))}
             <BabiesRow babies={babies} />
-            {/* Story 4.6 ("הסרת פרטים") adds its action here, at the bottom
-                of this cube, under a rule. */}
           </dl>
         </PageSection>
 
@@ -195,6 +197,12 @@ async function CustomerCardContent({
           notes={card.notes.map(toNoteItem)}
         />
       </PageSection>
+
+      {/* Story 4.6: removing her personal details, at the very bottom of the
+          card, after the notes (phone check, user decision 2026-10-21). */}
+      <div className="border-t border-border pt-6">
+        <RemoveDetails customerId={card.profile.id} />
+      </div>
     </>
   )
 }

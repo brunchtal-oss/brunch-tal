@@ -4,9 +4,11 @@ import type { ActionResult } from "@/lib/errors"
 import { callRpc } from "@/lib/rpc"
 import { resetLinkFor } from "@/lib/server/join-link"
 import { changeEmail } from "@/lib/server/privileged/account"
+import { anonymizeCustomer } from "@/lib/server/privileged/anonymize"
 import { createClient } from "@/lib/supabase/server"
 
 import { NOTE_MAX } from "./card-items"
+import { parseRemovalPlan, type RemovalPlan } from "./remove-details-items"
 import {
   MAX_CREDIT_OPTIONS,
   parseCreditCandidates,
@@ -151,6 +153,37 @@ export async function issueResetLinkAction(input: {
       linkExpiresAt: issued.link_expires_at,
     },
   }
+}
+
+// ---------------------------------------------------------------------------
+// Story 4.6: removing her personal details (a sensitive action, AD-7, and
+// a two-step one, AD-21). The preview words the blockers and what she
+// loses; the removal runs lib/server/privileged/anonymize.ts (Tal's session
+// for the RPCs, the service role only for the Auth delete). The same action
+// is the retry of a removal left pending ("השלמת ההסרה").
+// ---------------------------------------------------------------------------
+
+export async function previewRemoveDetailsAction(input: {
+  customerId: string
+}): Promise<ActionResult<RemovalPlan>> {
+  if (!isUuid(input?.customerId)) return INVALID
+  const result = await callRpc(
+    await createClient(),
+    "preview_admin_anonymize_customer",
+    { p_customer_id: input.customerId }
+  )
+  if (!result.ok) return result
+  return { ok: true, data: parseRemovalPlan(result.data) }
+}
+
+export async function removeDetailsAction(input: {
+  customerId: string
+  idempotencyKey: string
+}): Promise<ActionResult> {
+  if (!isUuid(input?.customerId) || !isUuid(input.idempotencyKey)) {
+    return INVALID
+  }
+  return anonymizeCustomer(input.customerId, input.idempotencyKey)
 }
 
 // ---------------------------------------------------------------------------

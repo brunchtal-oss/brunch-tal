@@ -6,12 +6,15 @@ import { callRpc } from "@/lib/rpc"
 import { createClient } from "@/lib/supabase/server"
 
 import type { CardAccount, CustomerCard } from "./card-items"
+import { removedProfileOf, type RemovedProfile } from "./remove-details-items"
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-// admin_get_customer for the card and its history pages. A bad id or
-// NOT_FOUND (not a customer): 404.
-export async function loadCard(id: string): Promise<CustomerCard> {
+// admin_get_customer for the card. A bad id or NOT_FOUND (not a customer):
+// 404. A removed customer (story 4.6) comes back as her tombstone only.
+export async function loadCardOrRemoved(
+  id: string
+): Promise<{ card: CustomerCard } | { removed: RemovedProfile }> {
   if (!UUID.test(id)) notFound()
   const result = await callRpc(await createClient(), "admin_get_customer", {
     p_customer_id: id,
@@ -20,7 +23,16 @@ export async function loadCard(id: string): Promise<CustomerCard> {
     if (result.code === "NOT_FOUND") notFound()
     throw new Error("admin_get_customer failed")
   }
-  return result.data as unknown as CustomerCard
+  const data = result.data as unknown as CustomerCard
+  const removed = removedProfileOf(data?.profile)
+  return removed ? { removed } : { card: data }
+}
+
+// The history pages: a removed customer has none (404).
+export async function loadCard(id: string): Promise<CustomerCard> {
+  const loaded = await loadCardOrRemoved(id)
+  if ("removed" in loaded) notFound()
+  return loaded.card
 }
 
 // admin_get_customer_account for the account section (story 2.8). Called

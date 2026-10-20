@@ -292,6 +292,11 @@ export const SHOWN_AUDIT_ACTIONS: Record<string, readonly AuditRule[]> = {
       result: accountChange(results.phoneChanged, results.phoneTaken),
     },
   ],
+  // Story 4.6: the removal itself (its row holds only anonymized_at); the
+  // closing step after Auth is hidden.
+  admin_anonymize_customer: [
+    { entity: "profiles", result: () => results.detailsRemoved },
+  ],
   admin_export_customers: [
     {
       entity: "profiles",
@@ -399,6 +404,7 @@ export const HIDDEN_AUDIT_ACTIONS: readonly string[] = [
   "admin_approve_payment",
   // Technical steps.
   "admin_begin_email_change",
+  "admin_finish_anonymize_customer",
   "join_begin",
   "migrate_identity_match",
   "refresh_returned_entitlements",

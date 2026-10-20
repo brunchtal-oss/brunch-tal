@@ -424,6 +424,25 @@ describe("job_expiry_alerts: credits", { timeout: 60_000 }, () => {
     })
   })
 
+  it("story 4.6: the same credit of a customer whose details were removed: no alert", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const first = await insertEvent(db, f, 96, 84)
+      const last = await insertEvent(db, f, 120, 96)
+      const id = await credit(db, f)
+      expect((await options(db, id)).map((o) => o.event_id).sort()).toEqual(
+        [first, last].sort()
+      )
+      await db.query(
+        "update public.profiles set anonymized_at = now() where id = $1",
+        [f.customerA]
+      )
+
+      await run(db, ALERTS)
+      expect(await alerts(db, "credit_expiring", id)).toHaveLength(0)
+    })
+  })
+
   it("the last option closes later than the credit days: no alert", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)
