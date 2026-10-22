@@ -41,6 +41,7 @@ const ROW: SettingsRow = {
   reminder_lead_hours: 24,
   admin_expiring_days: 21,
   customer_expiring_days: 10,
+  credit_expiring_days: 5,
   last_places_threshold: 4,
   default_prep_days: [-1, 0],
   inactivity_months: 3,
@@ -159,7 +160,7 @@ describe("TemplateEditor", () => {
       <TemplateEditor
         row={{
           ...CONFIRMED,
-          type: "broadcast",
+          type: "marketing_reminder",
           body_mode: "override",
           body: null,
           allowed_vars: [],

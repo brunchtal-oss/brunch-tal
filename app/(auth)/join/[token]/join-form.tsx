@@ -26,6 +26,7 @@ import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"
 import { Textarea } from "@/components/ui/textarea"
 import { authCopy } from "@/lib/copy/auth"
+import { birthDateRange } from "@/lib/time"
 import type { ConflictReason } from "@/lib/auth/join-link-state"
 import { joinCopy, type JoinErrorKey } from "@/lib/copy/join"
 import type { PhotoConsentContent } from "@/lib/content/schema"
@@ -470,6 +471,8 @@ export function JoinForm({
         {babyRows.map((rowId, index) => {
           const name = wiring("babyName", index)
           const birth = wiring("birthDate", index)
+          // 2 years back to 9 months ahead (story 5.20); the server decides.
+          const range = birthDateRange(today)
           return (
             <div key={rowId} className="flex flex-col gap-5">
               <Field data-invalid={name.error ? true : undefined}>
@@ -498,7 +501,8 @@ export function JoinForm({
                   {...birth.inputProps}
                   name="birthDate"
                   type="date"
-                  max={today}
+                  min={range?.min}
+                  max={range?.max}
                   required
                   aria-required
                   className="h-12 text-base"

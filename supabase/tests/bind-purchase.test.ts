@@ -521,6 +521,40 @@ describe("bind_purchase coverage", () => {
     })
   })
 
+  // Story 5.20: the seat side counts any real booking too, so a seat that
+  // was already completed (the session ended before the bind) and her own
+  // booking in that session is a BIND_CONFLICT, never the index's 23505.
+  it("a completed seat in a session where she has a booking -> BIND_CONFLICT (not 23505), nothing bound", async () => {
+    await inRollback(async (db) => {
+      const f = await seedMoney(db)
+      const paymentId = await approveCard(db, f)
+      const { eventId, bookingId } = await unboundBooking(db, paymentId)
+      await db.query(
+        "update public.bookings set status = 'completed' where id = $1",
+        [bookingId]
+      )
+      await db.query(
+        `insert into public.bookings (
+           customer_id, event_id, party_size, booked_by, policy_snapshot)
+         values ($1, $2, 1, 'customer',
+           '{"cancel_window_hours": 48, "reminder_lead_hours": 24}'::jsonb)`,
+        [f.customerA, eventId]
+      )
+
+      expect(
+        await queryError(db, "select private.bind_purchase($1, $2)", [
+          paymentId,
+          f.customerA,
+        ])
+      ).toMatchObject({ code: "P0001", message: "BIND_CONFLICT" })
+      const { rows } = await db.query(
+        "select customer_id, status from public.bookings where id = $1",
+        [bookingId]
+      )
+      expect(rows).toEqual([{ customer_id: null, status: "completed" }])
+    })
+  })
+
   // Story 3.5: the index backs the same rule: a second real booking of a
   // customer in one session is refused (23505), a completed one too.
   it("bookings_confirmed_customer_event_uidx: one confirmed or completed booking per customer and session", async () => {

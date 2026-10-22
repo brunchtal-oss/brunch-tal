@@ -305,14 +305,8 @@ describe("the companion's dietary note", { timeout: 30_000 }, () => {
       expect(await booking(db, p.booking)).toMatchObject({
         guest_details: "צמחונית",
       })
-      expect(await noteAudit(db, p.booking)).toEqual([
-        {
-          actor_kind: "customer",
-          customer_id: f.customerA,
-          before: { guest_details: "<changed>" },
-          after: { guest_details: "<changed>" },
-        },
-      ])
+      // Story 5.20 (fix 6): the note writes no audit row.
+      expect(await noteAudit(db, p.booking)).toEqual([])
       // No notification for a note.
       expect(await notificationsOf(db, f.customerA)).toHaveLength(1)
 
@@ -368,7 +362,7 @@ describe("the companion's dietary note", { timeout: 30_000 }, () => {
       expect(await booking(db, p.booking)).toMatchObject({
         guest_details: null,
       })
-      expect(await noteAudit(db, p.booking)).toHaveLength(2)
+      expect(await noteAudit(db, p.booking)).toEqual([])
     })
   })
 
@@ -495,7 +489,7 @@ describe("the companion's dietary note", { timeout: 30_000 }, () => {
         key,
       ])
       expect(second).toEqual(first)
-      expect(await noteAudit(db, p.booking)).toHaveLength(1)
+      expect(await noteAudit(db, p.booking)).toEqual([])
     })
   })
 
@@ -511,7 +505,7 @@ describe("the companion's dietary note", { timeout: 30_000 }, () => {
         randomUUID(),
       ])
       expect(again).toEqual({ booking_id: p.booking, guest_details: "X" })
-      expect(await noteAudit(db, p.booking)).toHaveLength(1)
+      expect(await noteAudit(db, p.booking)).toEqual([])
     })
   })
 

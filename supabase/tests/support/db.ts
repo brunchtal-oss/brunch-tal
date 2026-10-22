@@ -133,8 +133,12 @@ export function testName(label: string): string {
 
 const cleanups: Array<() => Promise<unknown>> = []
 
-/** Registers a cleanup; setup.ts runs them in reverse order in afterAll. */
+/**
+ * Registers a cleanup; setup.ts runs them in reverse order in afterAll, and
+ * an interrupted run runs the pending ones on exit (installExitCleanup).
+ */
 export function onCleanup(fn: () => Promise<unknown>): void {
+  installExitCleanup()
   cleanups.push(fn)
 }
 
@@ -150,6 +154,54 @@ export async function runCleanups(): Promise<void> {
     }
   }
   if (firstError) throw firstError
+}
+
+// Story 5.20 (fix 8): a run stopped with Ctrl+C (SIGINT), killed (SIGTERM)
+// or ending before afterAll still runs the pending cleanups, once, so its
+// committed test_ rows do not stay in the dev database. A cleanup that
+// already ran was popped, so nothing runs twice; after afterAll the list is
+// empty and only the pool is closed. What a hard kill (SIGKILL) leaves
+// behind, scripts/dev-clean-test-data.mjs finds by the test_ prefix.
+// Installed on the first onCleanup, so a file without committed rows keeps
+// the default signal handling.
+let exitCleanup: Promise<void> | undefined
+let exitHandlersInstalled = false
+
+/** Runs the pending cleanups once and closes the pool (exported for tests). */
+export function cleanupOnExit(): Promise<void> {
+  exitCleanup ??= (async () => {
+    try {
+      if (cleanups.length > 0) await runCleanups()
+    } catch (error) {
+      console.error(
+        `db tests: cleanup on exit failed: ${(error as Error).message}`
+      )
+    } finally {
+      await endPool().catch(() => {})
+    }
+  })()
+  return exitCleanup
+}
+
+const EXIT_CLEANUP_TIMEOUT_MS = 10_000
+
+function installExitCleanup(): void {
+  if (exitHandlersInstalled) return
+  exitHandlersInstalled = true
+  const onSignal = (code: number) => () => {
+    // The handler replaces the signal's default exit, so it exits itself;
+    // at most 10 seconds later, since a cleanup may wait on a row lock that
+    // an open test transaction still holds.
+    const timeout = new Promise<void>((resolve) => {
+      setTimeout(resolve, EXIT_CLEANUP_TIMEOUT_MS).unref()
+    })
+    void Promise.race([cleanupOnExit(), timeout]).finally(() =>
+      process.exit(code)
+    )
+  }
+  process.once("SIGINT", onSignal(130))
+  process.once("SIGTERM", onSignal(143))
+  process.once("beforeExit", () => void cleanupOnExit())
 }
 
 /**

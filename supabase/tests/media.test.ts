@@ -683,12 +683,12 @@ describe("session images", () => {
       expect(replaced.hidden_paths).toContain(`${first}.jpg`)
       expect((await mediaRow(db, shared)).publish_state).toBe("published")
 
-      // Audited with the session.
+      // Story 5.20 (fix 6): no audit row any more.
       const { rows } = await db.query(
         "select count(*)::int as n from public.audit_log where action = 'admin_set_event_image' and event_id = $1",
         [event]
       )
-      expect(rows[0].n).toBe(2)
+      expect(rows[0].n).toBe(0)
 
       // Anon reads it through the session.
       await asAnon(db)

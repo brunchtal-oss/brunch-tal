@@ -240,7 +240,7 @@ describe("notes board (story 4.11, fix 13)", { timeout: 30_000 }, () => {
     })
   })
 
-  it("a replay returns the same result with one row and one audit; another body with the key is refused", async () => {
+  it("a replay returns the same result with one row (no audit, story 5.20); another body with the key is refused", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)
       const before = (await boardIds(db)).length
@@ -248,7 +248,7 @@ describe("notes board (story 4.11, fix 13)", { timeout: 30_000 }, () => {
       const first = await call(db, f, ADD_NOTE, ["קייטרינג", key])
       expect(await call(db, f, ADD_NOTE, ["קייטרינג", key])).toEqual(first)
       expect(await boardIds(db)).toHaveLength(before + 1)
-      expect(await auditCount(db, first.note_id, "admin_add_note")).toBe(1)
+      expect(await auditCount(db, first.note_id, "admin_add_note")).toBe(0)
       expect(await fails(db, f, ADD_NOTE, ["אחר", key])).toBe(
         "IDEMPOTENCY_KEY_REUSED"
       )
@@ -335,14 +335,13 @@ describe("notes board (story 4.11, fix 13)", { timeout: 30_000 }, () => {
       await call(db, f, PINNED, [b, true])
       expect((await notesIn(db, [a, b, c])).map((n) => n.id)).toEqual([b, a, c])
 
+      // Story 5.20 (fix 6): the board writes no audit row.
       const { rows } = await db.query(
-        `select entity_type, entity_id, before, after from public.audit_log
+        `select count(*)::int as n from public.audit_log
          where actor_id = $1 and action = 'admin_set_note_order'`,
         [f.admin]
       )
-      expect(rows).toHaveLength(1)
-      expect(rows[0]).toMatchObject({ entity_type: "notes", entity_id: null })
-      expect(rows[0].after.note_order).toEqual(next)
+      expect(rows[0].n).toBe(0)
     })
   })
 
@@ -368,8 +367,8 @@ describe("notes board (story 4.11, fix 13)", { timeout: 30_000 }, () => {
       await db.query("select private.lock_notes_board()")
       expect(await call(db, f, NOTE_ORDER, [await boardIds(db)])).toBeTruthy()
 
-      expect(await auditCount(db, a, "admin_set_note_done")).toBe(1)
       for (const action of [
+        "admin_set_note_done",
         "admin_set_note_pinned",
         "admin_set_note_archived",
         "admin_update_note",
@@ -471,28 +470,18 @@ describe("notes board (story 4.11, fix 13)", { timeout: 30_000 }, () => {
     }
   })
 
-  it("the audit masks a note's body", async () => {
+  it("story 5.20 (fix 6): a note's add, update and delete write no audit row", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)
       const a = await note(db, f, "דנה 050-0000000")
       await call(db, f, UPDATE_NOTE, [a, "דנה, התקשרה", randomUUID()])
       await call(db, f, DELETE_NOTE, [a, randomUUID()])
       const { rows } = await db.query(
-        `select action, entity_type, before, after from public.audit_log
-         where entity_id = $1 order by action`,
+        "select count(*)::int as n from public.audit_log where entity_id = $1",
         [a]
       )
-      expect(rows.map((r) => r.action)).toEqual([
-        "admin_add_note",
-        "admin_delete_note",
-        "admin_update_note",
-      ])
-      expect(rows.every((r) => r.entity_type === "notes")).toBe(true)
-      const [add, del, update] = rows
-      expect(add.after.body).toBe("<changed>")
-      expect(del.before.body).toBe("<changed>")
-      expect(update.before.body).toBe("<changed>")
-      expect(update.after.body).toBe("<changed>")
+      expect(rows[0].n).toBe(0)
+      expect(await notesIn(db, [a])).toEqual([])
     })
   })
 

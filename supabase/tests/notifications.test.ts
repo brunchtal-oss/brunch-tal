@@ -328,7 +328,6 @@ const SEED = [
     "הכרטיסייה שלך עומדת לפוג",
     "נשארו לך {units} כניסות פנויות עד {expires_on}. זה הזמן לבחור מפגשים",
   ],
-  ["broadcast", "customer", true, "override", "הודעה מטל", null],
   [
     "admin_card_expiring",
     "admin",
@@ -350,7 +349,7 @@ const SEED = [
 }))
 
 describe("notification templates", () => {
-  it("hold the approved seed: 24 templates, recipient, channel, mode and wording", async () => {
+  it("hold the approved seed: 23 templates (story 5.20: no broadcast), recipient, channel, mode and wording", async () => {
     const rows = await sql(
       `select type, recipient_kind, push, body_mode, title, body, version
        from public.notification_templates
@@ -381,7 +380,11 @@ describe("notification templates", () => {
         "update public.notification_templates set recipient_kind = 'admin' where type = 'reminder'",
         "update public.notification_templates set recipient_kind = 'customer' where type = 'marketing_reminder'",
         "update public.notification_templates set body = null where type = 'reminder'",
-        "update public.notification_templates set body = 'x' where type = 'broadcast'",
+        "update public.notification_templates set body = 'x' where type = 'marketing_reminder'",
+        // Story 5.20: broadcast is no longer a type.
+        `insert into public.notification_templates
+           (type, recipient_kind, push, body_mode, title, body)
+         values ('broadcast', 'customer', true, 'override', 'x', null)`,
         "update public.notification_templates set body_mode = 'other' where type = 'reminder'",
       ]
       for (const text of statements) {
@@ -573,9 +576,10 @@ describe("enqueue_notification", () => {
         ],
         // An override on a template-only type, and none on an override type.
         [db, f.a, "card_expiring", "D", CARD_EXPIRING_VARS, "/me", "x"],
-        [db, f.a, "broadcast", "D", null, "/me"],
-        [db, f.a, "broadcast", "D", null, "/me", "  "],
         [db, f.admin1, "marketing_reminder", "D", null, "/admin"],
+        [db, f.admin1, "marketing_reminder", "D", null, "/admin", "  "],
+        // Story 5.20: broadcast is gone (an unknown type).
+        [db, f.a, "broadcast", "D", null, "/me", "x"],
         // Unknown type, empty discriminator, vars that are not an object.
         [db, f.a, "no_such_type", "D", null, "/me"],
         [db, f.a, "purchase_new_card", "", null, "/me"],
@@ -613,11 +617,11 @@ describe("enqueue_notification", () => {
       const f = await seed(db)
       await enqueue(
         db,
-        f.a,
-        "broadcast",
-        "broadcast-1",
+        f.admin1,
+        "marketing_reminder",
+        "2026-10-22T09:00",
         null,
-        "/me",
+        "/admin",
         "הודעה {לא} מרונדרת"
       )
       await enqueue(
@@ -642,11 +646,6 @@ describe("enqueue_notification", () => {
       expect(
         Object.fromEntries(rows.map((row) => [row.type, row.payload]))
       ).toEqual({
-        broadcast: {
-          title: "הודעה מטל",
-          body: "הודעה {לא} מרונדרת",
-          template_version: 1,
-        },
         event_changed: {
           title: "שינוי בבראנץ׳ של 10.11",
           body: "נוסח שטל ערכה",
@@ -658,6 +657,15 @@ describe("enqueue_notification", () => {
           template_version: 2,
         },
       })
+      // An override-only type: the override as is, never rendered.
+      const admin = await notificationsOf(db, [f.admin1])
+      expect(admin.map((row) => row.payload)).toEqual([
+        {
+          title: "תזכורת שיווק",
+          body: "הודעה {לא} מרונדרת",
+          template_version: 1,
+        },
+      ])
     })
   })
 
@@ -917,7 +925,7 @@ describe("notifications row level security", () => {
         [
           `insert into public.notifications
              (recipient_id, recipient_kind, type, payload, target_path, dedupe_key)
-           values ($1, 'customer', 'broadcast',
+           values ($1, 'customer', 'purchase_new_card',
              '{"title":"x","body":"x","template_version":1}', '/me', 'x')`,
           [f.a],
         ],

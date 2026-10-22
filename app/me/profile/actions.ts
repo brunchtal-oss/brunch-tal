@@ -66,7 +66,8 @@ function babyFields(input: {
   if (name.length > 100) return { ok: false, error: invalid("baby_name") }
   if (!birthDate)
     return { ok: false, error: invalid("birth_date", "FIELD_REQUIRED") }
-  // Whether it is in the future is decided by the database only.
+  // Whether it is in range (2 years back to 9 months ahead, story 5.20) is
+  // decided by the database only.
   if (!isPlainDate(birthDate))
     return { ok: false, error: invalid("birth_date") }
   return { ok: true, name, birthDate }

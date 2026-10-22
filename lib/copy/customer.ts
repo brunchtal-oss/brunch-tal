@@ -175,7 +175,8 @@ export const customerCopy = {
     // Back from /me/profile/photos (user decision 2026-10-08).
     backToProfile: "לפרופיל",
     saved: "הפרטים נשמרו",
-    birthDateFuture: "תאריך הלידה לא יכול להיות בעתיד",
+    birthDateRange:
+      "תאריך הלידה יכול להיות עד שנתיים אחורה ועד 9 חודשים קדימה.",
     linksLabel: "עוד באזור האישי",
     // The first row there, to the push card at the top of
     // /me/notifications (story 5.21).

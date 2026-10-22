@@ -69,6 +69,15 @@ describe("parsePushRegistration", () => {
     ["not an object", "x"],
     ["null", null],
     ["an http endpoint", input({ endpoint: "http://push.example.test/a" })],
+    // Story 5.20: only a known push service.
+    [
+      "an unknown push service",
+      input({ endpoint: "https://push.example.test/a" }),
+    ],
+    [
+      "userinfo before a known host",
+      input({ endpoint: "https://x@fcm.googleapis.com/a" }),
+    ],
     [
       "an endpoint over 1000 characters",
       input({ endpoint: `https://push.example.test/${"a".repeat(1000)}` }),

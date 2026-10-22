@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  SETTINGS_COLUMNS,
   draftFromRow,
   draftProblem,
   savedText,
@@ -21,6 +22,7 @@ const ROW: SettingsRow = {
   reminder_lead_hours: 24,
   admin_expiring_days: 21,
   customer_expiring_days: 10,
+  credit_expiring_days: 5,
   last_places_threshold: 4,
   default_prep_days: [-1, 0],
   inactivity_months: 3,
@@ -28,6 +30,12 @@ const ROW: SettingsRow = {
   default_session_start_time: "10:30",
   default_session_end_time: "14:30",
 }
+
+describe("SETTINGS_COLUMNS (story 5.20)", () => {
+  it("reads exactly the keys of SettingsRow", () => {
+    expect(SETTINGS_COLUMNS.split(", ").sort()).toEqual(Object.keys(ROW).sort())
+  })
+})
 
 describe("savedText", () => {
   it.each([

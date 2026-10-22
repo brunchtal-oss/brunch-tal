@@ -21,6 +21,13 @@ export type RemovalPlan = {
     }[]
     refund_requests: { id: string; amount_agorot: number }[]
     pending_choices: { credit_id: string }[]
+    // Story 5.20: a paid pinned purchase with no place, not settled yet.
+    parked_purchases: {
+      entitlement_id: string
+      event_id: string
+      starts_at: string
+      concept: string
+    }[]
   }
   forfeits: { entries_left: number; active_credits: number }
 }
@@ -51,6 +58,7 @@ export function parseRemovalPlan(data: unknown): RemovalPlan {
       bookings: list(blockers.bookings),
       refund_requests: list(blockers.refund_requests),
       pending_choices: list(blockers.pending_choices),
+      parked_purchases: list(blockers.parked_purchases),
     },
     forfeits: {
       entries_left: count(forfeits.entries_left),
@@ -105,6 +113,16 @@ export function blockerGroups(
         key: c.credit_id,
         href: `/admin/customers/${encodeURIComponent(customerId)}#credit-${c.credit_id}`,
         text: copy.choiceLine,
+      })),
+    },
+    {
+      // Story 5.20: settled from "לטיפול" (a credit, or a place).
+      key: "parked",
+      title: copy.blockedParked,
+      items: plan.blockers.parked_purchases.map((p) => ({
+        key: p.entitlement_id,
+        href: "/admin/attention",
+        text: `${adminCopy.sessions.sessionTitle(p.concept)} · ${formatSessionDate(p.starts_at)}`,
       })),
     },
   ]

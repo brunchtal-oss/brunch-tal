@@ -444,6 +444,28 @@ export function occupancyById(data: unknown): Record<string, number> {
   return byId
 }
 
+// The same answer's capacity by session id (story 5.20: the admin reads
+// events.capacity_adults only through admin RPCs). A malformed entry, or
+// a capacity that is not a positive whole number (the column checks > 0),
+// is skipped.
+export function capacityById(data: unknown): Record<string, number> {
+  const byId: Record<string, number> = {}
+  if (!Array.isArray(data)) return byId
+  for (const entry of data as unknown[]) {
+    if (typeof entry !== "object" || entry === null) continue
+    const { event_id, capacity } = entry as Record<string, unknown>
+    if (
+      typeof event_id === "string" &&
+      typeof capacity === "number" &&
+      Number.isInteger(capacity) &&
+      capacity > 0
+    ) {
+      byId[event_id] = capacity
+    }
+  }
+  return byId
+}
+
 // --- The editor's changes ---------------------------------------------------
 
 // One editable value of the editor: its text before and after, and the

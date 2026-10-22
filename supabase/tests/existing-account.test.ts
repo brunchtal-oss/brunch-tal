@@ -640,9 +640,9 @@ describe("claim_join", () => {
          where entity_type = 'activation_tokens' and entity_id = $1 and action = 'claim_join'`,
         [a.tokenId]
       )
-      expect(audit).toEqual([
-        { actor_id: a.f.customerA, actor_kind: "customer" },
-      ])
+      // Story 5.20 (fix 6): claim_join writes no audit row of its own
+      // (bind_purchase, which it calls, is shown).
+      expect(audit).toEqual([])
 
       expect(await claimAs(db, a.f.customerA, a.token, key)).toEqual(result)
       expect(await notes()).toBe(1)

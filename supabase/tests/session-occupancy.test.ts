@@ -15,7 +15,8 @@ const OCCUPANCY = "select public.admin_list_session_occupancy($1::uuid[]) as r"
 const SNAPSHOT = `'{"cancel_window_hours": 48, "reminder_lead_hours": 24}'::jsonb`
 
 type Fixture = MoneyFixture & { concept: string }
-type Entry = { event_id: string; occupied: number }
+// Story 5.20: the capacity too (read only through admin RPCs).
+type Entry = { event_id: string; occupied: number; capacity: number }
 
 async function seed(db: Db): Promise<Fixture> {
   const f = await seedMoney(db)
@@ -96,7 +97,7 @@ describe("admin_list_session_occupancy", () => {
       await book(db, eventId, f.customerA)
       await book(db, eventId, f.customerB)
       expect(await occupancy(db, f, [eventId])).toEqual([
-        { event_id: eventId, occupied: 2 },
+        { event_id: eventId, occupied: 2, capacity: 12 },
       ])
     })
   })
@@ -107,7 +108,7 @@ describe("admin_list_session_occupancy", () => {
       const eventId = await insertEvent(db, f, { kind: "couple", capacity: 14 })
       await book(db, eventId, f.customerA, { partySize: 2 })
       expect(await occupancy(db, f, [eventId])).toEqual([
-        { event_id: eventId, occupied: 2 },
+        { event_id: eventId, occupied: 2, capacity: 14 },
       ])
     })
   })
@@ -133,7 +134,7 @@ describe("admin_list_session_occupancy", () => {
         [payment.payment_id, eventId]
       )
       expect(await occupancy(db, f, [eventId])).toEqual([
-        { event_id: eventId, occupied: 1 },
+        { event_id: eventId, occupied: 1, capacity: 12 },
       ])
     })
   })
@@ -144,7 +145,7 @@ describe("admin_list_session_occupancy", () => {
       const eventId = await insertEvent(db, f)
       await book(db, eventId, f.customerA, { cancelled: true })
       expect(await occupancy(db, f, [eventId])).toEqual([
-        { event_id: eventId, occupied: 0 },
+        { event_id: eventId, occupied: 0, capacity: 12 },
       ])
     })
   })
@@ -156,8 +157,8 @@ describe("admin_list_session_occupancy", () => {
       const sooner = await insertEvent(db, f, { days: 8 })
       await book(db, later, f.customerA)
       expect(await occupancy(db, f, [later, randomUUID(), sooner])).toEqual([
-        { event_id: sooner, occupied: 0 },
-        { event_id: later, occupied: 1 },
+        { event_id: sooner, occupied: 0, capacity: 12 },
+        { event_id: later, occupied: 1, capacity: 12 },
       ])
       expect(await occupancy(db, f, [])).toEqual([])
     })

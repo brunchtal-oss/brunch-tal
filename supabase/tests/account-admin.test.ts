@@ -239,12 +239,10 @@ describe("email change", () => {
         ...(await auditOf(db, f.customer, "admin_begin_email_change")),
         ...(await auditOf(db, f.customer, "admin_finish_email_change")),
       ]
-      expect(rows).toHaveLength(2)
-      expect(rows[1].after).toMatchObject({ email: "<changed>" })
-      expect(rows[0].after).toMatchObject({
-        account_op_state: "email_change_pending",
-        account_op_target_hash: "<changed>",
-      })
+      // Story 5.20 (fix 6): only the finish writes a row (the begin step
+      // is technical).
+      expect(rows).toHaveLength(1)
+      expect(rows[0].after).toMatchObject({ email: "<changed>" })
       for (const row of rows) {
         expect(row.raw).not.toContain(newEmail)
         expect(row.raw).not.toContain(f.email)
@@ -258,7 +256,7 @@ describe("email change", () => {
     })
   })
 
-  it("an email of another account or of a pending import is taken: nothing changes, a row is logged", async () => {
+  it("an email of another account or of a pending import is taken: nothing changes, no row is logged (story 5.20)", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)
       const other = await insertAuthUser(db, "acct_other")
@@ -281,16 +279,9 @@ describe("email change", () => {
       expect((await profile(db, f.customer)).account_op_state).toBeNull()
       expect(await authEmail(db, f.customer)).toBe(f.email)
 
-      const rows = await auditOf(db, f.customer, "admin_begin_email_change")
-      expect(rows).toHaveLength(2)
-      for (const row of rows) {
-        expect(row).toMatchObject({
-          customer_id: f.customer,
-          after: { result: "taken" },
-        })
-        expect(row.raw).not.toContain(other.email)
-        expect(row.raw).not.toContain(importEmail)
-      }
+      expect(
+        await auditOf(db, f.customer, "admin_begin_email_change")
+      ).toHaveLength(0)
     })
   })
 

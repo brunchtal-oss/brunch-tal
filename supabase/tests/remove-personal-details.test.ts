@@ -18,7 +18,12 @@ import {
   testName,
   type Db,
 } from "./support/db"
-import { approve, seedMoney, type MoneyFixture } from "./support/money"
+import {
+  approve,
+  insertProduct,
+  seedMoney,
+  type MoneyFixture,
+} from "./support/money"
 
 const PREVIEW = "select public.preview_admin_anonymize_customer($1) as r"
 const REMOVE = "select public.admin_anonymize_customer($1, $2, $3) as r"
@@ -234,14 +239,44 @@ describe("preview and removal", { timeout: 60_000 }, () => {
       const refundsBefore = await call(db, f, REFUNDS, [])
 
       expect(await call(db, f, PREVIEW, [f.customer])).toEqual({
-        blockers: { bookings: [], refund_requests: [], pending_choices: [] },
+        blockers: {
+          bookings: [],
+          refund_requests: [],
+          pending_choices: [],
+          parked_purchases: [],
+        },
         forfeits: { entries_left: 4, active_credits: 0 },
       })
+
+      // Story 5.20: the payment's note is in its audit rows before the
+      // removal (masked to <removed> after it, below).
+      const notesBefore = await db.query<{ note: unknown }>(
+        `select coalesce(a.after -> 'note', a.before -> 'note') as note
+         from public.audit_log a
+         where a.entity_type = 'payments' and a.entity_id = $1
+           and (a.after ? 'note' or a.before ? 'note')`,
+        [f.paymentId]
+      )
+      expect(notesBefore.rows.length).toBeGreaterThan(0)
+      expect(notesBefore.rows.map((r) => r.note)).toContain(
+        testName("payment_note")
+      )
 
       expect(await remove(db, f)).toEqual({
         result: "pending",
         user_id: f.customer,
+        orphan_user_ids: [],
       })
+
+      const notesAfter = await db.query<{ note: unknown }>(
+        `select coalesce(a.after -> 'note', a.before -> 'note') as note
+         from public.audit_log a
+         where a.entity_type = 'payments' and a.entity_id = $1
+           and (a.after ? 'note' or a.before ? 'note')`,
+        [f.paymentId]
+      )
+      expect(notesAfter.rows.length).toBe(notesBefore.rows.length)
+      expect(notesAfter.rows.every((r) => r.note === "<removed>")).toBe(true)
 
       const p = await profile(db, f.customer)
       expect(p).toMatchObject({
@@ -424,6 +459,7 @@ describe("preview and removal", { timeout: 60_000 }, () => {
         ],
         refund_requests: [{ id: refunds[0].id, amount_agorot: 11800 }],
         pending_choices: [{ credit_id: pendingCredit }],
+        parked_purchases: [],
       })
 
       expect(
@@ -761,6 +797,282 @@ describe("permissions and input", () => {
         })
       }
       await db.query("reset role")
+    })
+  })
+})
+
+// Story 5.20 (user decisions 2026-10-22): a paid pinned purchase without a
+// place and a place held behind her join link block the removal; an email
+// change between its steps refuses it; the Auth users of her claiming join
+// links come back for deletion.
+describe("story 5.20 blockers and links", { timeout: 60_000 }, () => {
+  // As the owner: a payment of a pinned single for `eventId`, with its
+  // active entitlement and no booking (3.11 'park'); customer null for an
+  // unbound purchase.
+  async function parkedPurchase(
+    db: Db,
+    f: Fixture,
+    eventId: string,
+    customerId: string | null
+  ) {
+    const product = await insertProduct(db, {
+      label: "parked_single",
+      type: "single",
+      price: 12800,
+      units: 1,
+      validityMode: "session",
+    })
+    const { rows: payments } = await db.query(
+      `insert into public.payments (
+         customer_id, product_id, source, recorded_by, payment_method_id,
+         amount_agorot, paid_on, product_snapshot)
+       values ($1, $2, 'manual', $3, $4, 12800,
+         (now() at time zone 'Asia/Jerusalem')::date, '{}'::jsonb)
+       returning id`,
+      [customerId, product, f.admin, f.method]
+    )
+    const { rows: ents } = await db.query(
+      `insert into public.entitlements (
+         customer_id, payment_id, kind, original_units, valid_from, expires_on,
+         eligibility_snapshot, allowed_weekdays, eligible_event_kind,
+         pinned_event_id)
+       values ($1, $2, 'single', 1,
+         (now() at time zone 'Asia/Jerusalem')::date,
+         (now() at time zone 'Asia/Jerusalem')::date + 49,
+         jsonb_build_object('validity_mode', 'session', 'product_id', $3::uuid),
+         null, 'regular', $4)
+       returning id`,
+      [customerId, payments[0].id, product, eventId]
+    )
+    return {
+      paymentId: payments[0].id as string,
+      entitlementId: ents[0].id as string,
+    }
+  }
+
+  // As the owner: an unbound card payment (no entitlement needed here).
+  async function unboundPayment(db: Db, f: Fixture): Promise<string> {
+    const { rows } = await db.query(
+      `insert into public.payments (
+         customer_id, product_id, source, recorded_by, payment_method_id,
+         amount_agorot, paid_on, product_snapshot)
+       values (null, $1, 'manual', $2, $3, 47200,
+         (now() at time zone 'Asia/Jerusalem')::date, '{}'::jsonb)
+       returning id`,
+      [f.card, f.admin, f.method]
+    )
+    return rows[0].id
+  }
+
+  // As the owner: a join link for `paymentId` in `state`.
+  async function joinToken(
+    db: Db,
+    paymentId: string,
+    values: {
+      state: "pending" | "awaiting_login" | "claiming"
+      customerId?: string | null
+      boundUserId?: string | null
+      pendingUserId?: string | null
+    }
+  ): Promise<string> {
+    const { rows } = await db.query(
+      `insert into public.activation_tokens (
+         purpose, token_hash, state, expires_at, payment_id, customer_id,
+         bound_user_id, pending_user_id, claiming_at)
+       values ('join', md5(random()::text) || md5(random()::text), $1,
+         now() + interval '48 hours', $2, $3, $4, $5,
+         case when $1 = 'claiming' then now() end)
+       returning id`,
+      [
+        values.state,
+        paymentId,
+        values.customerId ?? null,
+        values.boundUserId ?? null,
+        values.pendingUserId ?? null,
+      ]
+    )
+    return rows[0].id
+  }
+
+  // The removal's error with its detail (ANONYMIZE_BLOCKED counts).
+  async function removeFailure(db: Db, f: Fixture) {
+    return asAdmin(db, f.admin, async () => {
+      await db.query("savepoint removal")
+      try {
+        await db.query(REMOVE, [f.customer, true, randomUUID()])
+        await db.query("release savepoint removal")
+        return null
+      } catch (error) {
+        await db.query("rollback to savepoint removal")
+        const { message, detail } = error as {
+          message: string
+          detail?: string
+        }
+        return { message, detail: detail ? JSON.parse(detail) : null }
+      }
+    })
+  }
+
+  it("parked: her paid pinned purchase without a place blocks, listed; nothing changes", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const event = await insertEvent(db, f, 24 * 5)
+      const parked = await parkedPurchase(db, f, event, f.customer)
+
+      const plan = await call(db, f, PREVIEW, [f.customer])
+      expect(plan.blockers.parked_purchases).toEqual([
+        {
+          entitlement_id: parked.entitlementId,
+          payment_id: parked.paymentId,
+          event_id: event,
+          starts_at: expect.any(String),
+          concept: expect.any(String),
+        },
+      ])
+      expect(await removeFailure(db, f)).toEqual({
+        message: "ANONYMIZE_BLOCKED",
+        detail: {
+          bookings: 0,
+          refund_requests: 0,
+          pending_choices: 0,
+          parked_purchases: 1,
+        },
+      })
+      expect((await profile(db, f.customer)).anonymized_at).toBeNull()
+
+      // Settled (here: no longer active): the removal proceeds.
+      await db.query(
+        "update public.entitlements set status = 'revoked' where id = $1",
+        [parked.entitlementId]
+      )
+      expect((await remove(db, f)).result).toBe("pending")
+    })
+  })
+
+  it("parked behind her join link (unbound) blocks too", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const event = await insertEvent(db, f, 24 * 5)
+      const parked = await parkedPurchase(db, f, event, null)
+      await joinToken(db, parked.paymentId, {
+        state: "awaiting_login",
+        boundUserId: f.customer,
+      })
+
+      const plan = await call(db, f, PREVIEW, [f.customer])
+      expect(
+        plan.blockers.parked_purchases.map(
+          (p: { entitlement_id: string }) => p.entitlement_id
+        )
+      ).toEqual([parked.entitlementId])
+      expect((await removeFailure(db, f))?.detail).toMatchObject({
+        parked_purchases: 1,
+      })
+      expect((await profile(db, f.customer)).anonymized_at).toBeNull()
+    })
+  })
+
+  it("awaiting_login seat: a place held for her purchase behind her waiting join link blocks, under bookings", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const event = await insertEvent(db, f, 24 * 5)
+      const payment = await unboundPayment(db, f)
+      const { rows } = await db.query(
+        `insert into public.bookings (
+           customer_id, payment_id, event_id, party_size, status, booked_by,
+           confirmed_at, policy_snapshot)
+         values (null, $1, $2, 1, 'confirmed', 'admin', now(), ${SNAPSHOT})
+         returning id`,
+        [payment, event]
+      )
+      await joinToken(db, payment, {
+        state: "awaiting_login",
+        boundUserId: f.customer,
+      })
+
+      const plan = await call(db, f, PREVIEW, [f.customer])
+      expect(plan.blockers.bookings).toEqual([
+        {
+          booking_id: rows[0].id,
+          event_id: event,
+          starts_at: expect.any(String),
+          concept: expect.any(String),
+        },
+      ])
+      expect((await removeFailure(db, f))?.detail).toMatchObject({
+        bookings: 1,
+      })
+      expect((await profile(db, f.customer)).anonymized_at).toBeNull()
+    })
+  })
+
+  it("a pending join link (not waiting for her sign-in) with a held place does not block", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const event = await insertEvent(db, f, 24 * 5)
+      const payment = await unboundPayment(db, f)
+      await db.query(
+        `insert into public.bookings (
+           customer_id, payment_id, event_id, party_size, status, booked_by,
+           confirmed_at, policy_snapshot)
+         values (null, $1, $2, 1, 'confirmed', 'admin', now(), ${SNAPSHOT})`,
+        [payment, event]
+      )
+      await joinToken(db, payment, { state: "pending", customerId: f.customer })
+      const plan = await call(db, f, PREVIEW, [f.customer])
+      expect(plan.blockers.bookings).toEqual([])
+    })
+  })
+
+  it("an email change between its steps: CONCURRENT_CHANGE on the preview and the removal, nothing changes", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const begun = await call(
+        db,
+        f,
+        "select public.admin_begin_email_change($1, $2, $3) as r",
+        [
+          f.customer,
+          `${testName("new_mail")}@example.test`.toLowerCase(),
+          randomUUID(),
+        ]
+      )
+      expect(begun.result).toBe("pending")
+      expect(await callError(db, f, PREVIEW, [f.customer])).toMatchObject({
+        code: "P0001",
+        message: "CONCURRENT_CHANGE",
+      })
+      expect(
+        await callError(db, f, REMOVE, [f.customer, true, randomUUID()])
+      ).toMatchObject({ code: "P0001", message: "CONCURRENT_CHANGE" })
+      const row = await profile(db, f.customer)
+      expect(row.anonymized_at).toBeNull()
+      expect(row.full_name).toBe(f.name)
+      expect(row.account_op_state).toBe("email_change_pending")
+    })
+  })
+
+  it("her claiming join link: revoked, and its pending Auth user comes back in orphan_user_ids", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const payment = await unboundPayment(db, f)
+      const pending = randomUUID()
+      const token = await joinToken(db, payment, {
+        state: "claiming",
+        customerId: f.customer,
+        pendingUserId: pending,
+      })
+
+      expect(await remove(db, f)).toMatchObject({
+        result: "pending",
+        user_id: f.customer,
+        orphan_user_ids: [pending],
+      })
+      const { rows } = await db.query(
+        "select state, revoked_at is not null as revoked from public.activation_tokens where id = $1",
+        [token]
+      )
+      expect(rows[0]).toEqual({ state: "revoked", revoked: true })
     })
   })
 })

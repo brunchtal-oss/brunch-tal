@@ -2,7 +2,9 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { babyAgeText } from "./copy/baby-age"
 import {
+  addMonthsToPlainDate,
   babyAge,
+  birthDateRange,
   formatAccessibleDate,
   formatAccessibleDateTime,
   formatClockTime,
@@ -241,5 +243,29 @@ describe("formatClockTime", () => {
     expect(formatClockTime("10:30:00")).toBe("10:30")
     expect(formatClockTime("09:05:59")).toBe("09:05")
     expect(formatClockTime("14:30")).toBe("14:30")
+  })
+})
+
+describe("addMonthsToPlainDate / birthDateRange (story 5.20)", () => {
+  it("moves by whole months and clamps to a shorter month, as Postgres", () => {
+    expect(addMonthsToPlainDate("2026-10-22", 9)).toBe("2027-07-22")
+    expect(addMonthsToPlainDate("2026-10-22", -24)).toBe("2024-10-22")
+    // date + interval: 31.05 + 9 months = 28.02 (29.02 in a leap year).
+    expect(addMonthsToPlainDate("2026-05-31", 9)).toBe("2027-02-28")
+    expect(addMonthsToPlainDate("2027-05-31", 9)).toBe("2028-02-29")
+    // 29.02 back 2 years = 28.02.
+    expect(addMonthsToPlainDate("2028-02-29", -24)).toBe("2026-02-28")
+    expect(addMonthsToPlainDate("2026-01-15", -1)).toBe("2025-12-15")
+    expect(addMonthsToPlainDate("2026-12-15", 1)).toBe("2027-01-15")
+    expect(addMonthsToPlainDate("2026-02-30", 1)).toBeNull()
+    expect(addMonthsToPlainDate("2026-10-22", 1.5)).toBeNull()
+  })
+
+  it("the birth date range: 2 years back to 9 months ahead", () => {
+    expect(birthDateRange("2026-10-22")).toEqual({
+      min: "2024-10-22",
+      max: "2027-07-22",
+    })
+    expect(birthDateRange("bad")).toBeNull()
   })
 })

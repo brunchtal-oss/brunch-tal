@@ -511,7 +511,8 @@ describe("concept image", () => {
         (await auditOf(db, id)).filter(
           (a) => a.action === "admin_set_concept_image"
         )
-      ).toHaveLength(3)
+        // Story 5.20 (fix 6): no audit row any more.
+      ).toHaveLength(0)
     })
   })
 
