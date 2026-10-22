@@ -477,7 +477,7 @@ flowchart LR
 | CAP-36 הארכה אוטומטית | `private.job_auto_extend`, `private.week_has_eligible_session`, `entitlement_corrections` | AD-8, AD-11, AD-14, AD-19 |
 | CAP-37 מוצר מוצמד | `admin_approve_payment(p_event_id)`, `private.book_core`, `join_complete`, `plan_funding` | AD-10, AD-18, AD-20, AD-23 |
 | CAP-38 דף עבודה | `app/admin/(shell)/sessions/[id]/work`, `work_sheets`, `work_dishes`, `work_tasks`, `shopping_items`, `admin_*` | AD-1, AD-5, AD-8, AD-16 |
-| CAP-39 רשימות | `app/admin/(shell)/notes`, `note_topics`, `notes` | AD-1, AD-5 |
+| CAP-39 רשימות | `app/admin/(shell)/notes`, `notes` (בלי נושאים מ-2026-10-21; נעילת advisory אחת ללוח, AD-6) | AD-1, AD-5, AD-6 |
 | CAP-40 אישור תמונות (אווירה ואישיות) | `set_photo_consent`, `set_personal_photo_consent`, `profiles.photo_consent*`, `profiles.personal_photo_consent*`, `join_complete`/`claim_complete` | AD-1, AD-10, AD-19 |
 | CAP-41 קונספטים | `concepts`, `app/admin/(shell)/concepts`, `lib/concepts/themes.ts` | AD-15, AD-16 |
 | CAP-42 כרטיסיות פתוחות | `app/admin/(shell)/customers/open-cards`, `admin_list_open_cards` | AD-14 |

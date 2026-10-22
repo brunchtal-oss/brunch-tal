@@ -1,19 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import {
+import * as actions from "./actions"
+
+const {
   addNoteAction,
-  addNoteTopicAction,
   deleteNoteAction,
-  deleteNoteTopicAction,
-  previewDeleteNoteTopicAction,
-  renameNoteTopicAction,
   setNoteArchivedAction,
   setNoteDoneAction,
   setNoteOrderAction,
   setNotePinnedAction,
-  setNoteTopicOrderAction,
   updateNoteAction,
-} from "./actions"
+} = actions
 
 const callRpc = vi.fn()
 
@@ -34,62 +31,26 @@ beforeEach(() => {
   callRpc.mockResolvedValue({ ok: true, data: { note_id: ID } })
 })
 
-describe("the notes tab's actions (story 4.11)", () => {
-  it("send each RPC its arguments", async () => {
-    callRpc.mockResolvedValueOnce({ ok: true, data: { topic_id: ID } })
-    await expect(
-      addNoteTopicAction({ name: "ספקים", idempotencyKey: KEY })
-    ).resolves.toEqual({ ok: true, data: { topicId: ID } })
-    expect(callRpc).toHaveBeenLastCalledWith(
-      { session: true },
-      "admin_add_note_topic",
-      { p_name: "ספקים", p_idempotency_key: KEY }
-    )
+describe("the notes board's actions (story 4.11, fix 13)", () => {
+  it("has no topic actions", () => {
+    expect(Object.keys(actions).filter((k) => /topic/i.test(k))).toEqual([])
+  })
 
+  it("send each RPC its arguments", async () => {
     await expect(
-      renameNoteTopicAction({ topicId: ID, name: "x", idempotencyKey: KEY })
+      addNoteAction({ body: "ספק פרחים", idempotencyKey: KEY })
     ).resolves.toEqual(OK)
     expect(callRpc).toHaveBeenLastCalledWith(
       { session: true },
-      "admin_rename_note_topic",
-      { p_topic_id: ID, p_name: "x", p_idempotency_key: KEY }
-    )
-
-    await deleteNoteTopicAction({
-      topicId: ID,
-      confirmed: true,
-      idempotencyKey: KEY,
-    })
-    expect(callRpc).toHaveBeenLastCalledWith(
-      { session: true },
-      "admin_delete_note_topic",
-      { p_topic_id: ID, p_confirmed: true, p_idempotency_key: KEY }
-    )
-
-    await setNoteTopicOrderAction({ ids: [ID, KEY] })
-    expect(callRpc).toHaveBeenLastCalledWith(
-      { session: true },
-      "admin_set_note_topic_order",
-      { p_ids: [ID, KEY] }
-    )
-
-    await addNoteAction({ topicId: ID, body: "ספק פרחים", idempotencyKey: KEY })
-    expect(callRpc).toHaveBeenLastCalledWith(
-      { session: true },
       "admin_add_note",
-      { p_topic_id: ID, p_body: "ספק פרחים", p_idempotency_key: KEY }
+      { p_body: "ספק פרחים", p_idempotency_key: KEY }
     )
 
-    await updateNoteAction({
-      noteId: ID,
-      topicId: KEY,
-      body: "x",
-      idempotencyKey: KEY,
-    })
+    await updateNoteAction({ noteId: ID, body: "x", idempotencyKey: KEY })
     expect(callRpc).toHaveBeenLastCalledWith(
       { session: true },
       "admin_update_note",
-      { p_note_id: ID, p_topic_id: KEY, p_body: "x", p_idempotency_key: KEY }
+      { p_note_id: ID, p_body: "x", p_idempotency_key: KEY }
     )
 
     await deleteNoteAction({ noteId: ID, idempotencyKey: KEY })
@@ -120,63 +81,36 @@ describe("the notes tab's actions (story 4.11)", () => {
       { p_note_id: ID, p_archived: true }
     )
 
-    await setNoteOrderAction({ topicId: ID, ids: [KEY, ID] })
+    await setNoteOrderAction({ ids: [KEY, ID] })
     expect(callRpc).toHaveBeenLastCalledWith(
       { session: true },
       "admin_set_note_order",
-      { p_topic_id: ID, p_ids: [KEY, ID] }
+      { p_ids: [KEY, ID] }
     )
   })
 
-  it("read the delete plan's note count", async () => {
-    callRpc.mockResolvedValueOnce({
-      ok: true,
-      data: { topic_id: ID, name: "ספקים", note_count: 3 },
+  it("returns the RPC's refusal as is", async () => {
+    callRpc.mockResolvedValueOnce({ ok: false, code: "CONCURRENT_CHANGE" })
+    await expect(setNoteOrderAction({ ids: [ID] })).resolves.toEqual({
+      ok: false,
+      code: "CONCURRENT_CHANGE",
     })
-    await expect(
-      previewDeleteNoteTopicAction({ topicId: ID })
-    ).resolves.toEqual({ ok: true, data: { name: "ספקים", noteCount: 3 } })
-    callRpc.mockResolvedValueOnce({ ok: true, data: { note_count: "3" } })
-    await expect(
-      previewDeleteNoteTopicAction({ topicId: ID })
-    ).resolves.toEqual({ ok: false, code: "SERVER_ERROR" })
-    callRpc.mockResolvedValueOnce({ ok: false, code: "NOT_AUTHORIZED" })
-    await expect(
-      previewDeleteNoteTopicAction({ topicId: ID })
-    ).resolves.toEqual({ ok: false, code: "NOT_AUTHORIZED" })
   })
 
   it("reject a bad shape without calling the RPC", async () => {
     const cases = [
-      addNoteTopicAction({ name: "   ", idempotencyKey: KEY }),
-      addNoteTopicAction({ name: "א".repeat(61), idempotencyKey: KEY }),
-      addNoteTopicAction({ name: "x", idempotencyKey: "nope" }),
-      renameNoteTopicAction({ topicId: "x", name: "x", idempotencyKey: KEY }),
-      previewDeleteNoteTopicAction({ topicId: "x" }),
-      deleteNoteTopicAction({
-        topicId: ID,
-        confirmed: "yes" as unknown as boolean,
-        idempotencyKey: KEY,
-      }),
-      setNoteTopicOrderAction({ ids: [] }),
-      setNoteTopicOrderAction({ ids: [ID, "x"] }),
-      addNoteAction({ topicId: ID, body: "   ", idempotencyKey: KEY }),
-      addNoteAction({
-        topicId: ID,
-        body: "א".repeat(2001),
-        idempotencyKey: KEY,
-      }),
-      updateNoteAction({
-        noteId: ID,
-        topicId: "x",
-        body: "x",
-        idempotencyKey: KEY,
-      }),
+      addNoteAction({ body: "   ", idempotencyKey: KEY }),
+      addNoteAction({ body: "א".repeat(2001), idempotencyKey: KEY }),
+      addNoteAction({ body: "x", idempotencyKey: "nope" }),
+      updateNoteAction({ noteId: "x", body: "x", idempotencyKey: KEY }),
+      updateNoteAction({ noteId: ID, body: " ", idempotencyKey: KEY }),
       deleteNoteAction({ noteId: ID, idempotencyKey: "" }),
       setNotePinnedAction({ noteId: ID, pinned: null as unknown as boolean }),
       setNoteDoneAction({ noteId: "x", done: true }),
       setNoteArchivedAction({ noteId: ID, archived: 1 as unknown as boolean }),
-      setNoteOrderAction({ topicId: ID, ids: "x" as unknown as string[] }),
+      setNoteOrderAction({ ids: [] }),
+      setNoteOrderAction({ ids: [ID, "x"] }),
+      setNoteOrderAction({ ids: "x" as unknown as string[] }),
       addNoteAction(
         undefined as unknown as Parameters<typeof addNoteAction>[0]
       ),
@@ -187,17 +121,9 @@ describe("the notes tab's actions (story 4.11)", () => {
     expect(callRpc).not.toHaveBeenCalled()
   })
 
-  it("accept a 2000-character note and a 60-character topic", async () => {
+  it("accept a 2000-character note", async () => {
     await expect(
-      addNoteAction({
-        topicId: ID,
-        body: ` ${"א".repeat(2000)} `,
-        idempotencyKey: KEY,
-      })
+      addNoteAction({ body: ` ${"א".repeat(2000)} `, idempotencyKey: KEY })
     ).resolves.toEqual(OK)
-    callRpc.mockResolvedValueOnce({ ok: true, data: { topic_id: ID } })
-    await expect(
-      addNoteTopicAction({ name: "א".repeat(60), idempotencyKey: KEY })
-    ).resolves.toEqual({ ok: true, data: { topicId: ID } })
   })
 })

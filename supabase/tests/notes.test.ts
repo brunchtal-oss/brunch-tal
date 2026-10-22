@@ -1,7 +1,9 @@
-// Story 4.11: the notes tab (CAP-39). Topics and notes, admin only. One test
-// per row of the spec's I/O matrix, plus the cascade of a topic delete, the
-// pinned/unpinned order, the move between topics and the audit's masked
-// body. Everything runs in inRollback.
+// The notes tab (story 4.11, fix 13: one board, no topics). Admin only. One
+// test per row of the spec's I/O matrix, plus the board order (pinned
+// first), the migration's shape and order, the board lock and the audit's
+// masked body. Everything runs in inRollback. The board is shared with the
+// dev data, so each test checks only the notes it made, except the full-list
+// order, which reads the whole board.
 
 import { randomUUID } from "node:crypto"
 
@@ -15,25 +17,18 @@ import {
   type Db,
 } from "./support/db"
 
-const ADD_TOPIC = "select public.admin_add_note_topic($1, $2) as r"
-const RENAME_TOPIC = "select public.admin_rename_note_topic($1, $2, $3) as r"
-const PREVIEW_DELETE_TOPIC =
-  "select public.preview_admin_delete_note_topic($1) as r"
-const DELETE_TOPIC = "select public.admin_delete_note_topic($1, $2, $3) as r"
-const TOPIC_ORDER = "select public.admin_set_note_topic_order($1::uuid[]) as r"
-const ADD_NOTE = "select public.admin_add_note($1, $2, $3) as r"
-const UPDATE_NOTE = "select public.admin_update_note($1, $2, $3, $4) as r"
+const ADD_NOTE = "select public.admin_add_note($1, $2) as r"
+const UPDATE_NOTE = "select public.admin_update_note($1, $2, $3) as r"
 const DELETE_NOTE = "select public.admin_delete_note($1, $2) as r"
 const PINNED = "select public.admin_set_note_pinned($1, $2) as r"
 const DONE = "select public.admin_set_note_done($1, $2) as r"
 const ARCHIVED = "select public.admin_set_note_archived($1, $2) as r"
-const NOTE_ORDER = "select public.admin_set_note_order($1, $2::uuid[]) as r"
+const NOTE_ORDER = "select public.admin_set_note_order($1::uuid[]) as r"
 
 type Fixture = { admin: string; customer: string }
 
 type NoteRow = {
   id: string
-  topic_id: string
   body: string
   pinned: boolean
   done: boolean
@@ -80,29 +75,28 @@ async function fails(db: Db, f: Fixture, text: string, params: unknown[]) {
   )
 }
 
-async function topic(db: Db, f: Fixture, name: string): Promise<string> {
-  return (await call(db, f, ADD_TOPIC, [name, randomUUID()])).topic_id
+async function note(db: Db, f: Fixture, body: string): Promise<string> {
+  return (await call(db, f, ADD_NOTE, [body, randomUUID()])).note_id
 }
 
-async function note(
-  db: Db,
-  f: Fixture,
-  topicId: string,
-  body: string
-): Promise<string> {
-  return (await call(db, f, ADD_NOTE, [topicId, body, randomUUID()])).note_id
-}
-
-// A topic's notes in display order (pinned first, then sort_order), as the
+// The given notes in board order (pinned first, then sort_order), as the
 // owner.
-async function notesOf(db: Db, topicId: string): Promise<NoteRow[]> {
+async function notesIn(db: Db, ids: string[]): Promise<NoteRow[]> {
   const { rows } = await db.query<NoteRow>(
-    `select id, topic_id, body, pinned, done, archived_at, sort_order
-     from public.notes where topic_id = $1
+    `select id, body, pinned, done, archived_at, sort_order
+     from public.notes where id = any($1::uuid[])
      order by pinned desc, sort_order, id`,
-    [topicId]
+    [ids]
   )
   return rows
+}
+
+// Every note on the board (archived included) in board order.
+async function boardIds(db: Db): Promise<string[]> {
+  const { rows } = await db.query<{ id: string }>(
+    "select id from public.notes order by pinned desc, sort_order, id"
+  )
+  return rows.map((r) => r.id)
 }
 
 async function auditCount(db: Db, entityId: string, action: string) {
@@ -113,79 +107,149 @@ async function auditCount(db: Db, entityId: string, action: string) {
   return rows[0].n
 }
 
-describe("notes (story 4.11)", { timeout: 30_000 }, () => {
+describe("notes board (story 4.11, fix 13)", { timeout: 30_000 }, () => {
+  it("after the migration there is one board: no topic_id, no note_topics, no topic RPCs", async () => {
+    await inRollback(async (db) => {
+      const column = await db.query(
+        `select 1 from information_schema.columns
+         where table_schema = 'public' and table_name = 'notes' and column_name = 'topic_id'`
+      )
+      expect(column.rows).toHaveLength(0)
+      const table = await db.query(
+        "select to_regclass('public.note_topics') as t"
+      )
+      expect(table.rows[0].t).toBeNull()
+      const functions = await db.query<{ sig: string }>(
+        `select p.oid::regprocedure::text as sig
+         from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+         where n.nspname in ('public', 'private')
+           and (p.proname like '%note_topic%' or p.proname = 'lock_topic_of_note'
+                or p.proname = 'note_top_order'
+                or p.proname in ('admin_add_note', 'admin_update_note', 'admin_set_note_order'))
+         order by 1`
+      )
+      expect(functions.rows.map((r) => r.sig)).toEqual([
+        "admin_add_note(text,uuid)",
+        "admin_set_note_order(uuid[])",
+        "admin_update_note(uuid,text,uuid)",
+      ])
+    })
+  })
+
+  it("the migration's renumbering keeps all notes, topic 1's first", async () => {
+    await inRollback(async (db) => {
+      // The same window as the migration, on temporary copies of the old
+      // shape: two topics, the second created first.
+      await db.query(
+        "create temp table t_topics (id uuid, sort_order int) on commit drop"
+      )
+      await db.query(
+        "create temp table t_notes (id uuid, topic_id uuid, sort_order int) on commit drop"
+      )
+      const [t1, t2] = [randomUUID(), randomUUID()]
+      const [a, b, c, d] = [
+        randomUUID(),
+        randomUUID(),
+        randomUUID(),
+        randomUUID(),
+      ]
+      await db.query("insert into t_topics values ($1, 2), ($2, 1)", [t2, t1])
+      await db.query(
+        "insert into t_notes values ($1, $5, -1), ($2, $5, 0), ($3, $6, -3), ($4, $6, 5)",
+        [a, b, c, d, t1, t2]
+      )
+      await db.query(
+        `update t_notes n set sort_order = o.rn
+         from (
+           select n2.id,
+                  row_number() over (order by t.sort_order, t.id, n2.sort_order, n2.id)::integer as rn
+           from t_notes n2 join t_topics t on t.id = n2.topic_id
+         ) o
+         where n.id = o.id`
+      )
+      const { rows } = await db.query<{ id: string; sort_order: number }>(
+        "select id, sort_order from t_notes order by sort_order"
+      )
+      expect(rows).toEqual([
+        { id: a, sort_order: 1 },
+        { id: b, sort_order: 2 },
+        { id: c, sort_order: 3 },
+        { id: d, sort_order: 4 },
+      ])
+    })
+  })
+
   it("adds a note with a trimmed body at the top of the unpinned notes", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)
-      const t = await topic(db, f, "  ספקים  ")
-      const { rows } = await db.query(
-        "select name from public.note_topics where id = $1",
-        [t]
-      )
-      expect(rows[0].name).toBe("ספקים")
-
-      const pinned = await note(db, f, t, "נעוץ")
+      const pinned = await note(db, f, "נעוץ")
       await call(db, f, PINNED, [pinned, true])
-      const first = await note(db, f, t, "ראשון")
-      const second = await note(db, f, t, "  ספק פרחים  ")
-      const list = await notesOf(db, t)
+      const first = await note(db, f, "ראשון")
+      const second = await note(db, f, "  ספק פרחים\nטלפון  ")
+      const list = await notesIn(db, [pinned, first, second])
       expect(list.map((n) => n.id)).toEqual([pinned, second, first])
       expect(list[1]).toMatchObject({
-        body: "ספק פרחים",
+        body: "ספק פרחים\nטלפון",
         pinned: false,
         done: false,
         archived_at: null,
       })
+      // The top of the whole board's unpinned notes.
+      const unpinned = await db.query<{ id: string }>(
+        "select id from public.notes where not pinned order by sort_order, id limit 1"
+      )
+      expect(unpinned.rows[0].id).toBe(second)
     })
   })
 
-  it("refuses an empty or too long body or name with detail.field", async () => {
+  it("refuses an empty or too long body with detail.field body", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)
-      const t = await topic(db, f, "רעיונות")
+      const before = (await boardIds(db)).length
       for (const body of [
         "   ",
         `${String.fromCharCode(0xa0)}\t\n`,
         "א".repeat(2001),
       ]) {
-        const error = await actAs(db, f.admin, () =>
-          queryError(db, ADD_NOTE, [t, body, randomUUID()])
+        expect(await fails(db, f, ADD_NOTE, [body, randomUUID()])).toBe(
+          "INVALID_INPUT"
         )
-        expect(error?.message).toBe("INVALID_INPUT")
       }
       // detail.field through PostgREST is the error's detail.
       await asAuthenticated(db, f.admin)
       await db.query("savepoint s")
       let detail: string | undefined
       try {
-        await db.query(ADD_NOTE, [t, "   ", randomUUID()])
+        await db.query(ADD_NOTE, ["   ", randomUUID()])
       } catch (error) {
         detail = (error as { detail?: string }).detail
       }
       await db.query("rollback to savepoint s")
       await db.query("reset role")
       expect(JSON.parse(detail ?? "{}")).toEqual({ field: "body" })
+      expect(await boardIds(db)).toHaveLength(before)
 
-      expect(
-        await fails(db, f, ADD_TOPIC, ["א".repeat(61), randomUUID()])
-      ).toBe("INVALID_INPUT")
-      expect(await notesOf(db, t)).toHaveLength(0)
+      // An edit to a blank body is refused the same way.
+      const a = await note(db, f, "a")
+      expect(await fails(db, f, UPDATE_NOTE, [a, "  ", randomUUID()])).toBe(
+        "INVALID_INPUT"
+      )
       // 2000 characters (after trimming) fit.
-      await note(db, f, t, ` ${"א".repeat(2000)} `)
-      expect(await notesOf(db, t)).toHaveLength(1)
+      await note(db, f, ` ${"א".repeat(2000)} `)
+      expect(await boardIds(db)).toHaveLength(before + 2)
     })
   })
 
   it("a replay returns the same result with one row and one audit; another body with the key is refused", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)
-      const t = await topic(db, f, "ספקים")
+      const before = (await boardIds(db)).length
       const key = randomUUID()
-      const first = await call(db, f, ADD_NOTE, [t, "קייטרינג", key])
-      expect(await call(db, f, ADD_NOTE, [t, "קייטרינג", key])).toEqual(first)
-      expect(await notesOf(db, t)).toHaveLength(1)
+      const first = await call(db, f, ADD_NOTE, ["קייטרינג", key])
+      expect(await call(db, f, ADD_NOTE, ["קייטרינג", key])).toEqual(first)
+      expect(await boardIds(db)).toHaveLength(before + 1)
       expect(await auditCount(db, first.note_id, "admin_add_note")).toBe(1)
-      expect(await fails(db, f, ADD_NOTE, [t, "אחר", key])).toBe(
+      expect(await fails(db, f, ADD_NOTE, ["אחר", key])).toBe(
         "IDEMPOTENCY_KEY_REUSED"
       )
     })
@@ -194,28 +258,26 @@ describe("notes (story 4.11)", { timeout: 30_000 }, () => {
   it("archive and restore keep pinned, done and sort_order", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)
-      const t = await topic(db, f, "ספקים")
-      const a = await note(db, f, t, "a")
-      const b = await note(db, f, t, "b")
+      const a = await note(db, f, "a")
+      const b = await note(db, f, "b")
       await call(db, f, PINNED, [a, true])
       await call(db, f, DONE, [a, true])
-      const before = (await notesOf(db, t)).find((n) => n.id === a)
+      const before = (await notesIn(db, [a]))[0]
 
       expect(await call(db, f, ARCHIVED, [a, true])).toEqual({
         note_id: a,
         archived: true,
       })
-      const archived = (await notesOf(db, t)).find((n) => n.id === a)
-      expect(archived?.archived_at).not.toBeNull()
+      expect((await notesIn(db, [a]))[0].archived_at).not.toBeNull()
 
       await call(db, f, ARCHIVED, [a, false])
-      const restored = await notesOf(db, t)
+      const restored = await notesIn(db, [a, b])
       expect(restored.map((n) => n.id)).toEqual([a, b])
       expect(restored[0]).toMatchObject({
         pinned: true,
         done: true,
         archived_at: null,
-        sort_order: before?.sort_order,
+        sort_order: before.sort_order,
       })
     })
   })
@@ -223,176 +285,73 @@ describe("notes (story 4.11)", { timeout: 30_000 }, () => {
   it("deletes a note for good; a replay returns the stored result; another id is NOT_FOUND", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)
-      const t = await topic(db, f, "ספקים")
-      const a = await note(db, f, t, "a")
+      const a = await note(db, f, "a")
       const key = randomUUID()
       expect(await call(db, f, DELETE_NOTE, [a, key])).toEqual({ note_id: a })
-      expect(await notesOf(db, t)).toHaveLength(0)
+      expect(await notesIn(db, [a])).toHaveLength(0)
       expect(await call(db, f, DELETE_NOTE, [a, key])).toEqual({ note_id: a })
-      expect(await fails(db, f, DELETE_NOTE, [a, randomUUID()])).toBe(
-        "NOT_FOUND"
-      )
-      expect(await fails(db, f, ARCHIVED, [a, false])).toBe("NOT_FOUND")
-    })
-  })
-
-  it("a topic with notes needs p_confirmed; the preview counts archived notes; a confirmed delete cascades", async () => {
-    await inRollback(async (db) => {
-      const f = await seed(db)
-      const t = await topic(db, f, "מתעניינות")
-      await note(db, f, t, "1")
-      await note(db, f, t, "2")
-      const archived = await note(db, f, t, "3")
-      await call(db, f, ARCHIVED, [archived, true])
-
-      expect(await call(db, f, PREVIEW_DELETE_TOPIC, [t])).toEqual({
-        topic_id: t,
-        name: "מתעניינות",
-        note_count: 3,
-      })
-      expect(await fails(db, f, DELETE_TOPIC, [t, false, randomUUID()])).toBe(
-        "CONFIRM_REQUIRED"
-      )
-      expect(await fails(db, f, DELETE_TOPIC, [t, null, randomUUID()])).toBe(
-        "CONFIRM_REQUIRED"
-      )
-      expect(await notesOf(db, t)).toHaveLength(3)
-
-      expect(await call(db, f, DELETE_TOPIC, [t, true, randomUUID()])).toEqual({
-        topic_id: t,
-        note_count: 3,
-      })
-      expect(await notesOf(db, t)).toHaveLength(0)
-      const { rows } = await db.query(
-        `select before, after from public.audit_log
-         where entity_id = $1 and action = 'admin_delete_note_topic'`,
-        [t]
-      )
-      expect(rows[0].before).toMatchObject({
-        name: "מתעניינות",
-        note_count: 3,
-      })
-      expect(rows[0].after).toEqual({})
-      expect(await fails(db, f, PREVIEW_DELETE_TOPIC, [t])).toBe("NOT_FOUND")
-    })
-  })
-
-  it("an empty topic is deleted without p_confirmed", async () => {
-    await inRollback(async (db) => {
-      const f = await seed(db)
-      const t = await topic(db, f, "ריק")
-      expect(await call(db, f, DELETE_TOPIC, [t, false, randomUUID()])).toEqual(
-        {
-          topic_id: t,
-          note_count: 0,
-        }
-      )
-      const { rows } = await db.query(
-        "select count(*)::int as n from public.note_topics where id = $1",
-        [t]
-      )
-      expect(rows[0].n).toBe(0)
-    })
-  })
-
-  it("moves a note to the top of the target's unpinned notes, keeping its state; a missing topic is NOT_FOUND", async () => {
-    await inRollback(async (db) => {
-      const f = await seed(db)
-      const from = await topic(db, f, "רעיונות")
-      const to = await topic(db, f, "ספקים")
-      const pinnedThere = await note(db, f, to, "נעוץ שם")
-      await call(db, f, PINNED, [pinnedThere, true])
-      const there = await note(db, f, to, "שם")
-      const moving = await note(db, f, from, "עובר")
-      await call(db, f, DONE, [moving, true])
-
-      expect(
-        await call(db, f, UPDATE_NOTE, [moving, to, "עובר", randomUUID()])
-      ).toEqual({ note_id: moving, topic_id: to })
-      expect(await notesOf(db, from)).toHaveLength(0)
-      const target = await notesOf(db, to)
-      expect(target.map((n) => n.id)).toEqual([pinnedThere, moving, there])
-      expect(target[1]).toMatchObject({ done: true, pinned: false })
-
-      const { rows } = await db.query(
-        `select before, after from public.audit_log
-         where entity_id = $1 and action = 'admin_update_note'`,
-        [moving]
-      )
-      expect(rows[0].before.topic_id).toBe(from)
-      expect(rows[0].after.topic_id).toBe(to)
-
-      expect(
-        await fails(db, f, UPDATE_NOTE, [
-          moving,
-          randomUUID(),
-          "עובר",
-          randomUUID(),
-        ])
-      ).toBe("NOT_FOUND")
-      expect((await notesOf(db, to)).map((n) => n.id)).toContain(moving)
-    })
-  })
-
-  it("orders notes and topics only with the full list, else CONCURRENT_CHANGE", async () => {
-    await inRollback(async (db) => {
-      const f = await seed(db)
-      const t = await topic(db, f, "ספקים")
-      const other = await topic(db, f, "אחר")
-      const a = await note(db, f, t, "a")
-      const b = await note(db, f, t, "b")
-      const c = await note(db, f, t, "c")
-      await call(db, f, ARCHIVED, [c, true])
-      const foreign = await note(db, f, other, "x")
-      // Display order now: c, b, a (each new note on top).
-      expect((await notesOf(db, t)).map((n) => n.id)).toEqual([c, b, a])
-
-      for (const ids of [
-        [c, b],
-        [c, b, foreign],
-        [c, b, a, foreign],
-        [c, b, b],
-      ]) {
-        expect(await fails(db, f, NOTE_ORDER, [t, ids])).toBe(
-          "CONCURRENT_CHANGE"
-        )
+      for (const [text, params] of [
+        [DELETE_NOTE, [a, randomUUID()]],
+        [ARCHIVED, [a, false]],
+        [PINNED, [a, true]],
+        [DONE, [a, true]],
+        [UPDATE_NOTE, [a, "x", randomUUID()]],
+      ] as [string, unknown[]][]) {
+        expect(await fails(db, f, text, params)).toBe("NOT_FOUND")
       }
-      expect((await notesOf(db, t)).map((n) => n.id)).toEqual([c, b, a])
+    })
+  })
 
-      expect(await call(db, f, NOTE_ORDER, [t, [a, c, b]])).toEqual({
-        note_ids: [a, c, b],
-      })
-      expect((await notesOf(db, t)).map((n) => n.id)).toEqual([a, c, b])
+  it("orders the board only with the full list (archived included), else CONCURRENT_CHANGE", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const a = await note(db, f, "a")
+      const b = await note(db, f, "b")
+      const c = await note(db, f, "c")
+      await call(db, f, ARCHIVED, [c, true])
+      // The board lock, so no other session's note changes the full list.
+      await db.query("select private.lock_notes_board()")
+      const board = await boardIds(db)
+      // Each new note on top of the unpinned notes: c, b, a.
+      expect((await notesIn(db, [a, b, c])).map((n) => n.id)).toEqual([c, b, a])
+
+      const rest = board.filter((id) => ![a, b, c].includes(id))
+      for (const ids of [
+        board.filter((id) => id !== c),
+        [...board, randomUUID()],
+        [...board.filter((id) => id !== a), randomUUID()],
+        [...board, b],
+        // The board's length, with one id twice.
+        board.map((id) => (id === a ? b : id)),
+      ]) {
+        expect(await fails(db, f, NOTE_ORDER, [ids])).toBe("CONCURRENT_CHANGE")
+      }
+      expect(await boardIds(db)).toEqual(board)
+
+      const next = [a, c, b, ...rest]
+      expect(await call(db, f, NOTE_ORDER, [next])).toEqual({ note_ids: next })
+      expect((await notesIn(db, [a, b, c])).map((n) => n.id)).toEqual([a, c, b])
       // A pinned note is shown first whatever its sort_order.
       await call(db, f, PINNED, [b, true])
-      expect((await notesOf(db, t)).map((n) => n.id)).toEqual([b, a, c])
+      expect((await notesIn(db, [a, b, c])).map((n) => n.id)).toEqual([b, a, c])
 
-      // Topics: the full list of every topic.
-      const { rows } = await db.query<{ id: string }>(
-        "select id from public.note_topics order by sort_order, id"
+      const { rows } = await db.query(
+        `select entity_type, entity_id, before, after from public.audit_log
+         where actor_id = $1 and action = 'admin_set_note_order'`,
+        [f.admin]
       )
-      const all = rows.map((r) => r.id)
-      expect(
-        await fails(db, f, TOPIC_ORDER, [all.filter((id) => id !== t)])
-      ).toBe("CONCURRENT_CHANGE")
-      const reversed = [...all].reverse()
-      expect(await call(db, f, TOPIC_ORDER, [reversed])).toEqual({
-        topic_ids: reversed,
-      })
-      const after = await db.query<{ id: string }>(
-        "select id from public.note_topics order by sort_order, id"
-      )
-      expect(after.rows.map((r) => r.id)).toEqual(reversed)
+      expect(rows).toHaveLength(1)
+      expect(rows[0]).toMatchObject({ entity_type: "notes", entity_id: null })
+      expect(rows[0].after.note_order).toEqual(next)
     })
   })
 
   it("a call that changes nothing writes no update and no audit", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)
-      const t = await topic(db, f, "ספקים")
-      const a = await note(db, f, t, "a")
+      const a = await note(db, f, "a")
       await call(db, f, DONE, [a, true])
-      const before = (await notesOf(db, t))[0]
+      const before = (await notesIn(db, [a]))[0]
       const updatedAt = (
         await db.query("select updated_at from public.notes where id = $1", [a])
       ).rows[0].updated_at
@@ -403,9 +362,11 @@ describe("notes (story 4.11)", { timeout: 30_000 }, () => {
       })
       await call(db, f, PINNED, [a, false])
       await call(db, f, ARCHIVED, [a, false])
-      await call(db, f, UPDATE_NOTE, [a, t, " a ", randomUUID()])
-      await call(db, f, RENAME_TOPIC, [t, "ספקים", randomUUID()])
-      await call(db, f, NOTE_ORDER, [t, [a]])
+      expect(await call(db, f, UPDATE_NOTE, [a, " a ", randomUUID()])).toEqual({
+        note_id: a,
+      })
+      await db.query("select private.lock_notes_board()")
+      expect(await call(db, f, NOTE_ORDER, [await boardIds(db)])).toBeTruthy()
 
       expect(await auditCount(db, a, "admin_set_note_done")).toBe(1)
       for (const action of [
@@ -415,9 +376,12 @@ describe("notes (story 4.11)", { timeout: 30_000 }, () => {
       ]) {
         expect(await auditCount(db, a, action)).toBe(0)
       }
-      expect(await auditCount(db, t, "admin_rename_note_topic")).toBe(0)
-      expect(await auditCount(db, t, "admin_set_note_order")).toBe(0)
-      expect((await notesOf(db, t))[0]).toEqual(before)
+      const order = await db.query<{ n: number }>(
+        "select count(*)::int as n from public.audit_log where actor_id = $1 and action = 'admin_set_note_order'",
+        [f.admin]
+      )
+      expect(order.rows[0].n).toBe(0)
+      expect((await notesIn(db, [a]))[0]).toEqual(before)
       expect(
         (
           await db.query("select updated_at from public.notes where id = $1", [
@@ -428,112 +392,93 @@ describe("notes (story 4.11)", { timeout: 30_000 }, () => {
     })
   })
 
-  it("an edit in place keeps the note's sort_order and position", async () => {
+  it("an edit keeps the note's sort_order, pinned, done and archived", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)
-      const t = await topic(db, f, "ספקים")
-      const a = await note(db, f, t, "a")
-      const b = await note(db, f, t, "b")
-      const c = await note(db, f, t, "c")
-      const before = await notesOf(db, t)
+      const a = await note(db, f, "a")
+      const b = await note(db, f, "b")
+      const c = await note(db, f, "c")
+      await call(db, f, DONE, [b, true])
+      const before = await notesIn(db, [a, b, c])
       expect(before.map((n) => n.id)).toEqual([c, b, a])
 
-      await call(db, f, UPDATE_NOTE, [b, t, "b2", randomUUID()])
-      const after = await notesOf(db, t)
+      expect(
+        await call(db, f, UPDATE_NOTE, [b, "ליגל\nענבר", randomUUID()])
+      ).toEqual({ note_id: b })
+      const after = await notesIn(db, [a, b, c])
       expect(after.map((n) => n.id)).toEqual([c, b, a])
       expect(after[1]).toMatchObject({
-        body: "b2",
+        body: "ליגל\nענבר",
+        done: true,
         sort_order: before[1].sort_order,
       })
+
+      await call(db, f, PINNED, [c, true])
+      await call(db, f, ARCHIVED, [c, true])
+      await call(db, f, UPDATE_NOTE, [c, "c2", randomUUID()])
+      expect((await notesIn(db, [c]))[0]).toMatchObject({
+        body: "c2",
+        pinned: true,
+      })
+      expect((await notesIn(db, [c]))[0].archived_at).not.toBeNull()
     })
   })
 
-  it("moving a pinned, archived note keeps it pinned and archived in the target", async () => {
-    await inRollback(async (db) => {
-      const f = await seed(db)
-      const from = await topic(db, f, "רעיונות")
-      const to = await topic(db, f, "ספקים")
-      await note(db, f, to, "שם")
-      const moving = await note(db, f, from, "עובר")
-      await call(db, f, PINNED, [moving, true])
-      await call(db, f, ARCHIVED, [moving, true])
-
-      await call(db, f, UPDATE_NOTE, [moving, to, "עובר", randomUUID()])
-      const moved = (await notesOf(db, to)).find((n) => n.id === moving)
-      expect(moved?.pinned).toBe(true)
-      expect(moved?.archived_at).not.toBeNull()
-    })
+  it("every note write takes the board's advisory lock", async () => {
+    const calls: [string, (id: string, board: string[]) => unknown[]][] = [
+      [ADD_NOTE, () => ["x", randomUUID()]],
+      [UPDATE_NOTE, (id) => [id, "y", randomUUID()]],
+      [DELETE_NOTE, (id) => [id, randomUUID()]],
+      [PINNED, (id) => [id, true]],
+      [DONE, (id) => [id, true]],
+      [ARCHIVED, (id) => [id, true]],
+      // A real new order (the new note moved last), so it does not return
+      // before writing.
+      [
+        NOTE_ORDER,
+        (id, board) => {
+          const moved = [...board.filter((x) => x !== id), id]
+          return [
+            moved.every((x, i) => x === board[i])
+              ? [...board].reverse()
+              : moved,
+          ]
+        },
+      ],
+    ]
+    for (const [text, params] of calls) {
+      await inRollback(async (db) => {
+        const f = await seed(db)
+        // As the owner, so no RPC has taken the lock yet.
+        const { rows } = await db.query<{ id: string }>(
+          "insert into public.notes (body, sort_order) values ('x', 0) returning id"
+        )
+        const held = async () =>
+          (
+            await db.query<{ n: number }>(
+              `select count(*)::int as n from pg_locks
+               where locktype = 'advisory' and pid = pg_backend_pid()
+                 and classid::bigint = (hashtext('notes')::bigint >> 32) & 4294967295
+                 and objid::bigint = hashtext('notes')::bigint & 4294967295
+                 and objsubid = 1`
+            )
+          ).rows[0].n
+        expect(await held()).toBe(0)
+        const board = await boardIds(db)
+        await call(db, f, text, params(rows[0].id, board))
+        expect(await held()).toBe(1)
+      })
+    }
   })
 
-  it("the current topic order writes no update and no audit", async () => {
+  it("the audit masks a note's body", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)
-      await topic(db, f, "א")
-      await topic(db, f, "ב")
-      const { rows } = await db.query<{ id: string; sort_order: number }>(
-        "select id, sort_order from public.note_topics order by sort_order, id"
-      )
-      const ids = rows.map((r) => r.id)
-      expect(await call(db, f, TOPIC_ORDER, [ids])).toEqual({ topic_ids: ids })
-      const after = await db.query<{ id: string; sort_order: number }>(
-        "select id, sort_order from public.note_topics order by sort_order, id"
-      )
-      expect(after.rows).toEqual(rows)
-      const audit = await db.query<{ n: number }>(
-        "select count(*)::int as n from public.audit_log where actor_id = $1 and action = 'admin_set_note_topic_order'",
-        [f.admin]
-      )
-      expect(audit.rows[0].n).toBe(0)
-    })
-  })
-
-  it("an unknown topic is NOT_FOUND for add and rename", async () => {
-    await inRollback(async (db) => {
-      const f = await seed(db)
-      expect(
-        await fails(db, f, ADD_NOTE, [randomUUID(), "x", randomUUID()])
-      ).toBe("NOT_FOUND")
-      expect(
-        await fails(db, f, RENAME_TOPIC, [randomUUID(), "x", randomUUID()])
-      ).toBe("NOT_FOUND")
-    })
-  })
-
-  it("rename: a blank name is INVALID_INPUT with field name; a padded name is stored trimmed", async () => {
-    await inRollback(async (db) => {
-      const f = await seed(db)
-      const t = await topic(db, f, "ספקים")
-      await asAuthenticated(db, f.admin)
-      await db.query("savepoint s")
-      let error: { message?: string; detail?: string } = {}
-      try {
-        await db.query(RENAME_TOPIC, [t, "   ", randomUUID()])
-      } catch (e) {
-        error = e as { message?: string; detail?: string }
-      }
-      await db.query("rollback to savepoint s")
-      await db.query("reset role")
-      expect(error.message).toBe("INVALID_INPUT")
-      expect(JSON.parse(error.detail ?? "{}")).toEqual({ field: "name" })
-
-      await call(db, f, RENAME_TOPIC, [t, "  ספקים חדשים  ", randomUUID()])
-      const { rows } = await db.query(
-        "select name from public.note_topics where id = $1",
-        [t]
-      )
-      expect(rows[0].name).toBe("ספקים חדשים")
-    })
-  })
-
-  it("the audit masks a note's body, not a topic's name", async () => {
-    await inRollback(async (db) => {
-      const f = await seed(db)
-      const t = await topic(db, f, "מתעניינות")
-      const a = await note(db, f, t, "דנה 050-0000000")
-      await call(db, f, UPDATE_NOTE, [a, t, "דנה, התקשרה", randomUUID()])
+      const a = await note(db, f, "דנה 050-0000000")
+      await call(db, f, UPDATE_NOTE, [a, "דנה, התקשרה", randomUUID()])
       await call(db, f, DELETE_NOTE, [a, randomUUID()])
       const { rows } = await db.query(
-        `select action, before, after from public.audit_log
+        `select action, entity_type, before, after from public.audit_log
          where entity_id = $1 order by action`,
         [a]
       )
@@ -542,63 +487,50 @@ describe("notes (story 4.11)", { timeout: 30_000 }, () => {
         "admin_delete_note",
         "admin_update_note",
       ])
+      expect(rows.every((r) => r.entity_type === "notes")).toBe(true)
       const [add, del, update] = rows
       expect(add.after.body).toBe("<changed>")
       expect(del.before.body).toBe("<changed>")
       expect(update.before.body).toBe("<changed>")
       expect(update.after.body).toBe("<changed>")
-      const topicAudit = await db.query(
-        `select after from public.audit_log
-         where entity_id = $1 and action = 'admin_add_note_topic'`,
-        [t]
-      )
-      expect(topicAudit.rows[0].after.name).toBe("מתעניינות")
     })
   })
 
   it("a customer reads 0 rows and every RPC is NOT_AUTHORIZED", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)
-      const t = await topic(db, f, "ספקים")
-      const a = await note(db, f, t, "a")
+      const a = await note(db, f, "a")
       await actAs(db, f.customer, async () => {
-        for (const table of ["note_topics", "notes"]) {
-          const { rows } = await db.query(
-            `select count(*)::int as n from public.${table}`
-          )
-          expect(rows[0].n).toBe(0)
-        }
+        const { rows } = await db.query(
+          "select count(*)::int as n from public.notes"
+        )
+        expect(rows[0].n).toBe(0)
         const calls: [string, unknown[]][] = [
-          [ADD_TOPIC, ["x", randomUUID()]],
-          [RENAME_TOPIC, [t, "x", randomUUID()]],
-          [PREVIEW_DELETE_TOPIC, [t]],
-          [DELETE_TOPIC, [t, true, randomUUID()]],
-          [TOPIC_ORDER, [[t]]],
-          [ADD_NOTE, [t, "x", randomUUID()]],
-          [UPDATE_NOTE, [a, t, "x", randomUUID()]],
+          [ADD_NOTE, ["x", randomUUID()]],
+          [UPDATE_NOTE, [a, "x", randomUUID()]],
           [DELETE_NOTE, [a, randomUUID()]],
           [PINNED, [a, true]],
           [DONE, [a, true]],
           [ARCHIVED, [a, true]],
-          [NOTE_ORDER, [t, [a]]],
+          [NOTE_ORDER, [[a]]],
         ]
         for (const [text, params] of calls) {
           expect((await queryError(db, text, params))?.message).toBe(
             "NOT_AUTHORIZED"
           )
         }
-        // No write grant on the tables.
+        // No write grant on the table.
         expect(
           (
             await queryError(
               db,
-              "insert into public.notes (topic_id, body, sort_order) values ($1, 'x', 0)",
-              [t]
+              "insert into public.notes (body, sort_order) values ('x', 0)",
+              []
             )
           )?.code
         ).toBe("42501")
       })
-      expect(await notesOf(db, t)).toHaveLength(1)
+      expect(await notesIn(db, [a])).toHaveLength(1)
     })
   })
 })
