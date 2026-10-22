@@ -3,14 +3,14 @@ import { cn } from "@/lib/utils"
 
 import type { PageStatus } from "./content-items"
 
-// DESIGN.md › content-section-row: draft = pending, published = success,
-// unpublished changes = warning, hidden = expired. Always a word; the dot is
-// decorative.
-export type ChipStatus = PageStatus | "hidden"
+// DESIGN.md › content-section-row: draft = pending, unpublished changes =
+// warning, hidden = expired. Always a word; the dot is decorative. What is
+// published with no pending draft has no chip (fix 17, user decision
+// 2026-10-21): only what is not on the site yet is marked.
+export type ChipStatus = Exclude<PageStatus, "published"> | "hidden"
 
 const CHIP: Record<ChipStatus, { chip: string; dot: string }> = {
   draft: { chip: "bg-pending-tint text-pending", dot: "bg-pending-dot" },
-  published: { chip: "bg-success-tint text-success", dot: "bg-success-dot" },
   changed: { chip: "bg-warning-tint text-warning", dot: "bg-warning-dot" },
   hidden: { chip: "bg-expired-tint text-expired", dot: "bg-expired-dot" },
 }
@@ -32,9 +32,18 @@ export function ContentStatusChip({ status }: { status: ChipStatus }) {
   )
 }
 
-// The line under a page's name: what the chip means for the site.
+// The chips of a page or a section: its status unless published, then
+// "hidden" when it is hidden.
+export function statusChips(status: PageStatus, hidden = false): ChipStatus[] {
+  const chips: ChipStatus[] = status === "published" ? [] : [status]
+  if (hidden) chips.push("hidden")
+  return chips
+}
+
+// The line under a page's name: what the chip means for the site; "" when
+// it is published (no chip, nothing to say).
 export function statusHint(status: PageStatus): string {
   const copy = adminCopy.content
   if (status === "draft") return copy.notShown
-  return status === "changed" ? copy.changedHint : copy.publishedHint
+  return status === "changed" ? copy.changedHint : ""
 }

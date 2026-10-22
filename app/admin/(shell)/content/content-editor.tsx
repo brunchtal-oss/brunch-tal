@@ -510,7 +510,16 @@ export function ContentEditor({
         )
       )}
 
-      {spec.hideable && (
+      {spec.hideable && spec.hideAsSwitch && (
+        <ShowSwitch
+          label={spec.hideAsSwitch.label}
+          hint={spec.hideAsSwitch.hint}
+          checked={!state.hidden}
+          onChange={(shown) => update({ ...state, hidden: !shown })}
+        />
+      )}
+
+      {spec.hideable && !spec.hideAsSwitch && (
         <div className="flex flex-col gap-3">
           {state.hidden && (
             <InlineNotice tone="warning">
@@ -751,6 +760,58 @@ function ImageInput({
       createMedia={createMediaAction}
       removable={removable}
     />
+  )
+}
+
+// An on/off switch for a section's hidden flag (home › promo_banner, fix
+// 15): on = shown. It only changes the form; saving and publishing write.
+// A 44px row (the label is part of the target), the track in primary when
+// on and outlined in ink-muted when off, the thumb moving to inline-end.
+function ShowSwitch({
+  label,
+  hint,
+  checked,
+  onChange,
+}: {
+  label: string
+  hint: string
+  checked: boolean
+  onChange: (checked: boolean) => void
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        aria-describedby="show-switch-hint"
+        onClick={() => onChange(!checked)}
+        className="group flex min-h-11 items-center gap-3 self-start rounded-[4px] text-start text-base font-semibold focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+      >
+        <span
+          aria-hidden
+          className={cn(
+            "relative inline-flex h-7 w-12 shrink-0 items-center rounded-full border-[1.5px] transition-colors motion-reduce:transition-none",
+            checked
+              ? "border-primary bg-primary"
+              : "border-muted-foreground bg-card"
+          )}
+        >
+          <span
+            className={cn(
+              "absolute top-1/2 size-5 -translate-y-1/2 rounded-full transition-[inset-inline-start] motion-reduce:transition-none",
+              checked
+                ? "start-[calc(100%-1.375rem)] bg-primary-foreground"
+                : "start-0.5 bg-muted-foreground"
+            )}
+          />
+        </span>
+        {label}
+      </button>
+      <p id="show-switch-hint" className="text-[15px] text-muted-foreground">
+        {hint}
+      </p>
+    </div>
   )
 }
 

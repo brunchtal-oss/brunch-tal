@@ -75,6 +75,7 @@ describe("content items", () => {
     ])
     expect(EDITABLE_PAGES.home.map((ref) => `${ref.slug}/${ref.key}`)).toEqual([
       "home/hero",
+      "home/promo_banner",
       "home/intro",
       "about/main",
       "home/contact",
@@ -207,6 +208,8 @@ describe("content items", () => {
     expect(sectionSummary({ items: [{}, {}] })).toContain("2")
     expect(sectionSummary({ question: "q" })).toBe("q")
     expect(sectionSummary({})).toBe("")
+    // Fix 15: the promo banner's row shows its text.
+    expect(sectionSummary({ text: "בקרוב" })).toBe("בקרוב")
   })
 
   it("starts the editor from the draft, else the published content", () => {

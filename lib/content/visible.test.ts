@@ -179,3 +179,21 @@ describe("withResolvedImages", () => {
     ).toEqual({ kind: "hero", content: { title: "t", image: img(A) } })
   })
 })
+
+// Fix 15: the promo banner is shown only when on and with text.
+describe("visibleSection promo_banner", () => {
+  it("shows a banner that is on with text", () => {
+    const section = {
+      kind: "promo_banner" as const,
+      content: { text: "בקרוב בראנצ׳ים 60+" },
+    }
+    expect(visibleSection(section)).toEqual(section)
+  })
+
+  it.each([
+    ["switched off", { text: "בקרוב", hidden: true }],
+    ["without text", {}],
+  ])("drops a banner %s", (_label, content) => {
+    expect(visibleSection({ kind: "promo_banner", content })).toBeNull()
+  })
+})

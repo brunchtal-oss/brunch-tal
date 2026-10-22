@@ -21,7 +21,7 @@ import {
   type EditorPageId,
 } from "../content-items"
 import { ContentRow } from "../content-row"
-import { statusHint, type ChipStatus } from "../content-status-chip"
+import { statusChips, statusHint } from "../content-status-chip"
 import { loadContentPages } from "../load-page"
 
 const copy = adminCopy.content
@@ -32,7 +32,8 @@ export const metadata: Metadata = {
 
 // /admin/content/<page> (story 5.3): the sections of one editor page in the
 // site's order, each a content-section-row with its chips (draft /
-// published / unpublished changes, and hidden), opening its own editor.
+// unpublished changes, and hidden; none when published, fix 17), opening
+// its own editor.
 // The footer's page also leads to the business details (its phone and
 // address come from there). An unknown page is notFound().
 export default function ContentSectionsPage({
@@ -63,12 +64,12 @@ async function Sections({ params }: { params: Promise<{ slug: string }> }) {
           const page = pages[ref.slug]
           const section = sectionOf(page, ref.key)
           const status = sectionStatus(page, section)
-          const chips: ChipStatus[] = sectionHidden(section)
-            ? [status, "hidden"]
-            : [status]
+          const chips = statusChips(status, sectionHidden(section))
           const summary = sectionSummary(editorContent(section))
           const detail = [
             summary || statusHint(status),
+            // A draft is marked even with a summary (fix 17).
+            summary && status === "draft" ? statusHint(status) : "",
             ref.slug === "gallery" ? copy.alsoOnHome : "",
           ]
             .filter(Boolean)

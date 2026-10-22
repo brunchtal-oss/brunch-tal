@@ -21,7 +21,7 @@ export function ContentRow({
     <li className="border-b border-border last:border-b-0">
       <Link href={href} className="flex min-h-12 items-center gap-3 py-3">
         <span className="flex min-w-0 flex-1 flex-col gap-1">
-          <span className="text-base leading-[1.35] font-semibold">
+          <span className="text-[17px] leading-[1.35] font-semibold">
             {title}
           </span>
           {detail && (

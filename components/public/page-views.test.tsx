@@ -75,6 +75,44 @@ describe("page views", () => {
     expect(html).not.toContain("about-title")
   })
 
+  // Fix 15: the promo banner, right under the hero and before the intro.
+  const home = (banner: Record<string, unknown>) =>
+    toSections([
+      { key: "hero", kind: "hero", content: { title: "hero-title" } },
+      { key: "promo_banner", kind: "promo_banner", content: banner },
+      { key: "intro", kind: "text_block", content: { title: "intro-title" } },
+    ])
+  const homeHtml = (banner: Record<string, unknown>) =>
+    renderToStaticMarkup(
+      <HomeView
+        home={home(banner)}
+        about={{}}
+        gallery={{}}
+        name="n"
+        whatsappHref={WA}
+      />
+    )
+
+  it("shows the promo banner between the hero and the intro", () => {
+    const html = homeHtml({ text: "בקרוב בראנצ׳ים 60+" })
+    const banner = html.indexOf("בקרוב בראנצ׳ים 60+")
+    expect(banner).toBeGreaterThan(html.indexOf("hero-title"))
+    expect(banner).toBeLessThan(html.indexOf("intro-title"))
+    expect(html).toContain("bg-primary")
+    expect(html).toContain("text-primary-foreground")
+    expect(html).toContain("border-dashed")
+  })
+
+  it.each([
+    ["switched off", { text: "בקרוב בראנצ׳ים 60+", hidden: true }],
+    ["blank", { text: "  " }],
+  ])("shows no promo banner when it is %s", (_label, banner) => {
+    const html = homeHtml(banner)
+    expect(html).not.toContain("promo-banner")
+    expect(html).not.toContain("בקרוב בראנצ׳ים 60+")
+    expect(html).toContain("intro-title")
+  })
+
   it("shows the text as text, not as HTML", () => {
     const sections = toSections([
       {

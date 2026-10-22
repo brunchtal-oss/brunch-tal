@@ -148,6 +148,16 @@ const requiredText = (max: number) => z.string().trim().min(1).max(max)
 // not shown on the site or in the preview (lib/content/visible.ts).
 const hidden = z.boolean().optional()
 
+// home › promo_banner (fix 15): a short announcement under the hero, one
+// optional text. Off is the section's hidden flag (the editor shows it as a
+// switch); off or blank, the site shows nothing (lib/content/visible.ts).
+export const promoBannerSchema = z.object({
+  text: optionalText(80),
+  hidden,
+})
+
+export type PromoBannerContent = z.infer<typeof promoBannerSchema>
+
 // A heading with its text (home › intro, home › contact, about › main,
 // contact › intro). The body keeps its line breaks; it is optional, so a
 // block can be a heading with an action (home › contact). An optional image
@@ -349,6 +359,7 @@ export const ACCESSIBILITY_REQUIRED_FIELDS = [
 // the editor.
 export const contentSchemas = {
   hero: heroSchema,
+  promo_banner: promoBannerSchema,
   business_details: businessDetailsSchema,
   photo_consent: photoConsentSchema,
   text_block: textBlockSchema,
