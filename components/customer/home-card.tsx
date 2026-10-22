@@ -5,7 +5,7 @@ import { customerCopy } from "@/lib/copy/customer"
 import { formatDayMonth, formatLocalDate } from "@/lib/time"
 import { cn } from "@/lib/utils"
 
-import { METER_MAX } from "./balance-card"
+import { METER_MAX } from "./entry-meter"
 
 // DESIGN.md › home-card (design round, user decision 2026-10-07): "הכרטיסייה
 // שלי" on the customer home, in place of balance-card there. No frame and

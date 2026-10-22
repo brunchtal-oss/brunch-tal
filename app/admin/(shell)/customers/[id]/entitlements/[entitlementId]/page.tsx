@@ -2,7 +2,7 @@ import { Suspense } from "react"
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
-import { EntryMeter, METER_MAX } from "@/components/customer/balance-card"
+import { EntryMeter, METER_MAX } from "@/components/customer/entry-meter"
 import { PageHeading } from "@/components/shared/page-heading"
 import { ResultNoticeHost } from "@/components/shared/result-notice"
 import { StatusChip } from "@/components/shared/status-chip"

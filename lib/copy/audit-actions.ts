@@ -5,12 +5,12 @@ import { formatDayMonth, formatShortDate } from "@/lib/time"
 // The audit log's whitelist (spec-audit-log-concise, user decision
 // 2026-10-18): which actions /admin/audit lists, the main row of each
 // operation ("{action}/{entity_type}", passed to admin_list_audit as
-// p_shown), and the one result sentence each shows. Every other action is
-// hidden (HIDDEN_AUDIT_ACTIONS, for story 5.20, which stops recording them).
+// p_shown), and the one result sentence each shows. Story 5.20 (fix 6)
+// stopped writing every action that was never listed.
 //
 // A new action written by private.audit gets a label in adminCopy.audit
-// .actions, a decision here (shown or hidden) and, when shown, a result
-// sentence or the edit flag (AGENTS.md).
+// .actions, a rule here and a result sentence or the edit flag (AGENTS.md).
+// A step nobody needs to check later is not written to the log at all.
 
 const copy = adminCopy.audit
 const results = copy.results
@@ -399,62 +399,6 @@ export const SHOWN_AUDIT_ACTIONS: Record<string, readonly AuditRule[]> = {
     },
   ],
 }
-
-// Recorded but never listed: nothing in them is worth checking later
-// (story 5.20 stops recording them).
-export const HIDDEN_AUDIT_ACTIONS: readonly string[] = [
-  // The work sheet.
-  "admin_add_prep_day",
-  "admin_remove_prep_day",
-  "admin_move_prep_day",
-  "admin_add_work_dish",
-  "admin_update_work_dish",
-  "admin_delete_work_dish",
-  "admin_set_work_dish_order",
-  "admin_add_work_task",
-  "admin_update_work_task",
-  "admin_delete_work_task",
-  "admin_set_work_task_done",
-  "admin_set_work_task_order",
-  "admin_add_shopping_item",
-  "admin_add_shopping_items",
-  "admin_update_shopping_item",
-  "admin_delete_shopping_item",
-  "admin_set_shopping_item_bought",
-  "admin_set_shopping_item_order",
-  // Notes and topics.
-  "admin_add_note",
-  "admin_update_note",
-  "admin_delete_note",
-  "admin_set_note_archived",
-  "admin_set_note_done",
-  "admin_set_note_pinned",
-  "admin_set_note_order",
-  "admin_add_note_topic",
-  "admin_rename_note_topic",
-  "admin_delete_note_topic",
-  "admin_set_note_topic_order",
-  // Drafts and images.
-  "admin_set_content_draft",
-  "admin_create_media",
-  "admin_begin_media_publish",
-  "admin_finish_media_publish",
-  "media_hidden",
-  "admin_set_event_image",
-  "admin_set_concept_image",
-  // The same approval as approve_payment (AD-10).
-  "admin_approve_payment",
-  // Technical steps.
-  "admin_begin_email_change",
-  "admin_finish_anonymize_customer",
-  "join_begin",
-  "migrate_identity_match",
-  "refresh_returned_entitlements",
-  // Masked, nothing to check.
-  "set_booking_guest_details",
-  // Calls bind_purchase, which is shown.
-  "claim_join",
-]
 
 export function auditRules(action: string): readonly AuditRule[] {
   return Object.hasOwn(SHOWN_AUDIT_ACTIONS, action)

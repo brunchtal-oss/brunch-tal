@@ -13,8 +13,8 @@ import { createClient } from "@/lib/supabase/server"
 
 import {
   SESSION_COLUMNS,
+  sessionRowsFrom,
   sessionsListFilter,
-  toSessionRow,
 } from "./load-session"
 import { occupancyById } from "./session-draft"
 import { SessionsList } from "./sessions-list"
@@ -88,16 +88,19 @@ async function SessionsContent() {
     .order("starts_at")
     .order("id")
   if (error) throw new Error("sessions list failed")
-  const rows = data.map(toSessionRow)
-  // The places taken, only from private.occupied_places (AD-6), in one call
-  // for the listed ids; none listed, no call.
+  // The places taken, only from private.occupied_places (AD-6), and the
+  // capacity (story 5.20: never read from events directly), in one call for
+  // the listed ids; none listed, no call.
   let occupied: Record<string, number> = {}
-  if (rows.length > 0) {
+  let answer: unknown = []
+  if (data.length > 0) {
     const result = await callRpc(supabase, "admin_list_session_occupancy", {
-      p_event_ids: rows.map((row) => row.id),
+      p_event_ids: data.map((row) => row.id),
     })
     if (!result.ok) throw new Error("sessions occupancy failed")
-    occupied = occupancyById(result.data)
+    answer = result.data
+    occupied = occupancyById(answer)
   }
+  const rows = sessionRowsFrom(data, answer)
   return <SessionsList rows={rows} occupied={occupied} />
 }

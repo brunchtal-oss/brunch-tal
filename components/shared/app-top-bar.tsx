@@ -21,10 +21,13 @@ import { Wordmark } from "./wordmark"
 // an on-primary focus ring.
 export function AppTopBar({
   home,
+  name,
   bell,
   wide = false,
 }: {
   home: "/me" | "/admin"
+  // The published business name, else the WORDMARK (story 5.20).
+  name: string
   bell: React.ReactNode
   // The admin bar spans the whole width above the side-nav from lg.
   wide?: boolean
@@ -42,6 +45,7 @@ export function AppTopBar({
       >
         <Wordmark
           href={home}
+          name={name}
           className="min-w-0 leading-[1.1] text-primary-foreground"
         />
         <div className="flex shrink-0 items-center gap-1">

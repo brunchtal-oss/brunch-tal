@@ -1,14 +1,17 @@
 import type { MetadataRoute } from "next"
 
-import { WORDMARK } from "@/lib/copy/shell"
+import { getBusinessName } from "@/lib/content/business-details"
 
 // The web app manifest (story 5.9), served at /manifest.webmanifest. The site
 // lock lets it and /icons/ through (SITE_LOCK_PUBLIC_FILES), so the site can
 // be installed while locked. Colours from DESIGN.md (primary, background).
-export default function manifest(): MetadataRoute.Manifest {
+// The name is the published business name, else the WORDMARK (story 5.20);
+// an installed app keeps the name it was installed with.
+export default async function manifest(): Promise<MetadataRoute.Manifest> {
+  const name = await getBusinessName()
   return {
-    name: WORDMARK,
-    short_name: WORDMARK,
+    name,
+    short_name: name,
     lang: "he",
     dir: "rtl",
     display: "standalone",

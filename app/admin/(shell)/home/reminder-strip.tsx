@@ -1,12 +1,7 @@
-import { createClient } from "@/lib/supabase/server"
-
+import { loadLatestReminder, type ReminderRow } from "./load-home"
 import { ReminderStripView } from "./reminder-strip-view"
 
-export type ReminderRow = {
-  id: string
-  payload: unknown
-  read_at: string | null
-}
+export type { ReminderRow }
 
 // The strip's reminder: the newest marketing reminder, only while it is
 // unread (an older unread one never shows once a newer one was read), with
@@ -28,18 +23,7 @@ export function currentReminder(
 // strip): her newest marketing_reminder notification (RLS: her own rows),
 // right under the h1, until she closes it. A failed read shows nothing.
 export async function ReminderStrip() {
-  const supabase = await createClient()
-  const { data, error } = await supabase
-    .from("notifications")
-    .select("id, payload, read_at")
-    .eq("recipient_kind", "admin")
-    .eq("type", "marketing_reminder")
-    .order("created_at", { ascending: false })
-    .order("id", { ascending: false })
-    .limit(1)
-    .maybeSingle()
-  if (error) return null
-  const reminder = currentReminder(data)
+  const reminder = currentReminder(await loadLatestReminder())
   if (!reminder) return null
   // Keyed by the reminder, so a newer one never inherits a closed state.
   return (

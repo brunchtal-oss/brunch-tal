@@ -85,7 +85,7 @@ export const joinCopy = {
   errors: {
     phone: "מספר הטלפון לא נראה תקין",
     email: "כתובת המייל לא נראית תקינה",
-    birthDate: "תאריך הלידה לא יכול להיות בעתיד",
+    birthDate: "תאריך הלידה יכול להיות עד שנתיים אחורה ועד 9 חודשים קדימה.",
     // Story 2.13: each names its question, so the summary's links differ.
     photoConsent: "צריך לבחור תשובה בשאלה על תמונות אווירה",
     personalPhotoConsent: "צריך לבחור תשובה בשאלה על תמונות אישיות",

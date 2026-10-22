@@ -50,9 +50,6 @@ export const customerCopy = {
     used: "השתתפת",
     cancelled: "ביטלת",
   },
-  // A returned non-card entry on home that funds no booking yet (user
-  // decision 2026-10-08).
-  toBook: "יש להירשם",
   movement: {
     grant: "רכישה",
     opening_balance: "יתרת פתיחה",
@@ -178,7 +175,8 @@ export const customerCopy = {
     // Back from /me/profile/photos (user decision 2026-10-08).
     backToProfile: "לפרופיל",
     saved: "הפרטים נשמרו",
-    birthDateFuture: "תאריך הלידה לא יכול להיות בעתיד",
+    birthDateRange:
+      "תאריך הלידה יכול להיות עד שנתיים אחורה ועד 9 חודשים קדימה.",
     linksLabel: "עוד באזור האישי",
     // The first row there, to the push card at the top of
     // /me/notifications (story 5.21).

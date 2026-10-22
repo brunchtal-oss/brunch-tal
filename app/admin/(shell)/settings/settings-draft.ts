@@ -21,6 +21,8 @@ export type SettingsRow = {
   reminder_lead_hours: number
   admin_expiring_days: number
   customer_expiring_days: number
+  // Story 5.10/5.20: "a credit about to expire" on the customer side.
+  credit_expiring_days: number
   last_places_threshold: number
   default_prep_days: number[]
   inactivity_months: number
@@ -28,6 +30,10 @@ export type SettingsRow = {
   default_session_start_time: string
   default_session_end_time: string
 }
+
+// The columns the settings page reads: every key of SettingsRow (tested).
+export const SETTINGS_COLUMNS =
+  "version, default_validity_days, registration_close_days_before, registration_close_local_time, default_capacity_regular, default_capacity_couple, cancel_window_hours, credit_options_count, reminder_lead_hours, admin_expiring_days, customer_expiring_days, credit_expiring_days, last_places_threshold, default_prep_days, inactivity_months, duplicate_payment_window_days, default_session_start_time, default_session_end_time"
 
 // The settings that are one whole number each.
 export const NUMBER_FIELDS = {
@@ -39,6 +45,7 @@ export const NUMBER_FIELDS = {
   reminder: { column: "reminder_lead_hours", min: 1, max: 168 },
   adminExpiring: { column: "admin_expiring_days", min: 0, max: 90 },
   customerExpiring: { column: "customer_expiring_days", min: 0, max: 90 },
+  creditExpiring: { column: "credit_expiring_days", min: 1, max: 30 },
   lastPlaces: { column: "last_places_threshold", min: 0, max: 50 },
   inactivity: { column: "inactivity_months", min: 1, max: 24 },
   duplicateWindow: {
@@ -165,6 +172,7 @@ const NUMBER_SHOW: Record<NumberField, (n: number) => string> = {
   reminder: show.hoursBefore,
   adminExpiring: show.days,
   customerExpiring: show.days,
+  creditExpiring: show.days,
   lastPlaces: show.places,
   inactivity: show.months,
   duplicateWindow: show.days,

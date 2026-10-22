@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 
 import {
   DEFAULT_TIME,
@@ -7,6 +7,7 @@ import {
   parseSchedule,
   scheduleChanged,
   scheduleFromDraft,
+  sendWithKey,
   textProblem,
   trimText,
   type MarketingText,
@@ -132,5 +133,40 @@ describe("text checks", () => {
     expect(textProblem("א".repeat(500))).toBeNull()
     expect(textProblem("א".repeat(501))).toBe("long")
     expect(textProblem("😀".repeat(500))).toBeNull()
+  })
+})
+
+// Audit 4 #6/#7: the key is replaced only after an answer.
+describe("sendWithKey", () => {
+  const KEY = "22222222-2222-4222-8222-222222222222"
+
+  it("saved: a new key for the next save", async () => {
+    const send = vi.fn(async () => ({ ok: true }) as const)
+    const sent = await sendWithKey(send, KEY)
+    expect(send).toHaveBeenCalledWith(KEY)
+    expect(sent.result).toEqual({ ok: true })
+    expect(sent.nextKey).not.toBe(KEY)
+  })
+
+  it("refused (stored under the key): a new key", async () => {
+    const answer = { ok: false, code: "STALE_VERSION" } as const
+    const sent = await sendWithKey(async () => answer, KEY)
+    expect(sent.result).toEqual(answer)
+    expect(sent.nextKey).not.toBe(KEY)
+  })
+
+  it("a SERVER_ERROR answer (may have been saved): the same key", async () => {
+    const answer = { ok: false, code: "SERVER_ERROR" } as const
+    const sent = await sendWithKey(async () => answer, KEY)
+    expect(sent.result).toEqual(answer)
+    expect(sent.nextKey).toBe(KEY)
+  })
+
+  it("thrown (may not have reached the server): SERVER_ERROR and the same key", async () => {
+    const sent = await sendWithKey(async () => {
+      throw new Error("network")
+    }, KEY)
+    expect(sent.result).toEqual({ ok: false, code: "SERVER_ERROR" })
+    expect(sent.nextKey).toBe(KEY)
   })
 })

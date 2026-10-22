@@ -1,5 +1,5 @@
 import { babyAge } from "@/components/admin/baby-age"
-import { METER_MAX } from "@/components/customer/balance-card"
+import { METER_MAX } from "@/components/customer/entry-meter"
 import type { StatusTone } from "@/components/shared/status-chip"
 import { consentLines } from "@/lib/admin/photo-consents"
 import { adminCopy } from "@/lib/copy/admin"
@@ -79,6 +79,9 @@ export type CardBooking = {
   // Story 3.16: the credit whose origin is this booking, else the credit
   // that funded it; null for none.
   credit_id?: string | null
+  // Story 5.20: a booking moved to another session (status cancelled), the
+  // session it went to; null otherwise.
+  moved_to_starts_at?: string | null
 }
 
 export type CardPayment = {
@@ -345,14 +348,18 @@ export function toBookingItem(
   row: CardBooking,
   customerId: string
 ): BookingItem {
+  const moved = row.status === "cancelled" ? row.moved_to_starts_at : null
   return {
     key: row.booking_id,
     href: `/admin/sessions/${row.event_id}`,
     title: adminCopy.sessions.sessionTitle(row.concept_name),
     when: formatSessionDate(row.starts_at),
     startsAt: row.starts_at,
-    status: copy.bookingStatus[row.status] ?? row.status,
-    tone: BOOKING_TONES[row.status] ?? "pending",
+    // Story 5.20: a moved booking says where it went, not "בוטלה".
+    status: moved
+      ? copy.bookingMoved(formatDayMonth(moved))
+      : (copy.bookingStatus[row.status] ?? row.status),
+    tone: moved ? "pending" : (BOOKING_TONES[row.status] ?? "pending"),
     couple: row.party_size === 2,
     creditHref:
       row.status === "cancelled" && row.credit_id

@@ -495,8 +495,14 @@ describe("join", () => {
     ],
     ["no baby", { babies: [] }, "INVALID_INPUT", { field: "babies" }],
     [
-      "a birth date in the future",
+      "a birth date more than 9 months ahead (story 5.20)",
       { babies: [{ name: "x", birth_date: "2999-01-01" }] },
+      "INVALID_INPUT",
+      { field: "birth_date", index: 0 },
+    ],
+    [
+      "a birth date more than 2 years back (story 5.20)",
+      { babies: [{ name: "x", birth_date: "2020-01-01" }] },
       "INVALID_INPUT",
       { field: "birth_date", index: 0 },
     ],

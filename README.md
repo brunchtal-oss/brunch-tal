@@ -52,6 +52,15 @@
 - **`npm run video:clear`:** סופר כמה שורות יימחקו בכל טבלה, עוצר אם המחיקה נוגעת בחשבונות הפיתוח, בשורות `test_` או בלקוחה שאינה מהעולם, ומבקש `y`. הוא מוחק גם את מה שנעשה בזמן הצילום (רכישות, הרשמות, פתקים, הערות, שינויי פרטים). `node scripts/video-clear.mjs --dry-run` רק סופר. שינויים בהגדרות, בתוכן, במוצרים ובקונספטים לא נמחקים, ולכן מצלמים אותם בלי לשמור, או שומרים ומחזירים ידנית.
 - **כניסות הצילום** (הסיסמה מ-`VIDEO_LOGIN_PASSWORD`): טל (אדמין) `admin@video.example.com`; מיכל אהרוני `michal.aharoni@video.example.com`; נטע ברגר `neta.berger@video.example.com`; סיוון אשכנזי `sivan.ashkenazi@video.example.com`. לדמות אחרת: `node scripts/dev-reset-link.mjs --email <מייל>@video.example.com --url https://<כתובת ה-Vercel>`.
 
+#### ניקוי נתוני הבדיקה וההדגמה הישנה
+
+1. **ניקוי נתוני הבדיקה:** `node scripts/dev-clean-test-data.mjs`. בלי דגל זו הרצה יבשה: הסקריפט רק מדפיס כמה שורות של נתוני `test_` יימחקו בכל טבלה, ועוצר אם רשומה מוגנת (לקוחה בדויה, אדמין, הדגמה) בתוכנית. רק אחרי שבודקים את התוכנית מריצים `node scripts/dev-clean-test-data.mjs --apply`. לא משתמשים ב-`scripts/demo-clear.mjs --dev-test-data`, כי הוא מוחק גם לקוחות פיתוח שאינן נתוני בדיקה, כמו dev-customer (מסמך התיקונים, תיקון 8).
+2. אם אין אדמין פיתוח: `node scripts/dev-reset-link.mjs --admin`. אם אין תמונות בגלריה: `npm run dev:seed-media`.
+3. `npm run demo:seed`, בין 06:10 ל-23:30 ולא בשבת, כי מפגש ההדגמה של היום מסתיים כמה דקות אחרי ההרצה. הסקריפט שומר את המזהים ב-`.demo-data.local.json` (לא ב-git). הרצה חוזרת לא מוסיפה כלום. בלי הקובץ הסקריפט לא ממשיך, אז לא מוחקים אותו.
+4. **סיסמה למבקרים:** `node scripts/dev-reset-link.mjs --email maya.barak@demo.example.com --url https://<כתובת ה-Vercel>`. פותחים את הקישור, בוחרים סיסמה, ומוסרים למבקרים את המייל, את הסיסמה ואת פרטי נעילת האתר. לכניסת אדמין עושים אותו דבר עם `--admin`.
+
+הסרת ההדגמה: `npm run demo:clear`. גם הוא רק כותב קובץ (`.demo-clear.local.sql`), שמריצים ב-SQL Editor. אחרי זה `demo:seed` מתחיל מחדש עם תאריכים חדשים.
+
 ## CI וכללי lint
 
 ‏GitHub Actions (`.github/workflows/ci.yml`) רץ על כל push ועל כל PR, מ-checkout נקי, בלי `.env`, בלי סודות ובלי מסד: ‏`npm ci`, ‏`npm run lint`, ‏`npm run format:check`, ‏`npm run typecheck`, ‏`npm test` ו-`npm audit --omit=dev --audit-level=high`. בדיקות המסד (`npm run test:db`) רצות רק מקומית.
@@ -107,7 +116,7 @@
 
 ### משימות מתוזמנות (pg_cron)
 
-- [ ] ב-`cron.job` יש את כל המשימות שב-`private.job_intervals()`: ‏`reminders`, ‏`invoke_push_worker`, ‏`complete_events`, ‏`refresh_credit_options`, ‏`expiry_alerts`, ‏`auto_extend`, ‏`cleanup` (סיפור 5.10). משימה שחסרה, שנכשלה או שלא הצליחה בזמן של פי 3 מהתדירות שלה מופיעה ב"לטיפול", וגם ערכי Vault חסרים ופוש שממתין יותר מ-15 דקות.
+- [ ] ב-`cron.job` יש את כל המשימות שב-`private.job_intervals()`: ‏`reminders`, ‏`invoke_push_worker`, ‏`complete_events`, ‏`refresh_credit_options`, ‏`marketing_reminders`, ‏`expiry_alerts`, ‏`auto_extend`, ‏`cleanup`, שמונה משימות (סיפורים 5.10 ו-5.11). משימה שחסרה, שנכשלה או שלא הצליחה בזמן של פי 3 מהתדירות שלה מופיעה ב"לטיפול", וגם ערכי Vault חסרים ופוש שממתין יותר מ-15 דקות.
 - [ ] **השהיית פרויקט Free:** ‏pg_cron לא מובטח (לפי התיעוד) כמונע השהיה של פרויקט Supabase חינמי אחרי 7 ימים בלי פעילות. בהשהיה כל המשימות נעצרות: אין תזכורות, אין התראות תפוגה, אין הארכה אוטומטית ואין פוש. צריך להחליט לפני ההשקה (שדרוג או פתרון אחר; ‏`deferred-work.md`, יעד 6.9).
 
 ### Vercel (Settings → Environment Variables, לכל סביבה)

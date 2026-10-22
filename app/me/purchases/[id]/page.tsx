@@ -4,7 +4,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { ChevronRightIcon } from "lucide-react"
 
-import { EntryMeter, METER_MAX } from "@/components/customer/balance-card"
+import { EntryMeter, METER_MAX } from "@/components/customer/entry-meter"
 import { PageHeading } from "@/components/shared/page-heading"
 import { StatusChip } from "@/components/shared/status-chip"
 import { customerCopy } from "@/lib/copy/customer"

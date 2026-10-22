@@ -338,7 +338,12 @@ describe("removing her personal details (story 4.6)", () => {
     callRpc.mockResolvedValue({
       ok: true,
       data: {
-        blockers: { bookings: [], refund_requests: [], pending_choices: [] },
+        blockers: {
+          bookings: [],
+          refund_requests: [],
+          pending_choices: [],
+          parked_purchases: [],
+        },
         forfeits: { entries_left: 3, active_credits: 1 },
       },
     })
@@ -347,7 +352,12 @@ describe("removing her personal details (story 4.6)", () => {
     ).resolves.toEqual({
       ok: true,
       data: {
-        blockers: { bookings: [], refund_requests: [], pending_choices: [] },
+        blockers: {
+          bookings: [],
+          refund_requests: [],
+          pending_choices: [],
+          parked_purchases: [],
+        },
         forfeits: { entries_left: 3, active_credits: 1 },
       },
     })

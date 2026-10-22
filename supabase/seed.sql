@@ -8,8 +8,6 @@
 -- (`-- --admin` for the admin account). That script also prints the one-time
 -- reset link.
 --
--- There are no business tables yet (story 1.1 has only identity and reset
--- tokens). Fictitious sessions, products and content are added here by the
--- stories that create those tables.
+-- The seed is intentionally empty; dev data comes from scripts.
 
 select 1;

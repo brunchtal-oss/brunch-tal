@@ -21,6 +21,7 @@ import { addTextAction, updateTextAction } from "./actions"
 import {
   MAX_TEXT,
   nextTextId,
+  sendWithKey,
   textProblem,
   trimText,
   type MarketingText,
@@ -171,21 +172,21 @@ function TextForm({
     }
     setPending(true)
     setError(null)
-    let result: ActionResult
-    try {
-      result = text
-        ? await updateTextAction({
-            textId: text.id,
-            body: trimText(body),
-            active,
-            expectedVersion: text.version,
-            idempotencyKey: key,
-          })
-        : await addTextAction({ body: trimText(body), idempotencyKey: key })
-    } catch {
-      result = { ok: false, code: "SERVER_ERROR" }
-    }
-    setKey(newIdempotencyKey())
+    const sent = await sendWithKey<ActionResult>(
+      (idempotencyKey) =>
+        text
+          ? updateTextAction({
+              textId: text.id,
+              body: trimText(body),
+              active,
+              expectedVersion: text.version,
+              idempotencyKey,
+            })
+          : addTextAction({ body: trimText(body), idempotencyKey }),
+      key
+    )
+    const result = sent.result
+    setKey(sent.nextKey)
     setPending(false)
     if (!result.ok) {
       setError(result.code)

@@ -5,6 +5,7 @@ import {
   EDITOR_PAGE_IDS,
   editorContent,
   editorPageOf,
+  editorStatementBlock,
   fieldErrorMessage,
   fieldErrors,
   findSectionRef,
@@ -20,11 +21,13 @@ import {
   sectionStatus,
   sectionSummary,
   slugsOf,
+  statementBlocked,
   statementPublishBlock,
   type ContentPage,
   type ContentSection,
   type SectionRef,
 } from "./content-items"
+import { fieldId, sectionSpec, type TextField } from "./section-fields"
 
 function section(values: Partial<ContentSection>): ContentSection {
   return {
@@ -351,5 +354,36 @@ describe("statementPublishBlock (story 5.5)", () => {
   it("does not block a valid draft or a published statement", () => {
     expect(statementPublishBlock(page(FULL))).toEqual([])
     expect(statementPublishBlock(page({}, FULL))).toEqual([])
+  })
+  it("the preview bar: each missing field with its editor label and a link to it", () => {
+    const blocked = statementBlocked(page({ ...FULL, contact_email: "" }))
+    const label = sectionSpec({
+      slug: "accessibility",
+      key: "statement",
+      kind: "accessibility_statement",
+    }).fields.find(
+      (field): field is TextField =>
+        field.type === "text" && field.name === "contact_email"
+    )?.label
+    expect(label).toBeTruthy()
+    expect(blocked).toEqual([
+      {
+        label,
+        href: `/admin/content/accessibility/statement#${fieldId("contact_email")}`,
+      },
+    ])
+    expect(statementBlocked(page(FULL))).toEqual([])
+    expect(statementBlocked(page({}, FULL))).toEqual([])
+  })
+
+  it("the section editor checks the statement only while it is unpublished", () => {
+    const [statement] = page(null).sections
+    expect(editorStatementBlock(statement)).toBe(true)
+    expect(
+      editorStatementBlock({ ...statement, published_content: FULL })
+    ).toBe(false)
+    expect(editorStatementBlock({ ...statement, kind: "legal_text" })).toBe(
+      false
+    )
   })
 })

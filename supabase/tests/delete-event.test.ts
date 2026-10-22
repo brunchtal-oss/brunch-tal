@@ -372,7 +372,7 @@ describe("admin_delete_event (story 3.17)", () => {
     })
   })
 
-  it("its own image, used nowhere else: hidden (media_hidden in the audit), its public path returned", async () => {
+  it("its own image, used nowhere else: hidden (no media_hidden audit row since 5.20), its public path returned", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)
       const ev = await insertEvent(db, f, { dayOffset: 5, status: "draft" })
@@ -394,7 +394,7 @@ describe("admin_delete_event (story 3.17)", () => {
          where action = 'media_hidden' and entity_id = $1`,
         [media]
       )
-      expect(hidden[0].n).toBe(1)
+      expect(hidden[0].n).toBe(0)
     })
   })
 
@@ -756,9 +756,9 @@ async function seedRace(label: string): Promise<Race> {
   )
   await sql(
     `insert into public.events (
-       id, concept_id, kind, starts_at, ends_at, capacity_adults,
+       id, description, concept_id, kind, starts_at, ends_at, capacity_adults,
        registration_closes_at, registration_close_overridden, status)
-     select $1, c.id, 'regular',
+     select $1, $2, c.id, 'regular',
        ((now() at time zone 'Asia/Jerusalem')::date + 3 + time '10:00') at time zone 'Asia/Jerusalem',
        ((now() at time zone 'Asia/Jerusalem')::date + 3 + time '12:00') at time zone 'Asia/Jerusalem',
        4,
@@ -767,7 +767,8 @@ async function seedRace(label: string): Promise<Race> {
      from public.concepts c
      where c.theme_key = 'mothers'
      limit 1`,
-    [eventId]
+    // Named test_ (story 5.20, fix 8).
+    [eventId, testName("committed_session")]
   )
   return { admin, customer, eventId }
 }

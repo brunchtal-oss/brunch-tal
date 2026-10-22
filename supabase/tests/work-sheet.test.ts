@@ -304,17 +304,14 @@ describe(
           [t, -4],
           [kept, -1],
         ])
+        // Story 5.20 (fix 6): the work sheet writes no audit row.
         const { rows } = await db.query(
-          `select before, after from public.audit_log
+          `select count(*)::int as n from public.audit_log
          where event_id = $1 and action = 'admin_move_prep_day'`,
           [id]
         )
-        expect(rows).toHaveLength(1)
-        expect(rows[0].before).toMatchObject({
-          prep_days: [-2, -1, 0],
-          moved_tasks: [{ id: t, dish_id: d, day_offset: -2 }],
-        })
-        expect(rows[0].after).toMatchObject({ prep_days: [-4, -1, 0] })
+        expect(rows[0].n).toBe(0)
+        expect(d).toBeTruthy()
       })
     })
 
@@ -519,7 +516,7 @@ describe("dishes and tasks", { timeout: 30_000 }, () => {
     })
   })
 
-  it("writes the audit log with the session", async () => {
+  it("story 5.20 (fix 6): writes no audit row", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)
       const id = await session(db, f, "2026-10-22")
@@ -532,28 +529,7 @@ describe("dishes and tasks", { timeout: 30_000 }, () => {
          where event_id = $1 and entity_type like 'work_%' order by action`,
         [id]
       )
-      expect(rows).toEqual([
-        {
-          action: "admin_add_prep_day",
-          entity_type: "work_sheets",
-          actor_id: f.admin,
-        },
-        {
-          action: "admin_add_work_dish",
-          entity_type: "work_dishes",
-          actor_id: f.admin,
-        },
-        {
-          action: "admin_add_work_task",
-          entity_type: "work_tasks",
-          actor_id: f.admin,
-        },
-        {
-          action: "admin_set_work_task_done",
-          entity_type: "work_tasks",
-          actor_id: f.admin,
-        },
-      ])
+      expect(rows).toEqual([])
     })
   })
 })
@@ -742,7 +718,7 @@ describe("review fixes", { timeout: 30_000 }, () => {
     })
   })
 
-  it("the audit keeps the deleted tasks; an unchanged order writes nothing", async () => {
+  it("story 5.20 (fix 6): orders, edits and deletes write no audit row", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)
       const id = await session(db, f, "2026-10-22")
@@ -764,19 +740,10 @@ describe("review fixes", { timeout: 30_000 }, () => {
          order by action`,
         [id]
       )
-      expect(rows.map((r) => r.action)).toEqual([
-        "admin_delete_work_dish",
-        "admin_remove_prep_day",
-      ])
-      expect(rows[0].before).toMatchObject({
-        name: "b",
-        tasks: [{ id: tb, day_offset: 0, body: "for b", done: false }],
-      })
-      expect(rows[1].before).toMatchObject({
-        deleted_tasks: [
-          { id: ta, dish_id: a, day_offset: -2, body: "for a", done: false },
-        ],
-      })
+      expect(rows).toEqual([])
+      // The deletes themselves happened.
+      expect((await sheet(db, f, id)).dishes.map((x) => x.id)).toEqual([a])
+      expect(tb).toBeTruthy()
     })
   })
 

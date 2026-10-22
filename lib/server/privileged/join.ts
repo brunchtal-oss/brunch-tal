@@ -277,11 +277,12 @@ export function joinStepKey(
 // join with this very user since; then nothing is deleted and the flow goes
 // on (the next join_begin answers LINK_USED). A user that is already gone
 // counts as deleted. Returns false on a failure, logged with ids and codes
-// only.
+// only. tokenId is null when the caller has no token id (a removal of
+// personal details, story 5.20).
 export async function deleteOrphanUser(
   supabase: ServiceClient,
   userId: string,
-  tokenId: string
+  tokenId: string | null
 ): Promise<boolean> {
   try {
     const profile = await supabase

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { updateSettingsAction } from "./actions"
+import { NUMBER_FIELDS } from "./settings-draft"
 import { updateTemplateAction } from "./templates/actions"
 
 const callRpc = vi.fn()
@@ -63,6 +64,31 @@ describe("updateSettingsAction", () => {
     expect(callRpc).not.toHaveBeenCalled()
   })
 
+  it("story 5.20: every column the editor sends passes the key check (credit_expiring_days too)", async () => {
+    callRpc.mockResolvedValue({ ok: true, data: { version: 4 } })
+    const columns = [
+      ...Object.values(NUMBER_FIELDS).map((field) => field.column),
+      "registration_close_days_before",
+      "registration_close_local_time",
+      "default_prep_days",
+      "default_session_start_time",
+      "default_session_end_time",
+    ]
+    expect(columns).toContain("credit_expiring_days")
+    for (const column of columns) {
+      callRpc.mockClear()
+      await expect(
+        updateSettingsAction({
+          changes: { [column]: 1 },
+          expectedVersion: 3,
+          idempotencyKey: KEY,
+        }),
+        column
+      ).resolves.toEqual({ ok: true, data: undefined })
+      expect(callRpc, column).toHaveBeenCalledTimes(1)
+    }
+  })
+
   it("passes STALE_VERSION through", async () => {
     callRpc.mockResolvedValue({ ok: false, code: "STALE_VERSION" })
     await expect(
@@ -101,7 +127,7 @@ describe("updateTemplateAction", () => {
   it("sends a null body for an override type", async () => {
     callRpc.mockResolvedValue({ ok: true, data: {} })
     await updateTemplateAction({
-      type: "broadcast",
+      type: "marketing_reminder",
       title: "הודעה",
       body: null,
       expectedVersion: 1,

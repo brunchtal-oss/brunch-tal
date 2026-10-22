@@ -1,6 +1,7 @@
 import "server-only"
 
 import type { ActionResult } from "@/lib/errors"
+import { isAllowedPushEndpoint } from "@/lib/push-endpoint"
 import { callRpc } from "@/lib/rpc"
 import { createClient } from "@/lib/supabase/server"
 
@@ -17,6 +18,9 @@ export type PushRegistrationInput = {
   platform: (typeof PLATFORMS)[number]
 }
 
+// The shape of any stored endpoint, for unregistering (a row saved before
+// story 5.20 may be of another host). A new registration needs a known push
+// service (isAllowedPushEndpoint, the same rule as the RPC).
 export function isPushEndpoint(value: unknown): value is string {
   return (
     typeof value === "string" &&
@@ -34,7 +38,13 @@ export function parsePushRegistration(
     v.keys && typeof v.keys === "object"
       ? (v.keys as Record<string, unknown>)
       : null
-  if (!isPushEndpoint(v.endpoint) || !keys) return null
+  if (
+    !isPushEndpoint(v.endpoint) ||
+    !isAllowedPushEndpoint(v.endpoint) ||
+    !keys
+  ) {
+    return null
+  }
   const { p256dh, auth } = keys
   if (
     typeof p256dh !== "string" ||

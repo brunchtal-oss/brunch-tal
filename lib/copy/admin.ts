@@ -1457,6 +1457,7 @@ export const adminCopy = {
       reminder: "תזכורת לפני מפגש (שעות)",
       adminExpiring: '"עומדת לפוג" אצלך (ימים לפני התפוגה)',
       customerExpiring: '"עומדת לפוג" אצל הלקוחה (ימים לפני התפוגה)',
+      creditExpiring: '"זיכוי עומד לפוג" אצל הלקוחה (ימים לפני התפוגה)',
       lastPlaces: '"מקומות אחרונים" (מקומות פנויים או פחות)',
       inactivity: "לקוחה לא פעילה אחרי (חודשים)",
       duplicateWindow: "זיהוי תשלום כפול (ימים לפני ואחרי)",
@@ -1474,6 +1475,7 @@ export const adminCopy = {
       reminder: "תזכורת לפני מפגש",
       adminExpiring: '"עומדת לפוג" אצלך',
       customerExpiring: '"עומדת לפוג" אצל הלקוחה',
+      creditExpiring: '"זיכוי עומד לפוג" אצל הלקוחה',
       lastPlaces: '"מקומות אחרונים"',
       inactivity: "לקוחה לא פעילה",
       duplicateWindow: "זיהוי תשלום כפול",
@@ -1558,7 +1560,6 @@ export const adminCopy = {
         // Story 3.14: a week with no fitting brunch extended the card.
         entitlement_auto_extended: "הארכה אוטומטית של כרטיסייה",
         card_expiring: "כרטיסייה עומדת לפוג",
-        broadcast: "הודעה כללית",
         admin_card_expiring: "כרטיסייה של לקוחה עומדת לפוג",
         marketing_reminder: "תזכורת שיווק",
       } as Record<string, string>,
@@ -1937,6 +1938,8 @@ export const adminCopy = {
         completed: "השתתפה",
         cancelled: "בוטלה",
       },
+      // Story 5.20: a booking moved to another session, by its date.
+      bookingMoved: (dayMonth: string) => `הועברה ל-${dayMonth}`,
       couple: "זוגי",
       noPurchases: "אין רכישות",
       // "{amount} · {method} · {DD.MM.YY}" under the product.
@@ -1983,6 +1986,8 @@ export const adminCopy = {
           "הרשמות עתידיות (מבטלים בעמוד המפגש, עם החזר או זיכוי)",
         blockedRefunds: "בקשות החזר שממתינות",
         blockedChoices: "זיכויים שממתינים לבחירה",
+        // Story 5.20: each links to "לטיפול", where it is settled.
+        blockedParked: "תשלום על מפגש בלי מקום, שעוד לא סודר",
         // "בקשת החזר של {amount}", to its row on the payments screen.
         refundLine: (amount: string) => `בקשת החזר של ${amount}`,
         // To the credit on this card.
@@ -2046,6 +2051,8 @@ export const adminCopy = {
     title: "רשימות",
     addNote: "+ פתק",
     emptyBoard: "עוד אין פתקים. פתק הוא מקום לרעיונות, ספקים או מתעניינות.",
+    // No shown note, but archived ones (story 5.20).
+    allArchived: "כל הפתקים בארכיון.",
     board: "פתקים",
     noteBody: "פתק",
     bodyHint: "השורה הראשונה מוצגת ככותרת",
@@ -2343,8 +2350,6 @@ export const adminCopy = {
       booked_by: "נרשמה על ידי",
       confirmed_at: "מועד אישור",
       cancelled_at: "מועד ביטול",
-      // Story 3.10: the booking a moved booking became.
-      moved_to_booking_id: "הועברה להרשמה",
       // Story 3.9: a refund request's completion.
       refunded_on: "תאריך ההחזר",
       requested_at: "מועד הבקשה",
@@ -2372,6 +2377,7 @@ export const adminCopy = {
       reminder_lead_hours: "תזכורת לפני מפגש (שעות)",
       admin_expiring_days: '"עומדת לפוג" אצלך (ימים)',
       customer_expiring_days: '"עומדת לפוג" אצל הלקוחה (ימים)',
+      credit_expiring_days: '"זיכוי עומד לפוג" אצל הלקוחה (ימים)',
       last_places_threshold: "סף מקומות אחרונים",
       default_prep_days: "ימי הכנה כברירת מחדל",
       default_session_start_time: "שעת התחלה",

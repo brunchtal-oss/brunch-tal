@@ -1453,9 +1453,9 @@ describe("a move against a parallel cancel", { timeout: 60_000 }, () => {
     ] as const) {
       await sql(
         `insert into public.events (
-           id, concept_id, kind, starts_at, ends_at, capacity_adults,
+           id, description, concept_id, kind, starts_at, ends_at, capacity_adults,
            registration_closes_at, registration_close_overridden, status)
-         select $1, c.id, 'regular',
+         select $1, $3, c.id, 'regular',
            ((now() at time zone 'Asia/Jerusalem')::date + $2::int + time '10:00') at time zone 'Asia/Jerusalem',
            ((now() at time zone 'Asia/Jerusalem')::date + $2::int + time '12:00') at time zone 'Asia/Jerusalem',
            12,
@@ -1464,7 +1464,8 @@ describe("a move against a parallel cancel", { timeout: 60_000 }, () => {
          from public.concepts c
          where c.theme_key = 'mothers'
          limit 1`,
-        [id, days]
+        // Named test_ (story 5.20, fix 8).
+        [id, days, testName("committed_session")]
       )
     }
 
@@ -1522,5 +1523,43 @@ describe("a move against a parallel cancel", { timeout: 60_000 }, () => {
       { event_id: eventA, status: "cancelled" },
       { event_id: eventB, status: "confirmed" },
     ])
+  })
+})
+
+// Story 5.20: the customer card shows where a moved booking went.
+describe("admin_get_customer: a moved booking", { timeout: 60_000 }, () => {
+  it("the source row carries moved_to_starts_at (the target's start); the other rows null", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      await grant(db, f, f.anyDayCard)
+      const a = await insertEvent(db, f, { dayOffset: 5 })
+      const b = await insertEvent(db, f, { dayOffset: 6 })
+      const original = await book(db, f.customerA, a)
+      const r = await move(db, f.customerA, original, b)
+
+      const card = await as(db, f.admin, async () => {
+        const { rows } = await db.query(
+          "select public.admin_get_customer($1) as r",
+          [f.customerA]
+        )
+        return rows[0].r
+      })
+      const { rows: target } = await db.query(
+        "select starts_at from public.events where id = $1",
+        [b]
+      )
+      const rows = card.bookings as Array<{
+        booking_id: string
+        moved_to_starts_at: string | null
+      }>
+      const moved = rows.find((row) => row.booking_id === original)
+      expect(moved).toBeDefined()
+      expect(new Date(moved!.moved_to_starts_at!).getTime()).toBe(
+        new Date(target[0].starts_at).getTime()
+      )
+      expect(
+        rows.find((row) => row.booking_id === r.booking_id)?.moved_to_starts_at
+      ).toBeNull()
+    })
   })
 })

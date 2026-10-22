@@ -144,12 +144,10 @@ describe("admin_approve_payment", () => {
          where entity_id = any($1::uuid[]) order by entity_type`,
         [[r.payment_id, r.entitlement_id, r.token_id]]
       )
-      // The payment has two rows: the core's insert and the payer name
-      // (required for a new customer since 2026-10-05).
+      // The core's rows only: story 5.20 (fix 6) stopped the wrapper's own
+      // rows (the payer name and the new token).
       expect(audit.map((a) => [a.entity_type, a.entity_id])).toEqual([
-        ["activation_tokens", r.token_id],
         ["entitlements", r.entitlement_id],
-        ["payments", r.payment_id],
         ["payments", r.payment_id],
       ])
       for (const row of audit) {
@@ -157,11 +155,6 @@ describe("admin_approve_payment", () => {
         expect(row.actor_kind).toBe("admin")
         expect(row.after).not.toContain(r.token as string)
       }
-      // audit_diff masks the token hash on the new token path.
-      const tokenAudit = audit.find(
-        (a) => a.entity_type === "activation_tokens"
-      )
-      expect(JSON.parse(tokenAudit!.after).token_hash).toBe("<changed>")
     })
   })
 
@@ -193,8 +186,8 @@ describe("admin_approve_payment", () => {
           "select 1 from public.audit_log where entity_id = any($1::uuid[])",
           [[first.payment_id, first.entitlement_id, first.token_id]]
         )
-        // The payment's second row is its payer name (2026-10-05).
-      ).toBe(4)
+        // The core's two rows (story 5.20: no wrapper rows).
+      ).toBe(2)
     })
   })
 

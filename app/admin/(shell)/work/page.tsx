@@ -37,7 +37,7 @@ export default function WorkTabPage() {
   )
 }
 
-async function WorkSessions() {
+export async function WorkSessions() {
   const { upcoming_sessions: sessions } = await loadHome()
   const next = sessions.slice(0, 3)
 

@@ -48,8 +48,11 @@ export function NotesView({
 
         {active.length === 0 ? (
           // empty-state (DESIGN › empty-state): the sentence and one action.
+          // Every note archived: says so instead of the empty board's text.
           <div className="flex flex-col items-center gap-4 rounded-lg bg-muted px-4 py-6 text-center">
-            <p className={sectionTitleClass}>{copy.emptyBoard}</p>
+            <p className={sectionTitleClass}>
+              {archived.length > 0 ? copy.allArchived : copy.emptyBoard}
+            </p>
             <AddNote wide />
           </div>
         ) : (

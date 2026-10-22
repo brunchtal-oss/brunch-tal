@@ -187,6 +187,9 @@ const TECHNICAL_KEYS = new Set([
   "input_hash",
   "token_hash",
   "provider_transaction_id",
+  // Story 5.20: an id, nothing Tal can read (the customer card shows where
+  // a moved booking went).
+  "moved_to_booking_id",
 ])
 
 export function isTechnicalKey(key: string): boolean {
@@ -420,6 +423,13 @@ function subjectOf(row: AuditRow): string | null {
     }
     case "notification_templates":
       return labelIn(adminCopy.settings.templates.types, subject)
+    // Story 5.20: a marketing reminder text by its first 40 characters.
+    case "marketing_reminder_texts": {
+      const text = subject.trim().replace(/\s+/g, " ")
+      if (text === "") return null
+      const chars = Array.from(text)
+      return chars.length > 40 ? `${chars.slice(0, 40).join("")}…` : text
+    }
     default:
       return null
   }

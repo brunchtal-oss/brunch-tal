@@ -15,6 +15,7 @@ import {
   toSessionRow,
 } from "../../load-session"
 import { loadProductChoices } from "../../product-choices"
+import { loadEventDetails } from "../load-details"
 import { sessionTitle } from "../../session-draft"
 import { SessionStatusChip } from "../../session-status-chip"
 import { SessionEditor } from "./session-editor"
@@ -48,7 +49,7 @@ export default function EditSessionPage({
   )
 }
 
-async function EditSessionContent({
+export async function EditSessionContent({
   params,
   searchParams,
 }: {
@@ -58,14 +59,15 @@ async function EditSessionContent({
   const [{ id }, { image }] = await Promise.all([params, searchParams])
   if (!UUID.test(id)) notFound()
   const supabase = await createClient()
-  const { data, error } = await supabase
-    .from("events")
-    .select(SESSION_COLUMNS)
-    .eq("id", id)
-    .maybeSingle()
+  // The row through RLS; its capacity from admin_get_event_details (story
+  // 5.20: no direct read of events.capacity_adults).
+  const [{ data, error }, details] = await Promise.all([
+    supabase.from("events").select(SESSION_COLUMNS).eq("id", id).maybeSingle(),
+    loadEventDetails(id),
+  ])
   if (error) throw new Error("session read failed")
-  if (!data) notFound()
-  const row = toSessionRow(data)
+  if (!data || !details) notFound()
+  const row = toSessionRow(data, details.capacity)
   const now = new Date()
   if (isReadOnlySession(row, now)) redirect(`/admin/sessions/${id}`)
   // As on the details page (display only; the cancel's plan checks again).

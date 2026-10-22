@@ -24,6 +24,7 @@ const SETTING_KEYS = new Set([
   "reminder_lead_hours",
   "admin_expiring_days",
   "customer_expiring_days",
+  "credit_expiring_days",
   "last_places_threshold",
   "default_prep_days",
   "inactivity_months",

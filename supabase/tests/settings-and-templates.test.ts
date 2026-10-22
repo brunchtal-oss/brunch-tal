@@ -272,6 +272,44 @@ describe("admin_update_business_settings", { timeout: 30_000 }, () => {
     })
   })
 
+  it("story 5.20: credit_expiring_days 1..30 is saved and audited; 0 and 31 are refused", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      await db.query(
+        "update public.business_settings set credit_expiring_days = 5"
+      )
+      for (const value of [0, 31]) {
+        expect(
+          await settingsFailure(db, f.admin, { credit_expiring_days: value })
+        ).toEqual({ message: "INVALID_INPUT", field: "credit_expiring_days" })
+      }
+      const r = await updateSettings(db, f, { credit_expiring_days: 30 })
+      expect(r).toMatchObject({ credit_expiring_days: 30 })
+      expect(
+        await updateSettings(db, f, { credit_expiring_days: 1 })
+      ).toMatchObject({ credit_expiring_days: 1 })
+      // One transaction: both rows share created_at, in no fixed order.
+      const audit = await auditRows(db, "admin_update_business_settings")
+      expect(audit).toHaveLength(2)
+      expect(audit).toEqual(
+        expect.arrayContaining([
+          {
+            entity_type: "business_settings",
+            entity_id: null,
+            before: { credit_expiring_days: 5 },
+            after: { credit_expiring_days: 30 },
+          },
+          {
+            entity_type: "business_settings",
+            entity_id: null,
+            before: { credit_expiring_days: 30 },
+            after: { credit_expiring_days: 1 },
+          },
+        ])
+      )
+    })
+  })
+
   it("cancel window and reminder: an existing booking keeps its snapshot, a new one takes the new values", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)
@@ -573,10 +611,22 @@ describe("admin_update_notification_template", { timeout: 30_000 }, () => {
     await inRollback(async (db) => {
       const f = await seed(db)
       expect(
-        await templateFailure(db, f.admin, "broadcast", "הודעה מטל", "גוף")
+        await templateFailure(
+          db,
+          f.admin,
+          "marketing_reminder",
+          "תזכורת שיווק",
+          "גוף"
+        )
       ).toEqual({ message: "INVALID_INPUT", field: "body" })
-      const r = await updateTemplate(db, f, "broadcast", "הודעה חדשה", null)
-      expect(r).toMatchObject({ title: "הודעה חדשה", body: null })
+      const r = await updateTemplate(
+        db,
+        f,
+        "marketing_reminder",
+        "תזכורת חדשה",
+        null
+      )
+      expect(r).toMatchObject({ title: "תזכורת חדשה", body: null })
     })
   })
 
@@ -678,7 +728,7 @@ describe("admin_update_notification_template", { timeout: 30_000 }, () => {
     })
   })
 
-  it("the admin reads all 24 templates (policy and grant)", async () => {
+  it("the admin reads all 23 templates (policy and grant; story 5.20: no broadcast)", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)
       const types = await as(db, f.admin, async () => {
@@ -687,7 +737,7 @@ describe("admin_update_notification_template", { timeout: 30_000 }, () => {
         )
         return rows.map((row) => row.type as string)
       })
-      expect(types).toHaveLength(24)
+      expect(types).toHaveLength(23)
     })
   })
 
@@ -715,7 +765,7 @@ describe("the template contract", { timeout: 60_000 }, () => {
          from public.notification_templates
          order by type`
       )
-      expect(rows).toHaveLength(24)
+      expect(rows).toHaveLength(23)
     })
   })
 

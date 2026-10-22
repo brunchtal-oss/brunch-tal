@@ -136,7 +136,8 @@ export const ERROR_MESSAGES = {
   EVENT_CANCELLED: "המפגש הזה בוטל",
   // The customer deletes her own last baby (story 2.10, user decision
   // 2026-10-06). INVALID_INPUT of a baby write carries detail.field
-  // birth_date (after the local today) or babies (more than 10).
+  // birth_date (more than 2 years back or 9 months ahead of the local
+  // today, story 5.20) or babies (more than 10).
   LAST_BABY: "צריך להשאיר לפחות תינוק אחד בפרופיל",
   // Cancelling a booking (story 3.6). Not hers, missing or no longer
   // confirmed (never telling which); past the self-cancel boundary (no
@@ -163,9 +164,18 @@ export const ERROR_MESSAGES = {
   CONCEPT_IN_USE:
     "יש לקונספט מפגשים, ולכן אי אפשר למחוק אותו. אפשר להעביר אותו לארכיון.",
   CONCEPT_NAME_TAKEN: "כבר יש קונספט בשם הזה",
+  // Duplicating a session whose concept is archived (story 5.20, user
+  // decision 2026-10-22).
+  CONCEPT_ARCHIVED:
+    "הקונספט של המפגש בארכיון, ולכן אי אפשר לשכפל אותו. אפשר להחזיר את הקונספט מהארכיון ואז לשכפל.",
+  // Changing the event kind of a product marked eligible on a session that
+  // is still ahead (story 5.20, user decision 2026-10-22).
+  PRODUCT_IN_USE:
+    "המוצר מסומן כתקף במפגשים קרובים, ולכן אי אפשר לשנות את סוג המפגש שלו. קודם צריך להוריד אותו מהמפגשים האלה.",
   // Account changes through Tal (story 2.8). EMAIL_TAKEN and PHONE_TAKEN
-  // come from the result { result: 'taken' } (the block is logged and
-  // committed, so the RPC does not raise) and from Auth's email_exists.
+  // come from the result { result: 'taken' } (the RPC answers the block
+  // without raising; a blocked phone change is logged, a blocked email
+  // change is not since story 5.20) and from Auth's email_exists.
   EMAIL_TAKEN: "המייל הזה כבר שייך לחשבון אחר",
   EMAIL_UNCHANGED: "זה כבר המייל של החשבון",
   PHONE_TAKEN: "המספר הזה כבר שייך לחשבון אחר",
@@ -175,7 +185,8 @@ export const ERROR_MESSAGES = {
   // not start (auth.updateUser with the publishable key).
   ACCOUNT_CHANGE_BLOCKED: "אי אפשר לשנות כאן מייל או טלפון. צרי קשר",
   // Removing a customer's personal details (story 4.6): she still has a
-  // future booking, a refund request waiting or a credit choice pending
+  // future booking (or a place held behind her join link), a refund request
+  // waiting, a credit choice pending or a paid purchase without a place
   // (admin_anonymize_customer checks again under its locks).
   ANONYMIZE_BLOCKED:
     "אי אפשר להסיר את הפרטים: יש ללקוחה הרשמות עתידיות או עניינים פתוחים",

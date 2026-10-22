@@ -46,6 +46,35 @@ const EXPECTED_GRANTS = [
   "column public.entitlement_movements.id authenticated SELECT",
   "column public.entitlement_movements.reverses_id authenticated SELECT",
   "column public.entitlement_movements.units authenticated SELECT",
+  // Story 5.20: every column but capacity_adults (admin RPCs only).
+  "column public.events.concept_id anon SELECT",
+  "column public.events.concept_id authenticated SELECT",
+  "column public.events.created_at anon SELECT",
+  "column public.events.created_at authenticated SELECT",
+  "column public.events.description anon SELECT",
+  "column public.events.description authenticated SELECT",
+  "column public.events.display_price_agorot anon SELECT",
+  "column public.events.display_price_agorot authenticated SELECT",
+  "column public.events.ends_at anon SELECT",
+  "column public.events.ends_at authenticated SELECT",
+  "column public.events.id anon SELECT",
+  "column public.events.id authenticated SELECT",
+  "column public.events.image_id anon SELECT",
+  "column public.events.image_id authenticated SELECT",
+  "column public.events.kind anon SELECT",
+  "column public.events.kind authenticated SELECT",
+  "column public.events.registration_close_overridden anon SELECT",
+  "column public.events.registration_close_overridden authenticated SELECT",
+  "column public.events.registration_closes_at anon SELECT",
+  "column public.events.registration_closes_at authenticated SELECT",
+  "column public.events.revision anon SELECT",
+  "column public.events.revision authenticated SELECT",
+  "column public.events.starts_at anon SELECT",
+  "column public.events.starts_at authenticated SELECT",
+  "column public.events.status anon SELECT",
+  "column public.events.status authenticated SELECT",
+  "column public.events.waitlist_cycle anon SELECT",
+  "column public.events.waitlist_cycle authenticated SELECT",
   "column public.media_assets.alt_text anon SELECT",
   "column public.media_assets.alt_text authenticated SELECT",
   "column public.media_assets.focus_x anon SELECT",
@@ -226,8 +255,6 @@ const EXPECTED_GRANTS = [
   "table public.entitlement_corrections authenticated SELECT",
   "table public.entitlements authenticated SELECT",
   "table public.event_products authenticated SELECT",
-  "table public.events anon SELECT",
-  "table public.events authenticated SELECT",
   "table public.marketing_reminder_texts authenticated SELECT",
   "table public.notes authenticated SELECT",
   "table public.notification_templates authenticated SELECT",
@@ -240,10 +267,6 @@ const EXPECTED_GRANTS = [
   "table public.refund_requests authenticated SELECT",
   "table public.shopping_items authenticated SELECT",
   "table public.waitlist_entries authenticated SELECT",
-  "table public.waitlist_entries service_role DELETE",
-  "table public.waitlist_entries service_role INSERT",
-  "table public.waitlist_entries service_role SELECT",
-  "table public.waitlist_entries service_role UPDATE",
   "table public.work_dishes authenticated SELECT",
   "table public.work_sheets authenticated SELECT",
   "table public.work_tasks authenticated SELECT",
@@ -394,6 +417,36 @@ async function defaultAclViolations(db?: Db): Promise<string[]> {
 describe("grants", () => {
   it("match the explicit list", async () => {
     expect(await actualGrants()).toEqual(EXPECTED_GRANTS)
+  })
+
+  it("story 5.20: events is readable by anon and authenticated in every column but capacity_adults", async () => {
+    const [columns, granted] = await Promise.all([
+      sql<{ c: string }>(
+        `select column_name as c from information_schema.columns
+         where table_schema = 'public' and table_name = 'events'
+           and column_name <> 'capacity_adults'
+         order by 1`
+      ),
+      sql<{ role: string; c: string }>(
+        `select r.rolname as role, a.attname as c
+         from pg_attribute a
+         cross join lateral aclexplode(a.attacl) acl
+         join pg_roles r on r.oid = acl.grantee
+         where a.attrelid = 'public.events'::regclass
+           and not a.attisdropped and a.attnum > 0
+           and acl.privilege_type = 'SELECT'
+           and r.rolname in ('anon', 'authenticated')
+         order by 1, 2`
+      ),
+    ])
+    const expected = columns.map((row) => row.c)
+    expect(expected.length).toBeGreaterThan(10)
+    for (const role of ["anon", "authenticated"]) {
+      expect(
+        granted.filter((row) => row.role === role).map((row) => row.c),
+        role
+      ).toEqual(expected)
+    }
   })
 
   it("give every function at most one API role, never anon or PUBLIC", async () => {

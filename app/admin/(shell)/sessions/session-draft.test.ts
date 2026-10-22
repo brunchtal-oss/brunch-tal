@@ -15,6 +15,7 @@ import {
   rescheduleRequest,
   listSummary,
   localDateTime,
+  capacityById,
   occupancyById,
   productChoicesFor,
   productsText,
@@ -429,6 +430,23 @@ describe("occupancyById", () => {
       ])
     ).toEqual({ a: 2, b: 0 })
     expect(occupancyById(null)).toEqual({})
+  })
+})
+
+describe("capacityById (story 5.20)", () => {
+  it("maps the RPC's capacity by session id and skips malformed ones", () => {
+    expect(
+      capacityById([
+        { event_id: "a", occupied: 2, capacity: 14 },
+        // 0 is not a capacity (the column checks > 0).
+        { event_id: "b", occupied: 0, capacity: 0 },
+        { event_id: "c", occupied: 1 },
+        { event_id: "d", occupied: 1, capacity: 1.5 },
+        { event_id: 3, capacity: 1 },
+        null,
+      ])
+    ).toEqual({ a: 14 })
+    expect(capacityById(undefined)).toEqual({})
   })
 })
 
