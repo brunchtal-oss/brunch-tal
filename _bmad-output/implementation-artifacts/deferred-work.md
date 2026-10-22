@@ -650,7 +650,7 @@
 - source_spec: `C:\Users\ligal\Desktop\Projects\audit-pre-5-20-2026-10-22.md` (הבדיקה המקדימה לפני 5.20, מחוץ ל-repo)
   target: 5.20
   summary: כל ממצא בדוח שהיעד המוצע שלו 5.20 או 6.2 נכנס ל-5.20, כי 6.2 בוטל: הרשאת SELECT של anon ו-authenticated על `events.capacity_adults`; `credit_session_matches` בלי `event_accepts_product`; מפתח idempotency שמתחלף אחרי catch בעורכי תזכורות השיווק; סף `isShortLine` בטלפון; ממצאי הסרת הפרטים (רכישה מוצמדת שלא סודרה, `awaiting_login`, ‏`account_op_state`, בדיקת היומן); והנמוכים (README של cron, ‏pgcrypto, ‏seed.sql, הרשאות `waitlist_entries`, ‏policy כפול, שאריות `broadcast` של 5.12, שבירת מילים בבאנר, לוח פתקים ריק כשיש ארכיון, בדיקות חסרות).
-  evidence: הדוח, 2026-10-22: ‏37 ממצאים, 0 חוסמי השקה. מחוץ ל-repo כי ה-repo ציבורי. ארבע החלטות בראש הדוח מחכות למשתמשת.
+  evidence: הדוח, 2026-10-22: ‏37 ממצאים, 0 חוסמי השקה. מחוץ ל-repo כי ה-repo ציבורי. ארבע ההחלטות שבראש הדוח התקבלו (completion-plan, 2026-10-22): חסימת הסרת פרטים כשיש רכישה מוצמדת שלא סודרה; העתקת העמודים המשפטיים (6.1); שם העסק נערך באדמין ונקרא מפרטי העסק במקום `WORDMARK`; רשימה סגורה של שרתי פוש. שלוש מהן ב-5.20.
 
 - source_spec: `C:\Users\ligal\Desktop\Projects\audit-pre-5-20-2026-10-22.md` (הבדיקה המקדימה לפני 5.20, מחוץ ל-repo)
   target: 6.1
