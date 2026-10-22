@@ -50,9 +50,6 @@ export const customerCopy = {
     used: "השתתפת",
     cancelled: "ביטלת",
   },
-  // A returned non-card entry on home that funds no booking yet (user
-  // decision 2026-10-08).
-  toBook: "יש להירשם",
   movement: {
     grant: "רכישה",
     opening_balance: "יתרת פתיחה",

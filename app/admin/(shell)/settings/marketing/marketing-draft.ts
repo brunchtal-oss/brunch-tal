@@ -3,6 +3,8 @@
 // next in the rotation. The server decides again (admin_update_business_
 // settings, private.job_marketing_reminders); this only shapes the screen.
 
+import { newIdempotencyKey } from "@/lib/idempotency"
+
 export type ScheduleSlot = { weekday: number; time: string }
 
 export type ScheduleDay = { on: boolean; time: string }
@@ -121,4 +123,26 @@ export function textProblem(body: string): "empty" | "long" | null {
   if (length === 0) return "empty"
   if (length > MAX_TEXT) return "long"
   return null
+}
+
+// One save of the texts or the schedule with its idempotency key (AD-5): an
+// answer (saved or refused) is stored under the key, so the next attempt
+// takes a new one. A thrown call, or a SERVER_ERROR answer (callRpc's
+// answer when the response was lost), may have been saved on the server,
+// so the same key is sent again.
+export async function sendWithKey<R extends { ok: boolean }>(
+  send: (idempotencyKey: string) => Promise<R>,
+  key: string
+): Promise<{
+  result: R | { ok: false; code: "SERVER_ERROR" }
+  nextKey: string
+}> {
+  try {
+    const result = await send(key)
+    const unknown =
+      !result.ok && (result as { code?: unknown }).code === "SERVER_ERROR"
+    return { result, nextKey: unknown ? key : newIdempotencyKey() }
+  } catch {
+    return { result: { ok: false, code: "SERVER_ERROR" }, nextKey: key }
+  }
 }

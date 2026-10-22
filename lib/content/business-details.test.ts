@@ -1,7 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
+import { WORDMARK } from "@/lib/copy/shell"
+
 import {
+  businessNameOf,
   getBusinessDetails,
+  getBusinessName,
   getWhatsappHref,
   guestWhatsappHref,
 } from "./business-details"
@@ -97,5 +101,32 @@ describe("guestWhatsappHref", () => {
       "https://wa.me/972544256456"
     )
     expect(guestWhatsappHref(null)).toBeNull()
+  })
+})
+
+// Story 5.20: the name the site shows, from תוכן › קשר.
+describe("the business name", () => {
+  it("the published name, trimmed", () => {
+    expect(
+      businessNameOf({ whatsapp_phone: "0544256456", business_name: " ב " })
+    ).toBe("ב")
+  })
+
+  it("the WORDMARK when no name is published, or nothing is", () => {
+    expect(businessNameOf({ whatsapp_phone: "0544256456" })).toBe(WORDMARK)
+    expect(
+      businessNameOf({ whatsapp_phone: "0544256456", business_name: " " })
+    ).toBe(WORDMARK)
+    expect(businessNameOf(null)).toBe(WORDMARK)
+  })
+
+  it("getBusinessName reads the published details", async () => {
+    maybeSingle.mockResolvedValue({
+      data: { published_content: { ...FULL, business_name: "שם חדש" } },
+      error: null,
+    })
+    await expect(getBusinessName()).resolves.toBe("שם חדש")
+    maybeSingle.mockResolvedValue({ data: null, error: null })
+    await expect(getBusinessName()).resolves.toBe(WORDMARK)
   })
 })

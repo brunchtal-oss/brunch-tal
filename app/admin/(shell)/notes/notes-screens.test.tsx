@@ -44,10 +44,18 @@ describe("the notes board's screen (story 4.11, fix 13)", () => {
     expect(html).toContain('href="/admin/notes?archive=1"')
   })
 
-  it("only archived notes: the board shows its empty-state", () => {
+  it("only archived notes: the empty-state says they are all archived", () => {
     const html = render([note("x", "בארכיון", { archived: true })])
-    expect(html).toContain(copy.emptyBoard)
+    expect(copy.allArchived).toBe("כל הפתקים בארכיון.")
+    expect(html).toContain(copy.allArchived)
+    expect(html).not.toContain(copy.emptyBoard)
     expect(html).not.toContain("בארכיון<")
+    expect(html.split(copy.addNote)).toHaveLength(2)
+    expect(html).toContain(copy.showArchive)
+  })
+
+  it("no note at all: the empty board's text, not the archived one", () => {
+    expect(render([])).not.toContain(copy.allArchived)
   })
 
   it("the first line is the title, the rest the text; a one-line note has no text", () => {

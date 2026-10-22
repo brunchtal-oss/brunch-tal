@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/server"
 import { ContentEditor } from "./content-editor"
 import {
   editorContent,
+  editorStatementBlock,
   hasPendingDraft,
   sectionHidden,
   sectionOf,
@@ -87,10 +88,7 @@ export async function EditorContent({
         draftInvalid={draftInvalid}
         backHref={`/admin/content/${pageId}`}
         backLabel={copy.backToPage(copy.pages[pageId])}
-        statementBlock={
-          section.kind === "accessibility_statement" &&
-          !section.published_content
-        }
+        statementBlock={editorStatementBlock(section)}
       />
     </>
   )

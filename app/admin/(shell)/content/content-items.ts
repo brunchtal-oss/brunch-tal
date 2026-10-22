@@ -6,6 +6,8 @@ import {
 } from "@/lib/content/schema"
 import { adminCopy } from "@/lib/copy/admin"
 
+import { fieldId, sectionSpec, type TextField } from "./section-fields"
+
 // The content editor's view of admin_get_content_page (stories 5.1, 5.3) and
 // the pure rules on it: which sections are edited here, a section's pending
 // draft and chip, and the field errors of a draft.
@@ -335,4 +337,29 @@ export function statementPublishBlock(page: ContentPage): string[] {
   const section = sectionOf(page, STATEMENT_REF.key)
   if (!section || section.published_content) return []
   return missingStatementFields(section.draft_content)
+}
+
+// The preview bar's block (story 5.5): the statement's missing required
+// fields before its first publish, each with its editor label and a link to
+// its field in the section's editor.
+export function statementBlocked(
+  page: ContentPage
+): { label: string; href: string }[] {
+  const fields = sectionSpec(STATEMENT_REF).fields
+  return statementPublishBlock(page).map((name) => ({
+    label:
+      fields.find(
+        (field): field is TextField =>
+          field.type === "text" && field.name === name
+      )?.label ?? name,
+    href: `/admin/content/accessibility/${STATEMENT_REF.key}#${fieldId(name)}`,
+  }))
+}
+
+// The section editor checks the statement's required fields before its
+// first publish (story 5.5): only the statement, only while unpublished.
+export function editorStatementBlock(section: ContentSection): boolean {
+  return (
+    section.kind === "accessibility_statement" && !section.published_content
+  )
 }

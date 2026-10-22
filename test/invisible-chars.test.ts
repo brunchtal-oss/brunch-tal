@@ -43,9 +43,9 @@ const TEXT_EXTENSIONS = new Set([
 ])
 
 // Already applied to the database, so it cannot be edited (AGENTS.md); its
-// normalize_phone was replaced by 20260930172341_fix_normalize_phone.sql.
+// normalize_phone was replaced by 20260930172419_fix_normalize_phone.sql.
 const EXEMPT = new Set([
-  "supabase/migrations/20260930171231_create_time_and_phone_helpers.sql",
+  "supabase/migrations/20260930171358_create_time_and_phone_helpers.sql",
 ])
 
 const RLM = 0x200f

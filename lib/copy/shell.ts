@@ -1,14 +1,19 @@
 // System microcopy of the three shells (navigation, skip link, sign-out,
 // the app top-bar and the notification centers).
-// The wordmark is one constant, the same name as the <title> template. The
-// public shell shows the published business name instead when there is one
-// (story 5.2).
+// The wordmark is one constant: the fallback business name. Every shell, the
+// <title>, /install and the manifest show the published business name
+// instead when there is one (stories 5.2, 5.20); the offline page and the
+// service worker keep the wordmark.
 
 export const WORDMARK = "בראנץ׳ אצל טל"
 
+// "{page name} · {business name}" (the root layout's title template).
+export function titleTemplateOf(name: string): string {
+  return `%s · ${name}`
+}
+
 export const shellCopy = {
   wordmark: WORDMARK,
-  titleTemplate: `%s · ${WORDMARK}`,
   skipToMain: "דילוג לתוכן הראשי",
   loading: "טוען…",
   signOut: "התנתקות",

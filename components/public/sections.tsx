@@ -83,9 +83,15 @@ export function SectionHeading({
   )
 }
 
-// One line at the body's 60ch measure: no line break and short enough to fit.
-export function isShortLine(text: string) {
-  return !text.includes("\n") && text.trim().length <= 60
+// The alignment of a text block's body (fix 18): running text (a line break
+// or more than one 60ch line) reads from its start edge under the centred
+// heading; a short line (up to 30 characters) stays centred; a line of
+// 31-60 characters wraps to two or three lines on a phone, so it starts
+// there and is centred from sm, where it fits on one line.
+export function lineAlignClass(text: string) {
+  const t = text.trim()
+  if (t.includes("\n") || t.length > 60) return "text-start"
+  return t.length <= 30 ? "text-center" : "text-start sm:text-center"
 }
 
 // text_block: a heading and its text (when there is one). children (the
@@ -130,9 +136,9 @@ export function TextBlockSection({
           className={cn(
             "mx-auto max-w-[60ch] text-[17px] leading-[1.65] text-pretty whitespace-pre-line",
             // Running text reads from its start edge under the centred
-            // heading; a single short line stays centred (user's decision
-            // 2026-10-22).
-            isShortLine(content.body) ? "text-center" : "text-start",
+            // heading; a short line stays centred (user's decision
+            // 2026-10-22, fix 18).
+            lineAlignClass(content.body),
             (content.title || content.eyebrow) && "mt-5"
           )}
         >

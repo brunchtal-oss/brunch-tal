@@ -7,6 +7,8 @@ import { randomUUID } from "node:crypto"
 
 import { describe, expect, it } from "vitest"
 
+import { toProductOptions } from "@/app/admin/(shell)/payments/new/product-options"
+
 import {
   asAuthenticated,
   inRollback,
@@ -146,11 +148,13 @@ describe("hiding a product", () => {
         randomUUID(),
       ])
 
-      // The query of app/admin/(shell)/payments/new/form-data.ts.
-      const { rows: offered } = await db.query(
-        "select id from public.products where active and validity_mode = 'days'"
+      // The rows of app/admin/(shell)/payments/new/form-data.ts, through the
+      // function that filters them for the form.
+      const { rows: products } = await db.query(
+        "select id, name, price_agorot, validity_mode, eligible_event_kind, allowed_weekdays, party_size, active from public.products"
       )
-      expect(offered.map((r) => r.id)).not.toContain(f.card)
+      const offered = toProductOptions(products)
+      expect(offered.map((o) => o.id)).not.toContain(f.card)
 
       expect(
         await queryError(

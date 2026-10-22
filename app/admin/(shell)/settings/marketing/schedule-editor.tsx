@@ -20,6 +20,7 @@ import {
   draftFromSchedule,
   scheduleChanged,
   scheduleFromDraft,
+  sendWithKey,
   type ScheduleDay,
   type ScheduleSlot,
 } from "./marketing-draft"
@@ -69,18 +70,19 @@ export function ScheduleEditor({
     }
     setPending(true)
     setAnswer(null)
-    let result: Answer
-    try {
-      const response = await updateScheduleAction({
-        schedule: next,
-        expectedVersion: version,
-        idempotencyKey: key,
-      })
-      result = response.ok ? { ok: true } : { ok: false, code: response.code }
-    } catch {
-      result = { ok: false, code: "SERVER_ERROR" }
-    }
-    setKey(newIdempotencyKey())
+    const sent = await sendWithKey(
+      (idempotencyKey) =>
+        updateScheduleAction({
+          schedule: next,
+          expectedVersion: version,
+          idempotencyKey,
+        }),
+      key
+    )
+    const result: Answer = sent.result.ok
+      ? { ok: true }
+      : { ok: false, code: sent.result.code }
+    setKey(sent.nextKey)
     setPending(false)
     setAnswer(result)
     if (result.ok) {

@@ -108,7 +108,7 @@
 
 ### משימות מתוזמנות (pg_cron)
 
-- [ ] ב-`cron.job` יש את כל המשימות שב-`private.job_intervals()`: ‏`reminders`, ‏`invoke_push_worker`, ‏`complete_events`, ‏`refresh_credit_options`, ‏`expiry_alerts`, ‏`auto_extend`, ‏`cleanup` (סיפור 5.10). משימה שחסרה, שנכשלה או שלא הצליחה בזמן של פי 3 מהתדירות שלה מופיעה ב"לטיפול", וגם ערכי Vault חסרים ופוש שממתין יותר מ-15 דקות.
+- [ ] ב-`cron.job` יש את כל המשימות שב-`private.job_intervals()`: ‏`reminders`, ‏`invoke_push_worker`, ‏`complete_events`, ‏`refresh_credit_options`, ‏`marketing_reminders`, ‏`expiry_alerts`, ‏`auto_extend`, ‏`cleanup`, שמונה משימות (סיפורים 5.10 ו-5.11). משימה שחסרה, שנכשלה או שלא הצליחה בזמן של פי 3 מהתדירות שלה מופיעה ב"לטיפול", וגם ערכי Vault חסרים ופוש שממתין יותר מ-15 דקות.
 - [ ] **השהיית פרויקט Free:** ‏pg_cron לא מובטח (לפי התיעוד) כמונע השהיה של פרויקט Supabase חינמי אחרי 7 ימים בלי פעילות. בהשהיה כל המשימות נעצרות: אין תזכורות, אין התראות תפוגה, אין הארכה אוטומטית ואין פוש. צריך להחליט לפני ההשקה (שדרוג או פתרון אחר; ‏`deferred-work.md`, יעד 6.9).
 
 ### Vercel (Settings → Environment Variables, לכל סביבה)

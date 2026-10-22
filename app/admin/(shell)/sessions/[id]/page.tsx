@@ -48,7 +48,7 @@ export default function SessionDetailsPage({
   )
 }
 
-async function SessionDetailsContent({
+export async function SessionDetailsContent({
   params,
 }: {
   params: Promise<{ id: string }>
