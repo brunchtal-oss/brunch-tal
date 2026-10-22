@@ -234,6 +234,7 @@ export const adminCopy = {
     // The sections, by "slug/key".
     sections: {
       "home/hero": "הירו",
+      "home/promo_banner": "באנר פרסומי",
       "home/intro": "פתיח",
       "about/main": "אודות",
       "home/contact": "יצירת קשר",
@@ -260,13 +261,11 @@ export const adminCopy = {
     // content-section-row chips (DESIGN › content-section-row).
     status: {
       draft: "טיוטה",
-      published: "פורסם",
       changed: "שינויים שלא פורסמו",
       hidden: "מוסתר",
     },
     notShown: "לא מוצג באתר עד שיפורסם",
     changedHint: "יש טיוטה שעוד לא פורסמה",
-    publishedHint: "התוכן מופיע באתר",
     backToList: "לכל התוכן",
     backToPage: (page: string) => `חזרה ל${page}`,
     saveDraft: "שמירת טיוטה",
@@ -290,6 +289,12 @@ export const adminCopy = {
     },
     // A saved draft that does not pass the schema (edited elsewhere).
     draftInvalid: "בטיוטה השמורה יש שדה לא תקין. כדאי לתקן ולשמור שוב",
+    // home › promo_banner (fix 15).
+    promoBanner: {
+      text: "טקסט הבאנר (לא חובה)",
+      switchLabel: "הצגת הבאנר באתר",
+      switchHint: "כשהמתג כבוי או שאין טקסט, הבאנר לא מוצג",
+    },
     hero: {
       title: "כותרת (לא חובה)",
       description: "תיאור (לא חובה)",

@@ -3,7 +3,11 @@ import { describe, expect, it } from "vitest"
 import { photoConsentSchema } from "@/lib/content/schema"
 import { adminCopy } from "@/lib/copy/admin"
 
-import { fieldErrors, type SectionRef } from "./content-items"
+import {
+  fieldErrorMessage,
+  fieldErrors,
+  type SectionRef,
+} from "./content-items"
 import {
   addItem,
   fieldId,
@@ -48,6 +52,7 @@ describe("section fields", () => {
   it("describes each edited kind", () => {
     for (const kind of [
       "hero",
+      "promo_banner",
       "text_block",
       "steps",
       "faq",
@@ -75,6 +80,37 @@ describe("section fields", () => {
     expect(hideable("business_details")).toBe(false)
     expect(hideable("photo_consent")).toBe(false)
     expect(hideable("footer")).toBe(false)
+  })
+
+  // Fix 15: the promo banner is one 80-character text with an on/off switch.
+  it("edits the promo banner's text, its on/off as a switch", () => {
+    const spec = sectionSpec({
+      slug: "home",
+      key: "promo_banner",
+      kind: "promo_banner",
+    })
+    expect(spec.hideable).toBe(true)
+    expect(spec.hideAsSwitch).toBeDefined()
+    expect(spec.fields).toMatchObject([
+      { type: "text", name: "text", maxLength: 80 },
+    ])
+    expect(
+      sectionSpec({ slug: "home", key: "intro", kind: "text_block" })
+        .hideAsSwitch
+    ).toBeUndefined()
+    const off = toContent(spec, {
+      text: { text: "בקרוב" },
+      items: [],
+      hidden: true,
+    })
+    expect(off).toEqual({ text: "בקרוב", hidden: true })
+    expect(fromContent(spec, off).hidden).toBe(true)
+    const errors = fieldErrors(
+      { slug: "home", key: "promo_banner", kind: "promo_banner" },
+      { text: "א".repeat(81) }
+    )
+    expect(errors).toEqual({ text: { kind: "tooLong", max: 80 } })
+    expect(fieldErrorMessage(errors!.text)).toBe("עד 80 תווים")
   })
 
   it("leaves the button label and the payment instructions out", () => {

@@ -1,6 +1,6 @@
 import { Suspense } from "react"
 import type { Metadata, Viewport } from "next"
-import { Assistant, Heebo } from "next/font/google"
+import { Assistant, Heebo, Rubik } from "next/font/google"
 
 import "./globals.css"
 import { RouteFocus } from "@/components/shared/route-focus"
@@ -20,6 +20,16 @@ const fontHeading = Heebo({
   subsets: ["hebrew", "latin"],
   variable: "--font-heading",
   display: "swap",
+})
+
+// The home promo banner's face only (fix 15, user decision 2026-10-22):
+// bold Rubik reads as an announcement. Not preloaded: one strip uses it.
+const fontPromo = Rubik({
+  subsets: ["hebrew", "latin"],
+  weight: "700",
+  variable: "--font-promo",
+  display: "swap",
+  preload: false,
 })
 
 // "{page name} · בראנץ׳ אצל טל" on every page.
@@ -52,7 +62,8 @@ export default function RootLayout({
         "antialiased",
         "font-sans",
         fontSans.variable,
-        fontHeading.variable
+        fontHeading.variable,
+        fontPromo.variable
       )}
     >
       <body>

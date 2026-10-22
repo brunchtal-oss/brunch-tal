@@ -76,6 +76,9 @@ export type SectionSpec = {
   fields: readonly EditorFieldSpec[]
   // A "hide the section" button (a hidden flag in the draft).
   hideable: boolean
+  // The hidden flag shown as an on/off switch instead of the button (on =
+  // shown; home › promo_banner, fix 15).
+  hideAsSwitch?: { label: string; hint: string }
 }
 
 const text = (
@@ -194,6 +197,15 @@ export function sectionSpec(ref: SectionRef): SectionSpec {
             aspects: HERO_ASPECTS,
           }),
         ],
+      }
+    case "promo_banner":
+      return {
+        hideable: true,
+        hideAsSwitch: {
+          label: copy.promoBanner.switchLabel,
+          hint: copy.promoBanner.switchHint,
+        },
+        fields: [text("text", copy.promoBanner.text, { maxLength: 80 })],
       }
     case "text_block": {
       // No required body (user decision 2026-10-08).

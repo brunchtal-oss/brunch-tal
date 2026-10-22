@@ -13,7 +13,7 @@ import {
   slugsOf,
 } from "./content-items"
 import { ContentRow } from "./content-row"
-import { statusHint } from "./content-status-chip"
+import { statusChips, statusHint } from "./content-status-chip"
 import { loadContentPages } from "./load-page"
 
 const copy = adminCopy.content
@@ -24,7 +24,8 @@ export const metadata: Metadata = {
 
 // /admin/content (stories 5.1, 5.3): one content-section-row per editor
 // page, grouped by where it is on the site, the whole row one target to the
-// page's sections, with the chip of all its sections.
+// page's sections, with the chip of all its sections (none when all is
+// published, fix 17).
 export default function ContentPage() {
   return (
     <>
@@ -54,7 +55,7 @@ async function ContentRows() {
             href={`/admin/content/${id}`}
             title={copy.pages[id]}
             detail={statusHint(status)}
-            chips={[status]}
+            chips={statusChips(status)}
           />
         )
       })}

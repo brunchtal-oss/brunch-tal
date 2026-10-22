@@ -5,6 +5,7 @@ import { adminCopy } from "@/lib/copy/admin"
 
 import { ContentEditor, ItemList } from "./content-editor"
 import { ContentRow } from "./content-row"
+import { statusChips, statusHint } from "./content-status-chip"
 import { PreviewBar } from "./preview-bar"
 import { sectionSpec, type EditorState, type ListField } from "./section-fields"
 
@@ -160,6 +161,33 @@ describe("ContentEditor", () => {
     expect(hidden).toContain(copy.showSection)
     expect(hidden).toContain(copy.sectionHiddenNotice)
   })
+
+  // Fix 15: the promo banner's on/off is a switch, not the hide button.
+  function banner(hidden: boolean) {
+    return editor({
+      sectionKey: "promo_banner",
+      kind: "promo_banner",
+      initial: { text: { text: "בקרוב" }, items: [], hidden },
+    })
+  }
+
+  it("edits the promo banner's text with an on/off switch", () => {
+    const html = banner(false)
+    expect(html).toContain(copy.promoBanner.text)
+    expect(html).toContain('maxLength="80"')
+    expect(html).toContain('role="switch"')
+    expect(html).toContain('aria-checked="true"')
+    expect(html).toContain(copy.promoBanner.switchLabel)
+    expect(html).toContain(copy.promoBanner.switchHint)
+    expect(html).not.toContain(copy.hideSection)
+    expect(html).not.toContain(copy.showSection)
+  })
+
+  it("shows the banner's switch off when it is hidden", () => {
+    const html = banner(true)
+    expect(html).toContain('aria-checked="false"')
+    expect(html).not.toContain(copy.showSection)
+  })
 })
 
 describe("undo", () => {
@@ -229,13 +257,48 @@ describe("ContentRow", () => {
           href="/admin/content/home/main"
           title="About"
           detail="d"
-          chips={["published", "hidden"]}
+          chips={["changed", "hidden"]}
         />
       </ul>
     )
     expect(html.match(/<a /g)).toHaveLength(1)
     expect(html).toContain('href="/admin/content/home/main"')
-    expect(html).toContain(copy.status.published)
+    expect(html).toContain(copy.status.changed)
+    expect(html).toContain(copy.status.hidden)
+  })
+
+  // Fix 17: titles in 17px; a published row has no chip and no hint.
+  it("has a 17px title and nothing for what is published", () => {
+    const html = renderToStaticMarkup(
+      <ul>
+        <ContentRow
+          href="/admin/content/home"
+          title="Home"
+          detail={statusHint("published")}
+          chips={statusChips("published")}
+        />
+      </ul>
+    )
+    expect(html).toContain("text-[17px]")
+    expect(html).not.toContain("פורסם")
+    expect(html).not.toContain("התוכן מופיע באתר")
+    expect(html).not.toContain("rounded-full")
+  })
+
+  it("still marks a draft and unpublished changes", () => {
+    const html = renderToStaticMarkup(
+      <ul>
+        <ContentRow
+          href="/admin/content/home"
+          title="Home"
+          detail={statusHint("draft")}
+          chips={[...statusChips("draft"), ...statusChips("changed", true)]}
+        />
+      </ul>
+    )
+    expect(html).toContain(copy.status.draft)
+    expect(html).toContain(copy.notShown)
+    expect(html).toContain(copy.status.changed)
     expect(html).toContain(copy.status.hidden)
   })
 })

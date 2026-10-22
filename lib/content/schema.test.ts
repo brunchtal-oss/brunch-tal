@@ -10,6 +10,7 @@ import {
   legalTextSchema,
   photoConsentQuestion,
   photoConsentSchema,
+  promoBannerSchema,
   schemaForKind,
   schemaForSection,
   stepsSchema,
@@ -394,5 +395,28 @@ describe("accessibilityStatementSchema", () => {
         body: "x".repeat(50001),
       }).success
     ).toBe(false)
+  })
+})
+
+// Fix 15: home › promo_banner.
+describe("promoBannerSchema", () => {
+  it("takes up to 80 characters and refuses 81", () => {
+    expect(promoBannerSchema.safeParse({ text: "א".repeat(80) }).success).toBe(
+      true
+    )
+    const long = promoBannerSchema.safeParse({ text: "א".repeat(81) })
+    expect(long.success).toBe(false)
+    expect(long.error?.issues[0]).toMatchObject({
+      code: "too_big",
+      path: ["text"],
+    })
+  })
+
+  it("reads a blank text as no text, and a hidden flag", () => {
+    expect(promoBannerSchema.parse({ text: "  " })).toEqual({})
+    expect(
+      promoBannerSchema.parse({ text: "בקרוב בראנצ׳ים 60+", hidden: true })
+    ).toEqual({ text: "בקרוב בראנצ׳ים 60+", hidden: true })
+    expect(schemaForKind("promo_banner")).toBe(promoBannerSchema)
   })
 })

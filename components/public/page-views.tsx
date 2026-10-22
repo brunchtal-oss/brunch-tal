@@ -1,6 +1,7 @@
 import { MessageCircleIcon } from "lucide-react"
 
 import { HomeHero } from "@/components/public/home-hero"
+import { PromoBanner } from "@/components/public/promo-banner"
 import {
   EmptyPublicPage,
   PublicPageHeading,
@@ -33,11 +34,12 @@ const copy = shellCopy.public
 // the same component, so the preview is exactly the page. Each section is
 // shown only when it is there.
 
-// The home page: the hero, the intro, the upcoming sessions (a slot, dynamic
-// on the site), about (about › main), the testimonials (gallery ›
-// testimonials) and contact (home › contact, with the WhatsApp button; only
-// with a usable number). images: the resolved images of these sections
-// (story 5.4; the published files, or the drafts in the admin preview).
+// The home page: the hero, the promo banner (fix 15), the intro, the
+// upcoming sessions (a slot, dynamic on the site), about (about › main), the
+// testimonials (gallery › testimonials) and contact (home › contact, with
+// the WhatsApp button; only with a usable number). images: the resolved
+// images of these sections (story 5.4; the published files, or the drafts in
+// the admin preview).
 export function HomeView({
   home,
   about,
@@ -56,6 +58,7 @@ export function HomeView({
   sessions?: React.ReactNode
 }) {
   const hero = sectionContent(home, "hero", "hero")
+  const promo = sectionContent(home, "promo_banner", "promo_banner")
   const intro = sectionContent(home, "intro", "text_block")
   const aboutMain = sectionContent(about, "main", "text_block")
   const testimonials = sectionContent(gallery, "testimonials", "testimonials")
@@ -66,6 +69,7 @@ export function HomeView({
   return (
     <>
       <HomeHero hero={hero} name={name} image={imageOf(hero?.image)} />
+      {promo && <PromoBanner content={promo} />}
       {intro && <TextBlockSection content={intro} />}
       {sessions}
       {aboutMain && (

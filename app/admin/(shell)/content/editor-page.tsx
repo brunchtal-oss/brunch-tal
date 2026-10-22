@@ -15,7 +15,11 @@ import {
   type EditorPageId,
   type SectionRef,
 } from "./content-items"
-import { ContentStatusChip, statusHint } from "./content-status-chip"
+import {
+  ContentStatusChip,
+  statusChips,
+  statusHint,
+} from "./content-status-chip"
 import { loadContentPage } from "./load-page"
 import {
   fromContent,
@@ -51,7 +55,8 @@ export async function EditorContent({
     ).success
 
   const status = sectionStatus(page, section)
-  const hidden = sectionHidden(section)
+  const chips = statusChips(status, sectionHidden(section))
+  const hint = statusHint(status)
   // Story 5.4: the saved images' draft files, for the editor's previews.
   const initial = fromContent(spec, content)
   const previewUrls = await signedDraftUrls(
@@ -61,13 +66,14 @@ export async function EditorContent({
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-3">
-        <ContentStatusChip status={status} />
-        {hidden && <ContentStatusChip status="hidden" />}
-        <p className="text-[15px] text-muted-foreground">
-          {statusHint(status)}
-        </p>
-      </div>
+      {(chips.length > 0 || hint) && (
+        <div className="flex flex-wrap items-center gap-3">
+          {chips.map((chip) => (
+            <ContentStatusChip key={chip} status={chip} />
+          ))}
+          {hint && <p className="text-[15px] text-muted-foreground">{hint}</p>}
+        </div>
+      )}
       <ContentEditor
         slug={ref.slug}
         sectionKey={ref.key}

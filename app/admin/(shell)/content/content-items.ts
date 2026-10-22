@@ -21,6 +21,7 @@ export type SectionRef = { slug: EditableSlug; key: string; kind: string }
 export const EDITABLE_PAGES = {
   home: [
     { slug: "home", key: "hero", kind: "hero" },
+    { slug: "home", key: "promo_banner", kind: "promo_banner" },
     { slug: "home", key: "intro", kind: "text_block" },
     { slug: "about", key: "main", kind: "text_block" },
     { slug: "home", key: "contact", kind: "text_block" },
@@ -296,7 +297,13 @@ export function sectionSummary(content: ContentObject): string {
   if (Array.isArray(content.items)) {
     return adminCopy.content.itemCount(content.items.length)
   }
-  for (const name of ["title", "question", "business_name", "whatsapp_phone"]) {
+  for (const name of [
+    "title",
+    "question",
+    "business_name",
+    "whatsapp_phone",
+    "text",
+  ]) {
     const value = content[name]
     if (typeof value === "string" && value.trim()) {
       const line = value.trim().split("\n")[0]
