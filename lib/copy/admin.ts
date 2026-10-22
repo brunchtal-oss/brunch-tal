@@ -2040,17 +2040,16 @@ export const adminCopy = {
       done: "הקובץ ירד",
     },
   },
-  // /admin/notes (story 4.11, CAP-39): topics and free notes, admin only.
+  // /admin/notes (story 4.11, CAP-39; fix 13: one board, no topics): free
+  // notes, admin only. A note's first line is shown as its title.
   notes: {
     title: "רשימות",
-    topicsNav: "נושאים",
-    addTopic: "+ נושא",
     addNote: "+ פתק",
-    emptyTopics: "עוד אין נושאים. נושא הוא מקום לרעיונות, ספקים או מתעניינות.",
-    emptyNotes: "אין פתקים בנושא הזה.",
-    topicName: "שם הנושא",
+    emptyBoard: "עוד אין פתקים. פתק הוא מקום לרעיונות, ספקים או מתעניינות.",
+    board: "פתקים",
     noteBody: "פתק",
-    moveTo: "העברה לנושא",
+    bodyHint: "השורה הראשונה מוצגת ככותרת",
+    newNote: "פתק חדש",
     done: "בוצע",
     pin: "נעיצה",
     unpin: "ביטול נעיצה",
@@ -2063,36 +2062,17 @@ export const adminCopy = {
     restore: "החזרה",
     restoreNamed: (body: string) => `החזרה של ${body}`,
     delete: "מחיקה",
-    rename: "שינוי שם",
     add: "הוספה",
     save: "שמירה",
     cancel: "ביטול",
     edit: "עריכה",
-    editTopic: (name: string) => `עריכת הנושא ${name}`,
     editNote: (body: string) => `עריכת הפתק ${body}`,
     noteSheet: "עריכת פתק",
     deleteNote: "מחיקת הפתק",
     deleteNoteQuestion: "למחוק את הפתק? אי אפשר להחזיר אותו.",
-    deleteTopic: "מחיקת הנושא",
-    deleteEmptyTopicQuestion: "למחוק את הנושא?",
-    // The sensitive dialog of a topic with notes (its question is in
-    // lib/admin/sensitive-actions.ts › delete_note_topic).
-    deleteTopicDescription: "הנושא והפתקים שבו יימחקו, ואי אפשר להחזיר אותם.",
-    impactTopic: "נושא",
-    impactNotes: "פתקים",
-    impactNotesValue: (n: number) =>
-      n === 1
-        ? "פתק אחד יימחק, כולל פתקים בארכיון"
-        : `${n} פתקים יימחקו, כולל פתקים בארכיון`,
-    deleteTopicCheckbox: (name: string) =>
-      `הבנתי שהנושא ${name} וכל הפתקים שבו יימחקו`,
     // Results (inline-notice and the live region).
-    topicAdded: "הנושא נוסף",
-    topicRenamed: "השם נשמר",
-    topicDeleted: "הנושא נמחק",
     noteAdded: "הפתק נוסף",
     noteSaved: "הפתק נשמר",
-    noteMoved: (topic: string) => `הפתק הועבר לנושא ${topic}`,
     notePinned: "הפתק ננעץ",
     noteUnpinned: "הנעיצה בוטלה",
     noteArchived: "הפתק הועבר לארכיון",
