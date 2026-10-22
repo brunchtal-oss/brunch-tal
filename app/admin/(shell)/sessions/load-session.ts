@@ -8,33 +8,43 @@ import type {
 // The columns the session screens read (public.events, admin RLS) with the
 // concept's name (the title, AD-16) and the session's image (story 5.4; the
 // admin reads every media_assets row) and its eligible products (story 3.18,
-// event_products, admin RLS).
+// event_products, admin RLS). Not the capacity: story 5.20 takes
+// events.capacity_adults away from a direct read (customers must never see
+// it), so the admin reads it from an admin RPC (admin_get_event_details).
 export const SESSION_COLUMNS =
-  "id, kind, description, starts_at, ends_at, capacity_adults, registration_closes_at, registration_close_overridden, status, display_price_agorot, concepts(name), image:media_assets!events_image_id_fkey(id, alt_text, focus_x, focus_y), event_products(product_id)"
+  "id, kind, description, starts_at, ends_at, registration_closes_at, registration_close_overridden, status, display_price_agorot, concepts(name), image:media_assets!events_image_id_fkey(id, alt_text, focus_x, focus_y), event_products(product_id)"
+
+// The sessions list still reads the capacity with the rows: no admin RPC
+// returns it for a list yet. Story 5.20 (B) moves it to
+// admin_list_session_occupancy before revoking the column.
+export const SESSIONS_LIST_COLUMNS =
+  `${SESSION_COLUMNS}, capacity_adults` as const
 
 // The generated row types its checked text columns as string; the table's
 // checks guarantee the narrower values. The concept is never missing
-// (concept_id is a required FK).
-export function toSessionRow(row: {
-  id: string
-  kind: string
-  description: string | null
-  starts_at: string
-  ends_at: string
-  capacity_adults: number
-  registration_closes_at: string
-  registration_close_overridden: boolean
-  status: string
-  display_price_agorot: number | null
-  concepts: { name: string } | null
-  image?: {
+// (concept_id is a required FK). The capacity comes from an admin RPC.
+export function toSessionRow(
+  row: {
     id: string
-    alt_text: string | null
-    focus_x: number
-    focus_y: number
-  } | null
-  event_products?: { product_id: string }[] | null
-}): SessionRow {
+    kind: string
+    description: string | null
+    starts_at: string
+    ends_at: string
+    registration_closes_at: string
+    registration_close_overridden: boolean
+    status: string
+    display_price_agorot: number | null
+    concepts: { name: string } | null
+    image?: {
+      id: string
+      alt_text: string | null
+      focus_x: number
+      focus_y: number
+    } | null
+    event_products?: { product_id: string }[] | null
+  },
+  capacity: number
+): SessionRow {
   const { concepts, image, event_products, ...rest } = row
   const sessionImage: SessionImage | null = image
     ? {
@@ -46,6 +56,7 @@ export function toSessionRow(row: {
     : null
   return {
     ...rest,
+    capacity_adults: capacity,
     kind: rest.kind as EventKind,
     status: rest.status as EventStatus,
     concept_name: concepts?.name ?? "",

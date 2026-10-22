@@ -416,13 +416,12 @@ export const HIDDEN_AUDIT_ACTIONS: readonly string[] = [
   "admin_delete_work_task",
   "admin_set_work_task_done",
   "admin_set_work_task_order",
-  "admin_add_shopping_item",
   "admin_add_shopping_items",
   "admin_update_shopping_item",
   "admin_delete_shopping_item",
   "admin_set_shopping_item_bought",
   "admin_set_shopping_item_order",
-  // Notes and topics.
+  // Notes.
   "admin_add_note",
   "admin_update_note",
   "admin_delete_note",
@@ -430,10 +429,6 @@ export const HIDDEN_AUDIT_ACTIONS: readonly string[] = [
   "admin_set_note_done",
   "admin_set_note_pinned",
   "admin_set_note_order",
-  "admin_add_note_topic",
-  "admin_rename_note_topic",
-  "admin_delete_note_topic",
-  "admin_set_note_topic_order",
   // Drafts and images.
   "admin_set_content_draft",
   "admin_create_media",
@@ -448,8 +443,6 @@ export const HIDDEN_AUDIT_ACTIONS: readonly string[] = [
   "admin_begin_email_change",
   "admin_finish_anonymize_customer",
   "join_begin",
-  "migrate_identity_match",
-  "refresh_returned_entitlements",
   // Masked, nothing to check.
   "set_booking_guest_details",
   // Calls bind_purchase, which is shown.

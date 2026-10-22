@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it, vi } from "vitest"
 
-import { shellCopy } from "@/lib/copy/shell"
+import { WORDMARK, shellCopy } from "@/lib/copy/shell"
 import type { ActionResult } from "@/lib/errors"
 import type { NotificationView } from "@/lib/notifications/shared"
 
@@ -33,7 +33,7 @@ function item(over: Partial<NotificationView> = {}): NotificationView {
 
 describe("AppTopBar", () => {
   const html = renderToStaticMarkup(
-    <AppTopBar home="/me" bell={<span>bell-slot</span>} />
+    <AppTopBar home="/me" name={WORDMARK} bell={<span>bell-slot</span>} />
   )
 
   it("is the sticky olive bar with the name home, the bell and sign-out", () => {
@@ -57,9 +57,17 @@ describe("AppTopBar", () => {
     expect(bell).toBeLessThan(signOut)
   })
 
+  it("shows the name it is given (the published business name)", () => {
+    const renamed = renderToStaticMarkup(
+      <AppTopBar home="/me" name="בראנץ׳ חדש" bell={null} />
+    )
+    expect(renamed).toContain("בראנץ׳ חדש")
+    expect(renamed).not.toContain(WORDMARK)
+  })
+
   it("links the admin bar to /admin", () => {
     const admin = renderToStaticMarkup(
-      <AppTopBar home="/admin" wide bell={null} />
+      <AppTopBar home="/admin" name={WORDMARK} wide bell={null} />
     )
     expect(admin).toContain('href="/admin"')
     expect(admin).toContain("lg:max-w-none")
@@ -67,7 +75,12 @@ describe("AppTopBar", () => {
 
   it("has the site link before the bell in the admin bar only", () => {
     const admin = renderToStaticMarkup(
-      <AppTopBar home="/admin" wide bell={<span>bell-slot</span>} />
+      <AppTopBar
+        home="/admin"
+        name={WORDMARK}
+        wide
+        bell={<span>bell-slot</span>}
+      />
     )
     const link = admin.match(/<a[^>]*aria-label="([^"]*)"[^>]*>/)
     expect(link?.[1]).toBe(shellCopy.toSite)

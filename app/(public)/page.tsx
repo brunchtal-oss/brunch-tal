@@ -3,11 +3,11 @@ import { Suspense } from "react"
 import { HomeView } from "@/components/public/page-views"
 import { UpcomingSessions } from "@/components/public/upcoming-sessions"
 import {
+  businessNameOf,
   getBusinessDetails,
   guestWhatsappHref,
 } from "@/lib/content/business-details"
 import { getPublishedPage } from "@/lib/content/pages"
-import { shellCopy } from "@/lib/copy/shell"
 
 // The home page (stories 5.1, 5.2, 5.16, 5.3): HomeView (the hero, the
 // intro, the upcoming sessions, about, the testimonials and contact), shared
@@ -31,7 +31,7 @@ export default async function HomePage() {
       about={about.sections}
       gallery={gallery.sections}
       images={{ ...home.images, ...about.images, ...gallery.images }}
-      name={details?.business_name ?? shellCopy.wordmark}
+      name={businessNameOf(details)}
       whatsappHref={guestWhatsappHref(details)}
       sessions={
         <Suspense fallback={null}>

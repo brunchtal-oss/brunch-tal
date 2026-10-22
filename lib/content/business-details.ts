@@ -1,5 +1,6 @@
 import { cacheLife, cacheTag } from "next/cache"
 
+import { WORDMARK } from "@/lib/copy/shell"
 import { createPublicClient } from "@/lib/supabase/public"
 
 import { businessDetailsSchema, type BusinessDetailsContent } from "./schema"
@@ -28,6 +29,17 @@ export async function getBusinessDetails(): Promise<BusinessDetailsContent | nul
 
   const parsed = businessDetailsSchema.safeParse(data?.published_content)
   return parsed.success ? parsed.data : null
+}
+
+// The business name to show (story 5.20): the published one (תוכן › קשר),
+// else the WORDMARK. The tab title, the top bars, the home hero (and its
+// preview), /install and the manifest; the offline page and the service worker keep the WORDMARK.
+export function businessNameOf(details: BusinessDetailsContent | null): string {
+  return details?.business_name?.trim() || WORDMARK
+}
+
+export async function getBusinessName(): Promise<string> {
+  return businessNameOf(await getBusinessDetails())
 }
 
 // The WhatsApp link of the published business details, without the

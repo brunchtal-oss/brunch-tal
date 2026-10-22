@@ -5,7 +5,8 @@ import { Assistant, Heebo, Rubik } from "next/font/google"
 import "./globals.css"
 import { RouteFocus } from "@/components/shared/route-focus"
 import { ServiceWorkerRegister } from "@/components/shared/service-worker-register"
-import { shellCopy } from "@/lib/copy/shell"
+import { getBusinessName } from "@/lib/content/business-details"
+import { rootMetadata } from "@/lib/root-metadata"
 import { cn } from "@/lib/utils"
 
 // Fonts per DESIGN.md: Assistant for body text, Heebo for headings. Both are
@@ -32,16 +33,10 @@ const fontPromo = Rubik({
   preload: false,
 })
 
-// "{page name} · בראנץ׳ אצל טל" on every page.
-export const metadata: Metadata = {
-  title: {
-    default: shellCopy.wordmark,
-    template: shellCopy.titleTemplate,
-  },
-  // Installed on an iPhone home screen (story 5.9): full screen, with the
-  // name under the icon. The manifest link is added by app/manifest.ts.
-  appleWebApp: { capable: true, title: shellCopy.wordmark },
-  icons: { apple: "/icons/apple-touch-icon.png" },
+// "{page name} · {business name}" on every page: the published name
+// (story 5.20), else the WORDMARK.
+export async function generateMetadata(): Promise<Metadata> {
+  return rootMetadata(await getBusinessName())
 }
 
 // The olive of the manifest's theme_color (DESIGN.md primary).

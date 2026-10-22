@@ -9,6 +9,7 @@ import { PushSync } from "@/components/shared/push-sync"
 import { RoleGate } from "@/components/shared/role-gate"
 import { ShellBell } from "@/components/shared/shell-bell"
 import { SkipLink } from "@/components/shared/skip-link"
+import { getBusinessName } from "@/lib/content/business-details"
 import { shellCopy } from "@/lib/copy/shell"
 import { adminNav } from "@/lib/nav"
 
@@ -21,16 +22,19 @@ export const instant = false
 // bell, sign-out; story 5.7), then main with the bottom-tab-bar until lg, or
 // the 240px side-nav right under the bar from lg. The role check runs
 // inside <Suspense> (AD-16).
-export default function AdminShellLayout({
+export default async function AdminShellLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  // The business name is published content (cached, content:global).
+  const name = await getBusinessName()
   return (
     <>
       <SkipLink />
       <AppTopBar
         home="/admin"
+        name={name}
         wide
         bell={<ShellBell surface="admin" refresh={getUnreadCount} />}
       />

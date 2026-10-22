@@ -12,7 +12,7 @@ import { callRpc } from "@/lib/rpc"
 import { createClient } from "@/lib/supabase/server"
 
 import {
-  SESSION_COLUMNS,
+  SESSIONS_LIST_COLUMNS,
   sessionsListFilter,
   toSessionRow,
 } from "./load-session"
@@ -83,12 +83,12 @@ async function SessionsContent() {
   const now = new Date().toISOString()
   const { data, error } = await supabase
     .from("events")
-    .select(SESSION_COLUMNS)
+    .select(SESSIONS_LIST_COLUMNS)
     .or(sessionsListFilter(now))
     .order("starts_at")
     .order("id")
   if (error) throw new Error("sessions list failed")
-  const rows = data.map(toSessionRow)
+  const rows = data.map((row) => toSessionRow(row, row.capacity_adults))
   // The places taken, only from private.occupied_places (AD-6), in one call
   // for the listed ids; none listed, no call.
   let occupied: Record<string, number> = {}

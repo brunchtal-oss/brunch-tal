@@ -18,6 +18,7 @@ import { UpcomingSessions } from "@/components/public/upcoming-sessions"
 import { PageHeading } from "@/components/shared/page-heading"
 import { PhotoConsentQuestions } from "@/components/shared/photo-consent-fieldset"
 import {
+  businessNameOf,
   getBusinessDetails,
   guestWhatsappHref,
 } from "@/lib/content/business-details"
@@ -44,14 +45,12 @@ import {
   isEditorPageId,
   sectionRefOf,
   slugsOf,
-  STATEMENT_REF,
-  statementPublishBlock,
+  statementBlocked,
   type ContentPage,
   type EditorPageId,
 } from "../../content-items"
 import { loadContentPages } from "../../load-page"
 import { PreviewBar } from "../../preview-bar"
-import { fieldId, sectionSpec, type TextField } from "../../section-fields"
 
 export const metadata: Metadata = {
   title: adminCopy.content.previewTitle,
@@ -148,22 +147,6 @@ async function Preview({
   )
 }
 
-// The statement's missing required fields before its first publish (story
-// 5.5), each linking to its field in the section's editor.
-function statementBlocked(
-  page: ContentPage
-): { label: string; href: string }[] {
-  const fields = sectionSpec(STATEMENT_REF).fields
-  return statementPublishBlock(page).map((name) => ({
-    label:
-      fields.find(
-        (field): field is TextField =>
-          field.type === "text" && field.name === name
-      )?.label ?? name,
-    href: `/admin/content/accessibility/${STATEMENT_REF.key}#${fieldId(name)}`,
-  }))
-}
-
 async function PageView({
   id,
   pages,
@@ -186,7 +169,7 @@ async function PageView({
           about={preview.sections[1]}
           gallery={gallery.sections}
           images={{ ...gallery.images, ...preview.images }}
-          name={details?.business_name ?? shellCopy.wordmark}
+          name={businessNameOf(details)}
           whatsappHref={whatsappHref}
           sessions={
             <Suspense fallback={null}>

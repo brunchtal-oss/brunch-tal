@@ -61,7 +61,7 @@ export default function MeSessionPage({
   )
 }
 
-async function SessionContent({
+export async function SessionContent({
   params,
   searchParams,
 }: {

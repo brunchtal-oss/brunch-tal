@@ -2046,6 +2046,8 @@ export const adminCopy = {
     title: "רשימות",
     addNote: "+ פתק",
     emptyBoard: "עוד אין פתקים. פתק הוא מקום לרעיונות, ספקים או מתעניינות.",
+    // No shown note, but archived ones (story 5.20).
+    allArchived: "כל הפתקים בארכיון.",
     board: "פתקים",
     noteBody: "פתק",
     bodyHint: "השורה הראשונה מוצגת ככותרת",

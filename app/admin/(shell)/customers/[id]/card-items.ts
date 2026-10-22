@@ -1,5 +1,5 @@
 import { babyAge } from "@/components/admin/baby-age"
-import { METER_MAX } from "@/components/customer/balance-card"
+import { METER_MAX } from "@/components/customer/entry-meter"
 import type { StatusTone } from "@/components/shared/status-chip"
 import { consentLines } from "@/lib/admin/photo-consents"
 import { adminCopy } from "@/lib/copy/admin"

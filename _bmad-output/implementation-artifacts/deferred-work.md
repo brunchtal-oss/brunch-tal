@@ -1,7 +1,7 @@
 # Deferred Work
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-1-6-site-lock-environments-and-preview-deploy.md`
-  target: 5.15
+  target: 6.1 (הועבר מ-5.15 ב-5.20, 2026-10-22: מה שנשאר מ-5.15 עבר ל-6.1, החלטת המשתמשת 2026-10-22; הנעילה עדיין שומרת על preview)
   summary: לפני ההשקה להחליט מה עושים עם `/reset/<token>` ו-`/join/<token>` ביומני הבקשות של Vercel (להוציא את הטוקן מהנתיב, או לקבל עם תוקף קצר ויומן מוגבל).
   evidence: Vercel רושם את נתיב הבקשה ואי אפשר לכבות את זה בקוד. החלטת המשתמשת ב-1.6 (2026-09-29): מקבלים בינתיים, כי הנתונים בדויים, הטוקן חד-פעמי ל-48 שעות, ורק בעלת החשבון רואה את היומן.
 
@@ -9,16 +9,19 @@
   target: 5.8/5.9
   summary: כשיתווספו manifest ו-service worker (פוש), לבדוק שהם עובדים מאחורי הנעילה. הדפדפן לא שולח Basic Auth בבקשת manifest בלי `crossorigin="use-credentials"`.
   evidence: ה-matcher נועל כל נתיב, כולל קבצים סטטיים. היום אין manifest, ולכן זה לא שובר כלום עדיין.
+  status: נסגר ב-5.20 (2026-10-22, בדיקת סגירה): נבנה ב-5.9. ‏`SITE_LOCK_PUBLIC_FILES` ב-`lib/site-lock.ts` פוטר את `/manifest.webmanifest` ואת `/icons/`, ונעילה שעברה נשמרת בעוגייה `site_lock`; נבדק ב-`lib/site-lock.test.ts` וב-`proxy.test.ts`.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-1-3-time-money-and-phone-helpers.md`
   target: 2.1
   summary: כשנבנות `business_settings` ו-`policy_snapshot`, להוסיף check constraints: ימים לפני הסגירה ושעות חלון הביטול אי-שליליים, ושעת הסגירה לא בין 00:00 ל-03:00 (שעה שנעלמת או כפולה במעבר שעון).
   evidence: `registration_closes_at` ו-`cancel_deadline` טהורים ולא בודקים קלט. ערך שלילי יקבע סגירה אחרי תחילת המפגש. המקום הנכון לאכוף הוא הטבלה שמזינה אותם. ‏`business_settings` נוצרת ב-2.1 (רטרוספקטיבה של E1, 2026-10-01), ושם גם `policy_snapshot` אם הוא נוצר מאוחר יותר.
+  status: נסגר ב-5.20 (2026-10-22, בדיקת סגירה): נבנה ב-2.1. ‏`20261001162630_create_money_schema.sql` מוסיף ל-`business_settings` את `registration_close_days_before >= 0`, ‏`cancel_window_hours >= 0` ו-`registration_close_local_time >= '03:00'`. ‏`policy_snapshot` הוא העתק של הערכים האלה.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-1-3-time-money-and-phone-helpers.md`
   target: 2.1 אם נדרש, אחרת 2.2
   summary: בסיפור הראשון שבודק RLS או RPC עם לקוחה אמיתית, להוסיף ל-`supabase/tests/support/db.ts` יצירה ומחיקה של משתמשות Auth בדויות עם הקידומת `runId`.
   evidence: ARCHITECTURE-SPINE שורה 296 ("כל בדיקה יוצרת משתמשות ונתונים עם קידומת `test_<run-id>` ומוחקת אותם"). היום `asAuthenticated` מקבל uuid אקראי בלי משתמשת Auth, וזה מספיק לעזרים הטהורים. ה-verify של 2.1 בודק שלקוחה לא קוראת תשלום של אחרת. סשן 2.1 יחליט אם פרופיל בלי משתמשת Auth מספיק לזה (ל-`profiles` אין FK ל-`auth.users`).
+  status: נסגר ב-5.20 (2026-10-22, בדיקת סגירה): נבנה ב-2.2. ‏`insertAuthUser` ב-`supabase/tests/support/db.ts` יוצר משתמשת Auth בדויה עם `test_<runId>_`, והיא נמחקת ב-rollback של `inRollback`.
 
 - source_spec: `_bmad-output/implementation-artifacts/epic-1-retro-2026-10-01.md`
   target: 6.9
@@ -34,7 +37,7 @@
   target: 3.6, ‏3.13/3.14
   summary: ב-2.12 יש תבנית אחת לכל סוג. ‏3.6 מחליט על נוסח לכל מקרה ב-`booking_cancelled` (זיכוי, החזר, ביטול בלי החזר), ו-3.13/3.14 ב-`entitlement_changed` (הארכה, החזרת כניסה, תיקון). אפשרות: שדה `{outcome}` שהקורא מעצב, או תבניות נוספות בטבלה.
   evidence: החלטת המשתמשת ב-2.12: תבנית אחת לסוג, ונוסח לכל מקרה נדחה לסיפורים שיוצרים את ההתראות.
-  status: החלק של 3.6 נסגר ב-3.6 (2026-10-06, החלטת המשתמשת): תבנית לכל מקרה. ‏`booking_cancelled` (כרטיסייה) בנוסח קבוע, ו-`booking_cancelled_pinned` חדשה למוצמדת, עם המשתנים `{date}` ו-`{expires_on}`. ‏3.7 מוסיף את מקרי הזיכוי וההחזר, ו-3.13/3.14 את `entitlement_changed`. החלק של 3.7 נסגר ב-3.7 (2026-10-10, החלטת המשתמשת): `booking_cancelled_pinned` היא עכשיו "זיכוי" (גם ביטול חוזר של הרשמה ממומנת מזיכוי), ו-`booking_cancelled_refund` חדשה לבקשת החזר; שתיהן רק עם `{date}`. החלק של 3.13 נסגר ב-3.13 (2026-10-18, החלטת המשתמשת): תבנית לכל מקרה של תיקון. ‏`entitlement_changed` (תוקף, בנוסח חדש), ‏`entitlement_units_changed` (יתרה) ו-`entitlement_terms_changed` (ימים או סוג מפגש), כולן עם `{expires_on}` ו-`{units}`. החלק של 3.14 נסגר ב-3.14 (2026-10-19, החלטת המשתמשת): ההארכה האוטומטית שולחת סוג חדש, `entitlement_auto_extended` (לא `entitlement_changed`), עם `{expires_on}` ו-`{units}`, התראה אחת לכרטיסייה בכל הרצה.
+  status: החלק של 3.6 נסגר ב-3.6 (2026-10-06, החלטת המשתמשת): תבנית לכל מקרה. ‏`booking_cancelled` (כרטיסייה) בנוסח קבוע, ו-`booking_cancelled_pinned` חדשה למוצמדת, עם המשתנים `{date}` ו-`{expires_on}`. ‏3.7 מוסיף את מקרי הזיכוי וההחזר, ו-3.13/3.14 את `entitlement_changed`. החלק של 3.7 נסגר ב-3.7 (2026-10-10, החלטת המשתמשת): `booking_cancelled_pinned` היא עכשיו "זיכוי" (גם ביטול חוזר של הרשמה ממומנת מזיכוי), ו-`booking_cancelled_refund` חדשה לבקשת החזר; שתיהן רק עם `{date}`. החלק של 3.13 נסגר ב-3.13 (2026-10-18, החלטת המשתמשת): תבנית לכל מקרה של תיקון. ‏`entitlement_changed` (תוקף, בנוסח חדש), ‏`entitlement_units_changed` (יתרה) ו-`entitlement_terms_changed` (ימים או סוג מפגש), כולן עם `{expires_on}` ו-`{units}`. החלק של 3.14 נסגר ב-3.14 (2026-10-19, החלטת המשתמשת): ההארכה האוטומטית שולחת סוג חדש, `entitlement_auto_extended` (לא `entitlement_changed`), עם `{expires_on}` ו-`{units}`, התראה אחת לכרטיסייה בכל הרצה. כל החלקים נסגרו בסיפורים שלהם (ראו למעלה), ולכן הפריט נסגר ב-5.20 (2026-10-22, בדיקת סגירה): תבנית לכל מקרה ב-3.6, ‏3.7, ‏3.13 ו-3.14.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-14-auto-extend-empty-weeks.md`
   target: 5.10
@@ -52,6 +55,7 @@
   target: 5.8
   summary: משימות `queued` ב-`notification_jobs` מצטברות מ-2.2 ועד שיש עובד פוש. ‏5.8 מחליט מה עושים בהן כשהעובד עולה (לשלוח, לסגור בלי שליחה את מה שהתיישן, או לפי גיל המשימה), כדי שלקוחה לא תקבל בבת אחת פוש ישן.
   evidence: ‏`private.enqueue_notification` יוצרת משימה לכל סוג עם פוש, ואין עדיין `claim_push_jobs` או עובד.
+  status: נסגר ב-5.20 (2026-10-22, בדיקת סגירה): נבנה ב-5.8. ‏`claim_push_jobs` סוגר כ-`skipped` משימה של התראה בת יותר מ-24 שעות, וההתראה נשארת במרכז; נבדק ב-`supabase/tests/push.test.ts`.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-12-notification-core.md`
   target: 3.5
@@ -63,31 +67,37 @@
   target: 2.5
   summary: הערכים ב-`p_vars` הם טקסט שהקורא עיצב (תאריך DD.MM, סכום ב-₪). כשהקורא הראשון שמעצב תאריך או סכום נבנה (`purchase_repeat`), ליצור עזר SQL אחד לכל עיצוב ב-`private`, כדי שכל RPC יעצב אותו דבר.
   evidence: ‏`private.enqueue_notification` מחליפה `{key}` בערך כמו שהוא. ב-2.12 עוד אין קורא.
+  status: נסגר ב-5.20 (2026-10-22, בדיקת סגירה): נבנה ב-2.5. ‏`private.format_day_month` ו-`private.format_agorot` ב-`20261004065006_repeat_purchase_and_amount_override.sql`, ונבדקים מול `formatDayMonth` ו-`formatAgorot` ב-`repeat-purchase.test.ts`.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-12-notification-core.md`
   target: 4.7
   summary: עריכת תבנית צריכה להיבדק בשמירה: רק שדות `{…}` שהסוג מעביר, וסוגריים מאוזנים. אחרת כל enqueue של הסוג זורק `INVALID_INPUT` ומבטל את ה-RPC של התשלום או ההרשמה.
   evidence: ‏`private.render_notification_text` בודקת רק בזמן ה-enqueue, ואין בטבלה רשימת שדות מותרים לכל סוג. ביקורת 2.12, ממצא 5.
+  status: נסגר ב-5.20 (2026-10-22, בדיקת סגירה): נבנה ב-4.7. ‏`admin_update_notification_template` מרנדר את הכותרת והגוף עם `private.template_sample_vars(allowed_vars)` וזורק `TEMPLATE_INVALID` על שדה לא מותר או סוגריים לא מאוזנים; נבדק ב-`settings-and-templates.test.ts`.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-12-notification-core.md`
   target: 4.7
   summary: ‏RPC העריכה (או trigger) מעלה את `version` ואת `updated_at`, קובע את `updated_by`, ומשנה רק `title` ו-`body`. ‏`push`, ‏`body_mode` ו-`recipient_kind` קבועים.
   evidence: ב-2.12 אין שום אכיפה במסד לאלה, ובבדיקה הגרסה עולה ידנית. ביקורת 2.12, ממצא 6.
+  status: נסגר ב-5.20 (2026-10-22, בדיקת סגירה): נבנה ב-4.7. ‏`admin_update_notification_template` משנה רק `title` ו-`body`, מעלה `version`, קובע `updated_at` ו-`updated_by` ובודק `STALE_VERSION`; נבדק ב-`settings-and-templates.test.ts`.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-12-notification-core.md`
   target: 5.8
   summary: הודעה כללית עד 2000 תווים בעברית (כ-4000 בייט) עלולה לעבור את מגבלת ה-payload של Web Push (כ-4KB). העובד מקצר את הגוף לפוש (ההתראה באזור האישי נשארת מלאה), או ש-`admin_send_broadcast` מגביל את האורך.
   evidence: ‏`enqueue_notification` מקבלת override עד 2000 תווים, ואין גבול אחרי הרינדור. ביקורת 2.12, ממצא 7.
+  status: נסגר ב-5.20 (2026-10-22, בדיקת סגירה): נבנה ב-5.8. ‏`pushBody()` ב-`lib/server/privileged/push-worker.ts` מקצר את גוף הפוש ל-300 תווים בגבול מילה, וההתראה במרכז נשארת מלאה; נבדק ב-`push-worker.test.ts`.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-2-join-tracer.md`
   target: 2.3
   summary: התנגשות אחרי שלב 2 (‏`phone_taken` או `bind_conflict` ב-`join_complete`) משאירה משתמשת Auth עם מייל וסיסמה בלי פרופיל. קישור עתידי עם אותו מייל ייכנס ל-`identity_match`, וההתחברות שלה תיתן `ACCOUNT_NOT_ACTIVE`. צריך לרשום אותה לטיפול של טל (או למחוק אותה) כשהקישור עובר ל-conflict.
   evidence: ‏`pending_user_id` נשאר על הטוקן, ושום קוד לא מנקה את משתמשת ה-Auth. ביקורת 2.2 (edge-case, blind-hunter).
+  status: נסגר ב-5.20 (2026-10-22, בדיקת סגירה): נבנה ב-2.3 ו-2.4. התנגשות ב-`join_complete` קוראת ל-`deleteOrphanUser` ב-`lib/server/privileged/join.ts`, שלא מוחקת משתמשת שיש לה פרופיל.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-2-join-tracer.md`
   target: 2.4
   summary: קישור ב-`claiming` נעול ל-`input_hash` הראשון. אם שלב ה-Auth נכשל (מייל ש-Auth דוחה, `email_exists`, תקלה) והלקוחה מתקנת מייל או טלפון, היא מקבלת `LINK_IN_USE` לתמיד. ‏2.4 (המשך ממצב claiming) מחליט: לאפשר claim מחדש כשאין עדיין משתמשת Auth ל-`pending_user_id`, או להעביר ל"לטיפול". גם `email_exists` משאיר את הקישור `claiming` ו-`token_view` מציג אותו כפעיל.
   evidence: ‏`join_begin` זורק `LINK_IN_USE` לכל hash אחר במצב claiming (החלטה ב-spec). ביקורת 2.2, edge-case 1–3.
+  status: נסגר ב-5.20 (2026-10-22, בדיקת סגירה): נבנה ב-2.4. קלט מתוקן ב-`claiming` מאפס את הקישור (`discard_pending_user`, ומשתמשת ה-Auth נמחקת), עד 3 בדיקות זהות (`identity_attempts`); ‏`20261003190437_link_lifecycle_and_recovery.sql`, ‏`20261003192417_join_begin_discard_before_lock.sql`, ‏`link-lifecycle.test.ts`.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-2-join-tracer.md`
   target: E3
@@ -99,6 +109,7 @@
   target: 2.10
   summary: ‏`babies` פתוחה לכתיבה ישירה של הלקוחה (insert/update לפי עמודות), אבל רק `join_complete` בודק תאריך לידה לא בעתיד ומספר תינוקות. ‏2.10 מוסיף את הבדיקות (trigger או RPC) לפני שמסך הפרופיל כותב.
   evidence: check לא יכול להשוות ל-`now()`. ביקורת 2.2, blind-hunter 6.
+  status: נסגר ב-5.20 (2026-10-22, בדיקת סגירה): נבנה ב-2.10. ה-trigger ‏`private.babies_guard` ב-`20261005232525_profile_babies_and_photo_consent.sql` דוחה תאריך בעתיד, יותר מ-10 תינוקות ומחיקת התינוק האחרון; נבדק ב-`profile.test.ts`. הגבול התחתון ושינוי הגבול העליון ל-9 חודשים נכנסים ב-5.20 (B).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-2-join-tracer.md`
   target: 6.9
@@ -109,6 +120,7 @@
   target: 2.4
   summary: קישור ב-`awaiting_login` נשאר קשור לחשבון עד שהוא פג, גם כשהלקוחה הקלידה בטעות מייל או טלפון של לקוחה אחרת או לא מצליחה להתחבר. קלט אחר מקבל `LINK_IN_USE`, ו"לטיפול" לא רואה אותו. ‏2.4 מחליט: קישור חלופי מטל, או סימון ב"לטיפול".
   evidence: ‏`join_begin` נועל את `awaiting_login` ל-`input_hash` הראשון (החלטה ב-spec, בדיקה אחת לקישור). ביקורת 2.3, edge-case 1.
+  status: נסגר ב-5.20 (2026-10-22, בדיקת סגירה): נבנה ב-2.4. קלט אחר ב-`awaiting_login` נבדק מחדש ומנקה את `bound_user_id` (אותן מיגרציות כמו בפריט של `claiming`), וטל מפיקה קישור חלופי ב-`/admin/links`.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-3-existing-account-and-identity-conflicts.md`
   target: הסרת פרטים (`admin_anonymize_customer`)
@@ -120,11 +132,13 @@
   target: 2.6
   summary: ב-toggletip של "תוקף הכרטיסיה פג" ב-`/me` מספר השבועות הוא `Math.round(validity_days / 7)` בלי צורת יחיד או זוגי. כשטל תערוך תוקף שאינו כפולה של 7 (למשל 10 ימים), יוצג "עברו 1 שבועות" או מספר מעוגל. ‏2.6 מחליט: ימים כשאינו כפולה של 7, ונוסח ליחיד ולזוגי (באישור המשתמשת).
   evidence: ‏`validityWeeks` ב-`app/me/purchase-items.ts` ו-`expiredBeforeBoundInfo` ב-`lib/copy/customer.ts`. היום יש רק כרטיסייה של 49 ימים. ביקורת 2.4, blind-hunter ו-edge-case.
+  status: נסגר ב-5.20 (2026-10-22, בדיקת סגירה): ‏`validityWeeks` כבר לא קיים. ‏`customerCopy.expiredBeforeBoundInfo(days)` ב-`lib/copy/customer.ts` כותב יחיד ורבים, וימים כשאינו כפולה של 7; נבדק ב-`components/customer/expired-card-note.test.tsx`.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-5-repeat-purchase-and-amount-override.md`
   target: 4.7
   summary: מסך ההגדרות מוסיף את `business_settings.duplicate_payment_window_days` (טווח לזיהוי תשלום כפול, ברירת מחדל 7) ל-`value-change-row`, עם יומן ישן ← חדש.
   evidence: העמודה נוצרה ב-2.5, אבל הכרטיס של 4.7 לא מונה אותה ברשימת ברירות המחדל (admin-configurable-parameters.md, החלטת משתמשת 2026-10-02).
+  status: נסגר ב-5.20 (2026-10-22, בדיקת סגירה): נבנה ב-4.7. השדה `duplicateWindow` ב-`app/admin/(shell)/settings/settings-draft.ts`, נשמר ב-`admin_update_business_settings` עם יומן (`20261006194531_business_settings_review_fixes.sql`).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-5-repeat-purchase-and-amount-override.md`
   target: הסרת פרטים (`admin_anonymize_customer`)
@@ -142,10 +156,12 @@
   target: 5.20 (במקום 2.11, החלטת המשתמשת 2026-10-10)
   summary: הבדיקה שמוצר מוסתר לא מוצע ב"הוספת תשלום" מריצה עותק של השאילתה ב-`form-data.ts` ולא אותה עצמה. להוציא את הסינון לפונקציה שבדיקה מריצה.
   evidence: ביקורת 2.6, ממצא 7. הסינון (`.eq("active", true)`) קודם ל-2.6 ולא השתנה, והאישור דוחה מוצר מוסתר (`PRODUCT_NOT_AVAILABLE`).
+  status: נסגר ב-5.20 (A, 2026-10-22): הסינון של מוצר מוסתר עבר ל-`toProductOptions` ב-`app/admin/(shell)/payments/new/product-options.ts` (בדיקת יחידה), ו-`product-catalog.test.ts` מריץ את אותה פונקציה על השורות.
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-1-publish-hero-to-home-tracer.md`
   target: 4.7
   summary: מסך ההגדרות (`/admin/settings`) מוסיף שורה "פרטי העסק" שמובילה לעורך `/admin/content/contact`. זו אותה רשומה (טיוטה ← פרסום), לא עותק נפרד בהגדרות.
   evidence: ‏EXPERIENCE (Flow 7 וההגדרות): פרטי העסק נערכים "מהגדרות › פרטי העסק או מתוכן האתר › קשר". העורך נבנה ב-5.1, ו-`/admin/settings` עוד לא קיים.
+  status: נסגר ב-5.20 (2026-10-22, בדיקת סגירה): נבנה ב-4.7. ‏`BUSINESS_DETAILS_HREF = "/admin/content/contact"` ב-`settings-editor.tsx`; נבדק ב-`settings-screens.test.tsx`.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-1-concepts-and-session-management.md`
   target: 3.18 (החלטת המשתמשת 2026-10-10)
@@ -169,6 +185,7 @@
   target: 5.16
   summary: העמודים `/sessions` ו-`/sessions/[id]`, הפריט "הבראנצ׳ים" ב-`publicNav` (אחרי "בית"), אזור המפגשים בבית (בין `home/intro` ל-`gallery/testimonials`, ‏`sort_order` 3–4 פנויים) ומחיר התצוגה בעמוד המפגש.
   evidence: 5.2 בנה רק את החלק הסטטי. כפתור ההירו מופיע מעצמו כש-`/sessions` נכנס ל-`publicNav` (`hasPublicSessions`).
+  status: נסגר ב-5.20 (2026-10-22, בדיקת סגירה): נבנה ב-5.16. ‏`app/(public)/sessions/page.tsx` ו-`sessions/[id]/page.tsx` (עם מחיר התצוגה), "הבראנצ׳ים" ב-`publicNav` (`lib/nav.test.ts`) ו-`<UpcomingSessions/>` בבית.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-2-public-pages-static.md`
   target: 5.7
@@ -198,11 +215,13 @@
   target: 4.7
   summary: מסך ההגדרות מוסיף את `business_settings.default_session_start_time` ו-`default_session_end_time` ("שעות מפגש חדש", ברירת מחדל 10:30–14:30) ל-`value-change-row`, עם יומן ישן ← חדש.
   evidence: העמודות נוספו אחרי בדיקת הטלפון של 3.1 (החלטת המשתמשת 2026-10-04), ועד 4.7 טל לא יכולה לשנות אותן.
+  status: נסגר ב-5.20 (2026-10-22, בדיקת סגירה): נבנה ב-4.7. השדה `sessionHours` ב-`settings-draft.ts` שומר את שתי השעות ב-`admin_update_business_settings`, שבודק שהסיום אחרי ההתחלה; נבדק ב-`settings-draft.test.ts`.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-2-public-pages-static.md`
   target: 5.5
   summary: עמוד "תנאי שימוש" חדש (slug ‏`terms`, נתיב `/terms`) לצד מדיניות הפרטיות (`/privacy`) והצהרת הנגישות (`/accessibility`). הפוטר כבר מקשר לכל אחד מהם ברגע שהעמוד שלו מתפרסם (`publicLegalNav` ב-`lib/nav.ts`). לפי EXPERIENCE הקישור להצהרת הנגישות קיים תמיד, גם לפני פרסום, ולכן ב-5.5 הוא מוצג קבוע.
   evidence: החלטת המשתמשת 2026-10-04. תנאי שימוש לא מופיעים במסמך המקור.
+  status: נסגר ב-5.20 (2026-10-22, בדיקת סגירה): נבנה ב-5.5. ‏`app/(public)/terms`, העמודים ב-`20261006110524_legal_pages.sql` וב-`20261006155737_legal_text_single_field.sql`, ו-`visibleLegalNav` ב-`lib/nav.ts`.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-2-public-pages-static.md`
   target: 5.4
@@ -214,6 +233,7 @@
   target: 5.16
   summary: בבית, אחרי הפתיח: "הבראנצ׳ים הקרובים" עם 2–3 המפגשים הקרובים (תאריך, קונספט ותמונת אוכל), מהטבלאות של 3.1 ומרכיב כרטיס המפגש המשותף.
   evidence: בקשת המשתמשת 2026-10-04. מסמך המקור: "מפגשים קרובים" בבית.
+  status: נסגר ב-5.20 (2026-10-22, בדיקת סגירה): נבנה ב-5.16. ‏`components/public/upcoming-sessions.tsx` מציג עד 3 מפגשים עם תמונה; נבדק ב-`upcoming-sessions.test.tsx`.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-2-public-pages-static.md`
   target: 5.3
@@ -237,11 +257,13 @@
   target: 5.16
   summary: שלושת הפריטים הציבוריים שהופנו ל-3.2 מ-5.2 (`/sessions` ו-`/sessions/[id]` עם מחיר התצוגה, "הבראנצ׳ים" ב-`publicNav` ועדכון `nav.test.ts`, ואזור "הבראנצ׳ים הקרובים" בבית) נבנים בסיפור מסכים נפרד, עם `session-card` ו-`concept-header` של 3.2, בלי תפוסה ובלי תווית רגיל/זוגי.
   evidence: החלטת המשתמשת 2026-10-04 בתכנון 3.2. תצוגה בלבד בלי שינוי סכמה, ולכן ביקורת מקוצרת, ויכול לרוץ במקביל ל-3.3.
+  status: נסגר ב-5.20 (2026-10-22, בדיקת סגירה): נבנה ב-5.16 (`components/public/public-sessions.tsx`, ‏`upcoming-sessions.tsx`), כמו שני הפריטים הקודמים של העמודים הציבוריים.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-2-self-booking-tracer-with-a-card.md`
   target: 3.11
   summary: ‏`private.plan_funding` דורש `available ≥ party_size`, ו-`private.book_core` משריין `units = party_size`. אבל מוצר זוגי הוא כניסה אחת לשני מבוגרים (מקור §2; ב-seed ‏`units 1, party_size 2`), ולכן זכות זוגית לא תתאים אף פעם למפגש זוגי. גם בגיליון כתוב "כניסה אחת" באופן קבוע. ‏3.11 מפריד בין מספר המקומות למספר הכניסות (כניסות מהזכות, מקומות מ-`party_size`), ומציג בגיליון את `units`.
   evidence: ביקורת 3.2 (intent-alignment, edge-case, blind). לא מגיע ב-3.2, כי זכות זוגית מוצמדת ולא נבחרת ב-self.
+  status: נסגר ב-5.20 (2026-10-22, בדיקת סגירה): נבנה ב-3.11. ‏`private.plan_funding` דורש `available >= 1` ולוקח כניסה אחת להרשמה, ו-`party_size` קובע רק מקומות (`20261004215859_pinned_product_approval.sql`, והגרסה האחרונה ב-`20261013161248_couple_and_intro.sql`).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-2-self-booking-tracer-with-a-card.md`
   target: 3.8
@@ -265,9 +287,10 @@
   target: 2.10
   summary: קישור "הדרכת התקנה" (`/install`) ברשימת הפרופיל ב-`/me` (EXPERIENCE › פרופיל). ב-5.9 הקישור רק בפוטר הציבורי.
   evidence: מסך הפרופיל עוד לא קיים.
+  status: נסגר ב-5.20 (2026-10-22, בדיקת סגירה): נבנה ב-2.10. ‏`app/me/profile/page.tsx` מקשר ל-`/install` (`copy.installGuide`).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-9-pwa-install-and-offline.md`
-  target: 5.15
+  target: 6.1 (הועבר מ-5.15 ב-5.20, 2026-10-22: מה שנשאר מ-5.15 עבר ל-6.1, החלטת המשתמשת 2026-10-22; הנעילה עדיין שומרת על preview)
   summary: לטופס הנעילה (`POST /site-lock`) אין הגבלת ניסיונות, כמו ל-Basic Auth. אם הנעילה נשארת אחרי ההדגמה, להוסיף הגבלה או להסתמך על הסרתה ב-5.15.
   evidence: ‏`handleSiteLockPost` ב-`lib/site-lock.ts`.
 
@@ -286,6 +309,7 @@
   target: 3.4
   summary: שורת "לקוחה חדשה · ממתינה להצטרפות" ברשימת הנרשמות של המפגש: הרשמה מוצמדת עם `customer_id` ריק עד ההצטרפות. היא כבר נספרת במכסה (`occupied_places`).
   evidence: ‏3.11 יוצר את ההרשמות האלה; רשימת הנרשמות נבנית ב-3.4.
+  status: נסגר ב-5.20 (2026-10-22, בדיקת סגירה): נבנה ב-3.4. ‏`admin_get_event_details` מחזיר `pending_join`, ו-`attendee-list.tsx` מציג "לקוחה חדשה · ממתינה להצטרפות"; נבדק ב-`load-details.test.ts` וב-`admin-booking.test.ts`.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-11-pinned-product-approval-and-placement.md`
   target: לא נבנה (6.2 בוטל, החלטת המשתמשת 2026-10-22: אין `prior_participation_override`; טל לא מאשרת תשלום על היכרות ממי שכבר השתתפה)
@@ -316,7 +340,7 @@
   status: נסגר, הוחלט שלא לבנות (החלטת המשתמשת 2026-10-20, 3.18). אין מחיר ברירת מחדל: עמוד המפגש (הציבורי ובאזור האישי) מציג מחיר רק כשטל מזינה `display_price_agorot`, כמו היום.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-16-public-session-pages.md`
-  target: 5.15
+  target: 5.20 (B, הועבר מ-5.15, 2026-10-22)
   summary: ל-anon יש הרשאת קריאה לכל הטבלה `events` (`grant select on table`), כולל העמודה `capacity_adults`. העמודים הציבוריים לא בוחרים אותה (`PUBLIC_SESSION_COLUMNS`), אבל ההרשאה עצמה עדיין פתוחה. לצמצם את ההרשאה לעמודות הציבוריות לפני הסרת הנעילה.
   evidence: ‏RLS ‏`events_anon_select` והרשאות העמודות של anon; ‏`lib/sessions/public.ts`.
 
@@ -369,7 +393,7 @@
   status: נשאר פתוח (5.10, ‏2026-10-20): מחיקת קבצים ב-Storage דורשת את ה-Storage API ולא נכנסה ל-`job_cleanup` (ה-spec של 5.10, Never). עבר ל-5.20.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-4-media-upload-and-publish.md`
-  target: 5.18 / 6.x
+  target: 6.9 (הועבר ב-5.20, 2026-10-22, לפי טבלת השיוך ב-completion-plan: "החלטה ב-6.9")
   summary: הקבצים הציבוריים מוגשים עם `cache-control: max-age=600` (נקבע בהעלאה ועובר בהעתקה). קובץ שהוסתר עלול להמשיך להיות מוגש כ-10 דקות אחרי המחיקה: מה-CDN של Supabase ומהמטמון של next/image (‏`images.minimumCacheTTL: 60`, ולכן ה-max-age של המקור קובע). להחליט לפני ההשקה אם זה מספיק.
   evidence: בבדיקת המסד של 5.4 הכתובת הציבורית החזירה 200 מיד אחרי המחיקה, ו-4xx רק עם query string חדש.
 
@@ -377,7 +401,7 @@
   target: 3.6
   summary: אחרי ביטול הרשמה, לבדוק שהבית ו-`/me/purchases` (`get_my_entitlements`) זהים למסך הכרטיסיות הפתוחות של טל (4.3). באותו סיפור להוסיף לבית את הקישור "לכל ההרשמות שלי" ל-`/me/bookings`, ואת פעולות הביטול וההזזה בכרטיס "המפגש הקרוב".
   evidence: ‏4.12 נבנה לפני 3.6 ו-4.3. אין עדיין ביטול, `/me/bookings` או מסך כרטיסיות פתוחות (Never של spec 4.12).
-  status: החלק של 3.6 נסגר ב-3.6 (2026-10-06): בבית יש ביטול (או "צרי קשר") מתחת לכרטיס "המפגש הקרוב" והקישור "לכל ההרשמות שלי" ל-`/me/bookings`, והיתרה אחרי ביטול נבדקה מול `get_my_entitlements` ב-`supabase/tests/cancel-booking.test.ts`. ההזזה (3.10) וההשוואה למסך הכרטיסיות הפתוחות (4.3) נשארות לסיפורים שלהן. ההשוואה נסגרה ב-4.3 (2026-10-13): ב-`supabase/tests/open-cards.test.ts`, הבדיקה "a booking on the card cancelled: its entry is gone, one more free; numbers still equal on all three" משווה את `admin_list_open_cards` ל-`get_my_entitlements` ול-`admin_get_customer` לפני הביטול ואחריו. ההזזה נסגרה ב-3.10 (2026-10-18, החלטת המשתמשת): הכפתור "הזזה למועד אחר" נמצא רק בעמוד המפגש, ליד "ביטול", ולא בבית או ב-`/me/bookings`.
+  status: החלק של 3.6 נסגר ב-3.6 (2026-10-06): בבית יש ביטול (או "צרי קשר") מתחת לכרטיס "המפגש הקרוב" והקישור "לכל ההרשמות שלי" ל-`/me/bookings`, והיתרה אחרי ביטול נבדקה מול `get_my_entitlements` ב-`supabase/tests/cancel-booking.test.ts`. ההזזה (3.10) וההשוואה למסך הכרטיסיות הפתוחות (4.3) נשארות לסיפורים שלהן. ההשוואה נסגרה ב-4.3 (2026-10-13): ב-`supabase/tests/open-cards.test.ts`, הבדיקה "a booking on the card cancelled: its entry is gone, one more free; numbers still equal on all three" משווה את `admin_list_open_cards` ל-`get_my_entitlements` ול-`admin_get_customer` לפני הביטול ואחריו. ההזזה נסגרה ב-3.10 (2026-10-18, החלטת המשתמשת): הכפתור "הזזה למועד אחר" נמצא רק בעמוד המפגש, ליד "ביטול", ולא בבית או ב-`/me/bookings`. כל החלקים נסגרו בסיפורים שלהם (ראו למעלה), ולכן הפריט נסגר ב-5.20 (2026-10-22, בדיקת סגירה).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-4-12-personal-area-home-and-entitlements.md`
   target: 3.12
@@ -389,6 +413,7 @@
   target: 5.20 (completion-plan, שיוך פריטים)
   summary: בדיקה דטרמיניסטית ש-`days_left` ב-`get_my_entitlements` נספר לפי התאריך ב-`Asia/Jerusalem` ולא לפי UTC, גם בשעות שאחרי חצות המקומית.
   evidence: הבדיקה הקיימת קובעת את `expires_on` באותו ביטוי שבו משתמש ה-RPC, ולכן `current_date` (‏UTC) היה נכשל רק בין חצות ל-02:00 או 03:00. הקוד נכון. חסר מנגנון להזרקת זמן לבדיקות המסד.
+  status: נסגר ב-5.20 (2026-10-22, החלטת ה-spec של 5.20): הקוד נכון, ובדיקה דטרמיניסטית דורשת להגדיר מחדש את `get_my_entitlements` לצורך בדיקה בלבד.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-4-12-personal-area-home-and-entitlements.md`
   target: (הסיפור שיבנה ביטול תשלום)
@@ -431,10 +456,10 @@
   status: נסגר ב-4.2 (2026-10-07). ‏`admin_get_home` מחזיר `customer_id` בכל שורה של `expiring_cards`, והשם בשורה מקשר לכרטיס (השורה עצמה לא קישור). פריטי "לטיפול" לא משתנים (החלטת המשתמשת 2026-10-07: רק "שילמה ואין לה מקום" שייך ללקוחה עם חשבון, והוא מוביל לעמוד המפגש). ההחלטה על יעד אחד לשורה כשמתווסף קישור לכרטיסיות הפתוחות נשארת ל-4.3. נסגרה ב-4.3 (2026-10-13, החלטת המשתמשת 2026-10-10): השם מקשר לכרטיסיות הפתוחות המסוננות, עם הכרטיסייה מודגשת, במקום לכרטיס הלקוחה. משם "לפרופיל" מוביל לכרטיס.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-12-session-completion-job.md`
-  target: 5.20 (6.2 בוטל, 2026-10-22). קודם לבדוק אם 3.5 כבר סגר אותו (completion-plan משייך ל-3.5)
+  target: 5.20 (B; 6.2 בוטל, 2026-10-22)
   summary: בדיקת הכפילות ב-`bind_purchase` ("כבר יש לה הרשמה במפגש הזה") והאינדקס `bookings_confirmed_customer_event_uidx` מסתכלים רק על `confirmed`. אחרי ש-`job_complete_events` מסיים מפגש, הרשמה מוצמדת בלי לקוחה משויכת ללקוחה שכבר הייתה לה הרשמה באותו מפגש, בלי `BIND_CONFLICT`, ויש לה שתי הרשמות ושני ניצולים. התיקון: לספור גם `completed` בבדיקה (`private.is_real_booking`), עם בדיקה.
   evidence: ביקורת 3.12 (edge, intent). נדיר: טל אישרה בטעות "לקוחה חדשה" למי שיש לה חשבון, למפגש שהיא כבר רשומה אליו, והקישור נפתח אחרי סוף המפגש. החלטת המשתמשת 2026-10-06: לא לתקן ב-3.12.
-  status: נסגר ב-3.5: הבדיקה ב-`bind_purchase` משתמשת ב-`private.is_real_booking`, והאינדקס `bookings_confirmed_customer_event_uidx` נבנה מחדש על `confirmed` ו-`completed`, עם בדיקות.
+  status: פתוח עד מיזוג 5.20 (B). הצד של "הרשמה אחרת" נסגר ב-3.5: הבדיקה ב-`bind_purchase` משתמשת ב-`private.is_real_booking`, והאינדקס `bookings_confirmed_customer_event_uidx` נבנה מחדש על `confirmed` ו-`completed`, עם בדיקות. הצד של ההרשמה המוצמדת (`b.status = 'confirmed'`) מתוקן ב-5.20 (B) עם `private.is_real_booking`.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-12-session-completion-job.md`
   target: 3.7
@@ -463,21 +488,24 @@
   target: 5.20 (במקום 5.14, החלטת המשתמשת 2026-10-10)
   summary: אין בדיקה שעמוד העורך ועמוד התצוגה המקדימה מעבירים את חסימת הפרסום של הצהרת הנגישות (`editor-page.tsx`, ‏`statementBlocked` ב-preview). החלקים הטהורים והרכיבים עצמם נבדקים.
   evidence: ביקורת 5.5 (2026-10-06). רכיבי שרת שדורשים RSC harness; פעולת הפרסום כבר בודקת את הסכמה בשרת.
+  status: נסגר ב-5.20 (A, 2026-10-22): ‏`statementBlocked` ו-`editorStatementBlock` עברו ל-`content-items.ts` ונבדקים ב-`content-items.test.ts`; עמוד העורך והתצוגה המקדימה קוראים להם.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-4-9-work-tab-dishes-tasks-prep-days.md`
   target: 5.20 (במקום 4.13, החלטת המשתמשת 2026-10-10)
   summary: אין בדיקה אוטומטית ל-redirect של `/admin/sessions/[id]/day` אל `/work`, לקישור "ללשונית העבודה" בעמוד המפגש וללשונית `/admin/work` (עד שלושה בראנצ׳ים, קישור לכל דף).
   evidence: ביקורת 4.9 (2026-10-06, ‏verification-gap). מסכים דקים בלי לוגיקה משלהם; הבדיקה בטלפון מכסה אותם.
+  status: נסגר ב-5.20 (A, 2026-10-22): ‏`sessions/[id]/day/page.test.ts` (ההפניה), ‏`sessions/[id]/page.test.tsx` (הקישור ללשונית העבודה) ו-`work/page.test.tsx` (עד שלושה, קישור לכל דף, מצב ריק).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-4-9-work-tab-dishes-tasks-prep-days.md`
   target: 3.17
   summary: `work_sheets.event_id` הוא `on delete cascade`, ולכן מחיקת מפגש מוחקת את דף העבודה, המנות, המשימות ופריטי הקניות (`shopping_items`, ‏4.10, גם הם `on delete cascade` מ-`work_sheets`) בלי שורת יומן. ‏3.17 (מחיקת מפגש בלי הרשמות) רושם ביומן גם את נתוני דף העבודה שנמחקים, או לפחות את מספרם.
   evidence: ביקורת 4.9 (2026-10-06, ‏blind-hunter). ה-cascade נבחר ב-spec של 4.9 כדי ש-3.17 יוכל למחוק מפגש.
+  status: נסגר ב-5.20 (2026-10-22, בדיקת סגירה): נבנה ב-3.17. ‏`private.plan_admin_delete_event` סופר מנות, משימות ופריטי קניות, והמחיקה רושמת אותם ביומן (`20261018080914_delete_event.sql`); נבדק ב-`delete-event.test.ts`.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-4-7-business-settings-and-templates.md`
   summary: כל סיפור שמוסיף קורא ל-`enqueue_notification` (5.17 reminder, 5.6 waitlist_spot, 3.8 event_cancelled/event_changed, 3.13 entitlement_changed, 5.10 card_expiring/admin_card_expiring) מעביר את כל `allowed_vars` של הסוג, ומוסיף בדיקת מסד שעורכת את התבנית לכל השדות המותרים ומריצה את הזרימה האמיתית.
   evidence: ביקורת 4.7, ממצא 9 (medium, לא אומת). ‏`allowed_vars` של 9 הסוגים בלי קורא נקבע מראש. קורא שמעביר פחות שדות ייכשל ב-render בתוך העסקה ויבטל אותה.
-  status: ‏reminder בוצע ב-5.17 (‏`allowed_vars` = ‏`date`, ‏`time`, ‏`concept`, ובדיקת "כל השדות" ב-`session-reminders.test.ts`). ‏event_cancelled ו-event_changed בוצעו ב-3.8 (בדיקת "כל השדות" ב-`settings-and-templates.test.ts`, על התצוגה המקדימה ועל ההודעה). ‏entitlement_changed, ‏entitlement_units_changed ו-entitlement_terms_changed בוצעו ב-3.13 (‏`expires_on` ו-`units` בכל קריאה; בדיקת "כל השדות" ב-`settings-and-templates.test.ts` וב-`entitlement-corrections.test.ts`). ‏waitlist_spot בוצע ב-5.6 (‏`date` בכל קריאה מ-`private.notify_waitlist`; בדיקת "כל השדות" עם ביטול אמיתי ב-`settings-and-templates.test.ts`).
+  status: ‏reminder בוצע ב-5.17 (‏`allowed_vars` = ‏`date`, ‏`time`, ‏`concept`, ובדיקת "כל השדות" ב-`session-reminders.test.ts`). ‏event_cancelled ו-event_changed בוצעו ב-3.8 (בדיקת "כל השדות" ב-`settings-and-templates.test.ts`, על התצוגה המקדימה ועל ההודעה). ‏entitlement_changed, ‏entitlement_units_changed ו-entitlement_terms_changed בוצעו ב-3.13 (‏`expires_on` ו-`units` בכל קריאה; בדיקת "כל השדות" ב-`settings-and-templates.test.ts` וב-`entitlement-corrections.test.ts`). ‏waitlist_spot בוצע ב-5.6 (‏`date` בכל קריאה מ-`private.notify_waitlist`; בדיקת "כל השדות" עם ביטול אמיתי ב-`settings-and-templates.test.ts`). כל הפריט נסגר ב-5.20 (2026-10-22, בדיקת סגירה): ‏`waitlist_spot` (5.6), ‏`card_expiring` ו-`admin_card_expiring` (5.10, בהרצה של `job_expiry_alerts`) ו-`entitlement_changed`, ‏`entitlement_units_changed`, ‏`entitlement_terms_changed` (3.13, דרך `admin_correct_entitlement`) נבדקים עם כל השדות המותרים ב-`settings-and-templates.test.ts` (`fillAllFields`).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-8-push-pipeline-and-permission.md`
   target: 4.6
@@ -506,6 +534,7 @@
   target: 5.18
   summary: לקוחות בדויות של נתוני ההדגמה נוצרות בלי `push_subscriptions`. כך התזכורות שלהן (‏`job_reminders`) נשמרות רק במרכז ההתראות, ומשימת הפוש נסגרת `skipped`. אין צורך בקוד.
   evidence: ‏spec 5.17 (Always, נתוני הדגמה): פוש נשלח רק למנוי שנרשם לאותה לקוחה.
+  status: נסגר ב-5.20 (2026-10-22, בדיקת סגירה): אין צורך בקוד: לקוחה בלי מנוי פוש מקבלת את ההתראה רק במרכז. הערה ל-5.22 (נתוני ההדגמה החדשים): לא ליצור להן `push_subscriptions`.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-17-session-reminder-24h.md`
   target: 4.6
@@ -553,6 +582,7 @@
   summary: שמות חלק מקובצי המיגרציה ב-`supabase/migrations/` לא תואמים לגרסה שנרשמה ב-`supabase_migrations.schema_migrations` במסד. לא משנים שמות עכשיו (החלטת המשתמשת 2026-10-10). לפני הקמת פרויקט ה-production צריך ליישר, כדי ש-`supabase db push` או הרצה מסודרת של המיגרציות יעבדו.
   evidence: נמצא בתכנון 5.19 (spec 5.19, החלטות המשתמשת 2026-10-10).
   scope: נבדק 2026-10-22: ‏53 מתוך 116 קבצים (מ-`20260929154813_revoke_default_privileges` ועד 2026-10-07) נושאים גרסה שונה מזו שבמסד. השמות זהים אחד לאחד, אין קובץ חסר או עודף, ומשנים רק את שם הקובץ לגרסה שבמסד (`git mv`), בלי לגעת במסד. הסדר לפי הגרסאות שבמסד הוא הסדר שבו הוחלו בפועל (למשל `media_upload_and_publish` לפני `admin_session_details_and_manual_booking`). ‏`lib/content/photo-consent-seed.test.ts` ו-`lib/copy/audit-actions.test.ts` מפנים לשמות קבצים ומתעדכנים, וגם הפניות לשמות ישנים במסמכים.
+  status: היישור נסגר ב-5.20 (A, 2026-10-22): ‏53 הקבצים שונו ב-`git mv` לגרסה שבמסד, בלי שינוי תוכן, ועכשיו כל אחד מ-116 הקבצים נקרא `<version>_<name>.sql` לפי `supabase_migrations.schema_migrations`. הבדיקה נשארת ל-6.1.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-7-cancellation-credits-and-refund-requests.md`
   target: 3.8
@@ -564,9 +594,10 @@
   target: 5.20
   summary: הרכיב `BalanceCard` ב-`components/customer/balance-card.tsx` לא בשימוש מאז 3.7 (הוא הציג את הכניסה ש"חזרה" ב-3.6). הקובץ נשאר, כי `EntryMeter` ו-`METER_MAX` שבו משמשים את פירוט הרכישה ואת כרטיס הלקוחה באדמין. להסיר את `BalanceCard` ואת הבדיקות שלו בניקוי המאוחד.
   evidence: בדיקת הטלפון של 3.7 (2026-10-10). המשתמשת אישרה להסיר אותו; הוא נשאר כי הסרה דורשת לכתוב מחדש את בדיקות `EntryMeter`.
+  status: נסגר ב-5.20 (A, 2026-10-22): ‏`EntryMeter` ו-`METER_MAX` עברו ל-`components/customer/entry-meter.tsx` עם בדיקה משלהם, וחמשת הקבצים מייבאים משם. `balance-card.tsx` ו-`balance-card.test.tsx` נמחקו ב-PR של 5.20 (A).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-7-cancellation-credits-and-refund-requests.md`
-  target: 5.10
+  target: 5.20 (B, הועבר מ-5.10, 2026-10-22)
   summary: למסלול `CREDIT_LOCKED` ב-`private.job_complete_events` אין בדיקה: זיכוי שנעול בעסקה אחרת מכשיל את הסיום של אותו מפגש, והמפגש נסגר בהרצה הבאה.
   evidence: ביקורת 3.7 (verification-gap). צריך שני חיבורים שעושים commit, כמו בדיקות המקביליות של ההרשמה.
 
@@ -574,6 +605,7 @@
   target: 5.20 (להחליט: לתקן או לסגור; שובץ 2026-10-22)
   summary: The audit log cannot answer Flow 9 ("why did a customer's balance change") directly: `book_session`/`cancel_booking` audit the bookings row without units or the charged entitlement, and `entitlement_movements` are not audited, so the viewer shows that a booking or cancel happened but not which card or how many units moved.
   evidence: Intent-alignment review of story 4.5; 4.5 forbids changing `private.audit` or any writer. Settle by deciding whether writers record the movement (units, entitlement) in `after`.
+  status: נסגר ב-5.20 (2026-10-22, החלטת ה-spec של 5.20): תיקון דורש לשנות את `book_core` ו-`cancel_core`, סיכון גבוה בשביל שיפור בתצוגה בלבד.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-4-8-concepts-admin.md`
   target: 5.20
@@ -584,11 +616,13 @@
   target: 3.19
   summary: במסך הרישום הידני מוצגים גם מפגשים שאי אפשר לממן מהזכויות של הלקוחה (מפגש "עם סבתוש" זוגי מוצע לכרטיסייה).
   evidence: הבדיקה המקומית של 4.3 (2026-10-13, החלטת המשתמשת). ‏`admin_list_bookable_events` לא מקבל לקוחה, והסינון תלוי ב-`plan_funding` ש-3.5 משנה. הסימון "רשומה" והרישום לכמה מפגשים נבנו ב-4.3.
+  status: נסגר ב-5.20 (2026-10-22, בדיקת סגירה): נבנה ב-3.19. ‏`admin_list_customer_bookable_events` (`20261018215548_manual_booking_fundable.sql`) מציג רק מפגשים ש-`plan_funding` יכול לממן; נבדק ב-`manual-booking-funding.test.ts`.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-5-couple-and-intro-bookings.md`
   target: 3.8
   summary: ב-`/me/bookings` הרשמה שבוטלה יחד עם המפגש מוצגת רק עם התווית הכללית "בוטלה", ושום דבר לא אומר שהמפגש עצמו בוטל. עמוד המפגש שבוטל שולח אותה לשם לפרטים.
   evidence: ביקורת 3.5 (blind). ‏`pastBookingStatus` נותן לכל הרשמה שבוטלה אותה תווית. התצוגה של ביטול מצד העסק שייכת ל-3.8.
+  status: נסגר ב-5.20 (2026-10-22, החלטת המשתמשת): כרטיס הבחירה הממתינה כבר אומר שהמפגש בוטל.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-8-business-cancels-or-changes-a-session.md`
   target: 5.20 (להוסיף בדיקה או לסגור כמקובל, יחד עם שאר בדיקות `CONCURRENT_CHANGE`; שובץ 2026-10-22)
@@ -616,6 +650,7 @@
   target: 5.20 (שובץ 2026-10-22)
   summary: AGENTS.md line on 2.8 says a phone change in auth.users is blocked "unless started by admin_begin_email_change" (it is always blocked), and does not mention the SQL Editor switch `set local app.allow_auth_identity_change = 'on'` for an admin's own email.
   evidence: 2.8 review (blind-hunter). Agent-context file, so deferred by the review rules.
+  status: נסגר ב-5.20 (A, 2026-10-22): השורה ב-AGENTS.md מתוקנת: שינוי טלפון ב-`auth.users` נחסם תמיד, שינוי מייל רק ב-`email_change_pending` עם גיבוב תואם, והעקיפה ב-SQL Editor.
 
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-9-refund-completion.md`
@@ -636,10 +671,12 @@
   target: 5.20 (להחליט: לסגור כמקובל או להוסיף בדיקה; שובץ 2026-10-22)
   summary: "מחוץ לחלון לא נקרא שום RPC" בהזזה נבדק רק על הפונקציה הטהורה `moveTapAction`, לא על לחיצה בכפתור.
   evidence: אין בפרויקט בדיקות רכיב אינטראקטיביות (אין testing-library). השרת עדיין מחזיר `can_move: false`, כך שהמסך נכון גם בלי הבדיקה המקומית; נבדק בטלפון (ביקורת 3.10, ממצא 12).
+  status: נסגר ב-5.20 (2026-10-22, החלטת ה-spec של 5.20): אין בפרויקט testing-library, והשרת (`can_move`) ו-`moveTapAction` נבדקים.
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-17-delete-a-session.md`
   target: 5.20 (קודם לבדוק אם זה קורה; אחרי יישור השמות הקובץ נקרא `20261005194206_media_upload_and_publish.sql`; שובץ 2026-10-22)
   summary: `private.hide_unused_media` (called by session delete, concept delete and set image) hides every published or copying media row not in `private.used_media_ids()`, so an image uploaded but not attached yet may be hidden and its public file deleted when Tal deletes something else.
-  evidence: 3.17 review round 1 (edge-case, maybe-false, medium if true). Pre-existing function behaviour; settle by checking whether an upload can sit in `published`/`copying` before it is attached (the upload and publish flow of `20261005193920_media_upload_and_publish.sql`).
+  evidence: 3.17 review round 1 (edge-case, maybe-false, medium if true). Pre-existing function behaviour; settle by checking whether an upload can sit in `published`/`copying` before it is attached (the upload and publish flow of `20261005194206_media_upload_and_publish.sql`).
+  status: נסגר ב-5.20 (2026-10-22, החלטת ה-spec של 5.20): טיוטה אף פעם לא מוסתרת. תמונה שפורסמה ועוד לא שובצה עלולה להיות מוסתרת במקרה של מירוץ, אבל אז השיבוץ נכשל ב-`MEDIA_NOT_PUBLISHED`, ופרסום חוזר עובד מקובץ הטיוטה שנשמר.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-audit-log-concise.md`
   target: 5.20
@@ -684,6 +721,7 @@
   target: 5.20
   summary: `app/me/sessions/[id]/page.tsx` has no render test, so its waitlist wiring (her entry, `?from=waitlist`, hiding the BookingPanel's full notice) is covered only by the helper tests and the phone check.
   evidence: verification-gap review of 5.6. The page never had a test harness; `waitlistState` and `waitlistShowsFull` are tested.
+  status: נסגר ב-5.20 (A, 2026-10-22): ‏`app/me/sessions/[id]/page.test.tsx` מרנדר את `SessionContent`: הצעה כשמלא, ההרשמה שלה לרשימה, `?from=waitlist`, והסתרת הפאנל כשמלא.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-10-scheduled-jobs.md`
   target: 5.20 (לא נבנה בסבב התיקונים; שובץ מחדש 2026-10-22)
@@ -719,8 +757,10 @@
   target: 5.20
   summary: לשאילתה ב-`ReminderStrip` (`app/admin/(shell)/home/reminder-strip.tsx`), שבוחרת את ה-`marketing_reminder` האחרון, אין בדיקת יחידה.
   evidence: ביקורת 5.11, סבב 1 ‏#9. תיקון: להעביר את הקריאה ל-loader (כמו `load-home.ts`) ולבדוק אותה שם. בינתיים הבדיקה בטלפון מכסה אותה.
+  status: נסגר ב-5.20 (A, 2026-10-22): הקריאה עברה ל-`loadLatestReminder()` ב-`load-home.ts` ונבדקת ב-`load-home.test.ts`.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-notes-redesign.md`
   target: 5.20
   summary: הבדיקה של מספור הפתקים מחדש במיגרציה `20261021064354_notes_without_topics.sql` מריצה העתק של ה-SQL על טבלאות זמניות, ולא את המיגרציה עצמה.
   evidence: ביקורת תיקון 13, סבב 1 ‏#5. המיגרציה חד-פעמית וכבר הוחלה, ואחריה נבדק במסד שכל הפתקים נשמרו בסדר אחד. אם המיגרציה תרוץ שוב במסד הפרודקשן החדש, לבדוק שם את הסדר.
+  status: נסגר ב-5.20 (2026-10-22, החלטת ה-spec של 5.20): מיגרציה חד-פעמית שכבר הוחלה. אם היא תרוץ במסד הפרודקשן החדש (6.1), לבדוק שם את סדר הפתקים.

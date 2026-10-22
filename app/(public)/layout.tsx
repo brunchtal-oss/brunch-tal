@@ -5,6 +5,7 @@ import { TopBar } from "@/components/public/top-bar"
 import { ViewerTopBar, ViewerWhatsapp } from "@/components/public/viewer-shell"
 import { SkipLink } from "@/components/shared/skip-link"
 import {
+  businessNameOf,
   getBusinessDetails,
   guestWhatsappHref,
 } from "@/lib/content/business-details"
@@ -13,7 +14,6 @@ import {
   getPublishedSections,
   sectionContent,
 } from "@/lib/content/pages"
-import { shellCopy } from "@/lib/copy/shell"
 import { footerLinks } from "@/lib/content/visible"
 import { publicLegalNav, visibleLegalNav } from "@/lib/nav"
 
@@ -42,7 +42,7 @@ export default async function PublicLayout({
     getPublishedSections("site"),
   ])
   const links = footerLinks(sectionContent(site, "footer", "footer")?.items)
-  const name = details?.business_name ?? shellCopy.wordmark
+  const name = businessNameOf(details)
   const whatsappHref = guestWhatsappHref(details)
 
   return (

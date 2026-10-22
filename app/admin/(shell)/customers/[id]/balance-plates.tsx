@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { ChevronDownIcon, ChevronLeftIcon } from "lucide-react"
 
-import { EntryMeter } from "@/components/customer/balance-card"
+import { EntryMeter } from "@/components/customer/entry-meter"
 import { StatusChip } from "@/components/shared/status-chip"
 import { adminCopy } from "@/lib/copy/admin"
 import { formatLocalDate } from "@/lib/time"

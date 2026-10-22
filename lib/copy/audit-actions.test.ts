@@ -62,6 +62,19 @@ function result(extra: Partial<AuditRow>): string | null {
   return auditRuleOf(r.action, r.entity_type)?.result?.(r) ?? null
 }
 
+// Written only by functions that were dropped or rewritten since (topics,
+// the single shopping item, one-time migrations): old migration files still
+// contain them, but no live function writes them any more.
+const RETIRED_AUDIT_ACTIONS = [
+  "admin_add_note_topic",
+  "admin_rename_note_topic",
+  "admin_delete_note_topic",
+  "admin_set_note_topic_order",
+  "admin_add_shopping_item",
+  "refresh_returned_entitlements",
+  "migrate_identity_match",
+]
+
 // The actions private.audit is called with as a literal in the migrations.
 function auditedActions(): string[] {
   const dir = fileURLToPath(
@@ -121,6 +134,7 @@ describe("the whitelist", () => {
     const decided = new Set([
       ...Object.keys(SHOWN_AUDIT_ACTIONS),
       ...HIDDEN_AUDIT_ACTIONS,
+      ...RETIRED_AUDIT_ACTIONS,
     ])
     const found = auditedActions()
     expect(found.length).toBeGreaterThan(50)
@@ -136,6 +150,13 @@ describe("the whitelist", () => {
       "admin_move_booking",
     ]) {
       expect(decided.has(action), action).toBe(true)
+    }
+  })
+
+  it("retired actions are neither shown nor hidden", () => {
+    for (const action of RETIRED_AUDIT_ACTIONS) {
+      expect(Object.hasOwn(SHOWN_AUDIT_ACTIONS, action), action).toBe(false)
+      expect(HIDDEN_AUDIT_ACTIONS, action).not.toContain(action)
     }
   })
 
