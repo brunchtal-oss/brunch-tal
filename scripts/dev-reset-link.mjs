@@ -8,9 +8,9 @@
 //   (PowerShell strips the `--` of `npm run dev:reset-link -- --flag`)
 //                                     # also print a link for that deploy
 //                                     # (only deploys wired to the DEV project)
-//   node scripts/dev-reset-link.mjs --email maya.barak@demo.example.com
-//                                     # a demo customer (story 5.18): only an
-//                                     # existing user on demo.example.com, on
+//   node scripts/dev-reset-link.mjs --email liraz.kaplan@video.example.com
+//                                     # a filming persona (story 5.22): only an
+//                                     # existing user on video.example.com, on
 //                                     # the DEV project; nothing is created
 //
 // The account gets a random password that is never printed; the link is the
@@ -26,6 +26,7 @@ import { networkInterfaces } from "node:os"
 import { createClient } from "@supabase/supabase-js"
 
 import { devRef, parseEmail } from "./dev-guard.mjs"
+import { FILMING_LOGIN_EMAILS } from "./video-cast.mjs"
 
 if (existsSync(".env.local")) process.loadEnvFile(".env.local")
 
@@ -40,9 +41,10 @@ if (!url || !secretKey) {
 
 const asAdmin = process.argv.includes("--admin")
 
-// --email <x@demo.example.com> or --email=<x@demo.example.com>: an existing
-// demo customer (story 5.18).
-const parsedEmail = parseEmail(process.argv.slice(2))
+// --email <x@video.example.com> or --email=<x@video.example.com>: an existing
+// filming persona (story 5.22).
+// Never a filming login: a reset would replace VIDEO_LOGIN_PASSWORD.
+const parsedEmail = parseEmail(process.argv.slice(2), FILMING_LOGIN_EMAILS)
 if (parsedEmail.error) {
   console.error(parsedEmail.error)
   process.exit(1)
@@ -72,7 +74,7 @@ function parseBaseUrl(argv) {
 }
 const baseUrl = parseBaseUrl(process.argv.slice(2))
 const account = demoEmail
-  ? { email: demoEmail, label: "לקוחת הדגמה", demo: true }
+  ? { email: demoEmail, label: "דמות מהסרטונים", demo: true }
   : asAdmin
   ? { email: "dev-admin@example.com", label: "אדמין בדויה" }
   : {
@@ -132,7 +134,7 @@ function lanAddresses() {
     )
 }
 
-// A demo customer: only an existing user with an activated profile, on the
+// A filming persona: only an existing user with an activated profile, on the
 // DEV project; no user and no profile is created or changed.
 async function findDemoUser(email) {
   if (
@@ -148,7 +150,7 @@ async function findDemoUser(email) {
   }
   const user = await findUserByEmail(email)
   if (!user) {
-    console.error(`אין לקוחת הדגמה ${email}. קודם: npm run demo:seed`)
+    console.error(`אין דמות ${email} במסד. קודם: npm run video:seed`)
     process.exit(1)
   }
   const { data: profile, error } = await supabase
@@ -159,7 +161,7 @@ async function findDemoUser(email) {
     .maybeSingle()
   if (error) throw new Error(`profile read failed: ${error.code}`)
   if (!profile) {
-    console.error(`ל-${email} אין פרופיל פעיל. קודם: npm run demo:seed`)
+    console.error(`ל-${email} אין פרופיל פעיל. קודם: npm run video:seed`)
     process.exit(1)
   }
   return user
