@@ -232,7 +232,7 @@ describe("claim_push_jobs / finish_push_job", { timeout: 30_000 }, () => {
       expect(claimed[0].subscriptions.map((s) => s.id)).toEqual([s1, s2].sort())
       expect(claimed[0].subscriptions[0]).toEqual({
         id: expect.any(String),
-        endpoint: expect.stringMatching(/^https:\/\/push\.example\.test\//),
+        endpoint: expect.stringMatching(/^https:\/\/fcm\.googleapis\.com\//),
         p256dh: KEYS.p256dh,
         auth: KEYS.auth,
       })

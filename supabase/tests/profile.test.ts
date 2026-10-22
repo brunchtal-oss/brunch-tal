@@ -156,12 +156,21 @@ describe("babies guard", () => {
         [c.babyIds[0], testName("renamed")]
       )
       expect(rows).toEqual([{ name: testName("renamed") }])
+      // A day further out of range is refused; the boundary itself (exactly
+      // two years back) is accepted.
       const moved = await raised(
         db,
-        `update public.babies set birth_date = birth_date + 1 where id = $1`,
+        `update public.babies set birth_date = birth_date - 1 where id = $1`,
         [c.babyIds[0]]
       )
       expect(moved?.detail).toEqual({ field: "birth_date" })
+      const { rows: edge } = await db.query(
+        `update public.babies set birth_date = (${TODAY} - interval '2 years')::date
+         where id = $1
+         returning birth_date = (${TODAY} - interval '2 years')::date as ok`,
+        [c.babyIds[0]]
+      )
+      expect(edge).toEqual([{ ok: true }])
     })
   })
 

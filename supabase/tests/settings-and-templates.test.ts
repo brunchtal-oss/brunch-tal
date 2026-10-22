@@ -728,7 +728,7 @@ describe("admin_update_notification_template", { timeout: 30_000 }, () => {
     })
   })
 
-  it("the admin reads all 24 templates (policy and grant)", async () => {
+  it("the admin reads all 23 templates (policy and grant; story 5.20: no broadcast)", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)
       const types = await as(db, f.admin, async () => {
@@ -737,7 +737,7 @@ describe("admin_update_notification_template", { timeout: 30_000 }, () => {
         )
         return rows.map((row) => row.type as string)
       })
-      expect(types).toHaveLength(24)
+      expect(types).toHaveLength(23)
     })
   })
 
@@ -765,7 +765,7 @@ describe("the template contract", { timeout: 60_000 }, () => {
          from public.notification_templates
          order by type`
       )
-      expect(rows).toHaveLength(24)
+      expect(rows).toHaveLength(23)
     })
   })
 

@@ -2,7 +2,7 @@
 title: '5.20 Unified refactor sweep after the demo'
 type: 'refactor'
 created: '2026-10-22'
-status: 'in-review'
+status: 'done'
 baseline_commit: 'da0f51f23c4276cd3d85fb723c9307f4860ac992'
 route: 'full'
 route_source: 'auto'
@@ -236,6 +236,8 @@ Rejected: edit page throws on a non-NOT_FOUND RPC error (same as its existing re
 | 13 | events column grant: a future column becomes silently unreadable (blind) | low | patch | grants test compares granted columns with all columns minus `capacity_adults`. |
 | 14 | Stale `EMAIL_TAKEN` comment says "logged" (blind) | low | patch | Comment fixed. |
 | 15 | deferred-work says "נבדק" for DB tests not yet run (blind) | low | patch | "נכתבה בדיקה…; תורץ אחרי הרצת המיגרציה". |
+
+**Full `test:db` after the migration (2026-10-22):** 1316 passed, 6 failed (5 files of 67) — all stale expectations, no code defect: 24 → 23 templates (broadcast removed, 2 tests); `moved_to_starts_at: null` in `admin_get_customer` (customers); the push seed's host moved to `fcm.googleapis.com` (push); the new birth-date test moved a date onto the allowed boundary (now: one day further out refused, the boundary itself accepted); and `content-publish` "home page with its hero section" lacked `promo_banner` — **failing since #114 (fixes 15, 17), not caused by (B)**. Fixed in the test files only; the 5 files plus `notifications.test.ts` re-ran: 6 files, 197 tests passed. Item 29 ("hold the approved seed", 23 templates) passed in the full run and the re-run.
 
 Rejected: concurrent kind change vs `save_event_products` (rare race, needs locks in another function); failed orphan Auth deletion not retried (rare; before 5.20 orphans were never deleted; adds RPC state); held places behind her `claiming`/`pending` links (maybe-false: such links carry no profile before join; settle by finding a held booking whose token's `pending_user_id` has a profile); unborn baby shows no age (spec: acceptable); existing `audit_log` rows of retired actions kept (spec: stop writing only; viewer hides them); UI does not pre-empt `CONCEPT_ARCHIVED`/name the sessions for `PRODUCT_IN_USE` (server message is clear, adds UI); fix-8 test does not simulate a killed worker (SIGKILL cannot be caught; manual script covers).
 

@@ -114,7 +114,8 @@ describe("content publish", () => {
         published_version: 0,
         published_at: null,
       })
-      // The hero (5.1), then the intro and contact sections (5.2), in order.
+      // The hero (5.1), the promo banner (fix 15), then the intro and
+      // contact sections (5.2), in order.
       expect(page.sections).toEqual([
         expect.objectContaining({
           key: "hero",
@@ -123,6 +124,11 @@ describe("content publish", () => {
           hidden: false,
           draft_content: null,
           published_content: null,
+        }),
+        expect.objectContaining({
+          key: "promo_banner",
+          kind: "promo_banner",
+          sort_order: 1,
         }),
         expect.objectContaining({
           key: "intro",

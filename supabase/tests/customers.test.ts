@@ -499,6 +499,8 @@ describe("admin_get_customer", () => {
         created_at: expect.any(String),
         // Story 3.16: no credit came from or funded it.
         credit_id: null,
+        // Story 5.20: not moved.
+        moved_to_starts_at: null,
       })
       expect(r.payments).toEqual([
         {
