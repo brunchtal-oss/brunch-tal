@@ -386,7 +386,7 @@
   status: נסגר ב-3.12 (2026-10-06): ב-`supabase/tests/my-entitlements.test.ts` ‏`private.job_complete_events` מעבירה את הכניסה מ-`reserved` ל-`used` דרך `get_my_entitlements`, וכרטיסייה שנוצלה כולה מקבלת `is_used_up` (הבית והפירוט נגזרים מהמספרים האלה). ההשוואה למסך הכרטיסיות הפתוחות של טל נשארת ל-4.3. נסגרה ב-4.3 (2026-10-13): ב-`supabase/tests/open-cards.test.ts`, הבדיקות "3 used + 1 reserved: ..." (מספרים זהים ב-`admin_list_open_cards`, ‏`get_my_entitlements` ו-`admin_get_customer` אחרי סיום שלושה מפגשים) ו-"the last session completes: the card drops from the list and stays on the customer card".
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-4-12-personal-area-home-and-entitlements.md`
-  target: (בלי יעד)
+  target: 5.20 (completion-plan, שיוך פריטים)
   summary: בדיקה דטרמיניסטית ש-`days_left` ב-`get_my_entitlements` נספר לפי התאריך ב-`Asia/Jerusalem` ולא לפי UTC, גם בשעות שאחרי חצות המקומית.
   evidence: הבדיקה הקיימת קובעת את `expires_on` באותו ביטוי שבו משתמש ה-RPC, ולכן `current_date` (‏UTC) היה נכשל רק בין חצות ל-02:00 או 03:00. הקוד נכון. חסר מנגנון להזרקת זמן לבדיקות המסד.
 
@@ -397,7 +397,7 @@
   status: נשאר פתוח לביטול תשלום. ‏3.9 (2026-10-13) לא מבטל תשלום: רכישה מוצמדת שהוחזרה מוצגת ב-`/me/purchases` עם `credit_status = refunded` (הצ׳יפ "הוחזר"), והסכום שמוצג הוא עדיין מה ששולם.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-10-customer-profile-babies-and-photo-consent.md`
-  target: (בלי יעד)
+  target: 5.20 (completion-plan, שיוך פריטים; הערך בהחלטת המשתמשת)
   summary: אין גבול תחתון לתאריך לידה של תינוק, לא בטופס ההצטרפות, לא בפרופיל ולא ב-`private.babies_guard`. טעות הקלדה כמו 1026-07-05 נשמרת, ומוצגת אצל טל כגיל של "1000 שנים". הגבול הוא ערך עסקי (גיל מקסימלי או שנה), ולכן החלטה של המשתמשת.
   evidence: ביקורת 2.10 (blind). אותו מצב קיים ב-`join_complete` מ-2.2.
 
@@ -431,7 +431,7 @@
   status: נסגר ב-4.2 (2026-10-07). ‏`admin_get_home` מחזיר `customer_id` בכל שורה של `expiring_cards`, והשם בשורה מקשר לכרטיס (השורה עצמה לא קישור). פריטי "לטיפול" לא משתנים (החלטת המשתמשת 2026-10-07: רק "שילמה ואין לה מקום" שייך ללקוחה עם חשבון, והוא מוביל לעמוד המפגש). ההחלטה על יעד אחד לשורה כשמתווסף קישור לכרטיסיות הפתוחות נשארת ל-4.3. נסגרה ב-4.3 (2026-10-13, החלטת המשתמשת 2026-10-10): השם מקשר לכרטיסיות הפתוחות המסוננות, עם הכרטיסייה מודגשת, במקום לכרטיס הלקוחה. משם "לפרופיל" מוביל לכרטיס.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-12-session-completion-job.md`
-  target: (בלי יעד)
+  target: 6.2, שמגדיר מחדש את `bind_purchase` (שובץ 2026-10-22). קודם לבדוק אם 3.5 כבר סגר אותו (completion-plan משייך ל-3.5); ‏5.20 לא נוגע ב-`bind_purchase`
   summary: בדיקת הכפילות ב-`bind_purchase` ("כבר יש לה הרשמה במפגש הזה") והאינדקס `bookings_confirmed_customer_event_uidx` מסתכלים רק על `confirmed`. אחרי ש-`job_complete_events` מסיים מפגש, הרשמה מוצמדת בלי לקוחה משויכת ללקוחה שכבר הייתה לה הרשמה באותו מפגש, בלי `BIND_CONFLICT`, ויש לה שתי הרשמות ושני ניצולים. התיקון: לספור גם `completed` בבדיקה (`private.is_real_booking`), עם בדיקה.
   evidence: ביקורת 3.12 (edge, intent). נדיר: טל אישרה בטעות "לקוחה חדשה" למי שיש לה חשבון, למפגש שהיא כבר רשומה אליו, והקישור נפתח אחרי סוף המפגש. החלטת המשתמשת 2026-10-06: לא לתקן ב-3.12.
   status: נסגר ב-3.5: הבדיקה ב-`bind_purchase` משתמשת ב-`private.is_real_booking`, והאינדקס `bookings_confirmed_customer_event_uidx` נבנה מחדש על `confirmed` ו-`completed`, עם בדיקות.
@@ -552,6 +552,7 @@
   target: 5.20 (יישור), 6.1 (בדיקה)
   summary: שמות חלק מקובצי המיגרציה ב-`supabase/migrations/` לא תואמים לגרסה שנרשמה ב-`supabase_migrations.schema_migrations` במסד. לא משנים שמות עכשיו (החלטת המשתמשת 2026-10-10). לפני הקמת פרויקט ה-production צריך ליישר, כדי ש-`supabase db push` או הרצה מסודרת של המיגרציות יעבדו.
   evidence: נמצא בתכנון 5.19 (spec 5.19, החלטות המשתמשת 2026-10-10).
+  scope: נבדק 2026-10-22: ‏53 מתוך 116 קבצים (מ-`20260929154813_revoke_default_privileges` ועד 2026-10-07) נושאים גרסה שונה מזו שבמסד. השמות זהים אחד לאחד, אין קובץ חסר או עודף, ומשנים רק את שם הקובץ לגרסה שבמסד (`git mv`), בלי לגעת במסד. הסדר לפי הגרסאות שבמסד הוא הסדר שבו הוחלו בפועל (למשל `media_upload_and_publish` לפני `admin_session_details_and_manual_booking`). ‏`lib/content/photo-consent-seed.test.ts` ו-`lib/copy/audit-actions.test.ts` מפנים לשמות קבצים ומתעדכנים, וגם הפניות לשמות ישנים במסמכים.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-7-cancellation-credits-and-refund-requests.md`
   target: 3.8
@@ -570,6 +571,7 @@
   evidence: ביקורת 3.7 (verification-gap). צריך שני חיבורים שעושים commit, כמו בדיקות המקביליות של ההרשמה.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-4-5-audit-log-viewer.md`
+  target: 5.20 (להחליט: לתקן או לסגור; שובץ 2026-10-22)
   summary: The audit log cannot answer Flow 9 ("why did a customer's balance change") directly: `book_session`/`cancel_booking` audit the bookings row without units or the charged entitlement, and `entitlement_movements` are not audited, so the viewer shows that a booking or cancel happened but not which card or how many units moved.
   evidence: Intent-alignment review of story 4.5; 4.5 forbids changing `private.audit` or any writer. Settle by deciding whether writers record the movement (units, entitlement) in `after`.
 
@@ -589,6 +591,7 @@
   evidence: ביקורת 3.5 (blind). ‏`pastBookingStatus` נותן לכל הרשמה שבוטלה אותה תווית. התצוגה של ביטול מצד העסק שייכת ל-3.8.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-8-business-cancels-or-changes-a-session.md`
+  target: 5.20 (להוסיף בדיקה או לסגור כמקובל, יחד עם שאר בדיקות `CONCURRENT_CHANGE`; שובץ 2026-10-22)
   summary: No test covers `CONCURRENT_CHANGE` in `admin_cancel_event` / `admin_reschedule_event` when a new booking or a bind commits between the unlocked read of the registrants and the booking locks.
   evidence: 3.8 review round 1 (blind-hunter). The re-check exists in the code; triggering it needs a paused committing transaction, like the 3.7 `CREDIT_LOCKED` item.
 
@@ -599,6 +602,7 @@
   status: נסגר ב-3.13 (2026-10-18, החלטת המשתמשת): כמו ביטול מצד העסק. ב"לטיפול" יש לפריט כפתור "הצעת החזר או זיכוי" (`admin_settle_parked_purchase`), שיוצר הרשמה מבוטלת וזיכוי עם `choice_pending`, והלקוחה בוחרת כמו ב-3.8. הפריט נסגר מעצמו. נבדק ב-`supabase/tests/entitlement-corrections.test.ts`.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-8-admin-assisted-reset-and-rate-limit.md`
+  target: 6.1 (בדיקה ידנית בפרויקט הפרודקשן; שובץ 2026-10-22)
   summary: The auth.users trigger (`private.guard_auth_user_change`) has no automated test against real Supabase Auth; the DB tests stand Auth in with an owner UPDATE.
   evidence: 2.8 review (verification-gap). Checked by hand on dev 2026-10-14 with a throwaway user (all cases passed). Re-check by hand when a mail provider is added (secure email change will then reach the trigger) and on the production project (6.1).
 
@@ -609,25 +613,31 @@
   status: Closed in 4.6 (2026-10-20): the reset branch of `admin_issue_link` refuses `anonymization_pending` (`RESET_TARGET_INVALID`). Verified in test:db (2026-10-21).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-8-admin-assisted-reset-and-rate-limit.md`
+  target: 5.20 (שובץ 2026-10-22)
   summary: AGENTS.md line on 2.8 says a phone change in auth.users is blocked "unless started by admin_begin_email_change" (it is always blocked), and does not mention the SQL Editor switch `set local app.allow_auth_identity_change = 'on'` for an admin's own email.
   evidence: 2.8 review (blind-hunter). Agent-context file, so deferred by the review rules.
 
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-9-refund-completion.md`
+  target: 5.20 (יחד עם שאר בדיקות `CONCURRENT_CHANGE`; שובץ 2026-10-22)
   summary: No test covers `CONCURRENT_CHANGE` in `admin_complete_refund` when a bind commits between the unlocked read of an unbound request and the credit lock.
   evidence: 3.9 review round 1 (verification-gap). The re-check exists in the code; triggering it needs a paused committing bind, like the 3.8 `admin_cancel_event` item.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-13-entitlement-corrections.md`
+  target: 5.20 (יחד עם שאר בדיקות `CONCURRENT_CHANGE`; שובץ 2026-10-22)
   summary: No test covers `CONCURRENT_CHANGE` in `admin_correct_entitlement` / `admin_settle_parked_purchase` (a bind committing between the unlocked read of the customer and the locks).
   evidence: 3.13 review round 1 (blind-hunter). The re-check exists in the code; triggering it needs a paused committing transaction, like 3.8 #19 and 3.9 #9.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-10-move-a-booking.md`
+  target: 5.20 (שובץ 2026-10-22)
   summary: בכרטיס הלקוחה באדמין הרשמה שהוזזה מוצגת "בוטלה", וביומן הפעולות השדה "הועברה להרשמה" מציג מזהה גולמי; טל לא רואה "הועברה ל-{תאריך}".
   evidence: רק `get_my_bookings` של הלקוחה מחזיר `moved_to_starts_at`; `admin_get_customer` ו-`card-items.ts` (`copy.bookingStatus[row.status]`) לא מכירים את `moved_to_booking_id`. התיקון דורש שינוי ב-RPC של האדמין (ביקורת 3.10, ממצא 11).
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-10-move-a-booking.md`
+  target: 5.20 (להחליט: לסגור כמקובל או להוסיף בדיקה; שובץ 2026-10-22)
   summary: "מחוץ לחלון לא נקרא שום RPC" בהזזה נבדק רק על הפונקציה הטהורה `moveTapAction`, לא על לחיצה בכפתור.
   evidence: אין בפרויקט בדיקות רכיב אינטראקטיביות (אין testing-library). השרת עדיין מחזיר `can_move: false`, כך שהמסך נכון גם בלי הבדיקה המקומית; נבדק בטלפון (ביקורת 3.10, ממצא 12).
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-17-delete-a-session.md`
+  target: 5.20 (קודם לבדוק אם זה קורה; אחרי יישור השמות הקובץ נקרא `20261005194206_media_upload_and_publish.sql`; שובץ 2026-10-22)
   summary: `private.hide_unused_media` (called by session delete, concept delete and set image) hides every published or copying media row not in `private.used_media_ids()`, so an image uploaded but not attached yet may be hidden and its public file deleted when Tal deletes something else.
   evidence: 3.17 review round 1 (edge-case, maybe-false, medium if true). Pre-existing function behaviour; settle by checking whether an upload can sit in `published`/`copying` before it is attached (the upload and publish flow of `20261005193920_media_upload_and_publish.sql`).
 
@@ -635,11 +645,13 @@
   target: 5.20
   summary: להפסיק לרשום ביומן את הפעולות המוסתרות (`HIDDEN_AUDIT_ACTIONS` ב-`lib/copy/audit-actions.ts`, כ-35 פונקציות: דף העבודה, פתקים ונושאים, טיוטות, תמונות ושלבים טכניים), כשאף סיפור לא רץ במקביל.
   evidence: החלטת המשתמשת 2026-10-18. היומן הקצר מסנן אותן בקריאה בלבד (`p_shown` של `admin_list_audit`), והן עדיין נכתבות ל-`audit_log`. שינוי בכותבים נוגע בפונקציות שסיפורים אחרים עורכים.
+  scope: נבדק 2026-10-22: ברשימה 46 פעולות. ארבע של נושאי פתקים (`admin_add_note_topic`, ‏`admin_rename_note_topic`, ‏`admin_delete_note_topic`, ‏`admin_set_note_topic_order`) כבר לא קיימות (תיקון 13 מחק את הנושאים), ו-5.20 רק מוחק אותן מהרשימה. ארבע אחרות (`join_begin`, ‏`claim_join`, ‏`migrate_identity_match`, ‏`admin_finish_anonymize_customer`) שייכות ל-6.2, שמגדיר אותן מחדש ומוריד מהן את הרישום; 5.20 לא נוגע בהן (החלטת המשתמשת 2026-10-22).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-16-admin-credit-adjustments.md`
   summary: `supabase/tests/notifications.test.ts` "hold the approved seed" compares the whole template table with a SEED list that stopped at 18 templates, so it fails on every `test:db` run (the table has 20 before 3.16, 23 with 3.14 and 3.16).
   evidence: verification-gap review of 3.16; `settings-and-templates.test.ts` already counts 20+. Settle by updating the SEED list (or narrowing the test to the original 18 types) in the fixes round.
   status: Closed in 5.10 (2026-10-20): SEED gains `credit_options_changed`, `credit_refund_requested` and `credit_expiring` (24 templates). Not yet run against the database (night run); confirm in the first `test:db`.
+  target: 5.20 (אימות בהרצת test:db המלאה; שובץ 2026-10-22)
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-6-waitlist.md`
   target: 5.10
@@ -664,7 +676,7 @@
   evidence: verification-gap review of 5.6. The page never had a test harness; `waitlistState` and `waitlistShowsFull` are tested.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-10-scheduled-jobs.md`
-  target: סבב התיקונים
+  target: 5.20 (לא נבנה בסבב התיקונים; שובץ מחדש 2026-10-22)
   summary: שדה בהגדרות העסק ל-`business_settings.credit_expiring_days` (כמה ימים לפני שנסגרת ההרשמה לחלופה האחרונה של זיכוי הלקוחה מקבלת התראה; 1 עד 30, ברירת מחדל 5): מפתח ב-`admin_update_business_settings`, שדה במסך ההגדרות ובדיקה.
   evidence: החלטת המשתמשת 2026-10-20 (spec 5.10): העמודה נוספה בלי שדה בהגדרות.
 
@@ -684,6 +696,7 @@
   evidence: ביקורת 3.18 (edge-case-hunter). הפונקציה מ-`20261013162639_business_cancel_event.sql` לא הוגדרה מחדש ב-3.18.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-4-6-remove-personal-details.md`
+  target: 5.20 (קודם לבדוק אם זה קורה, ולתקן רק אם כן; שובץ 2026-10-22)
   summary: When a removed customer had a join token in `claiming` whose `pending_user_id` is an Auth user other than her own, step 1 revokes the token but nothing deletes that orphan Auth user (it may hold an email or phone).
   evidence: 4.6 review (edge-case), maybe-false, medium if true. Settle by checking `join_begin`/`claim_join`: can a token where she is `customer_id` or `bound_user_id` carry a different `pending_user_id` while claiming, and does `private.revoke_join_token` already clean it.
 
