@@ -8,7 +8,6 @@ import {
   ErrorNotice,
   MoveButtons,
   OUTLINE,
-  TEXT_BUTTON,
   TextForm,
   WorkPanel,
 } from "@/components/admin/edit-kit"
@@ -16,8 +15,6 @@ import { useAnnounce, useWorkAction } from "@/components/admin/use-work-action"
 import { useOnlineGuard } from "@/components/shared/online-button"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Field, FieldLabel } from "@/components/ui/field"
-import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { adminCopy } from "@/lib/copy/admin"
 import { newIdempotencyKey } from "@/lib/idempotency"
 import { cn } from "@/lib/utils"
@@ -36,51 +33,93 @@ import {
   moveGroup,
   noteLabel,
   noteOrderAfterMove,
+  noteTitle,
   type Note,
-  type NoteTopic,
 } from "./notes-data"
 
-// A note of the notes tab (story 4.11): a check-item for "בוצע" (a real
-// checkbox, saved at once and announced; a done note is struck through and
-// muted, and stays in its place), a pinned note on a muted ground with a pin
-// mark, and the pencil that opens the note's sheet: the text, "העברה
-// לנושא", pin, archive, up and down, delete.
+// A note on the board (story 4.11; fix 13, sketch A): a paper card with a
+// slight tilt; its first line is the title (body-strong 17px), the rest the
+// text under it (body-sm, ink-muted), in full. A pinned note sits on a muted
+// ground with a strip of tape (decorative, brand-accent). The footer: the
+// check-item for "בוצע" (a real checkbox, saved at once and announced; a
+// done note is struck through and muted, and stays in its place), the pin
+// toggle (saved at once) and the pencil that opens the note's sheet: the
+// text, pin, archive, up and down, delete.
 
 const copy = adminCopy.notes
+
+const TILT = ["-rotate-[0.6deg]", "rotate-[0.5deg]", ""] as const
+
+const ICON_BUTTON =
+  "inline-flex size-11 shrink-0 items-center justify-center rounded-[4px] text-muted-foreground hover:bg-border"
 
 export function NoteItem({
   note,
   notes,
-  topic,
-  topics,
+  tilt = 0,
 }: {
   note: Note
   notes: readonly Note[]
-  topic: NoteTopic
-  topics: readonly NoteTopic[]
+  tilt?: number
 }) {
   const id = useId()
   const announce = useAnnounce()
   const { pending, error, run } = useWorkAction()
   const [open, setOpen] = useState(false)
-  // "בוצע" writes at once: offline it is dimmed and described (5.21).
+  // "בוצע" and the pin write at once: offline they are dimmed and described
+  // (5.21).
   const doneGuard = useOnlineGuard()
+  const pinGuard = useOnlineGuard({ "aria-describedby": `${id}-title` })
+  const { title, rest } = noteTitle(note.body)
 
   return (
     <li
       data-pinned={note.pinned || undefined}
+      data-done={note.done || undefined}
       className={cn(
-        "flex flex-col gap-1 rounded-lg px-3",
-        note.pinned && "bg-muted"
+        "relative flex min-w-0 flex-col gap-1.5 rounded-lg border px-3 pt-3 pb-1 motion-reduce:rotate-0",
+        TILT[tilt % TILT.length],
+        note.pinned
+          ? "border-transparent bg-muted pt-[18px]"
+          : "border-border bg-card"
       )}
     >
-      <div className="flex min-h-11 items-start gap-2">
+      {note.pinned && (
+        // A strip of tape: decorative only.
+        <span
+          aria-hidden
+          data-tape
+          className="pointer-events-none absolute start-1/2 -top-[7px] h-3.5 w-14 translate-x-1/2 -rotate-3 rounded-[2px] bg-brand-accent/45"
+        />
+      )}
+      {/* Plain text, not a label: tapping it to read or copy a phone
+          number must not toggle "בוצע"; only the checkbox (44px) does. */}
+      <p
+        id={`${id}-title`}
+        className={cn(
+          "text-[17px] leading-[1.35] font-semibold [overflow-wrap:anywhere]",
+          note.done && "text-muted-foreground line-through"
+        )}
+      >
+        <bdi>{title}</bdi>
+      </p>
+      {rest && (
+        <p
+          className={cn(
+            "text-[15px] leading-normal [overflow-wrap:anywhere] whitespace-pre-line text-muted-foreground",
+            note.done && "line-through"
+          )}
+        >
+          <bdi>{rest}</bdi>
+        </p>
+      )}
+      <div className="mt-0.5 flex min-w-0 items-center gap-1">
         <Checkbox
           id={`${id}-done`}
           checked={note.done}
           disabled={pending}
           aria-busy={pending || undefined}
-          aria-labelledby={`${id}-done-label ${id}-body`}
+          aria-labelledby={`${id}-done-label ${id}-title`}
           onCheckedChange={(value) => {
             const done = value === true
             run(
@@ -88,63 +127,66 @@ export function NoteItem({
               () => announce(done ? copy.markedDone : copy.markedNotDone)
             )
           }}
-          className="relative mt-2.5 size-6 rounded-[4px] border-[1.5px] border-muted-foreground bg-card after:absolute after:-inset-2.5 after:content-['']"
+          className="relative size-6 rounded-[4px] border-[1.5px] border-muted-foreground bg-card after:absolute after:-inset-2.5 after:content-['']"
           {...doneGuard}
         />
         <span id={`${id}-done-label`} className="sr-only">
           {copy.done}
         </span>
-        {/* Plain text, not a label: tapping it to read or copy a phone
-            number must not toggle "בוצע"; only the checkbox (44px) does. */}
-        <p
-          id={`${id}-body`}
-          className={cn(
-            "min-w-0 flex-1 py-2.5 text-base leading-normal break-words whitespace-pre-line",
-            note.done && "text-muted-foreground line-through"
-          )}
+        <span className="flex-1" />
+        <button
+          type="button"
+          aria-pressed={note.pinned}
+          aria-label={note.pinned ? copy.unpin : copy.pin}
+          aria-describedby={`${id}-title`}
+          aria-busy={pending || undefined}
+          aria-disabled={pending || undefined}
+          onClick={() => {
+            if (pending) return
+            const pinned = !note.pinned
+            run(
+              () => setNotePinnedAction({ noteId: note.id, pinned }),
+              () => announce(pinned ? copy.notePinned : copy.noteUnpinned)
+            )
+          }}
+          className={cn(ICON_BUTTON, note.pinned && "text-foreground")}
+          {...pinGuard}
         >
-          <bdi>{note.body}</bdi>
-        </p>
-        {note.pinned && (
-          <span className="mt-3 shrink-0 text-muted-foreground">
-            <PinIcon aria-hidden strokeWidth={1.5} className="size-4" />
-            <span className="sr-only">{copy.pinned}</span>
-          </span>
-        )}
+          <PinIcon
+            aria-hidden
+            strokeWidth={1.5}
+            className={cn("size-[18px]", note.pinned && "fill-current")}
+          />
+        </button>
         <button
           type="button"
           aria-label={copy.editNote(noteLabel(note.body))}
           onClick={() => setOpen(true)}
-          className="-me-2.5 inline-flex size-11 shrink-0 items-center justify-center rounded-[4px] text-muted-foreground hover:bg-border"
+          className={cn(ICON_BUTTON, "-me-2.5")}
         >
           <PencilIcon aria-hidden strokeWidth={1.5} className="size-5" />
         </button>
       </div>
+      {note.pinned && <span className="sr-only">{copy.pinned}</span>}
       <ErrorNotice code={error} />
       {open && (
-        <NotePanel
-          note={note}
-          notes={notes}
-          topic={topic}
-          topics={topics}
-          onClose={() => setOpen(false)}
-        />
+        <NotePanel note={note} notes={notes} onClose={() => setOpen(false)} />
       )}
     </li>
   )
 }
 
+function BodyHint() {
+  return <p className="text-[13px] text-muted-foreground">{copy.bodyHint}</p>
+}
+
 function NotePanel({
   note,
   notes,
-  topic,
-  topics,
   onClose,
 }: {
   note: Note
   notes: readonly Note[]
-  topic: NoteTopic
-  topics: readonly NoteTopic[]
   onClose: () => void
 }) {
   const id = useId()
@@ -152,7 +194,6 @@ function NotePanel({
   const { pending, error, run } = useWorkAction()
   const guard = useOnlineGuard()
   const [body, setBody] = useState(note.body)
-  const [target, setTarget] = useState(topic.id)
   const [key, setKey] = useState(newIdempotencyKey)
   const [deleteKey] = useState(newIdempotencyKey)
   const group = moveGroup(notes, note)
@@ -179,38 +220,18 @@ function NotePanel({
             () =>
               updateNoteAction({
                 noteId: note.id,
-                topicId: target,
                 body,
                 idempotencyKey: key,
               }),
             () => {
               setKey(newIdempotencyKey())
               onClose()
-              const moved = topics.find(
-                (t) => t.id === target && t.id !== topic.id
-              )
-              announce(moved ? copy.noteMoved(moved.name) : copy.noteSaved)
+              announce(copy.noteSaved)
             }
           )
         }
       >
-        {topics.length > 1 && (
-          <Field>
-            <FieldLabel htmlFor={`${id}-topic`}>{copy.moveTo}</FieldLabel>
-            <NativeSelect
-              id={`${id}-topic`}
-              value={target}
-              onChange={(event) => setTarget(event.target.value)}
-              className="h-12 w-full text-base"
-            >
-              {topics.map((t) => (
-                <NativeSelectOption key={t.id} value={t.id}>
-                  {t.name}
-                </NativeSelectOption>
-              ))}
-            </NativeSelect>
-          </Field>
-        )}
+        <BodyHint />
       </TextForm>
 
       <div className="flex flex-wrap gap-2">
@@ -268,7 +289,7 @@ function NotePanel({
           if (!ids) return
           const position = index + delta + 1
           run(
-            () => setNoteOrderAction({ topicId: topic.id, ids }),
+            () => setNoteOrderAction({ ids }),
             () => announce(copy.moved(position, group.length))
           )
         }}
@@ -294,16 +315,10 @@ function NotePanel({
   )
 }
 
-// "+ פתק": opens a short form in place; the new note is at the top of the
-// unpinned notes. A successful add closes it and returns focus to the
-// opener; "ביטול" closes it without adding.
-export function AddNote({
-  topicId,
-  wide = false,
-}: {
-  topicId: string
-  wide?: boolean
-}) {
+// "+ פתק" (primary, at the inline start): opens a sheet with the note's
+// text; the new note is at the top of the unpinned notes. A successful add
+// closes it and returns focus to the opener.
+export function AddNote({ wide = false }: { wide?: boolean }) {
   const id = useId()
   const announce = useAnnounce()
   const { pending, error, run, clearError } = useWorkAction()
@@ -318,16 +333,13 @@ export function AddNote({
     openerRef.current?.focus()
   }, [open])
 
-  if (!open) {
-    return (
+  return (
+    <>
       <Button
         ref={openerRef}
         type="button"
         size="lg"
-        onClick={() => {
-          setOpen(true)
-          queueMicrotask(() => document.getElementById(`${id}-body`)?.focus())
-        }}
+        onClick={() => setOpen(true)}
         className={cn(
           "h-12 rounded-[4px] px-6 text-base font-semibold",
           wide ? "w-full sm:w-auto" : "self-start"
@@ -335,68 +347,74 @@ export function AddNote({
       >
         {copy.addNote}
       </Button>
-    )
-  }
-
-  return (
-    <div className="flex w-full flex-col gap-3 rounded-lg bg-muted px-3 py-3 text-start">
-      <TextForm
-        id={`${id}-body`}
-        label={copy.noteBody}
-        value={body}
-        onChange={setBody}
-        max={MAX_NOTE_BODY}
-        multiline
-        submitLabel={copy.add}
-        pending={pending}
-        onSubmit={() =>
-          run(
-            () => addNoteAction({ topicId, body, idempotencyKey: key }),
-            () => {
-              setBody("")
-              setKey(newIdempotencyKey())
-              setOpen(false)
-              refocus.current = true
-              announce(copy.noteAdded)
-            }
-          )
-        }
-      />
-      <ErrorNotice code={error} />
-      <button
-        type="button"
-        className={cn(TEXT_BUTTON, "self-start")}
-        disabled={pending}
-        onClick={() => {
-          setOpen(false)
-          setBody("")
-          clearError()
-          refocus.current = true
+      <WorkPanel
+        open={open}
+        onOpenChange={(next) => {
+          setOpen(next)
+          if (!next) {
+            clearError()
+            refocus.current = true
+          }
         }}
+        busy={pending}
+        title={copy.newNote}
       >
-        {copy.cancel}
-      </button>
-    </div>
+        <TextForm
+          id={`${id}-body`}
+          label={copy.noteBody}
+          value={body}
+          onChange={setBody}
+          max={MAX_NOTE_BODY}
+          multiline
+          submitLabel={copy.add}
+          pending={pending}
+          onSubmit={() =>
+            run(
+              () => addNoteAction({ body, idempotencyKey: key }),
+              () => {
+                setBody("")
+                setKey(newIdempotencyKey())
+                refocus.current = true
+                setOpen(false)
+                announce(copy.noteAdded)
+              }
+            )
+          }
+        >
+          <BodyHint />
+        </TextForm>
+        <ErrorNotice code={error} />
+      </WorkPanel>
+    </>
   )
 }
 
-// An archived note (shown with "להציג ארכיון"): its text, muted (struck
-// through when done), and "החזרה", which returns it to the same place.
+// An archived note (shown with "להציג ארכיון"): its title and the rest,
+// muted (struck through when done), and "החזרה", which returns it to the
+// same place.
 export function ArchivedNoteItem({ note }: { note: Note }) {
   const announce = useAnnounce()
   const { pending, error, run } = useWorkAction()
   const guard = useOnlineGuard()
+  const { title, rest } = noteTitle(note.body)
   return (
     <li className="flex flex-col gap-1 border-b border-border py-2">
       <div className="flex items-start gap-3">
-        <p
+        <div
           className={cn(
-            "min-w-0 flex-1 py-2.5 leading-normal break-words whitespace-pre-line text-muted-foreground",
+            "flex min-w-0 flex-1 flex-col gap-0.5 py-2.5 leading-normal break-words text-muted-foreground",
             note.done && "line-through"
           )}
         >
-          <bdi>{note.body}</bdi>
-        </p>
+          <p className="font-semibold">
+            <bdi>{title}</bdi>
+          </p>
+          {rest && (
+            <p className="whitespace-pre-line">
+              <bdi>{rest}</bdi>
+            </p>
+          )}
+        </div>
         <button
           type="button"
           className={cn(OUTLINE, "shrink-0")}

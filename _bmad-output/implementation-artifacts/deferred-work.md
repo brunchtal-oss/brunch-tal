@@ -696,3 +696,8 @@
   target: 5.20
   summary: לשאילתה ב-`ReminderStrip` (`app/admin/(shell)/home/reminder-strip.tsx`), שבוחרת את ה-`marketing_reminder` האחרון, אין בדיקת יחידה.
   evidence: ביקורת 5.11, סבב 1 ‏#9. תיקון: להעביר את הקריאה ל-loader (כמו `load-home.ts`) ולבדוק אותה שם. בינתיים הבדיקה בטלפון מכסה אותה.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-notes-redesign.md`
+  target: 5.20
+  summary: הבדיקה של מספור הפתקים מחדש במיגרציה `20261021064354_notes_without_topics.sql` מריצה העתק של ה-SQL על טבלאות זמניות, ולא את המיגרציה עצמה.
+  evidence: ביקורת תיקון 13, סבב 1 ‏#5. המיגרציה חד-פעמית וכבר הוחלה, ואחריה נבדק במסד שכל הפתקים נשמרו בסדר אחד. אם המיגרציה תרוץ שוב במסד הפרודקשן החדש, לבדוק שם את הסדר.

@@ -50,8 +50,7 @@
 | work_dishes | work_sheet_id, name, sort_order |
 | work_tasks | dish_id, day_offset, body, done, sort_order |
 | shopping_items | work_sheet_id, body, quantity (טקסט חופשי, אופציונלי; מאז 2026-10-07 לא נקלט במסך, ונשמר רק אם כבר קיים), bought, sort_order. "+ פריט" מוסיף כמה פריטים בפעולה אחת (שורה לכל פריט) |
-| note_topics | name, sort_order |
-| notes | topic_id, body, pinned, done, archived_at, created_at, updated_at |
+| notes | body (השורה הראשונה מוצגת ככותרת), pinned, done, archived_at, sort_order (סדר אחד לכל הלוח), created_at, updated_at. בלי נושאים: note_topics הוסרה ב-2026-10-21 (תיקון 13, החלטת המשתמשת) |
 | business_settings | ברירות מחדל עם גרסת הגדרות: default_validity_days, registration_close_rule (ימים לפני + שעה), default_capacity_adults לפי סוג מפגש (regular 12, couple 14), cancel_window_hours, credit_options_count (2), reminder_lead_hours (24), admin_expiring_days (21, במקום expiring_threshold_days), last_places_threshold (4), default_prep_days ([-1, 0]), customer_expiring_days (10), marketing_reminder_schedule (ימים ושעה: א׳ ג׳ ד׳ 09:00, ב׳ ה׳ 20:00), inactivity_months. פרטי העסק עברו ל-content_sections (business_details), כדי שיהיו להם טיוטה ופרסום |
 | audit_log | actor_id, actor_kind (admin, customer, system), action, entity_type, entity_id, customer_id, event_id (לסינון לפי מפגש, CAP-26), before, after (רק מה שהשתנה, בלי פרטים מזהים, AD-19), reason (אופציונלי), created_at |
 

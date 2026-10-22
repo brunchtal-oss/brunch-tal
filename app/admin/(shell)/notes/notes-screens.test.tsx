@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest"
 
 import { adminCopy } from "@/lib/copy/admin"
 
-import type { Note, NoteTopic } from "./notes-data"
+import type { Note } from "./notes-data"
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: vi.fn(), push: vi.fn(), replace: vi.fn() }),
@@ -16,12 +16,6 @@ vi.mock("@/lib/supabase/server", () => ({
 const { NotesView } = await import("./notes-view")
 
 const copy = adminCopy.notes
-const T1 = "11111111-1111-4111-8111-111111111111"
-const T2 = "22222222-2222-4222-8222-222222222222"
-const TOPICS: NoteTopic[] = [
-  { id: T1, name: "ספקים" },
-  { id: T2, name: "רעיונות" },
-]
 
 function note(id: string, body: string, extra: Partial<Note> = {}): Note {
   return {
@@ -35,49 +29,51 @@ function note(id: string, body: string, extra: Partial<Note> = {}): Note {
   }
 }
 
-function render(notes: Note[], showArchive = false, topics = TOPICS) {
+function render(notes: Note[], showArchive = false) {
   return renderToStaticMarkup(
-    <NotesView
-      topics={topics}
-      topic={topics[0] ?? null}
-      notes={notes}
-      showArchive={showArchive}
-    />
+    <NotesView notes={notes} showArchive={showArchive} />
   )
 }
 
-describe("the notes tab's screen (story 4.11)", () => {
-  it("no topics: the empty-state and its one action", () => {
-    const html = render([], false, [])
-    expect(html).toContain(copy.emptyTopics)
-    expect(html.split(copy.addTopic)).toHaveLength(2)
-    expect(html).not.toContain(copy.addNote)
-  })
-
-  it("a topic without notes: the switcher with the current topic, the empty-state and + פתק", () => {
+describe("the notes board's screen (story 4.11, fix 13)", () => {
+  it("an empty board: the empty-state and its one action", () => {
     const html = render([])
-    expect(html).toContain(`aria-label="${copy.topicsNav}"`)
-    expect(html).toMatch(
-      new RegExp(`aria-current="page"[^>]*href="/admin/notes\\?topic=${T1}"`)
-    )
-    expect(html).toContain(`href="/admin/notes?topic=${T2}"`)
-    expect(html).toContain(copy.emptyNotes)
+    expect(html).toContain(copy.emptyBoard)
     expect(html.split(copy.addNote)).toHaveLength(2)
-    expect(html).toContain(copy.addTopic)
     expect(html).toContain(copy.showArchive)
+    expect(html).toContain('href="/admin/notes?archive=1"')
   })
 
-  it("a done note: a real checkbox, checked, and the text struck through", () => {
+  it("only archived notes: the board shows its empty-state", () => {
+    const html = render([note("x", "בארכיון", { archived: true })])
+    expect(html).toContain(copy.emptyBoard)
+    expect(html).not.toContain("בארכיון<")
+  })
+
+  it("the first line is the title, the rest the text; a one-line note has no text", () => {
+    const html = render([note("a", "ליגל\nענבר"), note("b", "איציק לקינוחים")])
+    expect(html).not.toContain(copy.emptyBoard)
+    expect(html).toMatch(/text-\[17px\][^>]*><bdi>ליגל<\/bdi>/)
+    expect(html).toMatch(/whitespace-pre-line[^>]*><bdi>ענבר<\/bdi>/)
+    expect(html).toMatch(/text-\[17px\][^>]*><bdi>איציק לקינוחים<\/bdi>/)
+    // One text paragraph only (for "ליגל").
+    expect(html.match(/whitespace-pre-line/g)).toHaveLength(1)
+    // The board: a grid of 2 columns, 3 from md.
+    expect(html).toMatch(/grid-cols-2[^"]*md:grid-cols-3/)
+    expect(html.split(copy.addNote)).toHaveLength(2)
+  })
+
+  it("a done note: a real checkbox, checked, named by בוצע and the title, and struck through", () => {
     const html = render([
-      note("a", "ספק פרחים", { done: true }),
+      note("a", "ספק פרחים\nטלפון", { done: true }),
       note("b", "קייטרינג"),
     ])
     expect(html).toMatch(/role="checkbox"[^>]*aria-checked="true"/)
     expect(html).toMatch(/line-through[^>]*><bdi>ספק פרחים/)
+    expect(html).toMatch(/line-through[^>]*><bdi>טלפון/)
     expect(html).not.toMatch(/line-through[^>]*><bdi>קייטרינג/)
-    expect(html).not.toContain(copy.emptyNotes)
     // The text is not the checkbox's label (a tap on it does not toggle
-    // "בוצע"); the checkbox is named by "בוצע" and the text.
+    // "בוצע").
     expect(html).not.toContain("<label")
     const named = html.match(/aria-labelledby="([^"]+) ([^"]+)"/)
     expect(named).not.toBeNull()
@@ -87,27 +83,52 @@ describe("the notes tab's screen (story 4.11)", () => {
     )
   })
 
-  it("a pinned note is marked; archived notes appear only with the archive shown, with החזרה", () => {
-    const notes = [
+  it("a pinned note: muted, with the tape and a pressed pin; an unpinned one has a pin toggle", () => {
+    const html = render([
       note("p", "נעוץ למעלה", { pinned: true }),
-      note("x", "ישן בארכיון", { archived: true }),
-    ]
-    const hidden = render(notes)
-    expect(hidden).toContain("data-pinned")
-    expect(hidden).toContain(copy.pinned)
-    expect(hidden).not.toContain("ישן בארכיון")
-    expect(hidden).toContain(`href="/admin/notes?topic=${T1}&amp;archive=1"`)
-
-    const shown = render(notes, true)
-    expect(shown).toContain("ישן בארכיון")
-    expect(shown).toContain(copy.restore)
-    expect(shown).toContain(copy.hideArchive)
-    expect(shown).toContain(`href="/admin/notes?topic=${T1}"`)
+      note("u", "רגיל"),
+    ])
+    expect(html).toMatch(/data-pinned="true"[^>]*bg-muted/)
+    expect(html.match(/data-tape/g)).toHaveLength(1)
+    expect(html).toMatch(
+      /aria-hidden="true"[^>]*data-tape|data-tape[^>]*aria-hidden/
+    )
+    expect(html).toContain(copy.pinned)
+    expect(html).toMatch(
+      new RegExp(`aria-pressed="true" aria-label="${copy.unpin}"`)
+    )
+    expect(html).toMatch(
+      new RegExp(`aria-pressed="false" aria-label="${copy.pin}"`)
+    )
   })
 
-  it("only archived notes: the topic shows its empty-state", () => {
-    const html = render([note("x", "בארכיון", { archived: true })])
-    expect(html).toContain(copy.emptyNotes)
-    expect(html).not.toContain("בארכיון<")
+  it("archived notes appear only with the archive shown, with החזרה", () => {
+    const notes = [
+      note("a", "פעיל"),
+      note("x", "ישן בארכיון\nפרט נוסף", { archived: true, done: true }),
+    ]
+    const hidden = render(notes)
+    expect(hidden).not.toContain("ישן בארכיון")
+    expect(hidden).toContain('href="/admin/notes?archive=1"')
+
+    const shown = render(notes, true)
+    // The first line as the title, the rest under it, struck through when
+    // done.
+    expect(shown).toMatch(
+      /line-through[^>]*><p class="font-semibold"><bdi>ישן בארכיון<\/bdi><\/p><p class="whitespace-pre-line"><bdi>פרט נוסף<\/bdi>/
+    )
+    expect(shown).toContain(copy.restore)
+    expect(shown).toContain(copy.hideArchive)
+    expect(shown).toContain('href="/admin/notes"')
+  })
+
+  it("has no topic UI", () => {
+    const html = render(
+      [note("a", "פעיל"), note("x", "ישן", { archived: true })],
+      true
+    )
+    expect(html).not.toContain("נושא")
+    expect(html).not.toContain("topic")
+    expect(html).not.toContain("<nav")
   })
 })

@@ -2,21 +2,15 @@ import { describe, expect, it } from "vitest"
 
 import {
   moveGroup,
-  needsConfirmedDelete,
   noteLabel,
   noteOrderAfterMove,
+  notesHref,
+  noteTitle,
   orderNotes,
   parseNotesParams,
-  selectedTopic,
-  swapIds,
   toNotes,
-  toTopics,
-  topicHref,
   type Note,
 } from "./notes-data"
-
-const T1 = "11111111-1111-4111-8111-111111111111"
-const T2 = "22222222-2222-4222-8222-222222222222"
 
 function note(id: string, sortOrder: number, extra: Partial<Note> = {}): Note {
   return {
@@ -30,17 +24,7 @@ function note(id: string, sortOrder: number, extra: Partial<Note> = {}): Note {
   }
 }
 
-describe("the notes tab's data (story 4.11)", () => {
-  it("orders topics by sort_order, then id", () => {
-    expect(
-      toTopics([
-        { id: "b", name: "ספקים", sort_order: 2 },
-        { id: "c", name: "מתעניינות", sort_order: 1 },
-        { id: "a", name: "רעיונות", sort_order: 2 },
-      ]).map((t) => t.id)
-    ).toEqual(["c", "a", "b"])
-  })
-
+describe("the notes board's data (story 4.11, fix 13)", () => {
   it("orders notes pinned first, then the rest, each by sort_order; archived from archived_at", () => {
     const notes = toNotes([
       {
@@ -82,33 +66,29 @@ describe("the notes tab's data (story 4.11)", () => {
     expect(notes.at(-1)).toMatchObject({ id: "u2", done: true })
   })
 
-  it("reads ?topic= (a uuid only) and ?archive=1, and falls back to the first topic", () => {
-    expect(parseNotesParams({ topic: T1, archive: "1" })).toEqual({
-      topicId: T1,
-      archive: true,
-    })
-    expect(parseNotesParams({ topic: "x", archive: ["1"] })).toEqual({
-      topicId: null,
-      archive: false,
-    })
-    const topics = [
-      { id: T1, name: "א" },
-      { id: T2, name: "ב" },
-    ]
-    expect(selectedTopic(topics, T2)?.id).toBe(T2)
-    expect(selectedTopic(topics, null)?.id).toBe(T1)
-    expect(selectedTopic([], T1)).toBeNull()
-    expect(topicHref(T1)).toBe(`/admin/notes?topic=${T1}`)
-    expect(topicHref(T1, true)).toBe(`/admin/notes?topic=${T1}&archive=1`)
+  it("reads ?archive=1 and builds the board's address", () => {
+    expect(parseNotesParams({ archive: "1" })).toEqual({ archive: true })
+    expect(parseNotesParams({ archive: ["1"] })).toEqual({ archive: false })
+    expect(parseNotesParams({})).toEqual({ archive: false })
+    expect(notesHref()).toBe("/admin/notes")
+    expect(notesHref(true)).toBe("/admin/notes?archive=1")
   })
 
-  it("swaps one place, null at an edge", () => {
-    expect(swapIds(["a", "b", "c"], "b", -1)).toEqual(["b", "a", "c"])
-    expect(swapIds(["a", "b"], "a", -1)).toBeNull()
-    expect(swapIds(["a", "b"], "b", 1)).toBeNull()
+  it("the first line is the title, the rest the text", () => {
+    expect(noteTitle("ליגל\nענבר")).toEqual({ title: "ליגל", rest: "ענבר" })
+    expect(noteTitle("איציק לקינוחים")).toEqual({
+      title: "איציק לקינוחים",
+      rest: "",
+    })
+    expect(noteTitle("  ספק פרחים\r\nטלפון\n\nעוד שורה  ")).toEqual({
+      title: "ספק פרחים",
+      rest: "טלפון\n\nעוד שורה",
+    })
+    // Blank lines after the title leave no empty text.
+    expect(noteTitle("כותרת\n   \n")).toEqual({ title: "כותרת", rest: "" })
   })
 
-  it("moves a note among the shown notes of its group; archived notes keep their places in the full list", () => {
+  it("moves a note among the shown notes of its group; archived notes keep their places in the board's full list", () => {
     const notes = [
       note("p1", 0, { pinned: true }),
       note("a", 1),
@@ -137,12 +117,6 @@ describe("the notes tab's data (story 4.11)", () => {
       "b",
       "c",
     ])
-  })
-
-  it("a topic with any note, archived ones included, needs the confirmed delete", () => {
-    expect(needsConfirmedDelete([])).toBe(false)
-    expect(needsConfirmedDelete([note("a", 0)])).toBe(true)
-    expect(needsConfirmedDelete([note("x", 0, { archived: true })])).toBe(true)
   })
 
   it("names a note by its first line, at most 40 characters", () => {
