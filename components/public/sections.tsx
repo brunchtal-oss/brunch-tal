@@ -83,6 +83,11 @@ export function SectionHeading({
   )
 }
 
+// One line at the body's 60ch measure: no line break and short enough to fit.
+export function isShortLine(text: string) {
+  return !text.includes("\n") && text.trim().length <= 60
+}
+
 // text_block: a heading and its text (when there is one). children (the
 // WhatsApp button on home › contact) follow.
 export function TextBlockSection({
@@ -123,7 +128,11 @@ export function TextBlockSection({
       {content.body && (
         <p
           className={cn(
-            "mx-auto max-w-[60ch] text-center text-[17px] leading-[1.65] text-pretty whitespace-pre-line",
+            "mx-auto max-w-[60ch] text-[17px] leading-[1.65] text-pretty whitespace-pre-line",
+            // Running text reads from its start edge under the centred
+            // heading; a single short line stays centred (user's decision
+            // 2026-10-22).
+            isShortLine(content.body) ? "text-center" : "text-start",
             (content.title || content.eyebrow) && "mt-5"
           )}
         >
