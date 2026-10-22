@@ -4,7 +4,7 @@
 id = 15
 type = "story"
 title = "Lift the site lock — הסרת נעילת האתר"
-description = "SITE_LOCKED=false ב-preview וב-production (המנגנון ב-proxy.ts נשאר), app/robots.ts ו-X-Robots-Tag: noindex לכל האתר עד הפתיחה ב-6.9, ובדיקה שהגבלת הקצב של 2.8 פעילה על /login ו-/admin/login; באתר רק נתונים בדויים."
+description = "SITE_LOCKED=false ב-preview וב-production (המנגנון ב-proxy.ts נשאר), app/robots.ts ו-X-Robots-Tag: noindex לכל האתר עד הפתיחה ב-6.9, ובדיקה שהגבלת הקצב של 2.8 פעילה על /login ו-/admin/login; באתר רק נתונים בדויים. הנעילה בפרודקשן הוסרה ב-2026-10-10 (completion-plan); מה שנשאר (בדיקת הגבלת הקצב, ו-preview אם רוצים) נכנס לבדיקות של 6.1 (החלטת המשתמשת 2026-10-22), והסיפור לא נשלף בנפרד."
 verify = "כתובת ה-production נפתחת בלי סיסמה, כל תשובה נושאת X-Robots-Tag: noindex, /me ו-/admin עדיין דורשים התחברות, וניסיונות התחברות רבים ל-/admin/login נחסמים."
 covers = []
 after = ["2.8", 20]
