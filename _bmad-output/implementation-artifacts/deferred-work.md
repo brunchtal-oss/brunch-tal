@@ -26,7 +26,7 @@
   evidence: החלטת המשתמשת ברטרוספקטיבה של E1 (2026-10-01): מקבלים את ה-WARN בפרויקט הפיתוח. ייתכן שההגדרה דורשת תוכנית בתשלום של Supabase, ולכן זו החלטה שלה.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-1-money-schema-and-payment-approval-core.md`
-  target: סיפור היבוא
+  target: לא נבנה (6.2 בוטל, החלטת המשתמשת 2026-10-22: אין יבוא ואין יתרות פתיחה)
   summary: ‏`entitlements.payment_id` הוא `not null`. סיפור יבוא הלקוחות צריך להתיר `import_batch_id` במקומו (אחד מהשניים חובה) לפני שיתרות פתיחה נכנסות.
   evidence: ‏data-model.md כותב "payment_id (או import_batch_id)", ויומן התנועות כבר כולל `opening_balance`. נמצא בביקורת של 2.1 (blind-hunter).
 
@@ -288,7 +288,7 @@
   evidence: ‏3.11 יוצר את ההרשמות האלה; רשימת הנרשמות נבנית ב-3.4.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-11-pinned-product-approval-and-placement.md`
-  target: 6.2 (2.9 יצא, החלטת המשתמשת 2026-10-10)
+  target: לא נבנה (6.2 בוטל, החלטת המשתמשת 2026-10-22: אין `prior_participation_override`; טל לא מאשרת תשלום על היכרות ממי שכבר השתתפה)
   summary: ‏`private.has_participated` קורא רק הרשמות שהסתיימו. כש-2.9 מוסיף השתתפות מיבוא או מתיקון של טל (`profiles.prior_participation_override`), הפונקציה צריכה לקרוא גם אותה, כדי שלקוחה מיובאת לא תקבל היכרות שוב (מקור §2).
   evidence: ביקורת 3.11 (blind). העמודה עוד לא קיימת, ולכן לא נבדק עכשיו.
 
@@ -431,7 +431,7 @@
   status: נסגר ב-4.2 (2026-10-07). ‏`admin_get_home` מחזיר `customer_id` בכל שורה של `expiring_cards`, והשם בשורה מקשר לכרטיס (השורה עצמה לא קישור). פריטי "לטיפול" לא משתנים (החלטת המשתמשת 2026-10-07: רק "שילמה ואין לה מקום" שייך ללקוחה עם חשבון, והוא מוביל לעמוד המפגש). ההחלטה על יעד אחד לשורה כשמתווסף קישור לכרטיסיות הפתוחות נשארת ל-4.3. נסגרה ב-4.3 (2026-10-13, החלטת המשתמשת 2026-10-10): השם מקשר לכרטיסיות הפתוחות המסוננות, עם הכרטיסייה מודגשת, במקום לכרטיס הלקוחה. משם "לפרופיל" מוביל לכרטיס.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-12-session-completion-job.md`
-  target: 6.2, שמגדיר מחדש את `bind_purchase` (שובץ 2026-10-22). קודם לבדוק אם 3.5 כבר סגר אותו (completion-plan משייך ל-3.5); ‏5.20 לא נוגע ב-`bind_purchase`
+  target: 5.20 (6.2 בוטל, 2026-10-22). קודם לבדוק אם 3.5 כבר סגר אותו (completion-plan משייך ל-3.5)
   summary: בדיקת הכפילות ב-`bind_purchase` ("כבר יש לה הרשמה במפגש הזה") והאינדקס `bookings_confirmed_customer_event_uidx` מסתכלים רק על `confirmed`. אחרי ש-`job_complete_events` מסיים מפגש, הרשמה מוצמדת בלי לקוחה משויכת ללקוחה שכבר הייתה לה הרשמה באותו מפגש, בלי `BIND_CONFLICT`, ויש לה שתי הרשמות ושני ניצולים. התיקון: לספור גם `completed` בבדיקה (`private.is_real_booking`), עם בדיקה.
   evidence: ביקורת 3.12 (edge, intent). נדיר: טל אישרה בטעות "לקוחה חדשה" למי שיש לה חשבון, למפגש שהיא כבר רשומה אליו, והקישור נפתח אחרי סוף המפגש. החלטת המשתמשת 2026-10-06: לא לתקן ב-3.12.
   status: נסגר ב-3.5: הבדיקה ב-`bind_purchase` משתמשת ב-`private.is_real_booking`, והאינדקס `bookings_confirmed_customer_event_uidx` נבנה מחדש על `confirmed` ו-`completed`, עם בדיקות.
@@ -645,7 +645,17 @@
   target: 5.20
   summary: להפסיק לרשום ביומן את הפעולות המוסתרות (`HIDDEN_AUDIT_ACTIONS` ב-`lib/copy/audit-actions.ts`, כ-35 פונקציות: דף העבודה, פתקים ונושאים, טיוטות, תמונות ושלבים טכניים), כשאף סיפור לא רץ במקביל.
   evidence: החלטת המשתמשת 2026-10-18. היומן הקצר מסנן אותן בקריאה בלבד (`p_shown` של `admin_list_audit`), והן עדיין נכתבות ל-`audit_log`. שינוי בכותבים נוגע בפונקציות שסיפורים אחרים עורכים.
-  scope: נבדק 2026-10-22: ברשימה 46 פעולות. ארבע של נושאי פתקים (`admin_add_note_topic`, ‏`admin_rename_note_topic`, ‏`admin_delete_note_topic`, ‏`admin_set_note_topic_order`) כבר לא קיימות (תיקון 13 מחק את הנושאים), ו-5.20 רק מוחק אותן מהרשימה. ארבע אחרות (`join_begin`, ‏`claim_join`, ‏`migrate_identity_match`, ‏`admin_finish_anonymize_customer`) שייכות ל-6.2, שמגדיר אותן מחדש ומוריד מהן את הרישום; 5.20 לא נוגע בהן (החלטת המשתמשת 2026-10-22).
+  scope: נבדק 2026-10-22: ברשימה 46 פעולות. ארבע של נושאי פתקים (`admin_add_note_topic`, ‏`admin_rename_note_topic`, ‏`admin_delete_note_topic`, ‏`admin_set_note_topic_order`) כבר לא קיימות (תיקון 13 מחק את הנושאים), ו-5.20 רק מוחק אותן מהרשימה. גם `admin_add_shopping_item`, ‏`refresh_returned_entitlements` ו-`migrate_identity_match` כבר לא נכתבות (הבדיקה המקדימה). ‏`join_begin`, ‏`claim_join` ו-`admin_finish_anonymize_customer` נשארות ב-5.20, כי 6.2 בוטל (החלטת המשתמשת 2026-10-22).
+
+- source_spec: `C:\Users\ligal\Desktop\Projects\audit-pre-5-20-2026-10-22.md` (הבדיקה המקדימה לפני 5.20, מחוץ ל-repo)
+  target: 5.20
+  summary: כל ממצא בדוח שהיעד המוצע שלו 5.20 או 6.2 נכנס ל-5.20, כי 6.2 בוטל: הרשאת SELECT של anon ו-authenticated על `events.capacity_adults`; `credit_session_matches` בלי `event_accepts_product`; מפתח idempotency שמתחלף אחרי catch בעורכי תזכורות השיווק; סף `isShortLine` בטלפון; ממצאי הסרת הפרטים (רכישה מוצמדת שלא סודרה, `awaiting_login`, ‏`account_op_state`, בדיקת היומן); והנמוכים (README של cron, ‏pgcrypto, ‏seed.sql, הרשאות `waitlist_entries`, ‏policy כפול, שאריות `broadcast` של 5.12, שבירת מילים בבאנר, לוח פתקים ריק כשיש ארכיון, בדיקות חסרות).
+  evidence: הדוח, 2026-10-22: ‏37 ממצאים, 0 חוסמי השקה. מחוץ ל-repo כי ה-repo ציבורי. ארבע ההחלטות שבראש הדוח התקבלו (completion-plan, 2026-10-22): חסימת הסרת פרטים כשיש רכישה מוצמדת שלא סודרה; העתקת העמודים המשפטיים (6.1); שם העסק נערך באדמין ונקרא מפרטי העסק במקום `WORDMARK`; רשימה סגורה של שרתי פוש. שלוש מהן ב-5.20.
+
+- source_spec: `C:\Users\ligal\Desktop\Projects\audit-pre-5-20-2026-10-22.md` (הבדיקה המקדימה לפני 5.20, מחוץ ל-repo)
+  target: 6.1
+  summary: לפני שהאתר בפרודקשן נפתח: (1) הרצה אמיתית של כל המיגרציות במסד הריק (כולל `create extension` וה-trigger על `auth.users`); (2) העמודים המשפטיים (פרטיות, תקנון, נגישות) מפורסמים, אחרת טופס ההצטרפות מבקש הסכמה למדיניות שלא פורסמה; (3) ב-Data API חשופה רק הסכמה `public` (לשקול `revoke usage on schema net from anon, authenticated`); (4) שורה ב-checklist של README להוספת טל ל-`admin_roles`; (5) להחליט אם `issue_reset_token` (כלי פיתוח) נשאר בפרודקשן.
+  evidence: הדוח, תחום 1 (#1, ‏#2, ‏#10) ותחום 2 (#2, ‏#8).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-16-admin-credit-adjustments.md`
   summary: `supabase/tests/notifications.test.ts` "hold the approved seed" compares the whole template table with a SEED list that stopped at 18 templates, so it fails on every `test:db` run (the table has 20 before 3.16, 23 with 3.14 and 3.16).
