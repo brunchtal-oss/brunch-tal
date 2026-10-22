@@ -856,15 +856,16 @@ describe("a locked session", { timeout: 30_000 }, () => {
 
     await sql(
       `insert into public.events (
-         id, concept_id, kind, starts_at, ends_at, capacity_adults,
+         id, description, concept_id, kind, starts_at, ends_at, capacity_adults,
          registration_closes_at, registration_close_overridden, status)
-       select $1, c.id, 'regular', now() - interval '3 hours',
+       select $1, $2, c.id, 'regular', now() - interval '3 hours',
          now() - interval '1 hour', 12, now() - interval '4 hours', true,
          'published'
        from public.concepts c
        where c.theme_key = 'mothers'
        limit 1`,
-      [eventId]
+      // Named test_ (story 5.20, fix 8).
+      [eventId, testName("committed_session")]
     )
     return eventId
   }

@@ -221,6 +221,40 @@ export function isPlainDate(value: string): boolean {
   return parsePlainDate(value) !== null
 }
 
+/**
+ * A plain local date ("YYYY-MM-DD") moved by whole months (negative goes
+ * back), clamped to the last day of a shorter month, as Postgres's
+ * `date + interval 'N months'` (31.05 + 9 months = 28.02 or 29.02). For the
+ * input's min/max only; the database decides (AD-8). null for a bad date.
+ */
+export function addMonthsToPlainDate(
+  date: string,
+  months: number
+): string | null {
+  const parsed = parsePlainDate(date)
+  if (!parsed || !Number.isInteger(months)) return null
+  const index = parsed.year * 12 + (parsed.month - 1) + months
+  const year = Math.floor(index / 12)
+  const month = index - year * 12 + 1
+  const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate()
+  const day = Math.min(parsed.day, lastDay)
+  const pad = (n: number, width = 2) => String(n).padStart(width, "0")
+  return `${pad(year, 4)}-${pad(month)}-${pad(day)}`
+}
+
+/**
+ * The range a baby's birth date may take on a local day (user decision
+ * 2026-10-22): from 2 years back to 9 months ahead, the same bounds as
+ * private.birth_date_allowed. For the date input's min/max.
+ */
+export function birthDateRange(
+  today: string
+): { min: string; max: string } | null {
+  const min = addMonthsToPlainDate(today, -24)
+  const max = addMonthsToPlainDate(today, 9)
+  return min && max ? { min, max } : null
+}
+
 function parsePlainDate(date: string) {
   if (!PLAIN_DATE.test(date)) return null
   const [year, month, day] = date.split("-").map(Number)

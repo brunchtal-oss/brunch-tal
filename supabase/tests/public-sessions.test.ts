@@ -148,3 +148,30 @@ describe("public session columns as anon", () => {
     })
   })
 })
+
+// Story 5.20: events.capacity_adults only through admin RPCs; every other
+// column stays readable (column grants).
+describe("events.capacity_adults", () => {
+  it("is refused to anon and to a signed-in user; other columns still read", async () => {
+    await inRollback(async (db) => {
+      const published = await insertEvent(db, "published")
+      for (const role of ["anon", "authenticated"]) {
+        await db.query("savepoint role_check")
+        await db.query(`set local role ${role}`)
+        await expect(
+          db.query("select capacity_adults from public.events where id = $1", [
+            published,
+          ])
+        ).rejects.toMatchObject({ code: "42501" })
+        await db.query("rollback to savepoint role_check")
+        await db.query(`set local role ${role}`)
+        const { rows } = await db.query(
+          "select id, starts_at, status from public.events where id = $1",
+          [published]
+        )
+        expect(rows).toHaveLength(1)
+        await db.query("reset role")
+      }
+    })
+  })
+})

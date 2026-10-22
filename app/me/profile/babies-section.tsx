@@ -17,7 +17,7 @@ import {
   type ErrorCode,
   type ErrorDetail,
 } from "@/lib/errors"
-import { babyAge, formatFullDate } from "@/lib/time"
+import { babyAge, birthDateRange, formatFullDate } from "@/lib/time"
 
 import { addBaby, deleteBaby, updateBaby } from "./actions"
 import { FormButtons } from "./details-section"
@@ -290,6 +290,8 @@ function BabyForm({
   const dateError = field === "birth_date" ? error : null
   const nameId = `babyName-${id}`
   const dateId = `birthDate-${id}`
+  // 2 years back to 9 months ahead (story 5.20); the database decides.
+  const range = birthDateRange(today)
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-6" noValidate>
@@ -320,7 +322,8 @@ function BabyForm({
           name="birthDate"
           type="date"
           defaultValue={baby?.birthDate ?? ""}
-          max={today}
+          min={range?.min}
+          max={range?.max}
           required
           aria-required
           aria-invalid={dateError ? true : undefined}
@@ -330,7 +333,7 @@ function BabyForm({
         {dateError && (
           <FieldError id={`${dateId}-error`}>
             {dateError.code === "INVALID_INPUT"
-              ? copy.birthDateFuture
+              ? copy.birthDateRange
               : errorMessage(dateError.code)}
           </FieldError>
         )}

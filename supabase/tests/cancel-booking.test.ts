@@ -1014,9 +1014,9 @@ describe(
       }
       await sql(
         `insert into public.events (
-         id, concept_id, kind, starts_at, ends_at, capacity_adults,
+         id, description, concept_id, kind, starts_at, ends_at, capacity_adults,
          registration_closes_at, registration_close_overridden, status)
-       select $1, c.id, 'regular',
+       select $1, $2, c.id, 'regular',
          ((now() at time zone 'Asia/Jerusalem')::date + 5 + time '10:00') at time zone 'Asia/Jerusalem',
          ((now() at time zone 'Asia/Jerusalem')::date + 5 + time '12:00') at time zone 'Asia/Jerusalem',
          1,
@@ -1025,7 +1025,8 @@ describe(
        from public.concepts c
        where c.theme_key = 'mothers'
        limit 1`,
-        [eventId]
+        // Named test_ (story 5.20, fix 8).
+        [eventId, testName("committed_session")]
       )
 
       // A holds the only place (committed).

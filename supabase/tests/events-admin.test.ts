@@ -518,6 +518,61 @@ describe("duplicating", () => {
   })
 })
 
+describe("duplicating an archived concept (story 5.20)", () => {
+  it("is refused with CONCEPT_ARCHIVED and writes nothing; restored, it duplicates", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const source = await create(db, f, {
+        concept_id: f.concepts.grandma,
+        ...WHEN,
+      })
+      // As the owner, inside this transaction only.
+      await db.query(
+        "update public.concepts set archived_at = now() where id = $1",
+        [f.concepts.grandma]
+      )
+      const count = async () => {
+        const { rows } = await db.query(
+          "select count(*)::int as n from public.events where concept_id = $1",
+          [f.concepts.grandma]
+        )
+        return rows[0].n as number
+      }
+      const before = await count()
+      const refused = await asAdmin(db, f.admin, () =>
+        failure(db, DUPLICATE, [
+          source,
+          "2027-01-05",
+          "09:30",
+          "11:30",
+          randomUUID(),
+        ])
+      )
+      expect(refused).toMatchObject({
+        code: "P0001",
+        message: "CONCEPT_ARCHIVED",
+      })
+      expect(await count()).toBe(before)
+
+      await db.query(
+        "update public.concepts set archived_at = null where id = $1",
+        [f.concepts.grandma]
+      )
+      const copy = await asAdmin(db, f.admin, () =>
+        one(db, DUPLICATE, [
+          source,
+          "2027-01-05",
+          "09:30",
+          "11:30",
+          randomUUID(),
+        ])
+      )
+      expect(copy.event_id).not.toBe(source)
+      expect(await count()).toBe(before + 1)
+    })
+  })
+})
+
 describe("publishing", () => {
   it("draft -> published once; publishing again succeeds without a change", async () => {
     await inRollback(async (db) => {

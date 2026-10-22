@@ -853,7 +853,7 @@ describe("payer label (שם לזיהוי)", () => {
     })
   })
 
-  it("saves the trimmed label, refuses an empty one, and audits it masked", async () => {
+  it("saves the trimmed label, refuses an empty one; the label never reaches the audit", async () => {
     await inRollback(async (db) => {
       const f = await seedMoney(db)
       await asAuthenticated(db, f.admin)
@@ -884,14 +884,13 @@ describe("payer label (שם לזיהוי)", () => {
          where entity_type = 'payments' and entity_id = $1`,
         [named.payment_id]
       )
-      expect(audit.length).toBeGreaterThanOrEqual(2)
+      // Story 5.20 (fix 6): only the core's insert row; the wrapper's
+      // payer-label row is no longer written.
+      expect(audit).toHaveLength(1)
       for (const row of audit) {
-        expect(row.before).not.toContain("מיכל")
-        expect(row.after).not.toContain("מיכל")
+        expect(row.before ?? "").not.toContain("מיכל")
+        expect(row.after ?? "").not.toContain("מיכל")
       }
-      expect(
-        audit.some((row) => JSON.parse(row.after).payer_label === "<changed>")
-      ).toBe(true)
     })
   })
 

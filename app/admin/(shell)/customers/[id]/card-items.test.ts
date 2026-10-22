@@ -388,6 +388,32 @@ describe("the other parts", () => {
     ).toBeNull()
   })
 
+  it("story 5.20: a moved booking says where it went", () => {
+    const row = {
+      booking_id: "b3",
+      event_id: "ev3",
+      concept_name: "אמהות",
+      starts_at: MON_12,
+      status: "cancelled" as const,
+      party_size: 1,
+      created_at: "2026-10-01T07:00:00Z",
+      credit_id: null,
+      // 20.10 in Jerusalem.
+      moved_to_starts_at: "2026-10-20T07:00:00Z",
+    }
+    expect(toBookingItem(row, "c1")).toMatchObject({
+      status: "הועברה ל-20.10",
+      tone: "pending",
+    })
+    expect(
+      toBookingItem({ ...row, moved_to_starts_at: null }, "c1")
+    ).toMatchObject({ status: copy.bookingStatus.cancelled, tone: "expired" })
+    // Only a cancelled row is a move.
+    expect(toBookingItem({ ...row, status: "confirmed" }, "c1").status).toBe(
+      copy.bookingStatus.confirmed
+    )
+  })
+
   it("a purchase: the product, then amount, method and day", () => {
     expect(
       toPaymentLine({

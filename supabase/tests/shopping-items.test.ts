@@ -143,7 +143,8 @@ describe("shopping items", { timeout: 30_000 }, () => {
       ])
       expect(list.map((i) => i.id)).toEqual([first, ...r.item_ids])
       expect(list.every((i) => i.quantity === null && !i.bought)).toBe(true)
-      expect(await auditCount(db, id, "admin_add_shopping_items")).toBe(4)
+      // Story 5.20 (fix 6): the shopping list writes no audit row.
+      expect(await auditCount(db, id, "admin_add_shopping_items")).toBe(0)
     })
   })
 
@@ -249,12 +250,11 @@ describe("shopping items", { timeout: 30_000 }, () => {
         ["b", true],
         ["c", false],
       ])
-      expect(await auditCount(db, id, "admin_set_shopping_item_bought")).toBe(1)
+      expect(await auditCount(db, id, "admin_set_shopping_item_bought")).toBe(0)
 
       await call(db, f, UPDATE, [b, "b", " 2 ", randomUUID()])
-      expect(await auditCount(db, id, "admin_update_shopping_item")).toBe(0)
       await call(db, f, UPDATE, [a, "א", null, randomUUID()])
-      expect(await auditCount(db, id, "admin_update_shopping_item")).toBe(1)
+      expect(await auditCount(db, id, "admin_update_shopping_item")).toBe(0)
       // The edit keeps the place and the mark.
       expect((await items(db, f, id)).map((i) => i.body)).toEqual([
         "א",
@@ -274,9 +274,9 @@ describe("shopping items", { timeout: 30_000 }, () => {
       const b = await add(db, f, id, "b")
       await call(db, f, ORDER, [[b, a]])
       expect((await items(db, f, id)).map((i) => i.id)).toEqual([b, a])
-      expect(await auditCount(db, id, "admin_set_shopping_item_order")).toBe(1)
       await call(db, f, ORDER, [[b, a]])
-      expect(await auditCount(db, id, "admin_set_shopping_item_order")).toBe(1)
+      expect((await items(db, f, id)).map((i) => i.id)).toEqual([b, a])
+      expect(await auditCount(db, id, "admin_set_shopping_item_order")).toBe(0)
 
       const c = await add(db, f, id, "c")
       expect(await fails(db, f, ORDER, [[a, b]])).toBe("CONCURRENT_CHANGE")
@@ -294,7 +294,7 @@ describe("shopping items", { timeout: 30_000 }, () => {
     })
   })
 
-  it("deletes an item with its row in the audit", async () => {
+  it("deletes an item (story 5.20: no audit row)", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)
       const id = await session(db, f, "2026-10-22")
@@ -304,13 +304,7 @@ describe("shopping items", { timeout: 30_000 }, () => {
       expect(await call(db, f, DELETE, [a, key])).toEqual({ item_id: a })
       expect(await call(db, f, DELETE, [a, key])).toEqual({ item_id: a })
       expect((await items(db, f, id)).map((i) => i.body)).toEqual(["b"])
-      const { rows } = await db.query(
-        `select before from public.audit_log
-         where event_id = $1 and action = 'admin_delete_shopping_item'`,
-        [id]
-      )
-      expect(rows).toHaveLength(1)
-      expect(rows[0].before).toMatchObject({ id: a, body: "a", quantity: "3" })
+      expect(await auditCount(db, id, "admin_delete_shopping_item")).toBe(0)
       expect(await fails(db, f, DELETE, [a, randomUUID()])).toBe("NOT_FOUND")
     })
   })
@@ -351,7 +345,7 @@ describe("shopping items", { timeout: 30_000 }, () => {
     })
   })
 
-  it("the audit holds before and after of bought, update and order", async () => {
+  it("story 5.20 (fix 6): bought, update and order write no audit row", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)
       const id = await session(db, f, "2026-10-22")
@@ -371,17 +365,8 @@ describe("shopping items", { timeout: 30_000 }, () => {
          order by action`,
         [id]
       )
-      expect(rows.map((r) => r.action)).toEqual([
-        "admin_set_shopping_item_bought",
-        "admin_set_shopping_item_order",
-        "admin_update_shopping_item",
-      ])
-      expect(rows[0].before).toMatchObject({ bought: false })
-      expect(rows[0].after).toMatchObject({ bought: true })
-      expect(rows[1].before).toEqual({ shopping_order: [a, b] })
-      expect(rows[1].after).toEqual({ shopping_order: [b, a] })
-      expect(rows[2].before).toMatchObject({ body: "a", quantity: "1" })
-      expect(rows[2].after).toMatchObject({ body: "א", quantity: "2" })
+      // Story 5.20 (fix 6): none of them writes an audit row any more.
+      expect(rows).toEqual([])
     })
   })
 

@@ -28,6 +28,11 @@ const CONSENT = "select public.set_photo_consent($1) as r"
 const PERSONAL_CONSENT = "select public.set_personal_photo_consent($1) as r"
 const TOMORROW = "((now() at time zone 'Asia/Jerusalem')::date + 1)"
 const TODAY = "((now() at time zone 'Asia/Jerusalem')::date)"
+// Story 5.20 (user decision 2026-10-22): 2 years back to 9 months ahead.
+const NINE_MONTHS = `((${TODAY} + interval '9 months')::date)`
+const AFTER_NINE_MONTHS = `((${TODAY} + interval '9 months')::date + 1)`
+const TWO_YEARS_BACK = `((${TODAY} - interval '2 years')::date)`
+const BEFORE_TWO_YEARS = `((${TODAY} - interval '2 years')::date - 1)`
 
 // As the owner: an active customer (or not activated) with `babies` babies.
 async function seedCustomer(
@@ -81,14 +86,14 @@ async function babyCount(db: Db, customerId: string): Promise<number> {
 }
 
 describe("babies guard", () => {
-  it("refuses a birth date after the local today, on insert and update", async () => {
+  it("story 5.20: refuses a birth date more than 9 months ahead or 2 years back, on insert and on a date change", async () => {
     await inRollback(async (db) => {
       const c = await seedCustomer(db)
       await asAuthenticated(db, c.id)
 
       const onInsert = await raised(
         db,
-        `insert into public.babies (name, birth_date) values ($1, ${TOMORROW})`,
+        `insert into public.babies (name, birth_date) values ($1, ${AFTER_NINE_MONTHS})`,
         [testName("future")]
       )
       expect(onInsert).toEqual({
@@ -98,11 +103,33 @@ describe("babies guard", () => {
       })
       const onUpdate = await raised(
         db,
-        `update public.babies set birth_date = ${TOMORROW} where id = $1`,
+        `update public.babies set birth_date = ${BEFORE_TWO_YEARS} where id = $1`,
         [c.babyIds[0]]
       )
       expect(onUpdate?.message).toBe("INVALID_INPUT")
       expect(onUpdate?.detail).toEqual({ field: "birth_date" })
+      expect(
+        (
+          await raised(
+            db,
+            `insert into public.babies (name, birth_date) values ($1, ${BEFORE_TWO_YEARS})`,
+            [testName("old")]
+          )
+        )?.detail
+      ).toEqual({ field: "birth_date" })
+
+      // The edges and a baby still to be born are allowed.
+      for (const [label, date] of [
+        ["tomorrow", TOMORROW],
+        ["nine_months", NINE_MONTHS],
+        ["two_years", TWO_YEARS_BACK],
+      ]) {
+        const { rows } = await db.query(
+          `insert into public.babies (name, birth_date) values ($1, ${date}) returning customer_id`,
+          [testName(label)]
+        )
+        expect(rows, label).toEqual([{ customer_id: c.id }])
+      }
 
       // Born today is allowed (age 0).
       const { rows } = await db.query(
@@ -110,6 +137,40 @@ describe("babies guard", () => {
         [testName("today")]
       )
       expect(rows).toEqual([{ customer_id: c.id }])
+    })
+  })
+
+  it("story 5.20: an old row out of range keeps its date when only the name changes", async () => {
+    await inRollback(async (db) => {
+      const c = await seedCustomer(db)
+      // Written before the rule (the trigger off for this update only).
+      await db.query("set local session_replication_role = replica")
+      await db.query(
+        `update public.babies set birth_date = ${BEFORE_TWO_YEARS} where id = $1`,
+        [c.babyIds[0]]
+      )
+      await db.query("set local session_replication_role = origin")
+      await asAuthenticated(db, c.id)
+      const { rows } = await db.query(
+        "update public.babies set name = $2 where id = $1 returning name",
+        [c.babyIds[0], testName("renamed")]
+      )
+      expect(rows).toEqual([{ name: testName("renamed") }])
+      // A day further out of range is refused; the boundary itself (exactly
+      // two years back) is accepted.
+      const moved = await raised(
+        db,
+        `update public.babies set birth_date = birth_date - 1 where id = $1`,
+        [c.babyIds[0]]
+      )
+      expect(moved?.detail).toEqual({ field: "birth_date" })
+      const { rows: edge } = await db.query(
+        `update public.babies set birth_date = (${TODAY} - interval '2 years')::date
+         where id = $1
+         returning birth_date = (${TODAY} - interval '2 years')::date as ok`,
+        [c.babyIds[0]]
+      )
+      expect(edge).toEqual([{ ok: true }])
     })
   })
 

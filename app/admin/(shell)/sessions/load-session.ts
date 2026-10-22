@@ -1,8 +1,9 @@
-import type {
-  EventKind,
-  EventStatus,
-  SessionImage,
-  SessionRow,
+import {
+  capacityById,
+  type EventKind,
+  type EventStatus,
+  type SessionImage,
+  type SessionRow,
 } from "./session-draft"
 
 // The columns the session screens read (public.events, admin RLS) with the
@@ -10,19 +11,32 @@ import type {
 // admin reads every media_assets row) and its eligible products (story 3.18,
 // event_products, admin RLS). Not the capacity: story 5.20 takes
 // events.capacity_adults away from a direct read (customers must never see
-// it), so the admin reads it from an admin RPC (admin_get_event_details).
+// it), so the admin reads it from admin RPCs (admin_get_event_details,
+// admin_list_session_occupancy).
 export const SESSION_COLUMNS =
   "id, kind, description, starts_at, ends_at, registration_closes_at, registration_close_overridden, status, display_price_agorot, concepts(name), image:media_assets!events_image_id_fkey(id, alt_text, focus_x, focus_y), event_products(product_id)"
-
-// The sessions list still reads the capacity with the rows: no admin RPC
-// returns it for a list yet. Story 5.20 (B) moves it to
-// admin_list_session_occupancy before revoking the column.
-export const SESSIONS_LIST_COLUMNS =
-  `${SESSION_COLUMNS}, capacity_adults` as const
 
 // The generated row types its checked text columns as string; the table's
 // checks guarantee the narrower values. The concept is never missing
 // (concept_id is a required FK). The capacity comes from an admin RPC.
+type ListedRow = Parameters<typeof toSessionRow>[0]
+
+// The sessions list (story 5.20): the rows with their capacity from
+// admin_list_session_occupancy's answer (capacity_adults is never read
+// from events directly). A listed session missing from the answer throws,
+// as a missing occupancy does: a guessed capacity would show it full.
+export function sessionRowsFrom(
+  rows: ListedRow[],
+  occupancy: unknown
+): SessionRow[] {
+  const capacity = capacityById(occupancy)
+  return rows.map((row) => {
+    const value = capacity[row.id]
+    if (value === undefined) throw new Error("sessions capacity missing")
+    return toSessionRow(row, value)
+  })
+}
+
 export function toSessionRow(
   row: {
     id: string

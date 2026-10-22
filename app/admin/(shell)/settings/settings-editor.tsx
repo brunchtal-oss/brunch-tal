@@ -205,6 +205,7 @@ export function SettingsEditor({ row }: { row: SettingsRow }) {
       <Group id="settings-alerts" title={copy.groups.alerts}>
         {numberRow("adminExpiring")}
         {numberRow("customerExpiring")}
+        {numberRow("creditExpiring")}
         {numberRow("lastPlaces")}
         {numberRow("inactivity")}
         {numberRow("duplicateWindow")}

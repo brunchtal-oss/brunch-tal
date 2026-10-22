@@ -2,6 +2,7 @@ import "server-only"
 
 import webpush from "web-push"
 
+import { isAllowedPushEndpoint } from "@/lib/push-endpoint"
 import { callRpc } from "@/lib/rpc"
 
 import { createServiceClient } from "./service-client"
@@ -20,7 +21,7 @@ const RUN_BUDGET_MS = 45_000
 // it is old news (the notification center still has it).
 const TTL_SECONDS = 24 * 60 * 60
 const SEND_TIMEOUT_MS = 10_000
-// Web Push carries about 4KB; a broadcast may be 2000 characters.
+// Web Push carries about 4KB; a notification body may be 2000 characters.
 export const PUSH_BODY_MAX = 300
 
 export type VapidConfig = {
@@ -145,6 +146,11 @@ async function sendJob(
   }
   const outcomes = await Promise.all(
     job.subscriptions.map(async (sub) => {
+      // Story 5.20: only an endpoint of a known push service is sent to; a
+      // row saved before the rule is gone (deleted, as a 404/410).
+      if (!isAllowedPushEndpoint(sub.endpoint)) {
+        return { id: sub.id, outcome: { kind: "gone" } as Outcome }
+      }
       let outcome: Outcome
       try {
         outcome = outcomeOf(

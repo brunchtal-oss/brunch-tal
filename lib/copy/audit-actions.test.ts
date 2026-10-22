@@ -6,7 +6,6 @@ import { describe, expect, it } from "vitest"
 import { adminCopy } from "@/lib/copy/admin"
 
 import {
-  HIDDEN_AUDIT_ACTIONS,
   SHOWN_AUDIT_ACTIONS,
   auditRuleOf,
   shownPairs,
@@ -14,9 +13,10 @@ import {
   type AuditRelatedRow,
   type AuditRow,
 } from "./audit-actions"
+import { RETIRED_AUDIT_ACTIONS } from "./retired-audit-actions"
 
 // The audit log's whitelist (spec-audit-log-concise): every action written
-// by private.audit is shown or hidden, every shown one has a label and a
+// by private.audit is shown or retired, every shown one has a label and a
 // pair, and each result sentence matches the spec's matrix.
 
 const actions = adminCopy.audit.actions
@@ -62,19 +62,6 @@ function result(extra: Partial<AuditRow>): string | null {
   return auditRuleOf(r.action, r.entity_type)?.result?.(r) ?? null
 }
 
-// Written only by functions that were dropped or rewritten since (topics,
-// the single shopping item, one-time migrations): old migration files still
-// contain them, but no live function writes them any more.
-const RETIRED_AUDIT_ACTIONS = [
-  "admin_add_note_topic",
-  "admin_rename_note_topic",
-  "admin_delete_note_topic",
-  "admin_set_note_topic_order",
-  "admin_add_shopping_item",
-  "refresh_returned_entitlements",
-  "migrate_identity_match",
-]
-
 // The actions private.audit is called with as a literal in the migrations.
 function auditedActions(): string[] {
   const dir = fileURLToPath(
@@ -111,29 +98,9 @@ describe("the whitelist", () => {
     expect(new Set(pairs).size).toBe(pairs.length)
   })
 
-  it("shown and hidden never overlap; hidden actions have no label", () => {
-    for (const action of HIDDEN_AUDIT_ACTIONS) {
-      expect(Object.hasOwn(SHOWN_AUDIT_ACTIONS, action), action).toBe(false)
-      expect(Object.hasOwn(actions, action), action).toBe(false)
-    }
-    expect(HIDDEN_AUDIT_ACTIONS).toEqual(
-      expect.arrayContaining([
-        "admin_approve_payment",
-        "admin_set_content_draft",
-        "admin_add_work_task",
-        "admin_add_note",
-        "admin_create_media",
-        "admin_set_event_image",
-        "set_booking_guest_details",
-        "claim_join",
-      ])
-    )
-  })
-
-  it("every action written by private.audit is shown or hidden (a new one needs a decision)", () => {
+  it("every action written by private.audit is shown or retired (a new one needs a rule)", () => {
     const decided = new Set([
       ...Object.keys(SHOWN_AUDIT_ACTIONS),
-      ...HIDDEN_AUDIT_ACTIONS,
       ...RETIRED_AUDIT_ACTIONS,
     ])
     const found = auditedActions()
@@ -153,11 +120,28 @@ describe("the whitelist", () => {
     }
   })
 
-  it("retired actions are neither shown nor hidden", () => {
+  it("retired actions are not shown and have no label", () => {
     for (const action of RETIRED_AUDIT_ACTIONS) {
       expect(Object.hasOwn(SHOWN_AUDIT_ACTIONS, action), action).toBe(false)
-      expect(HIDDEN_AUDIT_ACTIONS, action).not.toContain(action)
+      expect(Object.hasOwn(actions, action), action).toBe(false)
     }
+    expect(new Set(RETIRED_AUDIT_ACTIONS).size).toBe(
+      RETIRED_AUDIT_ACTIONS.length
+    )
+    // Story 5.20 (fix 6): the actions that were recorded but never listed.
+    expect(RETIRED_AUDIT_ACTIONS).toEqual(
+      expect.arrayContaining([
+        "admin_approve_payment",
+        "admin_set_content_draft",
+        "admin_add_work_task",
+        "admin_add_note",
+        "admin_create_media",
+        "media_hidden",
+        "set_booking_guest_details",
+        "claim_join",
+        "join_begin",
+      ])
+    )
   })
 
   it("every label in adminCopy.audit.actions is a shown action", () => {

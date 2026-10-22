@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest"
 
 import {
   SESSION_COLUMNS,
-  SESSIONS_LIST_COLUMNS,
   isReadOnlySession,
+  sessionRowsFrom,
   sessionsListFilter,
   toSessionRow,
 } from "./load-session"
@@ -94,8 +94,46 @@ describe("toSessionRow capacity", () => {
     expect(toSessionRow(base, 14).capacity_adults).toBe(14)
   })
 
-  it("the edit page's columns do not read the capacity", () => {
+  it("the session screens' columns do not read the capacity (story 5.20)", () => {
     expect(SESSION_COLUMNS).not.toContain("capacity_adults")
-    expect(SESSIONS_LIST_COLUMNS).toContain("capacity_adults")
+  })
+})
+
+describe("sessionRowsFrom (story 5.20)", () => {
+  const row = (id: string) => ({
+    id,
+    kind: "regular",
+    description: null,
+    starts_at: "2026-11-01T08:00:00Z",
+    ends_at: "2026-11-01T10:00:00Z",
+    registration_closes_at: "2026-10-31T18:00:00Z",
+    registration_close_overridden: false,
+    status: "published",
+    display_price_agorot: null,
+    concepts: { name: "Greek" },
+  })
+
+  it("takes the capacity from the RPC's capacity, not occupied", () => {
+    const rows = sessionRowsFrom(
+      [row("a"), row("b")],
+      [
+        { event_id: "a", occupied: 3, capacity: 12 },
+        { event_id: "b", occupied: 0, capacity: 14 },
+      ]
+    )
+    expect(rows.map((r) => [r.id, r.capacity_adults])).toEqual([
+      ["a", 12],
+      ["b", 14],
+    ])
+  })
+
+  it("a listed session missing from the answer throws", () => {
+    expect(() =>
+      sessionRowsFrom([row("a")], [{ event_id: "b", occupied: 0, capacity: 9 }])
+    ).toThrow("sessions capacity missing")
+    expect(() =>
+      sessionRowsFrom([row("a")], [{ event_id: "a", occupied: 2 }])
+    ).toThrow("sessions capacity missing")
+    expect(sessionRowsFrom([], [])).toEqual([])
   })
 })

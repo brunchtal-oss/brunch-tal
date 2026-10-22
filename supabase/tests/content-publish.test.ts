@@ -114,7 +114,8 @@ describe("content publish", () => {
         published_version: 0,
         published_at: null,
       })
-      // The hero (5.1), then the intro and contact sections (5.2), in order.
+      // The hero (5.1), the promo banner (fix 15), then the intro and
+      // contact sections (5.2), in order.
       expect(page.sections).toEqual([
         expect.objectContaining({
           key: "hero",
@@ -123,6 +124,11 @@ describe("content publish", () => {
           hidden: false,
           draft_content: null,
           published_content: null,
+        }),
+        expect.objectContaining({
+          key: "promo_banner",
+          kind: "promo_banner",
+          sort_order: 1,
         }),
         expect.objectContaining({
           key: "intro",
@@ -159,7 +165,8 @@ describe("content publish", () => {
       expect(result).toMatchObject({ published_version: 1, changed: 1 })
       expect(await anonHero(db)).toEqual([{ published_content: HERO }])
 
-      // Audited: the draft and the publish of the section.
+      // Audited: the publish of the section (story 5.20: the draft step is
+      // no longer written).
       const { rows } = await db.query(
         `select a.action from public.audit_log a
          join public.content_sections s on s.id = a.entity_id
@@ -170,7 +177,6 @@ describe("content publish", () => {
       )
       expect(rows.map((r) => r.action).sort()).toEqual([
         "admin_publish_content",
-        "admin_set_content_draft",
       ])
     })
   })

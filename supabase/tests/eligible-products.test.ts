@@ -839,3 +839,194 @@ describe("eligible products", { timeout: 60_000 }, () => {
     })
   })
 })
+
+// Story 5.20 (user decision 2026-10-22): a product marked eligible on a
+// session still ahead keeps its event kind; and a credit or a card is only
+// offered a session that accepts its product.
+describe(
+  "story 5.20: product kind and product-aware candidates",
+  { timeout: 60_000 },
+  () => {
+    const UPDATE_PRODUCT =
+      "select public.admin_update_product($1, $2::jsonb, $3) as r"
+    const PREVIEW_CANCEL = "select public.preview_admin_cancel_event($1) as r"
+
+    async function updateProduct(
+      db: Db,
+      f: Fixture,
+      productId: string,
+      changes: Record<string, unknown>
+    ) {
+      return as(db, f.admin, () =>
+        queryError(db, UPDATE_PRODUCT, [
+          productId,
+          JSON.stringify(changes),
+          randomUUID(),
+        ])
+      )
+    }
+
+    async function kindOf(db: Db, productId: string): Promise<string> {
+      const { rows } = await db.query(
+        "select eligible_event_kind from public.products where id = $1",
+        [productId]
+      )
+      return rows[0].eligible_event_kind
+    }
+
+    it("kind change while marked on a session ahead: PRODUCT_IN_USE, nothing changed; another field still saves", async () => {
+      await inRollback(async (db) => {
+        const f = await seed(db)
+        const event = await insertEvent(db, f, { dayOffset: 3 })
+        await mark(db, f, event, [f.holiday])
+
+        expect(
+          await updateProduct(db, f, f.holiday, {
+            eligible_event_kind: "couple",
+          })
+        ).toEqual({ code: "P0001", message: "PRODUCT_IN_USE" })
+        expect(await kindOf(db, f.holiday)).toBe("regular")
+
+        // The name is not the kind: allowed while in use.
+        expect(
+          await updateProduct(db, f, f.holiday, { name: testName("holiday_2") })
+        ).toBeNull()
+        const { rows } = await db.query(
+          "select name from public.products where id = $1",
+          [f.holiday]
+        )
+        expect(rows[0].name).toBe(testName("holiday_2"))
+      })
+    })
+
+    it("kind change when marked only on a past or a cancelled session: saved", async () => {
+      await inRollback(async (db) => {
+        const f = await seed(db)
+        const past = await insertEvent(db, f, { dayOffset: 3 })
+        const cancelled = await insertEvent(db, f, { dayOffset: 4 })
+        await mark(db, f, past, [f.holiday])
+        await mark(db, f, cancelled, [f.holiday])
+        // As the owner: one session is over, the other cancelled.
+        await db.query(
+          `update public.events
+         set starts_at = now() - interval '3 days',
+             ends_at = now() - interval '3 days' + interval '2 hours',
+             registration_closes_at = now() - interval '3 days',
+             status = 'completed'
+         where id = $1`,
+          [past]
+        )
+        await db.query(
+          "update public.events set status = 'cancelled' where id = $1",
+          [cancelled]
+        )
+
+        expect(
+          await updateProduct(db, f, f.holiday, {
+            eligible_event_kind: "couple",
+          })
+        ).toBeNull()
+        expect(await kindOf(db, f.holiday)).toBe("couple")
+      })
+    })
+
+    it("duplicating a past session whose product changed kind: the copy leaves that product out", async () => {
+      await inRollback(async (db) => {
+        const f = await seed(db)
+        const past = await insertEvent(db, f, { dayOffset: 3 })
+        await mark(db, f, past, [f.holiday, f.pinned])
+        await db.query(
+          `update public.events
+         set starts_at = now() - interval '3 days',
+             ends_at = now() - interval '3 days' + interval '2 hours',
+             registration_closes_at = now() - interval '3 days',
+             status = 'completed'
+         where id = $1`,
+          [past]
+        )
+        expect(
+          await updateProduct(db, f, f.holiday, {
+            eligible_event_kind: "couple",
+          })
+        ).toBeNull()
+
+        const copy = await as(db, f.admin, async () => {
+          const { rows } = await db.query(DUPLICATE, [
+            past,
+            "2099-05-04",
+            "10:00",
+            "12:00",
+            randomUUID(),
+          ])
+          return rows[0].r.event_id as string
+        })
+        const { rows } = await db.query(
+          "select product_id from public.event_products where event_id = $1",
+          [copy]
+        )
+        expect(rows.map((r) => r.product_id)).toEqual([f.pinned])
+      })
+    })
+
+    it("credit_session_matches: a session that does not accept the credit's source product is not a candidate", async () => {
+      await inRollback(async (db) => {
+        const f = await seed(db)
+        const entitlement = await card(db, f)
+        const past = await insertEvent(db, f, {
+          dayOffset: -3,
+          status: "completed",
+        })
+        const target = await insertEvent(db, f, { dayOffset: 5 })
+        const credit = await insertCredit(db, f, entitlement, past)
+        const matches = async () => {
+          const { rows } = await db.query(
+            `select private.credit_session_matches(c, e) as ok
+           from public.cancellation_credits c, public.events e
+           where c.id = $1 and e.id = $2`,
+            [credit, target]
+          )
+          return rows[0].ok as boolean
+        }
+
+        // No product marked: every fitting product.
+        expect(await matches()).toBe(true)
+        await mark(db, f, target, [f.holiday])
+        expect(await matches()).toBe(false)
+        await mark(db, f, target, [f.holiday, f.card])
+        expect(await matches()).toBe(true)
+      })
+    })
+
+    it("plan_admin_cancel_event: a card booking is at risk when the only other session does not accept the card's product", async () => {
+      await inRollback(async (db) => {
+        const f = await seed(db)
+        await card(db, f)
+        const cancelled = await insertEvent(db, f, { dayOffset: 3 })
+        const other = await insertEvent(db, f, { dayOffset: 9 })
+        await book(db, f, cancelled)
+        const atRisk = async () =>
+          as(db, f.admin, async () => {
+            const { rows } = await db.query(PREVIEW_CANCEL, [cancelled])
+            return rows[0].r.at_risk as {
+              customer_id: string
+              reason: string
+            }[]
+          })
+
+        // The other session accepts the card: nothing at risk.
+        expect(await atRisk()).toEqual([])
+
+        await mark(db, f, other, [f.holiday])
+        expect(await atRisk()).toEqual([
+          expect.objectContaining({
+            customer_id: f.customerA,
+            reason: "no_session_before_expiry",
+          }),
+        ])
+
+        await mark(db, f, other, [f.holiday, f.card])
+        expect(await atRisk()).toEqual([])
+      })
+    })
+  }
+)

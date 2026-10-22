@@ -835,3 +835,84 @@ describe("grants and RLS", { timeout: 60_000 }, () => {
     })
   })
 })
+
+// Story 5.20 (user decision 2026-10-22): reopening registration notifies the
+// waitlist, once, merged with a capacity raise in the same save.
+describe("admin_update_event reopens registration", { timeout: 60_000 }, () => {
+  // A local "YYYY-MM-DDTHH:MM" one day from now (before the session).
+  const REOPEN_AT = `to_char((now() + interval '1 day') at time zone 'Asia/Jerusalem', 'YYYY-MM-DD"T"HH24:MI')`
+
+  async function closedWithWaiter(db: Db, f: Fixture, free: boolean) {
+    const event = await insertEvent(db, f)
+    const a = await book(db, f.customerA, event)
+    await join(db, f.customerC, event)
+    await db.query(
+      "update public.events set registration_closes_at = now() - interval '1 minute' where id = $1",
+      [event]
+    )
+    if (free) {
+      // A place frees after the close: nobody is told yet.
+      await as(db, f.admin, () =>
+        db.query(ADMIN_CANCEL, [a, true, randomUUID()])
+      )
+      expect(await spots(db, f.customerC)).toEqual([])
+    }
+    return event
+  }
+
+  async function reopen(db: Db, f: Fixture, event: string, extra = {}) {
+    const { rows } = await db.query(`select ${REOPEN_AT} as at`)
+    await as(db, f.admin, () =>
+      db.query(UPDATE_EVENT, [
+        event,
+        JSON.stringify({ registration_closes_local: rows[0].at, ...extra }),
+        randomUUID(),
+      ])
+    )
+  }
+
+  it("closed -> open with a free place: the waiter is told once", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const event = await closedWithWaiter(db, f, true)
+      await reopen(db, f, event)
+      expect(await cycleOf(db, event)).toBe(1)
+      expect((await spots(db, f.customerC)).map((s) => s.dedupe_key)).toEqual([
+        `waitlist_spot:${f.customerC}:${event}:1:1`,
+      ])
+    })
+  })
+
+  it("a capacity raise in the same save does not notify twice", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const event = await closedWithWaiter(db, f, false)
+      await reopen(db, f, event, { capacity_adults: 2 })
+      expect(await cycleOf(db, event)).toBe(1)
+      expect(await spots(db, f.customerC)).toHaveLength(1)
+    })
+  })
+
+  it("reopened but full: nothing (notify_waitlist checks the room)", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const event = await closedWithWaiter(db, f, false)
+      await reopen(db, f, event)
+      expect(await cycleOf(db, event)).toBe(0)
+      expect(await spots(db, f.customerC)).toEqual([])
+    })
+  })
+
+  it("an open registration moved later is not a reopening", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const event = await insertEvent(db, f, { capacity: 2 })
+      await book(db, f.customerA, event)
+      await book(db, f.customerB, event)
+      await join(db, f.customerC, event)
+      await reopen(db, f, event)
+      expect(await cycleOf(db, event)).toBe(0)
+      expect(await spots(db, f.customerC)).toEqual([])
+    })
+  })
+})

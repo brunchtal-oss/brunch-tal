@@ -51,7 +51,7 @@ type Claimed = {
 type Fixture = { a: string; b: string; admin: string; inactive: string }
 
 function endpointOf(label: string): string {
-  return `https://push.example.test/${testName(label)}/${randomUUID()}`
+  return `https://fcm.googleapis.com/fcm/send/${testName(label)}/${randomUUID()}`
 }
 
 // As the owner: customers A and B (active), an admin and a customer whose
@@ -232,7 +232,7 @@ describe("claim_push_jobs / finish_push_job", { timeout: 30_000 }, () => {
       expect(claimed[0].subscriptions.map((s) => s.id)).toEqual([s1, s2].sort())
       expect(claimed[0].subscriptions[0]).toEqual({
         id: expect.any(String),
-        endpoint: expect.stringMatching(/^https:\/\/push\.example\.test\//),
+        endpoint: expect.stringMatching(/^https:\/\/fcm\.googleapis\.com\//),
         p256dh: KEYS.p256dh,
         auth: KEYS.auth,
       })
@@ -667,27 +667,37 @@ describe("register / unregister", { timeout: 30_000 }, () => {
   it.each([
     ["http endpoint", "http://push.example.test/x", KEYS, "ios"],
     ["empty endpoint", "", KEYS, "ios"],
-    ["endpoint with a space", "https://push.example.test/a b", KEYS, "ios"],
     [
-      "long endpoint",
-      `https://push.example.test/${"a".repeat(1000)}`,
+      "endpoint with a space",
+      "https://fcm.googleapis.com/fcm/send/a b",
       KEYS,
       "ios",
     ],
-    ["no keys", "https://push.example.test/k", null, "ios"],
+    [
+      "long endpoint",
+      `https://fcm.googleapis.com/fcm/send/${"a".repeat(1000)}`,
+      KEYS,
+      "ios",
+    ],
+    ["no keys", "https://fcm.googleapis.com/fcm/send/k", null, "ios"],
     [
       "keys not strings",
-      "https://push.example.test/k",
+      "https://fcm.googleapis.com/fcm/send/k",
       { p256dh: 1, auth: "a" },
       "ios",
     ],
     [
       "bad key characters",
-      "https://push.example.test/k",
+      "https://fcm.googleapis.com/fcm/send/k",
       { p256dh: "a b", auth: "a" },
       "ios",
     ],
-    ["unknown platform", "https://push.example.test/k", KEYS, "windows"],
+    [
+      "unknown platform",
+      "https://fcm.googleapis.com/fcm/send/k",
+      KEYS,
+      "windows",
+    ],
   ])("%s -> INVALID_INPUT", async (_label, endpoint, keys, platform) => {
     await inRollback(async (db) => {
       const f = await seed(db)
@@ -698,6 +708,63 @@ describe("register / unregister", { timeout: 30_000 }, () => {
       await db.query("reset role")
     })
   })
+
+  // Story 5.20 (user decision 2026-10-22): known push services only.
+  it("accepts the known push services, also with :443", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      await asAuthenticated(db, f.a)
+      for (const endpoint of [
+        `https://fcm.googleapis.com/fcm/send/${randomUUID()}`,
+        `https://web.push.apple.com/${randomUUID()}`,
+        `https://wns2-par02p.notify.windows.com/w/?token=${randomUUID()}`,
+        `https://updates.push.services.mozilla.com/wpush/v2/${randomUUID()}`,
+        `https://fcm.googleapis.com:443/fcm/send/${randomUUID()}`,
+      ]) {
+        const { rows } = await db.query(REGISTER, [endpoint, KEYS, "android"])
+        expect(rows[0].r, endpoint).toEqual({ registered: true })
+      }
+      await db.query("reset role")
+      expect(await subIds(db, f.a)).toHaveLength(5)
+    })
+  })
+
+  it.each([
+    ["another host", "https://evil.example.com/fcm/send/x"],
+    [
+      "userinfo before the host",
+      "https://fcm.googleapis.com@evil.example.com/x",
+    ],
+    ["userinfo on the host", "https://user@fcm.googleapis.com/x"],
+    ["a port other than 443", "https://fcm.googleapis.com:8443/x"],
+    ["an uppercase host", "https://FCM.googleapis.com/x"],
+    ["a look-alike suffix", "https://fcm.googleapis.com.evil.com/x"],
+    ["a look-alike apple host", "https://evilpush.apple.com/x"],
+    ["the bare apple suffix", "https://push.apple.com/x"],
+    ["http", "http://fcm.googleapis.com/x"],
+  ])(
+    "story 5.20: %s -> INVALID_INPUT, field endpoint, nothing saved",
+    async (_label, endpoint) => {
+      await inRollback(async (db) => {
+        const f = await seed(db)
+        await asAuthenticated(db, f.a)
+        await db.query("savepoint bad_endpoint")
+        let failure: { message?: string; detail?: string } | null = null
+        try {
+          await db.query(REGISTER, [endpoint, KEYS, "ios"])
+        } catch (error) {
+          failure = error as { message?: string; detail?: string }
+        }
+        await db.query("rollback to savepoint bad_endpoint")
+        expect(failure?.message).toBe("INVALID_INPUT")
+        expect(JSON.parse(failure?.detail ?? "{}")).toEqual({
+          field: "endpoint",
+        })
+        await db.query("reset role")
+        expect(await subIds(db, f.a)).toEqual([])
+      })
+    }
+  )
 
   it("unregister: someone else's endpoint -> removed 0 and it stays; her own -> removed 1", async () => {
     await inRollback(async (db) => {

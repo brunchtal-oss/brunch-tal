@@ -2,7 +2,7 @@
 title: '5.20 Unified refactor sweep after the demo'
 type: 'refactor'
 created: '2026-10-22'
-status: 'in-progress'
+status: 'done'
 baseline_commit: 'da0f51f23c4276cd3d85fb723c9307f4860ac992'
 route: 'full'
 route_source: 'auto'
@@ -138,7 +138,7 @@ admin_duplicate_event, admin_update_event: `20261020200233_eligible_products` ·
 - [x] `deferred-work.md` -- mark closed with evidence: L8, L13, L18, L33, L51, L62, L67, L72, L77, L82, L87, L98, L108, L119, L124, L145, L168, L197, L202, L213, L236, L241, L264, L285, L376, L433 (other side; pinned side fixed in B), L472, L477, L505 (note for 5.22), L583, L723, L573, L635, L388, L639 (with this spec's close reasons); L588 (user decision); retarget L318→5.20, L3/L269→6.1, L371→6.9, L568→5.20; L92/L393 stay open; items fixed by (A) closed at (A).
 
 **Execution — Part B** (worktree `story-5-20b-refactor-sweep-db`, after A merged)
-- [ ] `npx supabase migration new refactor_sweep_db` -- one file, contents:
+- [x] `npx supabase migration new refactor_sweep_db` -- one file, contents:
   - `create extension if not exists pgcrypto with schema extensions;`
   - fix 6: redefine the writers listed in Code Map without the audit call.
   - `admin_duplicate_event`: archived concept → `CONCEPT_ARCHIVED`.
@@ -155,18 +155,18 @@ admin_duplicate_event, admin_update_event: `20261020200233_eligible_products` ·
   - grants: `revoke select on public.events from anon, authenticated` + column grant of all other columns; `revoke all on public.waitlist_entries from service_role`; replace the two SELECT policies with one `waitlist_entries_select` (`(select private.is_admin()) or customer_id = (select private.current_customer_id())`).
   - `register_push_subscription`: host allowlist (exact `fcm.googleapis.com`, `updates.push.services.mozilla.com`; suffix `.push.apple.com`, `.notify.windows.com`), lowercase, no userinfo, port absent or 443.
   - broadcast: delete the row, drop + re-add `notification_templates_type_check` without it (from live definition).
-- [ ] `lib/errors.ts` -- `CONCEPT_ARCHIVED`: "הקונספט של המפגש בארכיון, ולכן אי אפשר לשכפל אותו. אפשר להחזיר את הקונספט מהארכיון ואז לשכפל."; `PRODUCT_IN_USE`: "המוצר מסומן כתקף במפגשים קרובים, ולכן אי אפשר לשנות את סוג המפגש שלו. קודם צריך להוריד אותו מהמפגשים האלה."
-- [ ] `lib/copy/audit-actions.ts` -- remove all remaining hidden actions (list becomes empty → remove constant and its uses); test `RETIRED_AUDIT_ACTIONS` grows; new `supabase/tests/audit-retired-actions.test.ts`: no live function body calls `private.audit` with a retired action -- fix 6.
-- [ ] `frontend-design`; birth date in join + profile: `min`/`max`, shape check, copy in `lib/copy/customer.ts` and `lib/copy/join.ts` becomes "תאריך הלידה יכול להיות עד שנתיים אחורה ועד 9 חודשים קדימה."; `lib/time.ts` add-months/years helper + test.
-- [ ] `frontend-design`; settings field "זיכוי עומד לפוג" (labels in the pattern of `customerExpiring`: `'"זיכוי עומד לפוג" אצל הלקוחה (ימים לפני התפוגה)'`, show name `'"זיכוי עומד לפוג" אצל הלקוחה'`, audit `'"זיכוי עומד לפוג" אצל הלקוחה (ימים)'`) -- 5.10.
-- [ ] `frontend-design`; customer card: moved booking "הועברה ל-{DD.MM}"; audit hides `moved_to_booking_id` value (technical) -- 3.10.
-- [ ] anonymize TS: `parked_purchases` blocker group "תשלום על מפגש בלי מקום, שעוד לא סודר" linking to "לטיפול"; delete `orphan_user_ids` via `deleteOrphanUser`; tests.
-- [ ] `push-worker.ts` -- same allowlist before sending (shared pure helper + unit test); remove broadcast comment; `lib/copy/admin.ts:1561` broadcast key; broadcast tests.
-- [ ] `audit-data.ts` -- `marketing_reminder_texts` subject.
-- [ ] `supabase/tests/support/db.ts` -- SIGINT/SIGTERM/`beforeExit` run pending `onCleanup`s once; committed test events get `description = testName(...)` -- fix 8(ג).
-- [ ] `scripts/dev-clean-test-data.mjs` (+ unit test of the selection/protection logic) -- dev-guard; roots: `test\_%` in profiles.full_name, products/payment_methods/concepts.name, events.description, auth.users.email; admin_roles without auth user and without profile; dependents in FK order (Code Map/agent order incl. `entitlement_corrections*`, `entitlement_movements` trigger disabled locally, `audit_log`, `private.idempotency_results`); profiles without Auth user that are NOT `test_` are only listed for manual review; protected list asserted untouched; default dry-run prints counts per table.
-- [ ] `scripts/dev-clean-media-drafts.mjs` -- dev-guard; candidates: `media_assets` in `draft`, not in any `content_sections.draft_content`/published content/`events.image_id`/`concepts.default_image_id`, older than 7 days; dry-run lists, `--apply` removes the `media-drafts` object via Storage API then the row; never hidden/published rows; run only with the user's OK -- 5.4.
-- [ ] DB tests: every matrix row of (B), grants test updates, CONCURRENT_CHANGE for `admin_cancel_event`/`admin_reschedule_event`, `admin_complete_refund`, `admin_correct_entitlement`/`admin_settle_parked_purchase`, `CREDIT_LOCKED` in `job_complete_events`; anonymize audit test asserts `payment_note` present before and `<removed>` after.
+- [x] `lib/errors.ts` -- `CONCEPT_ARCHIVED`: "הקונספט של המפגש בארכיון, ולכן אי אפשר לשכפל אותו. אפשר להחזיר את הקונספט מהארכיון ואז לשכפל."; `PRODUCT_IN_USE`: "המוצר מסומן כתקף במפגשים קרובים, ולכן אי אפשר לשנות את סוג המפגש שלו. קודם צריך להוריד אותו מהמפגשים האלה."
+- [x] `lib/copy/audit-actions.ts` -- remove all remaining hidden actions (list becomes empty → remove constant and its uses); test `RETIRED_AUDIT_ACTIONS` grows; new `supabase/tests/audit-retired-actions.test.ts`: no live function body calls `private.audit` with a retired action -- fix 6.
+- [x] `frontend-design`; birth date in join + profile: `min`/`max`, shape check, copy in `lib/copy/customer.ts` and `lib/copy/join.ts` becomes "תאריך הלידה יכול להיות עד שנתיים אחורה ועד 9 חודשים קדימה."; `lib/time.ts` add-months/years helper + test.
+- [x] `frontend-design`; settings field "זיכוי עומד לפוג" (labels in the pattern of `customerExpiring`: `'"זיכוי עומד לפוג" אצל הלקוחה (ימים לפני התפוגה)'`, show name `'"זיכוי עומד לפוג" אצל הלקוחה'`, audit `'"זיכוי עומד לפוג" אצל הלקוחה (ימים)'`) -- 5.10.
+- [x] `frontend-design`; customer card: moved booking "הועברה ל-{DD.MM}"; audit hides `moved_to_booking_id` value (technical) -- 3.10.
+- [x] anonymize TS: `parked_purchases` blocker group "תשלום על מפגש בלי מקום, שעוד לא סודר" linking to "לטיפול"; delete `orphan_user_ids` via `deleteOrphanUser`; tests.
+- [x] `push-worker.ts` -- same allowlist before sending (shared pure helper + unit test); remove broadcast comment; `lib/copy/admin.ts:1561` broadcast key; broadcast tests.
+- [x] `audit-data.ts` -- `marketing_reminder_texts` subject.
+- [x] `supabase/tests/support/db.ts` -- SIGINT/SIGTERM/`beforeExit` run pending `onCleanup`s once; committed test events get `description = testName(...)` -- fix 8(ג).
+- [x] `scripts/dev-clean-test-data.mjs` (+ unit test of the selection/protection logic) -- dev-guard; roots: `test\_%` in profiles.full_name, products/payment_methods/concepts.name, events.description, auth.users.email; admin_roles without auth user and without profile; dependents in FK order (Code Map/agent order incl. `entitlement_corrections*`, `entitlement_movements` trigger disabled locally, `audit_log`, `private.idempotency_results`); profiles without Auth user that are NOT `test_` are only listed for manual review; protected list asserted untouched; default dry-run prints counts per table.
+- [x] `scripts/dev-clean-media-drafts.mjs` -- dev-guard; candidates: `media_assets` in `draft`, not in any `content_sections.draft_content`/published content/`events.image_id`/`concepts.default_image_id`, older than 7 days; dry-run lists, `--apply` removes the `media-drafts` object via Storage API then the row; never hidden/published rows; run only with the user's OK -- 5.4.
+- [x] DB tests: every matrix row of (B), grants test updates, CONCURRENT_CHANGE for `admin_cancel_event`/`admin_reschedule_event`, `admin_complete_refund`, `admin_correct_entitlement`/`admin_settle_parked_purchase`, `CREDIT_LOCKED` in `job_complete_events`; anonymize audit test asserts `payment_note` present before and `<removed>` after.
 - [ ] `fixes-log.md` (fixes 6, 8 → תוקן), `deferred-work.md` (#79 and B items closed), `tickets.toml` done (`tickets.py pull`, `mark done`).
 
 **Acceptance Criteria:**
@@ -187,6 +187,17 @@ admin_duplicate_event, admin_update_event: `20261020200233_eligible_products` ·
 
 - (A) done 2026-10-22: review pass 1 patched (see Triage Log); `balance-card.*` deleted (main session, `git rm`); `product-catalog.test.ts` ran with the planning tab's OK (13/13); lint, typecheck, format:check, `npm test` (215 files, 2581 tests) and `npm run build` pass. Status stays `in-progress` until (B) is built and reviewed.
 
+- (A) merged 2026-10-22 as #120 (`95458270fabb741e7965124196326a103ad1cfb0`); prod check passed (no login, customer, admin). Part B baseline: `95458270fabb741e7965124196326a103ad1cfb0`, worktree `brunch-wt-5-20b`, branch `story-5-20b-refactor-sweep-db`.
+- (B) built and reviewed 2026-10-22: migration `20261022154256_refactor_sweep_db.sql` (55 functions; each body compared to live — only planned lines change); review pass 1 patched; lint, typecheck, format:check, `npm test` (218 files, 2607 tests), build pass. Waiting for the user to run the migration in SQL Editor; then record it, `get_advisors`, regenerate types, full `test:db`.
+
+- (B) migration `20261022154256_refactor_sweep_db.sql`: 53 functions, each from its live `pg_get_functiondef` (the defining file is named above each one in the migration), plus two pure helpers `private.birth_date_allowed(date, date)` and `private.push_endpoint_allowed(text)` (no grant). Not applied (user runs it in SQL Editor). The SQL and plpgsql bodies were parsed with libpg-query (all pass, except `admin_duplicate_event` and `admin_update_business_settings`, whose unchanged live definitions fail the same way: a parser bug).
+- (B) fix 6 writers and their defining files: `private.hide_unused_media` 20261005203814_media_publish_review_fixes · `admin_add_note`, `admin_update_note`, `admin_delete_note`, `admin_set_note_archived`, `admin_set_note_done`, `admin_set_note_order`, `admin_set_note_pinned` 20261021064354_notes_without_topics · `admin_add_prep_day`, `admin_add_work_dish`, `admin_add_work_task`, `admin_delete_work_task`, `admin_set_work_task_done` 20261006184223_work_sheet · `admin_add_shopping_items`, `admin_move_prep_day`, `admin_remove_prep_day` 20261007154028_work_sheet_phone_check · `admin_delete_work_dish`, `admin_set_work_dish_order`, `admin_set_work_task_order`, `admin_update_work_dish`, `admin_update_work_task` 20261006191118_work_sheet_review_fixes · `admin_delete_shopping_item`, `admin_set_shopping_item_bought`, `admin_set_shopping_item_order`, `admin_update_shopping_item` 20261006215720_work_sheet_shopping · `admin_approve_payment` 20261013182941_pinned_single_notification · `admin_begin_email_change` 20261013203359_account_admin_and_rate_limit · `admin_create_media`, `admin_begin_media_publish`, `admin_finish_media_publish`, `admin_set_event_image` 20261005194206_media_upload_and_publish · `admin_finish_anonymize_customer` 20261020200750_remove_personal_details · `admin_set_concept_image` 20261010115547_concepts_admin · `admin_set_content_draft` 20261004122904_content_publish · `claim_join` 20261002182800_existing_account_and_conflicts · `join_begin` 20261003192417_join_begin_discard_before_lock · `set_booking_guest_details` 20261013161248_couple_and_intro. Only the `perform private.audit(...)` calls went; the empty `if` left in `admin_begin_media_publish` went with it, and two comments that said "audited/logged" were reworded.
+- (B) `RETIRED_AUDIT_ACTIONS` lives in `lib/copy/retired-audit-actions.ts` (test-only module) so the unit test and the new DB test share it.
+- (B) reopening: `v_old.registration_closes_at <= now()` and the saved one `> now()`, published, not started → `notify_waitlist(id, 0)`; otherwise a capacity raise as before (`elsif`, one call max).
+- (B) anonymize: parked purchases are the attention list's "paid without a place" (active pinned entitlement, no booking on its payment), hers or behind any of her join tokens (customer, bound or pending user); awaiting_login seats are confirmed future bookings with no customer behind her `awaiting_login` join token. `orphan_user_ids` excludes her own id (a claim token's pending user is her profile id).
+- (B) push: a disallowed subscription row is skipped by the worker (neither delivered nor gone), so the job is not failed for it.
+- (B) not done here (main session, after the migration runs): `get_advisors`, `database.types.ts`, full `test:db`, `tickets.py mark done` (only after merge). `node scripts/dev-clean-test-data.mjs` (dry run) and `node scripts/dev-clean-media-drafts.mjs` (dry run) ran against dev: no test data; one non-test profile without an Auth user listed; 4 unused drafts older than 7 days listed. Neither ran with `--apply`.
+
 ## Spec Change Log
 
 ## Review Triage Log
@@ -205,6 +216,30 @@ admin_duplicate_event, admin_update_event: `20261020200233_eligible_products` ·
 | 8 | deferred-work: BalanceCard status says "main session"; retargets without reason; old filename in hide_unused_media evidence (intent, blind) | low | patch | Status, reasons and filename fixed. |
 
 Rejected: edit page throws on a non-NOT_FOUND RPC error (same as its existing read-error throw); `%s` inside the business name (unlikely, adds a guard); `short_name` length (same 13-char name as before, OS truncation); edit page reads attendee data server-side only (never sent to the browser, admin-only); screens' use of `sendWithKey` untested (spec: no testing-library, helper tested); no editor hint/length limit on business name and cached null after a failed read (today the name equals WORDMARK; adds UI/complexity); layout wiring untested (accepted: browser flow not automated, prod check covers); old filenames in ticket history files (history); `RETIRED_AUDIT_ACTIONS` trusted until (B) (B adds the live-body DB test); renames not replay-tested (6.1 owns the replay).
+
+**Pass 1 — Part B** (blind-hunter, edge-case-hunter, verification-gap, intent-alignment; function bodies compared to live with a normalized diff — only the planned lines change): high 0, medium 3, low 14, false 0, maybe-false 1; rejected 7.
+
+| # | Finding | Verdict | Route | Evidence / action |
+|---|---|---|---|---|
+| 1 | Duplicating a past session whose product later changed kind fails in `save_event_products` (blind) | medium | patch | `PRODUCT_IN_USE` guards future sessions only (matrix "past only → saved"); the duplicate copies only products matching the session kind, plus DB test. |
+| 2 | Sessions list: missing capacity → 0 → "full"; page wiring untested (edge, blind, verification) | medium | patch | Throw like missing occupancy; row building moved to a tested helper. |
+| 3 | README demo-data step 1 still runs `demo-clear.mjs --dev-test-data` (intent) | medium | patch | Fixes-log 8(ב): that route deletes real dev customers; step now points to `dev-clean-test-data.mjs`. |
+| 4 | `CONCEPT_ARCHIVED` `exists … for share` locks no row (edge, blind) | low | patch | Lock the concept row first, then test `archived_at`. |
+| 5 | Disallowed push rows skipped forever, job reads as sent (edge, blind, verification) | low | patch | Worker reports them as gone (deleted). |
+| 6 | Server action pre-check still accepts any https host (intent) | low | patch | `lib/push/server.ts` uses `isAllowedPushEndpoint`. |
+| 7 | anonymize.ts: throw after step 1 leaves no ActionResult; customer id logged as tokenId (edge, blind) | low | patch | try/catch + log; no misleading tokenId. |
+| 8 | Whitespace-only marketing subject renders "" (edge) | low | patch | null when empty. |
+| 9 | Exit cleanup can hang on locks; signal path untested (edge, verification) | low | patch | Timeout race; test invokes the SIGINT handler. |
+| 10 | `credit_expiring_days` save allowlist / column read untested (verification) | low | patch | actions.test loops all editor columns. |
+| 11 | Cleanup plan could delete a non-test customer's rows tied to a test_ event/product (edge) | low | patch | New protection check refuses. |
+| 12 | Media-drafts script removes the file before the row (edge, blind) | low | patch | Row first, commit, then file. |
+| 13 | events column grant: a future column becomes silently unreadable (blind) | low | patch | grants test compares granted columns with all columns minus `capacity_adults`. |
+| 14 | Stale `EMAIL_TAKEN` comment says "logged" (blind) | low | patch | Comment fixed. |
+| 15 | deferred-work says "נבדק" for DB tests not yet run (blind) | low | patch | "נכתבה בדיקה…; תורץ אחרי הרצת המיגרציה". |
+
+**Full `test:db` after the migration (2026-10-22):** 1316 passed, 6 failed (5 files of 67) — all stale expectations, no code defect: 24 → 23 templates (broadcast removed, 2 tests); `moved_to_starts_at: null` in `admin_get_customer` (customers); the push seed's host moved to `fcm.googleapis.com` (push); the new birth-date test moved a date onto the allowed boundary (now: one day further out refused, the boundary itself accepted); and `content-publish` "home page with its hero section" lacked `promo_banner` — **failing since #114 (fixes 15, 17), not caused by (B)**. Fixed in the test files only; the 5 files plus `notifications.test.ts` re-ran: 6 files, 197 tests passed. Item 29 ("hold the approved seed", 23 templates) passed in the full run and the re-run.
+
+Rejected: concurrent kind change vs `save_event_products` (rare race, needs locks in another function); failed orphan Auth deletion not retried (rare; before 5.20 orphans were never deleted; adds RPC state); held places behind her `claiming`/`pending` links (maybe-false: such links carry no profile before join; settle by finding a held booking whose token's `pending_user_id` has a profile); unborn baby shows no age (spec: acceptable); existing `audit_log` rows of retired actions kept (spec: stop writing only; viewer hides them); UI does not pre-empt `CONCEPT_ARCHIVED`/name the sessions for `PRODUCT_IN_USE` (server message is clear, adds UI); fix-8 test does not simulate a killed worker (SIGKILL cannot be caught; manual script covers).
 
 ## Design Notes
 

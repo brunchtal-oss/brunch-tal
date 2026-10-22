@@ -19,7 +19,12 @@ const copy = adminCopy.customers.card.remove
 const CUSTOMER = "11111111-1111-4111-8111-111111111111"
 
 const EMPTY = {
-  blockers: { bookings: [], refund_requests: [], pending_choices: [] },
+  blockers: {
+    bookings: [],
+    refund_requests: [],
+    pending_choices: [],
+    parked_purchases: [],
+  },
   forfeits: { entries_left: 0, active_credits: 0 },
 }
 
@@ -57,6 +62,7 @@ describe("the removal plan (story 4.6)", () => {
         ],
         refund_requests: [],
         pending_choices: [{ credit_id: "c1" }],
+        parked_purchases: [],
       },
     })
     const groups = blockerGroups(plan, CUSTOMER)
@@ -74,6 +80,34 @@ describe("the removal plan (story 4.6)", () => {
       text: copy.choiceLine,
     })
     expect(blockerGroups(parseRemovalPlan(EMPTY), CUSTOMER)).toEqual([])
+  })
+
+  it("story 5.20: a paid purchase without a place links to לטיפול", () => {
+    const groups = blockerGroups(
+      parseRemovalPlan({
+        ...EMPTY,
+        blockers: {
+          ...EMPTY.blockers,
+          parked_purchases: [
+            {
+              entitlement_id: "en1",
+              payment_id: "p1",
+              event_id: "e1",
+              starts_at: "2026-10-23T07:00:00Z",
+              concept: "שישי מיוחד",
+            },
+          ],
+        },
+      }),
+      CUSTOMER
+    )
+    expect(groups.map((g) => g.title)).toEqual([copy.blockedParked])
+    expect(copy.blockedParked).toBe("תשלום על מפגש בלי מקום, שעוד לא סודר")
+    expect(groups[0].items[0]).toMatchObject({
+      key: "en1",
+      href: "/admin/attention",
+      text: expect.stringContaining("בראנץ׳ שישי מיוחד"),
+    })
   })
 
   it("a refund request links to its row on the payments screen", () => {

@@ -305,6 +305,7 @@ describe("labels seen in the dev database", () => {
       "input_hash",
       "token_hash",
       "provider_transaction_id",
+      "moved_to_booking_id",
     ]) {
       expect(isTechnicalKey(key), key).toBe(true)
     }
@@ -528,6 +529,18 @@ describe("toAuditItem: one concise item per operation", () => {
     expect(subject("notification_templates", "nope")).toBeNull()
     expect(subject("events", "x")).toBeNull()
     expect(subject("products", null)).toBeNull()
+    // Story 5.20: a marketing reminder text, cut at 40 characters.
+    expect(subject("marketing_reminder_texts", "  לא לשכוח לפרסם  ")).toBe(
+      "לא לשכוח לפרסם"
+    )
+    expect(subject("marketing_reminder_texts", "א".repeat(41))).toBe(
+      `${"א".repeat(40)}…`
+    )
+    // Whitespace only: no subject (not an empty string).
+    expect(subject("marketing_reminder_texts", " \n\t ")).toBeNull()
+    expect(subject("marketing_reminder_texts", "א".repeat(40))).toBe(
+      "א".repeat(40)
+    )
   })
 
   it("a deleted session (story 3.17): the session label from before, a short result", () => {

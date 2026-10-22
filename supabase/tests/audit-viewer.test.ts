@@ -1173,3 +1173,41 @@ describe("admin_list_audit: who may call it", () => {
     })
   })
 })
+
+// Story 5.20: a marketing reminder text's subject is the text itself (the
+// screen shortens it); a text no longer there falls back to the row's body.
+describe("admin_list_audit: a marketing reminder text's subject", () => {
+  it("the current body, else the body in the row", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const body = testName("reminder_text_now")
+      const { rows } = await db.query(
+        `insert into public.marketing_reminder_texts (body, sort_order)
+         values ($1, 999) returning id`,
+        [body]
+      )
+      const at = "2099-06-01 10:00+03"
+      const kept = await insertAudit(db, f, {
+        createdAt: at,
+        action: "admin_update_marketing_reminder_text",
+        entityType: "marketing_reminder_texts",
+        entityId: rows[0].id,
+        before: { body: testName("reminder_text_before") },
+        after: { body },
+      })
+      const gone = await insertAudit(db, f, {
+        createdAt: "2099-06-01 11:00+03",
+        action: "admin_add_marketing_reminder_text",
+        entityType: "marketing_reminder_texts",
+        entityId: randomUUID(),
+        after: { body: testName("reminder_text_gone") },
+      })
+      const page = await list(db, f, { from: "2099-06-01", to: "2099-06-01" })
+      const subjects = Object.fromEntries(
+        page.rows.map((row) => [row.id, row.subject])
+      )
+      expect(subjects[kept]).toBe(body)
+      expect(subjects[gone]).toBe(testName("reminder_text_gone"))
+    })
+  })
+})

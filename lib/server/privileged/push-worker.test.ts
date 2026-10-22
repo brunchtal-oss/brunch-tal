@@ -29,7 +29,7 @@ function job(id: string, subs: string[], body = "גוף"): ClaimedJob {
     target_path: "/me/bookings",
     subscriptions: subs.map((s) => ({
       id: s,
-      endpoint: `https://push.example.test/${s}`,
+      endpoint: `https://fcm.googleapis.com/fcm/send/${s}`,
       p256dh: "p",
       auth: "a",
     })),
@@ -76,7 +76,7 @@ describe("pushBody", () => {
     expect(pushBody("א".repeat(300))).toBe("א".repeat(300))
   })
 
-  it("cuts a 2000-character broadcast at a word boundary, at most 300 with …", () => {
+  it("cuts a 2000-character body at a word boundary, at most 300 with …", () => {
     const body = Array.from({ length: 400 }, (_, i) => `מילה${i}`).join(" ")
     expect(body.length).toBeGreaterThan(2000)
     const cut = pushBody(body)
@@ -108,7 +108,7 @@ describe("outcomeOf", () => {
     [new FakeWebPushError(401), { kind: "error", code: "HTTP_401" }],
     [new FakeWebPushError(500), { kind: "error", code: "HTTP_500" }],
     [
-      new Error("socket hang up https://push.example.test/x"),
+      new Error("socket hang up https://fcm.googleapis.com/fcm/send/x"),
       { kind: "error", code: "NETWORK" },
     ],
   ])("%o -> %o", (input, expected) => {
@@ -181,7 +181,7 @@ describe("runPushWorker", () => {
     expect(send).toHaveBeenCalledTimes(2)
     const [subscription, payload, options] = send.mock.calls[0]
     expect(subscription).toEqual({
-      endpoint: "https://push.example.test/s1",
+      endpoint: "https://fcm.googleapis.com/fcm/send/s1",
       keys: { p256dh: "p", auth: "a" },
     })
     expect(JSON.parse(payload)).toEqual({
@@ -236,10 +236,27 @@ describe("runPushWorker", () => {
     expect(result.sent).toBe(1)
   })
 
+  it("story 5.20: an endpoint of an unknown push service is never sent to and is gone", async () => {
+    const claimed = job("j1", ["s1", "s2"])
+    claimed.subscriptions[1].endpoint = "https://evil.example.com/s2"
+    const { client, calls } = fakeClient([[claimed]])
+    const send = vi.fn<SendPush>(async () => ({ statusCode: 201 }))
+    await runPushWorker(VAPID, { client, send })
+    expect(send).toHaveBeenCalledTimes(1)
+    expect(send.mock.calls[0][0].endpoint).toBe(
+      "https://fcm.googleapis.com/fcm/send/s1"
+    )
+    expect(finishes(calls)).toEqual([
+      { p_job_id: "j1", p_delivered: ["s1"], p_gone: ["s2"], p_error: "" },
+    ])
+  })
+
   it("the error never carries the endpoint or the message", async () => {
     const { client, calls } = fakeClient([[job("j1", ["s1"])]])
     const send = vi.fn<SendPush>(async () => {
-      throw new Error("connect ECONNREFUSED https://push.example.test/s1")
+      throw new Error(
+        "connect ECONNREFUSED https://fcm.googleapis.com/fcm/send/s1"
+      )
     })
     await runPushWorker(VAPID, { client, send })
     expect(finishes(calls)[0].p_error).toBe("NETWORK")
