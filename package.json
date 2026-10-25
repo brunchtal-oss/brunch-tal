@@ -19,8 +19,6 @@
     "test:watch": "vitest --project unit",
     "dev:reset-link": "node scripts/dev-reset-link.mjs",
     "dev:seed-media": "node scripts/dev-seed-media.mjs",
-    "demo:seed": "node scripts/demo-seed.mjs",
-    "demo:clear": "node scripts/demo-clear.mjs",
     "video:seed": "node scripts/video-seed.mjs",
     "video:clear": "node scripts/video-clear.mjs"
   },

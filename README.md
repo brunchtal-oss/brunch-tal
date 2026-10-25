@@ -52,14 +52,10 @@
 - **`npm run video:clear`:** סופר כמה שורות יימחקו בכל טבלה, עוצר אם המחיקה נוגעת בחשבונות הפיתוח, בשורות `test_` או בלקוחה שאינה מהעולם, ומבקש `y`. הוא מוחק גם את מה שנעשה בזמן הצילום (רכישות, הרשמות, פתקים, הערות, שינויי פרטים). `node scripts/video-clear.mjs --dry-run` רק סופר. שינויים בהגדרות, בתוכן, במוצרים ובקונספטים לא נמחקים, ולכן מצלמים אותם בלי לשמור, או שומרים ומחזירים ידנית.
 - **כניסות הצילום** (הסיסמה מ-`VIDEO_LOGIN_PASSWORD`): טל (אדמין) `admin@video.example.com`; מיכל אהרוני `michal.aharoni@video.example.com`; נטע ברגר `neta.berger@video.example.com`; סיוון אשכנזי `sivan.ashkenazi@video.example.com`. לדמות אחרת: `node scripts/dev-reset-link.mjs --email <מייל>@video.example.com --url https://<כתובת ה-Vercel>`.
 
-#### ניקוי נתוני הבדיקה וההדגמה הישנה
+#### ניקוי נתוני הבדיקה
 
-1. **ניקוי נתוני הבדיקה:** `node scripts/dev-clean-test-data.mjs`. בלי דגל זו הרצה יבשה: הסקריפט רק מדפיס כמה שורות של נתוני `test_` יימחקו בכל טבלה, ועוצר אם רשומה מוגנת (לקוחה בדויה, אדמין, הדגמה) בתוכנית. רק אחרי שבודקים את התוכנית מריצים `node scripts/dev-clean-test-data.mjs --apply`. לא משתמשים ב-`scripts/demo-clear.mjs --dev-test-data`, כי הוא מוחק גם לקוחות פיתוח שאינן נתוני בדיקה, כמו dev-customer (מסמך התיקונים, תיקון 8).
+1. **ניקוי נתוני הבדיקה:** `node scripts/dev-clean-test-data.mjs`. בלי דגל זו הרצה יבשה: הסקריפט רק מדפיס כמה שורות של נתוני `test_` יימחקו בכל טבלה, ועוצר אם רשומה מוגנת (לקוחה בדויה, אדמין) בתוכנית. רק אחרי שבודקים את התוכנית מריצים `node scripts/dev-clean-test-data.mjs --apply` (מסמך התיקונים, תיקון 8).
 2. אם אין אדמין פיתוח: `node scripts/dev-reset-link.mjs --admin`. אם אין תמונות בגלריה: `npm run dev:seed-media`.
-3. `npm run demo:seed`, בין 06:10 ל-23:30 ולא בשבת, כי מפגש ההדגמה של היום מסתיים כמה דקות אחרי ההרצה. הסקריפט שומר את המזהים ב-`.demo-data.local.json` (לא ב-git). הרצה חוזרת לא מוסיפה כלום. בלי הקובץ הסקריפט לא ממשיך, אז לא מוחקים אותו.
-4. **סיסמה למבקרים:** `node scripts/dev-reset-link.mjs --email maya.barak@demo.example.com --url https://<כתובת ה-Vercel>`. פותחים את הקישור, בוחרים סיסמה, ומוסרים למבקרים את המייל, את הסיסמה ואת פרטי נעילת האתר. לכניסת אדמין עושים אותו דבר עם `--admin`.
-
-הסרת ההדגמה: `npm run demo:clear`. גם הוא רק כותב קובץ (`.demo-clear.local.sql`), שמריצים ב-SQL Editor. אחרי זה `demo:seed` מתחיל מחדש עם תאריכים חדשים.
 
 ## CI וכללי lint
 

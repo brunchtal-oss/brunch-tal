@@ -2,9 +2,6 @@
 // check and the --email argument of a filming persona. No env, no network;
 // tested in test/dev-guard.test.ts.
 
-// The old demo domain (story 5.18); its scripts go with story 5.22 (D7).
-export const DEMO_DOMAIN = "demo.example.com"
-
 // The fictional world of the explainer videos (story 5.22): every Auth user
 // on this domain, the filming admin included, belongs to it.
 export const VIDEO_DOMAIN = "video.example.com"
