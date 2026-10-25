@@ -59,14 +59,19 @@ describe("AttendeeRow", () => {
   })
 
   // Story 2.13: both consents in words, only for an active customer.
-  it("an active customer's two photo consents on one line, read in full words", () => {
+  // Fix 21: each consent on its own line, no separator between them.
+  it("an active customer's two photo consents, each on its own line, read in full words", () => {
     const html = row({ photoConsent: false, personalPhotoConsent: true })
     expect(html).toContain(adminCopy.photoConsents.atmosphere.no)
     expect(html).toContain(adminCopy.photoConsents.personal.yes)
+    const lines = [
+      ...html.matchAll(
+        /<span class="block"><span aria-hidden="true"[^>]*>([^<]*)</g
+      ),
+    ].map((m) => m[1])
+    expect(lines).toEqual(["תמונות אווירה ✗", "תמונות אישיות ✓"])
     const visible = html.replace(/<span class="sr-only">[^<]*<\/span>/g, "")
-    expect(visible.replace(/<[^>]*>/g, "")).toContain(
-      "תמונות אווירה ✗ - תמונות אישיות ✓"
-    )
+    expect(visible.replace(/<[^>]*>/g, "")).not.toContain(" - תמונות")
     // The declined one in warning.
     expect(html).toMatch(/text-warning[^>]*>תמונות אווירה ✗</)
     const none = row({ pendingJoin: true, name: null })
