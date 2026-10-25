@@ -23,7 +23,7 @@
 // marketing reminder (one transaction, at the end).
 //
 // Passwords: the three customer logins and the filming admin get
-// VIDEO_LOGIN_PASSWORD (.env.local, at least 10 characters) through the Auth
+// VIDEO_LOGIN_PASSWORD (env or .env.local, at least 8 characters) through the Auth
 // Admin API; every other new Auth user a random one. Sign-ins use one-time
 // links. Nothing here prints a token, link, password or key; an error prints
 // only its code.
@@ -100,8 +100,8 @@ if (!devRef({ supabaseUrl: url, databaseUrl: process.env.DEV_DATABASE_URL })) {
   )
 }
 const loginPassword = process.env.VIDEO_LOGIN_PASSWORD ?? ""
-if (loginPassword.length < 10) {
-  fail("חסר VIDEO_LOGIN_PASSWORD ב-.env.local (לפחות 10 תווים).")
+if (loginPassword.length < 8) {
+  fail("חסר VIDEO_LOGIN_PASSWORD, כמשתנה סביבה בפקודה או ב-.env.local (לפחות 8 תווים).")
 }
 
 const OPTIONS = {
@@ -939,7 +939,7 @@ async function main() {
     // Summary: emails only, never a password.
     console.log("")
     console.log(`סיכום: ${counts.created} נוצרו עכשיו, ${counts.existing} כבר היו.`)
-    console.log("כניסות לצילום (הסיסמה: VIDEO_LOGIN_PASSWORD מ-.env.local):")
+    console.log("כניסות לצילום (הסיסמה: VIDEO_LOGIN_PASSWORD):")
     console.log(`  טל (אדמין הצילום): ${FILMING_ADMIN_EMAIL}`)
     for (const who of LOGINS) {
       console.log(`  ${personaOf(who).fullName}: ${videoEmail(personaOf(who).email)}`)

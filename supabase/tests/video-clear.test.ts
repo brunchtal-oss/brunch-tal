@@ -142,7 +142,7 @@ async function traceNote(db: Db, admin: string, note: string): Promise<void> {
   await db.query(
     `insert into private.idempotency_results
        (actor_scope, rpc, key, request_hash, result)
-     values ($1, 'admin_add_note', $2, 'test', jsonb_build_object('note_id', $3::text))`,
+     values ($1, 'admin_add_note', $2, repeat('0', 64), jsonb_build_object('note_id', $3::text))`,
     [admin, randomUUID(), note]
   )
 }
@@ -234,7 +234,7 @@ const exists = async (db: Db, table: string, column: string, id: string) =>
   (await db.query(`select 1 from ${table} where ${column} = $1`, [id]))
     .rowCount === 1
 
-describe("video-clear against Postgres", () => {
+describe("video-clear against Postgres", { timeout: 60_000 }, () => {
   it("passes the guards on a clean world and deletes only the world", async () => {
     await inRollback(async (db) => {
       const w = await seedWorld(db)

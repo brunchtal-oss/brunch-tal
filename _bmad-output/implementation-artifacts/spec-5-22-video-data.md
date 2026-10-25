@@ -105,7 +105,7 @@ Other states: **אורית נחום** card expiring D+7, H1+H3 used, 2 free · *
 - World anchor: the filming admin's Auth `app_metadata.video_world = { anchor_date, generation, complete }`. Keys = `demoKey(generation, item)`. A second run on the anchor day replays the same keys (stored results, no duplicates) and resumes after a crash; on another day it stops: "run video:clear, then video:seed".
 - Writes through RPCs: `admin_create_event` (publish false for U8), `admin_approve_payment` (every purchase, AD-10; past `p_paid_on` allowed), the join flow (`join_begin` → Auth `createUser` with `pending_user_id` → `join_complete`, as 5.18), `admin_issue_link`, `admin_book_customer`, `admin_cancel_event`, `admin_complete_refund`, `admin_add_customer_note`, work-sheet RPCs incl. `admin_add_prep_day`, `admin_add_note` + pin/done/archive, `admin_set_event_image` (published gallery media only; never removes Storage files), and as customers `book_sessions`, `cancel_booking`, `join_waitlist`, `set_booking_guest_details`. Written against the 5.20(B) definitions.
 - Direct writes (one pg transaction, `scripts/video-sql.mjs`, documented in Design Notes): DW1 the filming admin's `admin_roles` row; DW2 history time shift; DW3 backdating; DW4 נוי's token `expires_at` in the past; DW5 calling `private.job_complete_events`, `job_expiry_alerts`, `job_refresh_credit_options` (and the marketing enqueue, D9). No supabase-js `.insert/.update/.delete/.upsert`.
-- Passwords set via the Auth Admin API from `VIDEO_LOGIN_PASSWORD` (`.env.local`, ≥ 10 chars); never printed or written. Output holds no token, link, password or key.
+- Passwords set via the Auth Admin API from `VIDEO_LOGIN_PASSWORD` (≥ 8 chars, passed as an env var in the command, not written to any file; user decision 2026-10-25); never printed or written. Output holds no token, link, password or key.
 - `video:clear`: read-only count per table first; refuses (exit 1, nothing deleted) when the set touches dev-admin, dev-customer, a board note not traced to the filming admin (D10), any `test_` row, a booking of a non-world customer in a world event, or a world payment's customer whose email is outside the domain and who is not anonymized. Then asks for `y`; `--dry-run` only counts; non-interactive stdin refuses. The delete transaction recomputes the set and aborts if counts changed; deletes in FK order with `session_replication_role = replica` only around append-only tables; deletes the Auth users in the same transaction. The seed creates no Storage files; clear warns about media uploaded by the filming admin and leaves them.
 - Fictional copy: natural Hebrew, no "טל" in customer-facing text.
 
@@ -133,7 +133,7 @@ Other states: **אורית נחום** card expiring D+7, H1+H3 used, 2 free · *
 
 - **D1** Old dev data: the one-time full cleanup in "Starting state".
 - **D2** A dedicated filming admin `admin@video.example.com` (one direct `admin_roles` row), so everything filmed as Tal is removed by clear.
-- **D3** One `VIDEO_LOGIN_PASSWORD` in `.env.local` (planning session writes it) for the 3 customer logins and the filming admin.
+- **D3** One `VIDEO_LOGIN_PASSWORD` for the 3 customer logins and the filming admin: the same password as the other fictional dev accounts, passed as an env var in the command, never written to `.env.local` or the repo (user decision 2026-10-25, replaces ".env.local").
 - **D4** "Payment awaiting approval" has no state (Tal approves every payment): shown as a live approval (row 3) plus the refund awaiting completion (row 22).
 - **D5** Backdating: rows that represent the past get that moment as `created_at` (Design Notes, DW3), so the log, the notification center and דורית's inactivity look real.
 - **D6** `video:clear` deletes by itself (count + `y`), no SQL file.
@@ -177,7 +177,7 @@ Other states: **אורית נחום** card expiring D+7, H1+H3 used, 2 free · *
 - [x] `package.json` -- `video:seed`, `video:clear`.
 - [x] `README.md` -- replace "נתוני הדגמה": seed, clear, filming accounts, "clear then seed before each filming session".
 - [x] `_bmad-output/implementation-artifacts/video-filming-guide-5-22.md` -- Hebrew, per video: account, screen, what to show, live action, what clear removes.
-- [ ] Planning session -- `VIDEO_LOGIN_PASSWORD` in `.env.local`; delete the old demo files (D7); runs against dev on go; push/PR/merge; tickets done.
+- [ ] Planning session -- delete the old demo files (D7); runs against dev on go; push/PR/merge; tickets done.
 
 **Acceptance Criteria:**
 - Given a seeded world, when each map row marked "no" is opened, then its data shows as described.
