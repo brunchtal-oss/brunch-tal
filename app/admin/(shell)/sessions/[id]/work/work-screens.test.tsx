@@ -188,6 +188,13 @@ describe("the work sheet's sections (story 4.10, round 2)", () => {
       /class="[^"]*font-semibold text-warning[^"]*">אווירה ✗</
     )
     expect(table).not.toMatch(/class="[^"]*text-warning[^"]*">אווירה ✓</)
+    // Fix 21: each mark on its own line, no " · " between them.
+    expect(table).toMatch(
+      /<span class="block"><span aria-hidden="true" class="whitespace-nowrap[^"]*">אישיות/
+    )
+    expect(table).not.toMatch(
+      /אווירה [✓✗]<\/span><span class="sr-only">[^<]*<\/span><span aria-hidden="true">/
+    )
     expect(table).not.toContain("status-chip")
     expect(table).toContain("ללא גלוטן")
     expect(table).toContain(adminCopy.sessions.companion("צמחונית"))

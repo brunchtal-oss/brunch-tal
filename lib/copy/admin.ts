@@ -19,14 +19,14 @@ function productNames(names: readonly string[]): string {
 export const adminCopy = {
   // The two photo consents (story 2.13, user decision 2026-10-07): a line
   // each on the customer card and the session's registrant row, and a short
-  // mark each on the work sheet ("אווירה ✗ · אישיות ✓", the label in full
-  // words for a screen reader).
+  // mark each on the work sheet ("אווירה ✗", "אישיות ✓"; the label in full
+  // words for a screen reader). Each on its own line, no separator (fix 21).
   photoConsents: {
     atmosphere: {
       yes: "אישרה תמונות אווירה",
       no: "לא אישרה תמונות אווירה",
       short: "אווירה",
-      // The registrant row: "תמונות אווירה ✓ - תמונות אישיות ✗".
+      // The registrant row: "תמונות אווירה ✓".
       label: "תמונות אווירה",
     },
     personal: {
@@ -37,8 +37,6 @@ export const adminCopy = {
     },
     yesMark: "✓",
     noMark: "✗",
-    separator: " · ",
-    rowSeparator: " - ",
   },
   payments: {
     newTitle: "הוספת תשלום",

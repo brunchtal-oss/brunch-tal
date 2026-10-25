@@ -1,5 +1,3 @@
-import { Fragment } from "react"
-
 import { attendeeTitle, type Attendee } from "@/components/admin/attendee-row"
 import { babyAge } from "@/components/admin/baby-age"
 import { sectionTitleClass } from "@/components/shared/section-title"
@@ -13,15 +11,15 @@ import { consentMarks, dietLines } from "./shopping-message"
 // phone check): one table on the phone, on desktop and in print, in place
 // of attendee-row and of a separate diet section. Columns: name, with the
 // babies small under it (name and age on the session's day, as attendee-row
-// did; second phone check: no babies column) · photo consents ("אווירה ✓ ·
-// אישיות ✗", story 2.13; empty for a pending booking or removed details) ·
+// did; second phone check: no babies column) · photo consents ("אווירה ✓"
+// over "אישיות ✗", story 2.13, fix 21; empty for a pending booking or
+// removed details) ·
 // diet and allergies (what she wrote, and "מלווה: …"; empty when nothing).
 // No phone (it stays in the session's details) and no "×2". The heading
 // carries the number of bookings. Printed the same way; not printed when there are none.
 
 const copy = adminCopy.work
 const sessions = adminCopy.sessions
-const photoCopy = adminCopy.photoConsents
 
 const CELL = "border-b border-border px-2 py-3 text-start align-top"
 const HEAD = cn(
@@ -129,13 +127,13 @@ function RegistrantRow({
           </span>
         ))}
       </th>
-      {/* Short text, no chips (story 2.13): "אווירה ✗ · אישיות ✓"; a "not
-          approved" in the warning style; a screen reader reads the full words
-          (sr-only) instead of the mark. */}
+      {/* Short text, no chips (story 2.13): "אווירה ✗" and under it "אישיות
+          ✓", each on its own line (fix 21); a "not approved" in the warning
+          style; a screen reader reads the full words (sr-only) instead of the
+          mark. */}
       <td className={CELL}>
-        {marks.map((mark, index) => (
-          <Fragment key={mark.label}>
-            {index > 0 && <span aria-hidden>{photoCopy.separator}</span>}
+        {marks.map((mark) => (
+          <span key={mark.label} className="block">
             <span
               aria-hidden
               className={cn(
@@ -146,7 +144,7 @@ function RegistrantRow({
               {mark.text}
             </span>
             <span className="sr-only">{mark.label}</span>
-          </Fragment>
+          </span>
         ))}
       </td>
       <td className={cn(CELL, "break-words whitespace-pre-line")}>

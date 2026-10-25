@@ -7,7 +7,6 @@ import { cn } from "@/lib/utils"
 import { babyAge } from "./baby-age"
 
 const copy = adminCopy.sessions
-const photoCopy = adminCopy.photoConsents
 
 export type AttendeeBaby = { name: string; birthDate: string }
 
@@ -89,9 +88,9 @@ function AttendeeLine({
 
 // DESIGN.md › attendee-row (story 3.4; lines by the user's decision
 // 2026-10-08): line 1 the name and the babies with their ages ("×2" for a
-// couple booking); line 2 the two photo consents as "תמונות אווירה ✓ -
-// תמונות אישיות ✗" (each read in full words; a "not approved" in warning, as
-// on the work sheet); line 3 the dietary notes as written on a warning tint,
+// couple booking); then the two photo consents, "תמונות אווירה ✓" and under
+// it "תמונות אישיות ✗", each on its own line (fix 21; each read in full
+// words; a "not approved" in warning, as on the work sheet); line 3 the dietary notes as written on a warning tint,
 // and the companion's note the same way with "מלווה:". No phone (user
 // decision 2026-10-08: it stays on the customer card). An empty field shows nothing. A pending booking: "לקוחה חדשה ·
 // ממתינה להצטרפות" and the payer label; removed details: "פרטי הלקוחה
@@ -129,9 +128,8 @@ export function AttendeeRow({
         )}
         {consents && (
           <p className="text-[15px]">
-            {consentMarks(consents).map((mark, index) => (
-              <Fragment key={mark.label}>
-                {index > 0 && <span aria-hidden>{photoCopy.rowSeparator}</span>}
+            {consentMarks(consents).map((mark) => (
+              <span key={mark.label} className="block">
                 <span
                   aria-hidden
                   className={cn(mark.declined && "font-semibold text-warning")}
@@ -139,7 +137,7 @@ export function AttendeeRow({
                   {mark.rowText}
                 </span>
                 <span className="sr-only">{mark.label}</span>
-              </Fragment>
+              </span>
             ))}
           </p>
         )}
