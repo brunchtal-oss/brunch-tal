@@ -35,6 +35,7 @@ const input = () => ({
   ],
   joins: [{ customerId: id(6), paymentId: id(5), at: "2026-10-01 12:30" }],
   events: [{ eventId: id(2), createdAt: "2026-09-17 10:00" }],
+  validFrom: [{ paymentId: id(8), date: "2026-10-04" }],
   expiredLinks: [id(7)],
   marketingSlot: "2026-10-22 20:00",
 })
@@ -109,6 +110,22 @@ describe("directWritesSql (DW2–DW5)", () => {
     expect(expiry).toBeLessThan(marketing)
   })
 
+  it("starts a card's validity with the history, before the jobs", () => {
+    const sql = directWritesSql(input())
+    const start = indexOf(sql, "set valid_from")
+    expect(start).toBeGreaterThanOrEqual(0)
+    expect(sql[start]).toContain(`'${id(8)}'::uuid, date '2026-10-04'`)
+    expect(sql[start]).toContain("en.pinned_event_id is null")
+    expect(start).toBeLessThan(
+      sql.indexOf("select private.job_expiry_alerts();")
+    )
+    expect(
+      directWritesSql({ ...input(), validFrom: [] }).some((s) =>
+        s.includes("set valid_from")
+      )
+    ).toBe(false)
+  })
+
   it("matches a shifted session by its temporary date (safe to replay)", () => {
     const sql = directWritesSql(input())
     const shift = sql.filter((s) =>
@@ -171,6 +188,7 @@ describe("directWritesSql (DW2–DW5)", () => {
       payments: [],
       joins: [],
       events: [],
+      validFrom: [],
       expiredLinks: [],
       marketingSlot: null,
     })

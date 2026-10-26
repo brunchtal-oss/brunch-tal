@@ -107,6 +107,15 @@ describe("the video cast", () => {
     expect(card("orit").units - card("orit").entries.length).toBe(2)
     expect(card("stav").entries.length).toBe(4)
   })
+
+  it("starts Orit's card with the history and ends it in 7 days", () => {
+    const cast = castOn()
+    const { entitlements } = deriveWorld(cast, PRODUCTS)
+    const orit = entitlements.find((e) => e.owner === "orit")!
+    expect(orit.validFrom).toBe(cast.plan.historyStart)
+    expect(orit.expiresOn).toBe(addDays(cast.plan.today, 7))
+    expect(orit.paidOn < orit.validFrom).toBe(true)
+  })
 })
 
 describe("a broken cast fails its rule", () => {
@@ -169,6 +178,21 @@ describe("a broken cast fails its rule", () => {
     // within it, so push the card's end to the day before.
     personaOf(cast, "orit").purchases[0].paid = { expiresIn: 0 }
     expect(rules(cast)).toContain("validity")
+  })
+
+  it("auto-extend: a card paid before the history", () => {
+    const cast = castOn()
+    personaOf(cast, "michal").purchases[0].paid = { daysAgo: 24 }
+    expect(rules(cast)).toContain("auto-extend")
+  })
+
+  it("auto-extend: a week whose only sessions are drafts", () => {
+    // On Thursday 2026-10-22, H2 and H3 (12.10 and 15.10) are the week of
+    // 11.10, inside every card.
+    const cast = castOn()
+    Object.assign(cast.sessions.H2, { draft: true })
+    Object.assign(cast.sessions.H3, { draft: true })
+    expect(rules(cast)).toContain("auto-extend")
   })
 
   it("occupancy: U2 not full", () => {

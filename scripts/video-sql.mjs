@@ -86,6 +86,7 @@ export function adminRoleSql(userId) {
  *   payments: { paymentId: string, at: string, boundAt: string, notifyAt: string }[],
  *   joins: { customerId: string, paymentId: string, at: string }[],
  *   events: { eventId: string, createdAt: string }[],
+ *   validFrom?: { paymentId: string, date: string }[],
  *   expiredLinks: string[],
  *   marketingSlot: string | null,
  * }} input
@@ -99,6 +100,7 @@ export function directWritesSql(input) {
     payments,
     joins,
     events,
+    validFrom = [],
     expiredLinks,
     marketingSlot,
   } = input
@@ -154,6 +156,17 @@ export function directWritesSql(input) {
       `update public.entitlements en set created_at = v.at, bound_at = case when en.bound_at is null then null else v.bound_at end from ${pv} where en.payment_id = v.id;`,
       `update public.audit_log a set created_at = v.at from ${pv} where a.action in ('approve_payment', 'admin_approve_payment') and a.entity_type in ('payments', 'entitlements', 'activation_tokens') and (a.entity_id = v.id or a.entity_id in (select en.id from public.entitlements en where en.payment_id = v.id) or a.entity_id in (select t.id from public.activation_tokens t where t.payment_id = v.id));`,
       `update public.notifications n set created_at = v.notify_at from ${pv} where position(v.id::text in n.dedupe_key) > 0;`
+    )
+  }
+  // Cards paid before the history whose validity starts with it, so
+  // job_auto_extend (counting weeks from valid_from) finds a session in each.
+  if (validFrom.length > 0) {
+    const vv = values(
+      validFrom.map((c) => [uuidLiteral(c.paymentId), dateLiteral(c.date)]),
+      ["id", "valid_from"]
+    )
+    sql.push(
+      `update public.entitlements en set valid_from = v.valid_from from ${vv} where en.payment_id = v.id and en.pinned_event_id is null;`
     )
   }
   // Joins: the profile, its consents, babies, the consumed link.
