@@ -60,6 +60,11 @@ export function weekday(date) {
   return new Date(`${date}T00:00:00Z`).getUTCDay()
 }
 
+/** The Sunday that starts the local week of a date (private.local_week_start). */
+export function weekStart(date) {
+  return addDays(date, -weekday(date))
+}
+
 /** Whole days from a to b (b - a). */
 export function daysBetween(a, b) {
   return Math.round(
@@ -111,7 +116,8 @@ export function historyShift(date, today) {
  * F1, F2: the next 2 Fridays. H1–H4: the last 4 Mondays/Thursdays before the
  * run day, oldest first. HF: the last Friday before the run day. H0: the
  * Monday 17 weeks before the run day. temp: the temporary date and the shift
- * (weeks) of each history session.
+ * (weeks) of each history session. historyStart: the Sunday of H1's week, the
+ * first week with a session (every later week has one up to the run day).
  *
  * @param {string | number | Date} now
  */
@@ -137,7 +143,20 @@ export function planVideoDates(now) {
   for (const key of ["H1", "H2", "H3", "H4", "HF", "H0"]) {
     temp[key] = historyShift(sessions[key], today)
   }
-  return { today, sessions, temp }
+  return { today, sessions, temp, historyStart: weekStart(H1) }
+}
+
+// job_auto_extend runs every hour at minute 5 (5.10). A run in the middle
+// of the seed, while the history is still on its temporary dates (almost
+// the whole run), sees weeks without a session and extends every card. So
+// the seed starts only at minutes 6–54: the next run is at least 10 minutes
+// away.
+export const AUTO_EXTEND_QUIET = { from: 55, to: 5 }
+
+/** True when a seed must not start now (job_auto_extend runs soon). */
+export function nearAutoExtend(now) {
+  const minute = localParts(now).minutes % 60
+  return minute >= AUTO_EXTEND_QUIET.from || minute <= AUTO_EXTEND_QUIET.to
 }
 
 export const HISTORY_KEYS = ["H1", "H2", "H3", "H4", "HF", "H0"]
@@ -148,15 +167,21 @@ export function isHistory(key) {
 
 /**
  * The date a purchase was paid on, from its `paid` rule:
- * { daysAgo: n } (before the run day), { beforeEvent: n } (before the real
- * date of its session) or { expiresIn: n } (a card that ends n days after
- * the run day: paid_on = today + n - validity_days).
+ * { daysAgo: n } (before the run day), { historyWeek: n } (n days after the
+ * Sunday of H1's week, so job_auto_extend finds a session in every week of
+ * the card), { beforeEvent: n } (before the real date of its session) or
+ * { expiresIn: n } (a card that ends n days after the run day: paid_on =
+ * today + n - validity_days).
  *
- * @param {{ daysAgo?: number, beforeEvent?: number, expiresIn?: number }} paid
- * @param {{ today: string, eventDate?: string | null, validityDays?: number | null }} ctx
+ * @param {{ daysAgo?: number, historyWeek?: number, beforeEvent?: number, expiresIn?: number }} paid
+ * @param {{ today: string, historyStart?: string | null, eventDate?: string | null, validityDays?: number | null }} ctx
  */
-export function paidOnOf(paid, { today, eventDate, validityDays }) {
+export function paidOnOf(paid, { today, historyStart, eventDate, validityDays }) {
   if (typeof paid.daysAgo === "number") return addDays(today, -paid.daysAgo)
+  if (typeof paid.historyWeek === "number") {
+    if (!historyStart) throw new Error("historyWeek needs the history start")
+    return addDays(historyStart, paid.historyWeek)
+  }
   if (typeof paid.beforeEvent === "number") {
     if (!eventDate) throw new Error("beforeEvent needs the session date")
     return addDays(eventDate, -paid.beforeEvent)
