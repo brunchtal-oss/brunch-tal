@@ -13,8 +13,10 @@ import {
   joinMoment,
   localMoment,
   localParts,
+  nearAutoExtend,
   paidOnOf,
   planVideoDates,
+  weekStart,
   weekday,
 } from "../scripts/video-plan.mjs"
 
@@ -67,6 +69,16 @@ describe("planVideoDates", () => {
     const back = daysBetween(sessions.H0, today)
     expect(back).toBeGreaterThanOrEqual(119)
     expect(back).toBeLessThan(126)
+
+    // The history starts on the Sunday of H1's week, at least 12 days back,
+    // and from there every week up to today has a Monday or Thursday of
+    // H1–H4 (the weeks job_auto_extend checks).
+    expect(plan.historyStart).toBe(weekStart(sessions.H1))
+    expect(weekday(plan.historyStart)).toBe(0)
+    expect(daysBetween(plan.historyStart, today)).toBeGreaterThanOrEqual(12)
+    for (let w = plan.historyStart; w < weekStart(today); w = addDays(w, 7)) {
+      expect(history.some((d) => d >= w && d < addDays(w, 7))).toBe(true)
+    }
 
     for (const key of ["H1", "H2", "H3", "H4", "HF", "H0"]) {
       const shift = temp[key]
@@ -122,12 +134,29 @@ describe("paidOnOf", () => {
     // A card of 49 days that ends 7 days after today.
     const paid = paidOnOf({ expiresIn: 7 }, { today, validityDays: 49 })
     expect(addDays(paid, 49)).toBe("2026-10-29")
+    expect(
+      paidOnOf({ historyWeek: 2 }, { today, historyStart: "2026-10-04" })
+    ).toBe("2026-10-06")
   })
 
   it("refuses an incomplete rule", () => {
     expect(() => paidOnOf({ beforeEvent: 3 }, { today })).toThrow()
     expect(() => paidOnOf({ expiresIn: 7 }, { today })).toThrow()
+    expect(() => paidOnOf({ historyWeek: 0 }, { today })).toThrow()
     expect(() => paidOnOf({}, { today })).toThrow()
+  })
+})
+
+describe("nearAutoExtend", () => {
+  it("lets a seed start only at minutes 6–54 of the hour, Israel time", () => {
+    const at = (time: string) => new Date(`2026-10-26T${time}:00+02:00`)
+    expect(nearAutoExtend(at("10:54"))).toBe(false)
+    expect(nearAutoExtend(at("10:55"))).toBe(true)
+    expect(nearAutoExtend(at("23:59"))).toBe(true)
+    expect(nearAutoExtend(at("00:00"))).toBe(true)
+    expect(nearAutoExtend(at("10:05"))).toBe(true)
+    expect(nearAutoExtend(at("10:06"))).toBe(false)
+    expect(nearAutoExtend(at("10:30"))).toBe(false)
   })
 })
 

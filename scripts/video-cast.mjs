@@ -52,9 +52,13 @@ export const LOGINS = ["michal", "neta", "sivan"]
 
 // purchases[0] comes with the join link (a new customer); later purchases
 // are for the existing customer. paid: { daysAgo } before the run day,
-// { beforeEvent } before the real date of its session, or { expiresIn } (a
-// card that ends that many days after the run day). joins: false = a payer
-// who has not joined (no account). expiredLink: her link expired (DW4).
+// { historyWeek } days after the Sunday of H1's week, { beforeEvent } before
+// the real date of its session, or { expiresIn } (a card that ends that many
+// days after the run day). A card starts no earlier than H1's week (or has
+// validFromHistory: its validity starts there, DW3), so job_auto_extend
+// finds a session in every week of it and extends nothing (rule
+// "auto-extend"). joins: false = a payer who has not joined (no account).
+// expiredLink: her link expired (DW4).
 export const PERSONAS = [
   {
     key: "michal",
@@ -66,7 +70,7 @@ export const PERSONAS = [
     dietaryNotes: "בלי מוצרי חלב",
     babies: [{ name: "נעמה", ageDays: 132 }],
     purchases: [
-      { product: "card", paid: { daysAgo: 24 } },
+      { product: "card", paid: { historyWeek: 2 } },
       { product: "couple", event: "F1", paid: { daysAgo: 5 } },
     ],
   },
@@ -104,7 +108,9 @@ export const PERSONAS = [
     personalPhotoConsent: true,
     dietaryNotes: null,
     babies: [{ name: "אלמה", ageDays: 186 }],
-    purchases: [{ product: "card", paid: { expiresIn: 7 } }],
+    // Ends in 7 days, so paid 42 days back, before the history: its
+    // validity starts with the history (DW3; no screen shows valid_from).
+    purchases: [{ product: "card", paid: { expiresIn: 7 }, validFromHistory: true }],
   },
   {
     key: "adi",
@@ -256,23 +262,25 @@ export const PERSONAS = [
     personalPhotoConsent: true,
     dietaryNotes: null,
     babies: [{ name: "גפן", ageDays: 201 }],
-    purchases: [{ product: "card", paid: { daysAgo: 18 } }],
+    purchases: [{ product: "card", paid: { historyWeek: 0 } }],
   },
-  // Card holders who fill the sessions and the history.
+  // Card holders who fill the sessions and the history. Each pays before
+  // her first history session: H1 is at least a day after its Sunday, H2
+  // four, H3 eight, H4 eleven; H1's Sunday is at least 12 days back.
   ...[
-    ["efrat", "אפרת גולדברג", "efrat.goldberg", 21, "עמית", 110],
-    ["lior", "ליאור אברמוב", "lior.abramov", 20, "תמרה", 95],
-    ["sharon", "שרון קליין", "sharon.klein", 22, "נדב", 134],
-    ["merav", "מירב סגל", "merav.segal", 19, "יעלי", 82],
-    ["anat", "ענת רביבו", "anat.revivo", 17, "אוריין", 167],
-    ["noga", "נגה שטרן", "noga.stern", 16, "בארי", 121],
-    ["rinat", "רינת אוחיון", "rinat.ohayon", 18, "הדס", 73],
-    ["dikla", "דקלה פישר", "dikla.fisher", 20, "יהלי", 140],
-    ["yaara", "יערה בן דוד", "yaara.bendavid", 9, "אביב", 66],
-    ["osnat", "אסנת וקנין", "osnat.vaknin", 7, "מעיין", 152],
-    ["shaked", "שקד אילוז", "shaked.elouz", 12, "צור", 101],
-    ["hodaya", "הודיה מלמד", "hodaya.melamed", 3, "אלון", 58],
-  ].map(([key, fullName, email, paidDaysAgo, baby, ageDays], index) => ({
+    ["efrat", "אפרת גולדברג", "efrat.goldberg", { historyWeek: 0 }, "עמית", 110],
+    ["lior", "ליאור אברמוב", "lior.abramov", { historyWeek: 0 }, "תמרה", 95],
+    ["sharon", "שרון קליין", "sharon.klein", { historyWeek: 0 }, "נדב", 134],
+    ["merav", "מירב סגל", "merav.segal", { historyWeek: 1 }, "יעלי", 82],
+    ["anat", "ענת רביבו", "anat.revivo", { historyWeek: 2 }, "אוריין", 167],
+    ["noga", "נגה שטרן", "noga.stern", { historyWeek: 3 }, "בארי", 121],
+    ["rinat", "רינת אוחיון", "rinat.ohayon", { historyWeek: 5 }, "הדס", 73],
+    ["dikla", "דקלה פישר", "dikla.fisher", { historyWeek: 6 }, "יהלי", 140],
+    ["yaara", "יערה בן דוד", "yaara.bendavid", { daysAgo: 9 }, "אביב", 66],
+    ["osnat", "אסנת וקנין", "osnat.vaknin", { daysAgo: 7 }, "מעיין", 152],
+    ["shaked", "שקד אילוז", "shaked.elouz", { daysAgo: 12 }, "צור", 101],
+    ["hodaya", "הודיה מלמד", "hodaya.melamed", { daysAgo: 3 }, "אלון", 58],
+  ].map(([key, fullName, email, paid, baby, ageDays], index) => ({
     key,
     fullName,
     email,
@@ -293,7 +301,7 @@ export const PERSONAS = [
             { name: "שחר", ageDays },
           ]
         : [{ name: baby, ageDays }],
-    purchases: [{ product: "card", paid: { daysAgo: paidDaysAgo } }],
+    purchases: [{ product: "card", paid }],
   })),
 ]
 

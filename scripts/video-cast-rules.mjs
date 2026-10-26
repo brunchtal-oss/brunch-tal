@@ -6,7 +6,8 @@
 // future single entry; a couple session on top is allowed), entries per card
 // within its units and its validity (also on the temporary date of a
 // history session), occupancy targets (U2 full, U4 within the last-places
-// threshold, U5 at most 2), babies' birth dates within 2 years back to 9
+// threshold, U5 at most 2), no card that job_auto_extend (3.14) would
+// extend right after the seed, babies' birth dates within 2 years back to 9
 // months ahead of the run day, every credit alternative a session that
 // accepts the credit's product, unique emails and phones in the domain and
 // range, and no "טל" in the fictional copy.
@@ -18,6 +19,7 @@ import {
   daysBetween,
   isHistory,
   paidOnOf,
+  weekStart,
   weekday,
 } from "./video-plan.mjs"
 
@@ -65,6 +67,7 @@ export function deriveWorld(cast, products) {
       }
       const paidOn = paidOnOf(purchase.paid, {
         today,
+        historyStart: plan.historyStart,
         eventDate: event?.date ?? null,
         validityDays: product.validity_days,
       })
@@ -78,7 +81,7 @@ export function deriveWorld(cast, products) {
         units: product.units,
         event: purchase.event ?? null,
         paidOn,
-        validFrom: paidOn,
+        validFrom: purchase.validFromHistory ? plan.historyStart : paidOn,
         expiresOn: pinned
           ? event.date > paidOn
             ? event.date
@@ -233,6 +236,29 @@ export function checkCast(cast, products, settings) {
   for (const b of bookings) {
     if (!b.entitlement) {
       fail("units", `ל-${b.who} אין כרטיסייה בתוקף ל-${b.event}`)
+    }
+  }
+
+  // job_auto_extend (3.14, private.week_has_eligible_session): every ended
+  // week of a card, from the week of its valid_from to its expiry, has a
+  // session it fits (published or completed; full or past counts).
+  for (const e of entitlements) {
+    if (e.product.validity_mode !== "days") continue
+    for (let w = weekStart(e.validFrom); w <= e.expiresOn && addDays(w, 7) <= today; w = addDays(w, 7)) {
+      const fits = Object.values(sessions).some(
+        (s) =>
+          !s.draft &&
+          s.key !== cast.businessCancel &&
+          s.date >= w &&
+          s.date < addDays(w, 7) &&
+          s.kind === e.product.eligible_event_kind &&
+          (!Array.isArray(e.product.allowed_weekdays) ||
+            e.product.allowed_weekdays.includes(weekday(s.date))) &&
+          (!Array.isArray(s.products) || s.products.includes(e.type))
+      )
+      if (!fits) {
+        fail("auto-extend", `${e.id}: אין מפגש מתאים בשבוע ${w}, והכרטיסייה תוארך`)
+      }
     }
   }
 

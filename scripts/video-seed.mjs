@@ -19,8 +19,14 @@
 // Direct writes (no supabase-js insert/update/delete/upsert; pg, documented
 // in the spec's Design Notes): DW1 the filming admin's admin_roles row (its
 // own small transaction, before the first admin RPC); DW2 the history time
-// shift, DW3 backdating, DW4 the expired link, DW5 the job calls and the
-// marketing reminder (one transaction, at the end).
+// shift, DW3 backdating (and the validity start of a card paid before the
+// history), DW4 the expired link, DW5 the job calls and the marketing
+// reminder (one transaction, at the end).
+//
+// Only at minutes 6–54 of the hour: job_auto_extend (minute 5) would extend
+// every card while the history is still on its temporary dates. The seed
+// refuses to start at minutes 55–5, and stops before marking the world
+// complete if a card was extended anyway.
 //
 // Passwords: the three customer logins and the filming admin get
 // VIDEO_LOGIN_PASSWORD (env or .env.local, at least 8 characters) through the Auth
@@ -68,6 +74,7 @@ import {
   isUuid,
   joinMoment,
   localMoment,
+  nearAutoExtend,
   paidOnOf,
   planVideoDates,
   weekday,
@@ -266,6 +273,11 @@ async function inTransaction(statements) {
 // ---------------------------------------------------------------- main
 
 async function main() {
+  if (nearAutoExtend(new Date())) {
+    fail(
+      "ההארכה האוטומטית רצה בדקה 5 של כל שעה, ואם היא תרוץ באמצע ה-seed היא תאריך את הכרטיסיות. מריצים רק בין דקה 6 לדקה 54 של השעה."
+    )
+  }
   await db.connect()
   // 1. Guards: the dev admin exists; the cast passes its rules against the
   //    products and settings of the database; the concepts and methods it
@@ -389,6 +401,7 @@ async function main() {
       const eventId = purchase.event ? eventIds[purchase.event] : null
       const paidOn = paidOnOf(purchase.paid, {
         today,
+        historyStart: plan.historyStart,
         eventDate: purchase.event ? plan.sessions[purchase.event] : null,
         validityDays: product.validity_days,
       })
@@ -896,6 +909,12 @@ async function main() {
       const createdOn = eventCreatedOn(plan.sessions[key], paidOns, today)
       if (createdOn) eventRows.push({ eventId: eventIds[key], createdAt: `${createdOn} 10:00` })
     }
+    const validFromRows = PERSONAS.flatMap((persona) =>
+      persona.purchases
+        .map((purchase, index) => ({ purchase, entry: purchases.get(`payment:${persona.key}:${index}`) }))
+        .filter(({ purchase, entry }) => purchase.validFromHistory && entry)
+        .map(({ entry }) => ({ paymentId: entry.paymentId, date: plan.historyStart }))
+    )
     const expiredLinks = PERSONAS.filter((p) => p.expiredLink)
       .map((p) => purchases.get(`payment:${p.key}:0`)?.paymentId)
       .filter(isUuid)
@@ -923,11 +942,24 @@ async function main() {
         payments: paymentRows,
         joins: joinRows,
         events: eventRows,
+        validFrom: validFromRows,
         expiredLinks,
         marketingSlot: `${today} ${slotTime}`,
       })
     )
     console.log("נכתבו הזזת ההיסטוריה, התאריכים לאחור, הקישור שפג והמשימות.")
+    const paymentIds = [...purchases.values()].map((e) => e.paymentId).filter(isUuid)
+    const [{ extended }] = await q(
+      "select count(distinct c.entitlement_id)::integer as extended from public.entitlement_corrections c join public.entitlements en on en.id = c.entitlement_id where c.actor_kind = 'system' and en.payment_id = any($1::uuid[])",
+      [paymentIds]
+    )
+    if (extended > 0) {
+      console.error(
+        `ההארכה האוטומטית האריכה ${extended} כרטיסיות באמצע הריצה, והעולם לא מוכן לצילום. מריצים video:clear ואז video:seed, בין דקה 6 לדקה 54 של השעה.`
+      )
+      process.exitCode = 1
+      return
+    }
 
     // 10. The world is complete.
     await setAnchor(anchor.adminId, {
