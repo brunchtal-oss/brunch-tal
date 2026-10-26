@@ -41,6 +41,8 @@ export const joinCopy = {
   next: "הבא",
   back: "חזרה",
   used: "הקישור הזה כבר שימש ליצירת חשבון",
+  // Story 2.14: the purchase was voided (Tal's mistake): no contact line.
+  voided: "הקישור הזה בוטל.",
   // Joined, but the sign-in right after it failed.
   joined: "החשבון נוצר. נשאר רק להיכנס לאזור האישי",
   goToLogin: "כניסה לאזור האישי",

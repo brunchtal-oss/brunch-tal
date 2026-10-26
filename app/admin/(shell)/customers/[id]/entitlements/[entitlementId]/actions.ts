@@ -2,14 +2,18 @@
 
 import type { ActionResult } from "@/lib/errors"
 import { callRpc } from "@/lib/rpc"
+import { deleteOrphanUser } from "@/lib/server/privileged/join"
+import { createServiceClient } from "@/lib/server/privileged/service-client"
 import type { Json } from "@/lib/supabase/database.types"
 import { createClient } from "@/lib/supabase/server"
 
 import {
   isCorrectionField,
   parseCorrectionPlan,
+  parseVoidPlan,
   type CorrectionField,
   type CorrectionPlan,
+  type VoidPlan,
 } from "./entitlement-items"
 
 // Tal corrects one field of a card (story 3.13, a sensitive action, AD-7).
@@ -118,6 +122,67 @@ export async function correctEntitlementAction(input: {
     data: {
       affectedCount:
         typeof data?.affected_count === "number" ? data.affected_count : 0,
+    },
+  }
+}
+
+// Story 2.14: Tal voids a purchase recorded by mistake (a sensitive,
+// final action). The preview lists what it cancels; the void runs with her
+// session and checks everything again. The service role is used only
+// afterwards, to delete the pending Auth user of a stuck claiming link the
+// RPC revoked (as the links screen does); a failed deletion is only logged.
+export async function previewVoidPurchaseAction(input: {
+  paymentId: string
+}): Promise<ActionResult<VoidPlan>> {
+  if (typeof input?.paymentId !== "string" || !UUID.test(input.paymentId)) {
+    return { ok: false, code: "INVALID_INPUT" }
+  }
+  const result = await callRpc(
+    await createClient(),
+    "preview_admin_void_purchase",
+    { p_payment_id: input.paymentId }
+  )
+  if (!result.ok) return result
+  return { ok: true, data: parseVoidPlan(result.data) }
+}
+
+export async function voidPurchaseAction(input: {
+  paymentId: string
+  reason: string
+  confirmed: boolean
+  idempotencyKey: string
+}): Promise<ActionResult<{ cancelledCount: number }>> {
+  if (
+    typeof input?.paymentId !== "string" ||
+    !UUID.test(input.paymentId) ||
+    typeof input.reason !== "string" ||
+    input.reason.length > REASON_MAX ||
+    typeof input.confirmed !== "boolean" ||
+    typeof input.idempotencyKey !== "string" ||
+    !UUID.test(input.idempotencyKey)
+  ) {
+    return { ok: false, code: "INVALID_INPUT" }
+  }
+  const result = await callRpc(await createClient(), "admin_void_purchase", {
+    p_payment_id: input.paymentId,
+    p_reason: input.reason.trim() || NONE,
+    p_confirmed: input.confirmed,
+    p_idempotency_key: input.idempotencyKey,
+  })
+  if (!result.ok) return result
+  const data = result.data as {
+    cancelled_count?: unknown
+    revoked_pending_user_id?: unknown
+  } | null
+  const orphan = data?.revoked_pending_user_id
+  if (typeof orphan === "string" && UUID.test(orphan)) {
+    await deleteOrphanUser(createServiceClient(), orphan, null)
+  }
+  return {
+    ok: true,
+    data: {
+      cancelledCount:
+        typeof data?.cancelled_count === "number" ? data.cancelled_count : 0,
     },
   }
 }

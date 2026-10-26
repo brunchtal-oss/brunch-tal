@@ -727,7 +727,8 @@ describe("admin_get_home", () => {
         ids[3],
       ])
       await db.query(
-        "update public.payments set status = 'voided' where id = $1",
+        // Story 2.14: voided_at is set exactly with the status.
+        "update public.payments set status = 'voided', voided_at = now() where id = $1",
         [ids[4]]
       )
 

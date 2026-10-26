@@ -168,6 +168,15 @@ export function ClaimScreen({
     )
   }
 
+  // Story 2.14: only "the link was cancelled", no contact line or link.
+  if (state?.status === "voided") {
+    return (
+      <Alert aria-live="polite">
+        <AlertTitle className="whitespace-normal">{joinCopy.voided}</AlertTitle>
+      </Alert>
+    )
+  }
+
   if (state?.status === "expired" || state?.status === "conflict") {
     return (
       <Alert aria-live="polite">

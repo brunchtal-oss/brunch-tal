@@ -75,6 +75,11 @@ export type EntitlementCorrection = {
 
 export type EntitlementPage = {
   entitlement_id: string
+  // Story 2.14: the purchase's payment, and its void (when, why).
+  payment_id: string
+  payment_status: string
+  voided_at: string | null
+  void_reason: string | null
   customer_id: string | null
   customer_label: string | null
   product_name: string | null
@@ -419,6 +424,136 @@ export function affectedLine(a: AffectedBooking): string {
 // session, so a card's event kind is shown but never changed.
 export function fieldEditable(field: CorrectionField, kind: string): boolean {
   return !(field === "eligible_event_kind" && kind === "card")
+}
+
+// Story 2.14: voiding a purchase recorded by mistake. The section shows
+// only while the payment is approved and the entitlement active.
+export function canVoid(
+  page: Pick<EntitlementPage, "payment_status" | "status">
+): boolean {
+  return page.payment_status === "approved" && page.status === "active"
+}
+
+export function isVoided(page: Pick<EntitlementPage, "payment_status">) {
+  return page.payment_status === "voided"
+}
+
+// The balance (meter, summary, entries): not for a voided purchase, whose
+// released units would read as free entries; its notice says enough.
+export function showsBalance(
+  page: Pick<EntitlementPage, "payment_status">
+): boolean {
+  return !isVoided(page)
+}
+
+// After the void: "הרכישה בוטלה ב-{DD.MM.YY}" and, when Tal gave one,
+// "סיבה: {reason}". Null while the purchase is not voided.
+export function voidLines(
+  page: Pick<EntitlementPage, "payment_status" | "voided_at" | "void_reason">
+): { on: string | null; at: string | null; reason: string | null } | null {
+  if (!isVoided(page)) return null
+  let on: string | null = null
+  if (page.voided_at) {
+    try {
+      on = copy.void.voidedOn(formatShortDate(page.voided_at))
+    } catch {
+      on = null
+    }
+  }
+  const reason = page.void_reason?.trim()
+  return {
+    on,
+    at: on ? page.voided_at : null,
+    reason: reason ? copy.void.reasonLine(reason) : null,
+  }
+}
+
+export type VoidBooking = {
+  bookingId: string
+  eventId: string
+  startsAt: string
+  conceptName: string
+  partySize: number
+  guestDetails: string | null
+}
+
+export type VoidPlan =
+  | {
+      ok: true
+      paymentId: string
+      kind: string
+      customerLabel: string
+      productName: string
+      amountAgorot: number
+      paidOn: string
+      linkWillBeRevoked: boolean
+      bookings: VoidBooking[]
+    }
+  | { ok: false; code: ErrorCode }
+
+// preview_admin_void_purchase's result as the dialog reads it.
+export function parseVoidPlan(data: unknown): VoidPlan {
+  const row = asRecord(data)
+  if (row.ok !== true) {
+    return {
+      ok: false,
+      code: isErrorCode(row.code) ? row.code : "SERVER_ERROR",
+    }
+  }
+  const bookings = Array.isArray(row.bookings) ? row.bookings : []
+  return {
+    ok: true,
+    paymentId: text(row.payment_id),
+    kind: text(row.kind),
+    customerLabel: nameOf(text(row.customer_label)),
+    productName: text(row.product_name),
+    amountAgorot:
+      typeof row.amount_agorot === "number" &&
+      Number.isSafeInteger(row.amount_agorot)
+        ? row.amount_agorot
+        : 0,
+    paidOn: text(row.paid_on),
+    linkWillBeRevoked: row.link_will_be_revoked === true,
+    bookings: bookings.map((b) => {
+      const r = asRecord(b)
+      const guest = typeof r.guest_details === "string" ? r.guest_details : ""
+      return {
+        bookingId: text(r.booking_id),
+        eventId: text(r.event_id),
+        startsAt: text(r.starts_at),
+        conceptName: text(r.concept_name),
+        partySize: r.party_size === 2 ? 2 : 1,
+        guestDetails: guest.trim() || null,
+      }
+    }),
+  }
+}
+
+// One booking the void cancels: "בראנץ׳ {concept} {date}", and for a
+// couple "זוגית" with what she wrote about her partner.
+export function voidBookingLine(b: VoidBooking): {
+  session: string
+  couple: string | null
+} {
+  return {
+    session: `${adminCopy.sessions.sessionTitle(b.conceptName)} ${formatSessionDate(b.startsAt)}`,
+    couple:
+      b.partySize === 2
+        ? [copy.void.couple, b.guestDetails].filter(Boolean).join(", ")
+        : null,
+  }
+}
+
+// The dialog's notification lines (user decision 2026-10-26): always "the
+// customer gets no notification"; only a card with bookings to cancel adds
+// "tell her" (she booked with it herself). Never for single, intro or
+// couple: Tal placed that booking.
+export function voidNotificationLines(
+  plan: Pick<Extract<VoidPlan, { ok: true }>, "kind" | "bookings">
+): string[] {
+  return plan.kind === "card" && plan.bookings.length > 0
+    ? [copy.void.noNotification, copy.void.tellCustomer]
+    : [copy.void.noNotification]
 }
 
 // The meter's total after a balance fix (story 3.13): what was used,

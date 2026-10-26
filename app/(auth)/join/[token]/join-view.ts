@@ -4,7 +4,8 @@ import { joinCopy } from "@/lib/copy/join"
 
 import type { JoinFormState } from "./actions"
 
-export type JoinView = "form" | "joined" | "used" | "expired" | "conflict"
+export type JoinView =
+  "form" | "joined" | "used" | "expired" | "conflict" | "voided"
 
 // The link states the join form shows; awaiting_login has its own screens
 // (claim-join.tsx).
@@ -24,6 +25,7 @@ export function joinView(
   if (state?.status === "used") return "used"
   if (state?.status === "expired") return "expired"
   if (state?.status === "conflict") return "conflict"
+  if (state?.status === "voided") return "voided"
   return linkState === "active" ? "form" : linkState
 }
 

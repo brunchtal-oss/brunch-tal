@@ -158,8 +158,22 @@ describe("getJoinTokenView", () => {
     })
   })
 
+  it("a link of a voided purchase reads voided, with nothing shown (story 2.14)", async () => {
+    rpc.mockResolvedValue({
+      data: { state_public: "voided", purpose: "join" },
+      error: null,
+    })
+    await expect(getJoinTokenView(TOKEN)).resolves.toEqual({
+      state: "voided",
+      productName: null,
+      amountAgorot: null,
+      conflictReason: null,
+      boundUserId: null,
+    })
+  })
+
   it("keeps the bound account only for an awaiting_login link", async () => {
-    for (const state of ["active", "used", "conflict", "expired"]) {
+    for (const state of ["active", "used", "conflict", "expired", "voided"]) {
       rpc.mockResolvedValue({
         data: {
           state_public: state,

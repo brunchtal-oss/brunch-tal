@@ -4,6 +4,7 @@ import Link from "next/link"
 
 import { PageHeading } from "@/components/shared/page-heading"
 import { ResultNoticeHost } from "@/components/shared/result-notice"
+import { StatusChip } from "@/components/shared/status-chip"
 import { buttonClass } from "@/components/shared/button-class"
 import { adminCopy } from "@/lib/copy/admin"
 import { shellCopy } from "@/lib/copy/shell"
@@ -79,40 +80,61 @@ async function PaymentsContent() {
       <ul className="flex flex-col">
         {rows.map((row) => {
           const item = toPaymentItem(row)
+          const body = (
+            <>
+              <span className="flex items-start gap-2">
+                <span
+                  className={cn(
+                    "min-w-0 flex-1 text-base font-semibold break-words",
+                    item.unbound && "text-muted-foreground",
+                    item.href && "underline underline-offset-4"
+                  )}
+                >
+                  <bdi>{item.title}</bdi>
+                </span>
+                {item.voided && (
+                  <StatusChip tone="expired">{copy.voided}</StatusChip>
+                )}
+              </span>
+              <span className="text-[15px]">
+                <bdi>
+                  {item.detailsBefore}
+                  {item.voided ? (
+                    <s className="text-muted-foreground">{item.amount}</s>
+                  ) : (
+                    item.amount
+                  )}
+                  {item.detailsAfter}
+                </bdi>
+              </span>
+              {item.override && (
+                <span className="text-[15px] text-warning">
+                  <bdi>{item.override}</bdi>
+                </span>
+              )}
+              {item.extra && (
+                <span className="text-[13px] text-muted-foreground">
+                  <bdi>{item.extra}</bdi>
+                </span>
+              )}
+            </>
+          )
+          // Story 2.14 (user decision 2026-10-26): the whole row opens the
+          // purchase page, where a void or a correction is made.
           return (
             <li
               key={item.paymentId}
-              className="flex flex-col gap-1 border-b border-border py-4 first:pt-0 last:border-b-0"
+              className="border-b border-border last:border-b-0"
             >
-              <p
-                className={cn(
-                  "text-base font-semibold",
-                  item.unbound && "text-muted-foreground"
-                )}
-              >
-                {item.customerHref ? (
-                  <Link
-                    href={item.customerHref}
-                    className="rounded-[4px] underline underline-offset-4"
-                  >
-                    {item.title}
-                  </Link>
-                ) : (
-                  item.title
-                )}
-              </p>
-              <p className="text-[15px]">
-                <bdi>{item.details}</bdi>
-              </p>
-              {item.override && (
-                <p className="text-[15px] text-warning">
-                  <bdi>{item.override}</bdi>
-                </p>
-              )}
-              {item.extra && (
-                <p className="text-[13px] text-muted-foreground">
-                  <bdi>{item.extra}</bdi>
-                </p>
+              {item.href ? (
+                <Link
+                  href={item.href}
+                  className="flex flex-col gap-1 rounded-[4px] py-4 transition-colors hover:bg-muted/60"
+                >
+                  {body}
+                </Link>
+              ) : (
+                <div className="flex flex-col gap-1 py-4">{body}</div>
               )}
             </li>
           )

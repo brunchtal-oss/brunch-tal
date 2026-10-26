@@ -138,6 +138,22 @@ describe("contact link", () => {
     expect(html).toContain(`href="${HREF}"`)
   })
 
+  it("a voided purchase: only that the link was cancelled, no contact (story 2.14)", () => {
+    const html = renderToStaticMarkup(
+      <ClaimScreen
+        state={{ status: "voided" }}
+        pending={false}
+        token={TOKEN}
+        idempotencyKey={KEY}
+        productName={null}
+        amountAgorot={null}
+        contactHref={HREF}
+      />
+    )
+    expect(html).toContain(joinCopy.voided)
+    expect(html).not.toContain("<a ")
+  })
+
   it("keeps plain text without published business details", () => {
     const html = screen({ status: "conflict", reason: "bind_conflict" })
     expect(html).toContain(joinCopy.conflicts.bind_conflict)

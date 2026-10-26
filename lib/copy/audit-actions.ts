@@ -194,6 +194,14 @@ export const SHOWN_AUDIT_ACTIONS: Record<string, readonly AuditRule[]> = {
       },
     },
   ],
+  // Story 2.14: the payment row is the main row; the bookings it cancelled
+  // are rows of the same operation.
+  admin_void_purchase: [
+    {
+      entity: "payments",
+      result: (row) => results.purchaseVoided(related(row, "bookings").length),
+    },
+  ],
   admin_complete_refund: [
     {
       entity: "refund_requests",

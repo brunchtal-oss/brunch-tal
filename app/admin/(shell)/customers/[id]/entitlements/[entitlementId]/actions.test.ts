@@ -3,15 +3,24 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import {
   correctEntitlementAction,
   previewCorrectEntitlementAction,
+  previewVoidPurchaseAction,
+  voidPurchaseAction,
 } from "./actions"
 
 const callRpc = vi.fn()
+const deleteOrphanUser = vi.fn()
 
 vi.mock("@/lib/rpc", () => ({
   callRpc: (...args: unknown[]) => callRpc(...args),
 }))
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({ session: true }),
+}))
+vi.mock("@/lib/server/privileged/service-client", () => ({
+  createServiceClient: () => ({ service: true }),
+}))
+vi.mock("@/lib/server/privileged/join", () => ({
+  deleteOrphanUser: (...args: unknown[]) => deleteOrphanUser(...args),
 }))
 
 const ID = "33333333-3333-4333-8333-333333333333"
@@ -31,6 +40,7 @@ const BASE = {
 
 beforeEach(() => {
   callRpc.mockReset()
+  deleteOrphanUser.mockReset()
   callRpc.mockResolvedValue({ ok: true, data: { affected_count: 2 } })
 })
 
@@ -117,6 +127,115 @@ describe("card correction actions (story 3.13)", () => {
         field: "units",
         value: 1,
       })
+    ).resolves.toEqual(INVALID)
+    expect(callRpc).not.toHaveBeenCalled()
+  })
+})
+
+describe("purchase void actions (story 2.14)", () => {
+  const PAY = "55555555-5555-4555-8555-555555555555"
+  const ORPHAN = "66666666-6666-4666-8666-666666666666"
+
+  it("the void sends a trimmed reason (empty as null) and the key", async () => {
+    callRpc.mockResolvedValue({
+      ok: true,
+      data: {
+        payment_id: PAY,
+        cancelled_count: 1,
+        revoked_pending_user_id: null,
+      },
+    })
+    await expect(
+      voidPurchaseAction({
+        paymentId: PAY,
+        reason: "  ",
+        confirmed: true,
+        idempotencyKey: KEY,
+      })
+    ).resolves.toEqual({ ok: true, data: { cancelledCount: 1 } })
+    expect(callRpc).toHaveBeenLastCalledWith(
+      { session: true },
+      "admin_void_purchase",
+      {
+        p_payment_id: PAY,
+        p_reason: null,
+        p_confirmed: true,
+        p_idempotency_key: KEY,
+      }
+    )
+    expect(deleteOrphanUser).not.toHaveBeenCalled()
+  })
+
+  it("a revoked stuck link's pending Auth user is deleted after the void", async () => {
+    callRpc.mockResolvedValue({
+      ok: true,
+      data: {
+        payment_id: PAY,
+        cancelled_count: 0,
+        revoked_pending_user_id: ORPHAN,
+      },
+    })
+    await voidPurchaseAction({
+      paymentId: PAY,
+      reason: " טעות ",
+      confirmed: true,
+      idempotencyKey: KEY,
+    })
+    expect(callRpc).toHaveBeenLastCalledWith(
+      { session: true },
+      "admin_void_purchase",
+      expect.objectContaining({ p_reason: "טעות" })
+    )
+    expect(deleteOrphanUser).toHaveBeenCalledWith(
+      { service: true },
+      ORPHAN,
+      null
+    )
+  })
+
+  it("a refusal passes through; the preview parses the plan", async () => {
+    callRpc.mockResolvedValue({ ok: false, code: "LINK_IN_PROGRESS" })
+    await expect(
+      voidPurchaseAction({
+        paymentId: PAY,
+        reason: "",
+        confirmed: true,
+        idempotencyKey: KEY,
+      })
+    ).resolves.toEqual({ ok: false, code: "LINK_IN_PROGRESS" })
+    callRpc.mockResolvedValue({
+      ok: true,
+      data: { ok: false, code: "PURCHASE_HAS_CREDIT" },
+    })
+    await expect(
+      previewVoidPurchaseAction({ paymentId: PAY })
+    ).resolves.toEqual({
+      ok: true,
+      data: { ok: false, code: "PURCHASE_HAS_CREDIT" },
+    })
+    expect(callRpc).toHaveBeenLastCalledWith(
+      { session: true },
+      "preview_admin_void_purchase",
+      { p_payment_id: PAY }
+    )
+  })
+
+  it("a bad id, reason or key is INVALID_INPUT without calling the RPC", async () => {
+    const base = {
+      paymentId: PAY,
+      reason: "",
+      confirmed: true,
+      idempotencyKey: KEY,
+    }
+    for (const input of [
+      { ...base, paymentId: "x" },
+      { ...base, reason: "x".repeat(2001) },
+      { ...base, idempotencyKey: "x" },
+    ]) {
+      await expect(voidPurchaseAction(input)).resolves.toEqual(INVALID)
+    }
+    await expect(
+      previewVoidPurchaseAction({ paymentId: "x" })
     ).resolves.toEqual(INVALID)
     expect(callRpc).not.toHaveBeenCalled()
   })

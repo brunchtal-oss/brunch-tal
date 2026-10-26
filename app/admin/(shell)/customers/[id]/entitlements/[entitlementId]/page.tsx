@@ -17,6 +17,7 @@ import { OPEN_CARDS_PATH } from "../../../open-cards/open-cards-items"
 import { BackLink } from "../../back-link"
 import { CorrectionRow } from "./correction-row"
 import {
+  canVoid,
   draftOf,
   fieldEditable,
   meterTotal,
@@ -25,9 +26,12 @@ import {
   pageEntries,
   segmentMatches,
   sessionOptions,
+  showsBalance,
   termRows,
+  voidLines,
 } from "./entitlement-items"
 import { loadEntitlement } from "./load-entitlement"
+import { VoidPurchase } from "./void-purchase"
 
 const copy = adminCopy.customers.entitlement
 const cardCopy = adminCopy.customers.card
@@ -73,8 +77,12 @@ async function EntitlementContent({
   const sessions = sessionOptions(page)
   const initial = draftOf(page)
   const total = meterTotal(page)
-  const chip =
-    page.status !== "active"
+  // Story 2.14: a voided purchase reads "בוטל" (the payment), with when and
+  // why; it has no corrections and no void.
+  const voided = voidLines(page)
+  const chip = voided
+    ? copy.void.chip
+    : page.status !== "active"
       ? cardCopy.cancelled
       : page.is_expired
         ? cardCopy.expired
@@ -106,55 +114,85 @@ async function EntitlementContent({
             {copy.purchased(formatShortDate(page.paid_on))}
           </time>
         </p>
+        {voided && (voided.on || voided.reason) && (
+          <div className="mt-2 flex flex-col gap-1 rounded-lg bg-expired-tint px-4 py-3 text-base">
+            {voided.on && voided.at && (
+              <p className="font-semibold">
+                <time dateTime={voided.at}>{voided.on}</time>
+              </p>
+            )}
+            {voided.reason && (
+              <p className="break-words">
+                <bdi>{voided.reason}</bdi>
+              </p>
+            )}
+          </div>
+        )}
       </header>
 
-      <section
-        aria-label={cardCopy.balances}
-        className="flex flex-col gap-3 rounded-lg bg-muted px-4 py-4"
-      >
-        {total > 0 && total <= METER_MAX && (
-          <EntryMeter used={page.used} reserved={page.reserved} total={total} />
-        )}
-        <p className="text-base">
-          <bdi>
-            {cardCopy.balanceSummary(page.used, page.reserved, page.available)}
-          </bdi>
-        </p>
-        {entries.length > 0 && (
-          <ul className="flex flex-col gap-2">
-            {entries.map((line) => (
-              <EntryRow key={line.key} line={line} />
+      {/* Story 2.14: no balance for a voided purchase (its released
+          units would read as free entries). */}
+      {showsBalance(page) && (
+        <section
+          aria-label={cardCopy.balances}
+          className="flex flex-col gap-3 rounded-lg bg-muted px-4 py-4"
+        >
+          {total > 0 && total <= METER_MAX && (
+            <EntryMeter
+              used={page.used}
+              reserved={page.reserved}
+              total={total}
+            />
+          )}
+          <p className="text-base">
+            <bdi>
+              {cardCopy.balanceSummary(
+                page.used,
+                page.reserved,
+                page.available
+              )}
+            </bdi>
+          </p>
+          {entries.length > 0 && (
+            <ul className="flex flex-col gap-2">
+              {entries.map((line) => (
+                <EntryRow key={line.key} line={line} />
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
+
+      {!voided && (
+        <PageSection id="entitlement-terms" title={copy.termsTitle}>
+          {!page.correctable && (
+            <p className="text-base text-muted-foreground">
+              {copy.notCorrectable}
+            </p>
+          )}
+          <ul className="flex flex-col">
+            {terms.map((row) => (
+              <CorrectionRow
+                key={row.field}
+                entitlementId={page.entitlement_id}
+                field={row.field}
+                label={row.label}
+                value={row.value}
+                note={row.note}
+                initial={initial}
+                validFrom={page.valid_from}
+                reserved={page.reserved}
+                sessions={sessions}
+                customerName={name}
+                hasCustomer={page.customer_id !== null}
+                editable={
+                  page.correctable && fieldEditable(row.field, page.kind)
+                }
+              />
             ))}
           </ul>
-        )}
-      </section>
-
-      <PageSection id="entitlement-terms" title={copy.termsTitle}>
-        {!page.correctable && (
-          <p className="text-base text-muted-foreground">
-            {copy.notCorrectable}
-          </p>
-        )}
-        <ul className="flex flex-col">
-          {terms.map((row) => (
-            <CorrectionRow
-              key={row.field}
-              entitlementId={page.entitlement_id}
-              field={row.field}
-              label={row.label}
-              value={row.value}
-              note={row.note}
-              initial={initial}
-              validFrom={page.valid_from}
-              reserved={page.reserved}
-              sessions={sessions}
-              customerName={name}
-              hasCustomer={page.customer_id !== null}
-              editable={page.correctable && fieldEditable(row.field, page.kind)}
-            />
-          ))}
-        </ul>
-      </PageSection>
+        </PageSection>
+      )}
 
       <PageSection id="entitlement-history" title={copy.historyTitle}>
         {history.length === 0 ? (
@@ -194,6 +232,12 @@ async function EntitlementContent({
           </ol>
         )}
       </PageSection>
+
+      {canVoid(page) && (
+        <PageSection id="entitlement-void" title={copy.void.title}>
+          <VoidPurchase paymentId={page.payment_id} />
+        </PageSection>
+      )}
     </ResultNoticeHost>
   )
 }

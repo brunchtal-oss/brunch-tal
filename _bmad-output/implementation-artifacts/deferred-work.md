@@ -103,7 +103,7 @@
   target: E3
   summary: ‏`private.bind_purchase` ו-`token_view` לא בודקים `payments.status = 'approved'` ו-`entitlements.status = 'active'`. כשתהיה פעולה שמבטלת תשלום או שוללת זכות, קישור פתוח ישייך ויתריע על רכישה שבוטלה.
   evidence: היום אף RPC לא קובע `voided`, ‏`revoked` או `refunded`, ולכן זה לא קורה. ביקורת 2.2, edge-case 6–7.
-  status: נשאר פתוח לביטול תשלום (`voided`) ולשלילת זכות. ‏3.9 (2026-10-13) לא נוגע בו: החזר משנה רק את הזיכוי (`refunded`) ואת בקשת ההחזר, לא את התשלום או הזכות, ורכישה שהוחזרה נשארת ניתנת לשיוך בכוונה (היא עוברת ללקוחה עם ההתראה `refund_completed`; נבדק ב-`bind-purchase.test.ts` וב-`session-role-and-token-view.test.ts`).
+  status: נסגר ב-2.14 (2026-10-26): ‏`private.bind_purchase` דוחה תשלום שאינו `approved` או זכות שאינה `active` (`PURCHASE_VOIDED`, בלי שיוך), ו-`token_view` מחזיר `voided` לקישור שבוטל של רכישה שבוטלה; ‏`purchase-void.test.ts`. קודם לכן, ‏3.9 (2026-10-13) לא נגע בו: החזר משנה רק את הזיכוי (`refunded`) ואת בקשת ההחזר, לא את התשלום או הזכות, ורכישה שהוחזרה נשארת ניתנת לשיוך בכוונה (היא עוברת ללקוחה עם ההתראה `refund_completed`; נבדק ב-`bind-purchase.test.ts` וב-`session-role-and-token-view.test.ts`).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-2-join-tracer.md`
   target: 2.10
@@ -420,7 +420,7 @@
   target: (הסיפור שיבנה ביטול תשלום)
   summary: `get_my_entitlements` לא מחזיר את מצב התשלום (`payments.status`). כשיתווסף ביטול תשלום (`voided`), להחליט איך הזכות והסכום מוצגים ללקוחה, ולהוסיף לכך שדה ובדיקה.
   evidence: ה-RPC מחזיר `amount_agorot` ו-`paid_on` מכל תשלום, בלי הבדל. אין היום פעולה שמבטלת תשלום (unverified, medium אם יתממש).
-  status: נשאר פתוח לביטול תשלום. ‏3.9 (2026-10-13) לא מבטל תשלום: רכישה מוצמדת שהוחזרה מוצגת ב-`/me/purchases` עם `credit_status = refunded` (הצ׳יפ "הוחזר"), והסכום שמוצג הוא עדיין מה ששולם.
+  status: נסגר ב-2.14 (2026-10-26, החלטת המשתמשת): הלקוחה לא רואה רכישה שבוטלה בכלל. ‏`get_my_entitlements` משמיט זכות שהתשלום שלה `voided`, ועמוד הרכישה שלה לא נמצא. קודם לכן, ‏3.9 (2026-10-13) לא מבטל תשלום: רכישה מוצמדת שהוחזרה מוצגת ב-`/me/purchases` עם `credit_status = refunded` (הצ׳יפ "הוחזר"), והסכום שמוצג הוא עדיין מה ששולם.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-10-customer-profile-babies-and-photo-consent.md`
   target: 5.20 (completion-plan, שיוך פריטים; הערך בהחלטת המשתמשת)
@@ -789,3 +789,21 @@
   target: PR קטן לפני האיפוס לצילום הסרטון לטל (החלטת המשתמשת 2026-10-26; יכול לצאת יחד עם 2.14)
   summary: ב-video:seed הכרטיסייה של מיכל מתחילה ב-2.10, אבל ההיסטוריה שלה מתחילה ב-12.10. לכן `job_auto_extend` (כל שעה, בדקה 5) מאריך אותה בשבועיים אחרי כל seed ושולח לה הודעה. התיקון: תאריך הרכישה בתוך טווח ההיסטוריה, כך שאין שבוע מתאים בלי מפגש.
   evidence: נמצא בצילום הסרטון ללקוחות (2026-10-26).
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-14-purchase-void.md`
+  target: תיקונים
+  summary: ‏`admin_reschedule_event` עדיין משנה את `expires_on` של זכות מוצמדת שבוטלה (`revoked`) כשמועד המפגש שלה משתנה.
+  evidence: לא מזיק: הזכות `revoked`, ו-`plan_funding`, משימות הכרטיסיות והאזור האישי דורשים `active`, כך שהתוקף החדש לא משמש לכלום. נרשם ב-spec של 2.14 (Code Map).
+  status: פתוח
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-14-purchase-void.md`
+  target: תיקונים
+  summary: אין בדיקת מסד לחסימה `MANUAL_HANDLING_REQUIRED` בביטול רכישה (הרשמה של הרכישה שמומנה משני סוגי כניסה), ב-`preview_admin_void_purchase` וב-`admin_void_purchase`.
+  evidence: ביקורת 2.14 (verification-gap). הכתיבה מוגנת גם בבדיקה של `cancel_core`, ולכן רק התצוגה המקדימה עלולה לסטות. נסגר בבדיקה שמממנת הרשמה אחת משני סוגי זכות ומצפה לקוד משתיהן.
+  status: פתוח
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-14-purchase-void.md`
+  target: תיקונים
+  summary: לשלושת הענפים של `CONCURRENT_CHANGE` ב-`admin_void_purchase` (הצטרפות בין הקריאה לנעילה, לקוחה שהשתנתה, הרשמה מחוץ לקבוצה הנעולה) אין בדיקת מסד (medium, לא מאומת).
+  evidence: ביקורת 2.14 (blind-hunter). צריך עסקה מקבילה שנעצרת באמצע, כמו ב-3.13 #15. נסגר בבדיקה עם שני חיבורים.
+  status: פתוח

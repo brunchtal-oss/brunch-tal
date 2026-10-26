@@ -20,6 +20,8 @@ const row = (overrides: Partial<PaymentRow> = {}): PaymentRow => ({
   amount_override_reason: null,
   reference: null,
   note: null,
+  status: "approved",
+  entitlement_id: "ent-1",
   ...overrides,
 })
 
@@ -29,8 +31,12 @@ describe("toPaymentItem", () => {
       paymentId: "pay-1",
       title: "Dana",
       unbound: false,
-      customerHref: "/admin/customers/c-1",
-      details: copy.details("Card", "472 ₪", "Bit", "01.10", "03.10"),
+      href: "/admin/customers/c-1/entitlements/ent-1",
+      details: "Card · 472 ₪ · Bit · רכישה 01.10 · אושר 03.10",
+      detailsBefore: "Card · ",
+      amount: "472 ₪",
+      detailsAfter: " · Bit · רכישה 01.10 · אושר 03.10",
+      voided: false,
       override: null,
       extra: null,
     })
@@ -40,7 +46,7 @@ describe("toPaymentItem", () => {
     const item = toPaymentItem(row({ customer_id: null, customer_name: null }))
     expect(item.title).toBe(copy.unbound)
     expect(item.unbound).toBe(true)
-    expect(item.customerHref).toBeNull()
+    expect(item.href).toBe("/admin/customers/unbound/entitlements/ent-1")
   })
 
   it("titles an unbound payment with its payer label, and a bound one with the name", () => {
@@ -70,5 +76,13 @@ describe("toPaymentItem", () => {
     expect(toPaymentItem(row({ reference: "123", note: "n" })).extra).toBe(
       `${copy.reference("123")} · ${copy.note("n")}`
     )
+  })
+
+  it("marks a voided payment and links every row to its purchase page (story 2.14)", () => {
+    const item = toPaymentItem(row({ status: "voided" }))
+    expect(item.voided).toBe(true)
+    expect(item.amount).toBe("472 ₪")
+    expect(item.href).toBe("/admin/customers/c-1/entitlements/ent-1")
+    expect(toPaymentItem(row({ entitlement_id: null })).href).toBeNull()
   })
 })

@@ -20,6 +20,7 @@ describe("joinView", () => {
     ["used", "used"],
     ["expired", "expired"],
     ["conflict", "conflict"],
+    ["voided", "voided"],
   ] as const)("shows a %s link as %s before any submit", (link, expected) => {
     expect(joinView(null, link)).toBe(expected)
   })
@@ -29,6 +30,7 @@ describe("joinView", () => {
     [{ status: "used" }, "used"],
     [{ status: "expired" }, "expired"],
     [{ status: "conflict", reason: null }, "conflict"],
+    [{ status: "voided" }, "voided"],
   ] as const)("lets the result %j win over an active link", (state, view) => {
     expect(joinView(state, "active")).toBe(view)
   })

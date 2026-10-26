@@ -200,6 +200,26 @@ describe("result sentences", () => {
     ).toBe("נרשמה (2 מקומות)")
   })
 
+  it("a voided purchase (story 2.14): its payment row, with the bookings it cancelled", () => {
+    const voided = {
+      action: "admin_void_purchase",
+      entity_type: "payments",
+      changes: [{ key: "status", before: "approved", after: "voided" }],
+    }
+    const booking = rel("bookings", [
+      { key: "status", before: "confirmed", after: "cancelled" },
+    ])
+    expect(shownPairs()).toContain("admin_void_purchase/payments")
+    expect(actions.admin_void_purchase).toBe("ביטול רכישה")
+    expect(result(voided)).toBe("הרכישה בוטלה")
+    expect(result({ ...voided, related: [booking] })).toBe(
+      "הרכישה בוטלה, ובוטלה הרשמה אחת בלי זיכוי"
+    )
+    expect(result({ ...voided, related: [booking, booking] })).toBe(
+      "הרכישה בוטלה, ובוטלו 2 הרשמות בלי זיכוי"
+    )
+  })
+
   it("a cancellation: a credit for N sessions, a refund request, or back to the card", () => {
     const cancel = {
       action: "cancel_booking",

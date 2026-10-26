@@ -146,21 +146,20 @@ export const adminCopy = {
     add: "הוספת תשלום",
     unbound: "לקוחה חדשה · עוד לא הצטרפה",
     unboundNamed: (label: string) => `${label} · עוד לא הצטרפה`,
-    // "{product} · {amount} · {method} · רכישה {DD.MM} · אושר {DD.MM}"
-    details: (
-      product: string,
-      amount: string,
-      method: string,
-      paidOn: string,
-      approvedOn: string
-    ) =>
-      `${product} · ${amount} · ${method} · רכישה ${paidOn} · אושר ${approvedOn}`,
+    // "{product} · {amount} · {method} · רכישה {DD.MM} · אושר {DD.MM}",
+    // in three parts around the amount (story 2.14: a voided payment's
+    // amount is struck through).
+    detailsBefore: (product: string) => `${product} · `,
+    detailsAfter: (method: string, paidOn: string, approvedOn: string) =>
+      ` · ${method} · רכישה ${paidOn} · אושר ${approvedOn}`,
     catalogPrice: (price: string) => `מחיר הקטלוג ${price}`,
     reason: (reason: string) => `סיבה: ${reason}`,
     reference: (value: string) => `אסמכתה: ${value}`,
     note: (value: string) => `הערה: ${value}`,
     limit: "מוצגים 50 התשלומים האחרונים",
     empty: "אין עדיין תשלומים",
+    // Story 2.14: a voided payment's tag (its amount is struck through).
+    voided: "בוטל",
   },
   // The refunds section of /admin/payments (story 3.9, user decisions
   // 2026-10-14): the open requests, then the completed refunds of purchases
@@ -1798,6 +1797,35 @@ export const adminCopy = {
       historyWho: (actor: string, date: string) => `${actor}, ${date}`,
       historyReason: (reason: string) => `סיבה: ${reason}`,
       historySession: (title: string) => `מפגש: ${title}`,
+      // Story 2.14 (user decisions 2026-10-26): voiding a purchase recorded
+      // by mistake. Final; after a mistake Tal records a new payment. The
+      // dialog's title is in lib/admin/sensitive-actions.ts (purchase_void).
+      void: {
+        title: "ביטול הרכישה",
+        intro:
+          "לרכישה שנרשמה בטעות: לקוחה אחרת, מוצר אחר או תשלום שלא הגיע. התשלום לא ייספר בסכום החודש, והרכישה לא תופיע באזור האישי של הלקוחה.",
+        button: "ביטול הרכישה",
+        description: "התשלום יסומן כמבוטל, והרכישה לא תהיה זמינה יותר להרשמה.",
+        product: "מוצר",
+        amount: "סכום",
+        paidOn: "נרכשה",
+        bookingsTitle: "הרשמות שיבוטלו, בלי זיכוי",
+        noBookings: "אין הרשמות עתידיות מהרכישה",
+        couple: "זוגית",
+        linkRevoked: "קישור ההצטרפות יבוטל",
+        noNotification: "הלקוחה לא תקבל התראה",
+        // Only for a card with bookings to cancel.
+        tellCustomer: "כבר בוצע רישום בכרטיסייה, יש לעדכן את הלקוחה על הביטול",
+        final: "הביטול סופי. אם זו טעות, רושמים תשלום חדש",
+        reason: "סיבה (לא חובה)",
+        checkbox: (name: string) => `אני מאשרת לבטל את הרכישה של ${name}`,
+        confirm: "ביטול הרכישה",
+        done: "הרכישה בוטלה",
+        // After the void.
+        chip: "בוטל",
+        voidedOn: (date: string) => `הרכישה בוטלה ב-${date}`,
+        reasonLine: (reason: string) => `סיבה: ${reason}`,
+      },
     },
     card: {
       back: "לכל הלקוחות",
@@ -1943,7 +1971,8 @@ export const adminCopy = {
       // "{amount} · {method} · {DD.MM.YY}" under the product.
       purchaseDetail: (amount: string, method: string, paidOn: string) =>
         [amount, method, paidOn].filter(Boolean).join(" · "),
-      voided: "בוטלה",
+      // A voided payment (story 2.14: "בוטל", the payment).
+      voided: "בוטל",
       notes: "הערות פנימיות",
       notesHint: "רק לך, הלקוחה לא רואה",
       noNotes: "אין הערות",
@@ -2217,6 +2246,14 @@ export const adminCopy = {
       detailsRemoved: "הפרטים האישיים של הלקוחה הוסרו",
       // Story 5.11.
       marketingTextAdded: "נוסח חדש נוסף למאגר",
+      // Story 2.14: a purchase voided by mistake, and the bookings it
+      // cancelled (no credit).
+      purchaseVoided: (bookings: number) =>
+        bookings === 0
+          ? "הרכישה בוטלה"
+          : bookings === 1
+            ? "הרכישה בוטלה, ובוטלה הרשמה אחת בלי זיכוי"
+            : `הרכישה בוטלה, ובוטלו ${bookings} הרשמות בלי זיכוי`,
     },
     // Values.
     masked: "השתנה",
@@ -2266,6 +2303,8 @@ export const adminCopy = {
       // Story 3.16.
       admin_change_credit_options: "שינוי חלופות לזיכוי",
       admin_refund_credit: "החזר במקום זיכוי",
+      // Story 2.14.
+      admin_void_purchase: "ביטול רכישה",
       choose_credit_outcome: "בחירה בין זיכוי להחזר",
       bind_purchase: "שיוך רכישה",
       join_complete: "השלמת הצטרפות",

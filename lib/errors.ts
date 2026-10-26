@@ -193,6 +193,14 @@ export const ERROR_MESSAGES = {
   // The login and token actions' rate limit (story 2.8), for the IP and the
   // account or token alike; Supabase Auth's own 429 maps here too.
   TOO_MANY_ATTEMPTS: "יותר מדי ניסיונות. אפשר לנסות שוב בעוד 15 דקות",
+  // Voiding a purchase recorded by mistake (story 2.14): it is voided
+  // already (also a join or a new link for it); an entry of it was used (a
+  // session that started or ended); a credit or a refund request came from
+  // it.
+  PURCHASE_VOIDED: "הרכישה הזו בוטלה",
+  PURCHASE_ENTRY_USED:
+    "אי אפשר לבטל את הרכישה, כי כבר נוצלה ממנה כניסה למפגש שהתחיל או הסתיים",
+  PURCHASE_HAS_CREDIT: "אי אפשר לבטל את הרכישה, כי יש עליה זיכוי או בקשת החזר",
   // Raised by the adapter (never by SQL).
   INVALID_CREDENTIALS: "המייל או הסיסמה לא תואמים",
   // Correct password, but no active customer profile and not an admin.

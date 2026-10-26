@@ -45,7 +45,14 @@ export type JoinTokenView = {
 
 type TokenViewResult = {
   state_public:
-    "active" | "awaiting_login" | "used" | "expired" | "conflict" | "not_found"
+    | "active"
+    | "awaiting_login"
+    | "used"
+    | "expired"
+    | "conflict"
+    | "not_found"
+    // Story 2.14: the link of a voided purchase.
+    | "voided"
   purpose: string | null
   product_name: string | null
   amount_agorot: number | null
@@ -99,6 +106,8 @@ export async function getJoinTokenView(token: string): Promise<JoinTokenView> {
       }
     case "used":
       return { state: "used", ...closed }
+    case "voided":
+      return { state: "voided", ...closed }
     case "conflict":
       return {
         state: "conflict",
