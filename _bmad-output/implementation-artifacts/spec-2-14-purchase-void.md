@@ -100,6 +100,8 @@ context:
 
 ## Spec Change Log
 
+- 2026-10-27 (phone check, user decision): the customer card's `יתרות ותוקף` leaves out a voided card (`balanceViews` skips `status = 'revoked'`); it stays only in the history with `בוטל`. A booking cancelled by a void stays in `ההרשמות שלי` with `בוטל`, as specified (user kept it).
+
 ## Review Triage Log
 
 **Round 1 (2026-10-27):** blind-hunter, edge-case-hunter, verification-gap, intent-alignment. medium 1, low 4, false 6, rejected low 6; no intent_gap or bad_spec.
