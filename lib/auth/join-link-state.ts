@@ -1,7 +1,8 @@
 // Public state of a join link as shown on /join/[token]. awaiting_login: the
 // details matched an existing account (story 2.3), which logs in and confirms.
+// voided: the purchase was voided by mistake (story 2.14).
 export type JoinLinkState =
-  "active" | "awaiting_login" | "used" | "expired" | "conflict"
+  "active" | "awaiting_login" | "used" | "expired" | "conflict" | "voided"
 
 // Why a join link stopped (activation_tokens.conflict_reason). The screen
 // picks its wording by the reason; never the field that matched.

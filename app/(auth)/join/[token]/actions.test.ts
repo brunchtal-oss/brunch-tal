@@ -336,6 +336,35 @@ describe("submitJoinAction", () => {
   })
 
   it.each([
+    ["voided", { status: "voided" }],
+    ["expired", { status: "expired" }],
+    ["active", { status: "expired" }],
+  ])(
+    "LINK_EXPIRED reads the link again: %s (story 2.14)",
+    async (state, expected) => {
+      submitJoin.mockResolvedValue({ ok: false, code: "LINK_EXPIRED" })
+      getJoinTokenView.mockResolvedValue({ state })
+      await expect(submitJoinAction(null, form())).resolves.toEqual(expected)
+      expect(getJoinTokenView).toHaveBeenCalledWith(TOKEN)
+    }
+  )
+
+  it("LINK_EXPIRED stays expired when the link cannot be read", async () => {
+    submitJoin.mockResolvedValue({ ok: false, code: "LINK_EXPIRED" })
+    getJoinTokenView.mockRejectedValue(new Error("token_view failed"))
+    await expect(submitJoinAction(null, form())).resolves.toEqual({
+      status: "expired",
+    })
+  })
+
+  it("maps PURCHASE_VOIDED to the voided screen", async () => {
+    submitJoin.mockResolvedValue({ ok: false, code: "PURCHASE_VOIDED" })
+    await expect(submitJoinAction(null, form())).resolves.toEqual({
+      status: "voided",
+    })
+  })
+
+  it.each([
     [{ field: "phone" }, { field: "phone", message: "phone" }],
     [{ field: "email" }, { field: "email", message: "email" }],
     [
@@ -432,6 +461,17 @@ describe("claimJoinAction", () => {
     expect(getJoinTokenView).not.toHaveBeenCalled()
   })
 
+  it("shows the voided screen when the purchase was voided (story 2.14)", async () => {
+    rpc.mockResolvedValue({
+      data: null,
+      error: { code: "P0001", message: "PURCHASE_VOIDED" },
+    })
+    await expect(claimJoinAction(null, claimForm())).resolves.toEqual({
+      status: "voided",
+    })
+    expect(getJoinTokenView).not.toHaveBeenCalled()
+  })
+
   it("shows the conflict screen for a bind conflict", async () => {
     rpc.mockResolvedValue({ data: { outcome: "conflict" }, error: null })
     await expect(claimJoinAction(null, claimForm())).resolves.toEqual({
@@ -445,6 +485,7 @@ describe("claimJoinAction", () => {
     ["used", { status: "used" }],
     ["expired", { status: "expired" }],
     ["conflict", { status: "conflict", reason: "two_accounts" }],
+    ["voided", { status: "voided" }],
     ["awaiting_login", { status: "other_account" }],
   ])(
     "reads the link again after NOT_AUTHORIZED: %s",

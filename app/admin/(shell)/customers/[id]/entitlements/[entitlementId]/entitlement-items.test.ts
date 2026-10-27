@@ -16,6 +16,12 @@ import {
   sessionOptions,
   termRows,
   weekLine,
+  canVoid,
+  parseVoidPlan,
+  showsBalance,
+  voidBookingLine,
+  voidLines,
+  voidNotificationLines,
   type EntitlementPage,
 } from "./entitlement-items"
 
@@ -25,6 +31,10 @@ const EVENT = "33333333-3333-4333-8333-333333333333"
 
 const PAGE: EntitlementPage = {
   entitlement_id: ID,
+  payment_id: "44444444-4444-4444-8444-444444444444",
+  payment_status: "approved",
+  voided_at: null,
+  void_reason: null,
   customer_id: CUSTOMER,
   customer_label: "Noa",
   product_name: "כרטיסייה 4",
@@ -342,5 +352,114 @@ describe("review fixes", () => {
     expect(meterTotal({ used: 1, reserved: 1, available: 0 })).toBe(2)
     expect(meterTotal({ used: 1, reserved: 1, available: 3 })).toBe(5)
     expect(meterTotal({ used: 0, reserved: 0, available: -1 })).toBe(0)
+  })
+})
+
+describe("purchase void (story 2.14)", () => {
+  const PLAN = {
+    ok: true,
+    payment_id: "44444444-4444-4444-8444-444444444444",
+    entitlement_id: ID,
+    kind: "card",
+    customer_id: CUSTOMER,
+    customer_label: "  ",
+    product_name: "כרטיסייה 4",
+    amount_agorot: 47200,
+    paid_on: "2026-10-01",
+    link_will_be_revoked: false,
+    bookings: [
+      {
+        booking_id: "b1",
+        event_id: EVENT,
+        starts_at: "2026-10-16T07:00:00Z",
+        concept_name: "שישי מיוחד",
+        party_size: 2,
+        guest_details: " Dana ",
+      },
+      {
+        booking_id: "b2",
+        event_id: EVENT,
+        starts_at: "2026-10-23T07:00:00Z",
+        concept_name: "שישי מיוחד",
+        party_size: 1,
+        guest_details: null,
+      },
+    ],
+  }
+
+  it("a voided purchase shows no balance (meter, summary, entries)", () => {
+    expect(showsBalance(PAGE)).toBe(true)
+    expect(showsBalance({ payment_status: "approved" })).toBe(true)
+    expect(showsBalance({ ...PAGE, payment_status: "voided" })).toBe(false)
+  })
+
+  it("the section shows only for an approved payment and an active entitlement", () => {
+    expect(canVoid(PAGE)).toBe(true)
+    expect(canVoid({ ...PAGE, status: "revoked" })).toBe(false)
+    expect(canVoid({ ...PAGE, payment_status: "voided" })).toBe(false)
+  })
+
+  it("a voided purchase: its date and its reason, when given", () => {
+    expect(voidLines(PAGE)).toBeNull()
+    expect(
+      voidLines({
+        ...PAGE,
+        payment_status: "voided",
+        voided_at: "2026-10-26T08:00:00Z",
+        void_reason: "  לקוחה לא נכונה ",
+      })
+    ).toEqual({
+      on: "הרכישה בוטלה ב-26.10.26",
+      at: "2026-10-26T08:00:00Z",
+      reason: "סיבה: לקוחה לא נכונה",
+    })
+    expect(
+      voidLines({
+        ...PAGE,
+        payment_status: "voided",
+        voided_at: "2026-10-26T08:00:00Z",
+        void_reason: " ",
+      })?.reason
+    ).toBeNull()
+  })
+
+  it("parses the plan; a couple booking reads זוגית with the partner", () => {
+    const plan = parseVoidPlan(PLAN)
+    expect(plan).toMatchObject({
+      ok: true,
+      kind: "card",
+      customerLabel: "לקוחה חדשה",
+      amountAgorot: 47200,
+      linkWillBeRevoked: false,
+    })
+    if (!plan.ok) throw new Error("plan")
+    expect(plan.bookings).toHaveLength(2)
+    expect(voidBookingLine(plan.bookings[0]).couple).toBe("זוגית, Dana")
+    expect(voidBookingLine(plan.bookings[1]).couple).toBeNull()
+    expect(voidBookingLine(plan.bookings[1]).session).toContain("שישי מיוחד")
+    expect(parseVoidPlan({ ok: false, code: "PURCHASE_ENTRY_USED" })).toEqual({
+      ok: false,
+      code: "PURCHASE_ENTRY_USED",
+    })
+    expect(parseVoidPlan({ ok: false, code: "WHAT" })).toEqual({
+      ok: false,
+      code: "SERVER_ERROR",
+    })
+  })
+
+  it("the notification lines: the card line only for a card with bookings", () => {
+    const none = "הלקוחה לא תקבל התראה"
+    const tell = "כבר בוצע רישום בכרטיסייה, יש לעדכן את הלקוחה על הביטול"
+    const booking = parseVoidPlan(PLAN)
+    if (!booking.ok) throw new Error("plan")
+    expect(voidNotificationLines(booking)).toEqual([none, tell])
+    expect(voidNotificationLines({ kind: "card", bookings: [] })).toEqual([
+      none,
+    ])
+    for (const kind of ["single", "intro", "couple"]) {
+      expect(
+        voidNotificationLines({ kind, bookings: booking.bookings })
+      ).toEqual([none])
+    }
   })
 })

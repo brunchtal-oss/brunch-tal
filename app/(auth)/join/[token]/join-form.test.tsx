@@ -24,7 +24,7 @@ const PHOTO = {
 }
 
 function render(
-  linkState: "active" | "used" | "expired" | "conflict",
+  linkState: "active" | "used" | "expired" | "conflict" | "voided",
   extra: {
     conflictReason?: "two_accounts" | "not_activated" | null
     contactHref?: string | null
@@ -192,6 +192,13 @@ describe("JoinForm conflict reason", () => {
     const href = "https://wa.me/972544256456"
     const html = render("expired", { contactHref: href })
     expect(html).toContain(`>${joinCopy.expiredContactPhrase}</a>`)
+    expect(html).not.toContain('name="password"')
+  })
+
+  it("a voided purchase: only that the link was cancelled, no contact or form (story 2.14)", () => {
+    const html = render("voided", { contactHref: "https://wa.me/972544256456" })
+    expect(html).toContain(joinCopy.voided)
+    expect(html).not.toContain("<a ")
     expect(html).not.toContain('name="password"')
   })
 

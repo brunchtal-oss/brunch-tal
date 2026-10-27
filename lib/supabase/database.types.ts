@@ -1341,6 +1341,7 @@ export type Database = {
           reference: string | null
           source: string
           status: string
+          voided_at: string | null
         }
         Insert: {
           amount_agorot: number
@@ -1360,6 +1361,7 @@ export type Database = {
           reference?: string | null
           source: string
           status?: string
+          voided_at?: string | null
         }
         Update: {
           amount_agorot?: number
@@ -1379,6 +1381,7 @@ export type Database = {
           reference?: string | null
           source?: string
           status?: string
+          voided_at?: string | null
         }
         Relationships: [
           {
@@ -2365,6 +2368,15 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_void_purchase: {
+        Args: {
+          p_confirmed: boolean
+          p_idempotency_key: string
+          p_payment_id: string
+          p_reason: string
+        }
+        Returns: Json
+      }
       book_session: {
         Args: { p_event_id: string; p_idempotency_key: string }
         Returns: Json
@@ -2504,6 +2516,10 @@ export type Database = {
       }
       preview_admin_settle_parked_purchase: {
         Args: { p_entitlement_id: string }
+        Returns: Json
+      }
+      preview_admin_void_purchase: {
+        Args: { p_payment_id: string }
         Returns: Json
       }
       preview_book_session: { Args: { p_event_id: string }; Returns: Json }

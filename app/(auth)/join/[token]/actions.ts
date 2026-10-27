@@ -35,6 +35,8 @@ export type JoinFormState =
   | { status: "joined" }
   | { status: "used" }
   | { status: "expired" }
+  // Story 2.14: the purchase was voided.
+  | { status: "voided" }
   | { status: "error"; code: ErrorCode; errors: JoinFieldError[] }
 
 // INVALID_INPUT and CONSENT_REQUIRED from the RPCs, mapped to the field the
@@ -104,7 +106,18 @@ export async function submitJoinAction(
   const result = await submitJoin(token, validated.input, idempotencyKey)
   if (!result.ok) {
     if (result.code === "LINK_USED") return { status: "used" }
-    if (result.code === "LINK_EXPIRED") return { status: "expired" }
+    if (result.code === "LINK_EXPIRED") {
+      // Story 2.14: Tal voided the purchase while the form was open (its
+      // link was revoked): the link reads "voided", not "expired".
+      try {
+        const view = await getJoinTokenView(token)
+        if (view.state === "voided") return { status: "voided" }
+      } catch {
+        // The expired screen, as before.
+      }
+      return { status: "expired" }
+    }
+    if (result.code === "PURCHASE_VOIDED") return { status: "voided" }
     const fieldError = rpcFieldError(result.code, result.detail)
     return {
       status: "error",
@@ -143,6 +156,8 @@ export type ClaimFormState =
   | { status: "conflict"; reason: ConflictReason | null }
   | { status: "used" }
   | { status: "expired" }
+  // Story 2.14: the purchase was voided.
+  | { status: "voided" }
   // Signed in to an account this link is not bound to.
   | { status: "other_account" }
   | { status: "error"; code: ErrorCode }
@@ -182,6 +197,7 @@ export async function claimJoinAction(
   })
 
   if (!result.ok) {
+    if (result.code === "PURCHASE_VOIDED") return { status: "voided" }
     if (result.code !== "NOT_AUTHORIZED") {
       return { status: "error", code: result.code }
     }
@@ -194,6 +210,7 @@ export async function claimJoinAction(
     const state = view.state
     if (state === "used") return { status: "used" }
     if (state === "expired") return { status: "expired" }
+    if (state === "voided") return { status: "voided" }
     if (state === "conflict") {
       return { status: "conflict", reason: view.conflictReason }
     }

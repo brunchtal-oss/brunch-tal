@@ -311,12 +311,13 @@ describe("single entitlements (second phone check)", () => {
     expect(copy.singleToBook("30.10")).toBe("יש לשריין · בתוקף עד 30.10")
   })
 
-  it("cards first (all of them, as before), then the open singles", () => {
+  it("cards first (all but a voided one), then the open singles", () => {
     const views = balanceViews([
       single({ entitlement_id: "s-open", expires_on: "2026-10-05" }),
       single({ entitlement_id: "s-used", used: 1 }),
       entitlement({ entitlement_id: "c-expired", is_expired: true }),
       entitlement({ entitlement_id: "c1", expires_on: "2026-11-30" }),
+      entitlement({ entitlement_id: "c-voided", status: "revoked" }),
     ])
     expect(views.map((v) => [v.variant, v.key])).toEqual([
       ["card", "c-expired"],

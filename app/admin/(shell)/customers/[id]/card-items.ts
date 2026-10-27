@@ -313,10 +313,12 @@ export function toSingleItem(row: CardEntitlement): SingleItem {
 export type BalanceView =
   ({ variant: "card" } & BalanceItem) | ({ variant: "single" } & SingleItem)
 
-// The balances section: every card (as before), then the open singles,
-// each group by expiry.
+// The balances section: every card but a voided one (story 2.14, phone
+// check, user decision 2026-10-27: it stays only in the history), then the
+// open singles, each group by expiry.
 export function balanceViews(rows: CardEntitlement[]): BalanceView[] {
   return orderBalances(rows).flatMap((row): BalanceView[] => {
+    if (row.status === "revoked") return []
     if (row.kind === "card") return [{ variant: "card", ...toBalanceItem(row) }]
     return isOpenSingle(row)
       ? [{ variant: "single", ...toSingleItem(row) }]

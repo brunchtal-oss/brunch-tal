@@ -215,6 +215,15 @@ export function JoinForm({
     )
   }
 
+  // Story 2.14: only "the link was cancelled", no contact line or link.
+  if (view === "voided") {
+    return (
+      <Alert aria-live="polite">
+        <AlertTitle className="whitespace-normal">{joinCopy.voided}</AlertTitle>
+      </Alert>
+    )
+  }
+
   if (view === "expired" || view === "conflict") {
     return (
       <Alert aria-live="polite">
