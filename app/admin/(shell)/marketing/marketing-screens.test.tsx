@@ -5,6 +5,7 @@ import { adminCopy } from "@/lib/copy/admin"
 
 import {
   MarketingIntro,
+  MarketingPrivacyNotice,
   MarketingTagsEditor,
   PRIVACY_EDIT_HREF,
   savePayload,
@@ -49,18 +50,16 @@ const EMPTY: MarketingTagsEditorRow = {
 }
 
 describe("MarketingTagsEditor", () => {
-  it("shows the section, the scope, three LTR fields with hints and the double-count note", () => {
+  it("shows the section and three LTR fields with hints", () => {
     const html = renderToStaticMarkup(<MarketingTagsEditor row={EMPTY} />)
     for (const text of [
       copy.section,
-      copy.scope,
       copy.labels.ga4,
       copy.labels.gtm,
       copy.labels.pixel,
       copy.hints.ga4,
       copy.hints.gtm,
       copy.hints.pixel,
-      copy.doubleCount,
     ]) {
       expect(html).toContain(text)
     }
@@ -80,9 +79,14 @@ describe("MarketingTagsEditor", () => {
     expect(html.match(new RegExp(`>${copy.off}<`, "g"))).toHaveLength(2)
   })
 
-  it("the intro and the privacy notice link to the privacy policy's editor", () => {
+  it("the intro is only the IDs sentence", () => {
     const html = renderToStaticMarkup(<MarketingIntro />)
     expect(html).toContain(copy.intro)
+    expect(html).not.toContain(copy.privacyNotice)
+  })
+
+  it("the privacy notice links to the privacy policy's editor", () => {
+    const html = renderToStaticMarkup(<MarketingPrivacyNotice />)
     expect(html).toContain(copy.privacyNotice)
     expect(html).toContain(`href="${PRIVACY_EDIT_HREF}"`)
     expect(PRIVACY_EDIT_HREF).toBe("/admin/content/privacy")
