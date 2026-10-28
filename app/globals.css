@@ -272,6 +272,25 @@ body:has([data-whatsapp-bar]) [data-site-footer] {
     padding-bottom: 0;
   }
 }
+/*
+ * The cookie notice (story 5.23, components/public/cookie-notice.tsx): 16
+ * above the bottom of the screen, and while the whatsapp-bar is shown the
+ * same offset as scroll-padding-bottom above (the bar's 1px + 12 + 48 + 12 +
+ * safe area, plus 16), so the bar stays visible below it. Below a 480px
+ * window height the bar is in the flow and the notice sits at bottom 0.
+ */
+[data-cookie-notice] {
+  bottom: calc(1rem + env(safe-area-inset-bottom));
+}
+body:has([data-whatsapp-bar]) [data-cookie-notice] {
+  bottom: calc(4.5rem + 1px + env(safe-area-inset-bottom) + 1rem);
+}
+@media (max-height: 479.98px) {
+  [data-cookie-notice],
+  body:has([data-whatsapp-bar]) [data-cookie-notice] {
+    bottom: 0;
+  }
+}
 /* On the olive top-bar the ring is on-primary, so it shows on the bar. */
 [data-top-bar] :focus-visible {
   outline-color: var(--primary-foreground);

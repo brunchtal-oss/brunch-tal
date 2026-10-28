@@ -227,6 +227,8 @@ export const adminCopy = {
       privacy: "מדיניות פרטיות",
       terms: "תנאי שימוש",
       accessibility: "הצהרת נגישות",
+      // Story 5.23.
+      "cookie-notice": "הודעת עוגיות",
     },
     // The sections, by "slug/key".
     sections: {
@@ -246,6 +248,7 @@ export const adminCopy = {
       "privacy/body": "נוסח המדיניות",
       "terms/body": "נוסח התנאים",
       "accessibility/statement": "נוסח ההצהרה",
+      "cookie-notice/notice": "נוסח ההודעה",
     } as Record<string, string>,
     // The row of "site" that leads to the business details (the footer's
     // phone and address come from there).
@@ -370,6 +373,14 @@ export const adminCopy = {
       // Before the first publish, while a required field is missing
       // (EXPERIENCE › admin states: publish aria-disabled + the list).
       blocked: "אי אפשר לפרסם את ההצהרה לפני שממלאים את שדות החובה:",
+    },
+    // cookie-notice › notice (story 5.23).
+    cookieNotice: {
+      title: "כותרת",
+      body: "הפסקה",
+      linkLabel: "טקסט הקישור למדיניות הפרטיות",
+      linkHint:
+        "הקישור מוצג בסוף הפסקה ומוביל לעמוד מדיניות הפרטיות. אם הפסקה מסתיימת באות אחת (למשל ב), הקישור מתחבר אליה בלי רווח.",
     },
     // Story 2.13: two consents and one note under both.
     photoConsent: {

@@ -54,6 +54,10 @@ export const EDITABLE_PAGES = {
       kind: "accessibility_statement",
     },
   ],
+  // Story 5.23: the cookie notice at the bottom of the public site.
+  "cookie-notice": [
+    { slug: "cookie-notice", key: "notice", kind: "cookie_notice" },
+  ],
 } as const satisfies Record<string, readonly SectionRef[]>
 
 export type EditorPageId = keyof typeof EDITABLE_PAGES
@@ -76,6 +80,7 @@ export const EDITABLE_SLUGS = [
   "privacy",
   "terms",
   "accessibility",
+  "cookie-notice",
 ] as const
 
 export type EditableSlug = (typeof EDITABLE_SLUGS)[number]

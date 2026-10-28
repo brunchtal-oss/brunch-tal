@@ -61,6 +61,7 @@ describe("section fields", () => {
       "footer",
       "photo_consent",
       "business_details",
+      "cookie_notice",
     ]) {
       expect(
         sectionSpec({ slug: "home", key: "x", kind }).fields.length
@@ -391,6 +392,52 @@ describe("legal fields", () => {
     })
     expect(fieldErrors(STATEMENT, { ...base, contact_email: "nope" })).toEqual({
       contact_email: { kind: "email" },
+    })
+  })
+})
+
+// Story 5.23: the cookie notice.
+describe("cookie notice fields", () => {
+  const NOTICE: SectionRef = {
+    slug: "cookie-notice",
+    key: "notice",
+    kind: "cookie_notice",
+  }
+  const copy = adminCopy.content.cookieNotice
+
+  it("edits a title, a paragraph and the link's text, never hidden", () => {
+    const noticeSpec = sectionSpec(NOTICE)
+    expect(noticeSpec.hideable).toBe(false)
+    expect(noticeSpec.fields).toEqual([
+      expect.objectContaining({ name: "title", label: copy.title }),
+      expect.objectContaining({
+        name: "body",
+        label: copy.body,
+        multiline: true,
+        maxLength: 1000,
+      }),
+      expect.objectContaining({
+        name: "link_label",
+        label: copy.linkLabel,
+        hint: copy.linkHint,
+        maxLength: 80,
+      }),
+    ])
+  })
+
+  it("saves the fields as the schema reads them, all optional", () => {
+    const noticeSpec = sectionSpec(NOTICE)
+    const content = {
+      title: "האתר משתמש בעוגיות 🍪",
+      body: "אפשר לעיין ב",
+      link_label: "מדיניות הפרטיות שלנו",
+    }
+    const state = fromContent(noticeSpec, { ...content, hidden: true })
+    expect(toContent(noticeSpec, state)).toEqual(content)
+    expect(fieldErrors(NOTICE, content)).toBeNull()
+    expect(fieldErrors(NOTICE, {})).toBeNull()
+    expect(fieldErrors(NOTICE, { title: "x".repeat(121) })).toEqual({
+      title: { kind: "tooLong", max: 120 },
     })
   })
 })

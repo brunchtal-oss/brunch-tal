@@ -106,6 +106,8 @@ export const shellCopy = {
     whatsappLabel: "יצירת קשר",
     whatsappBar: "להצטרפות צרי קשר",
     whatsappBarName: "להצטרפות צרי קשר בוואטסאפ (נפתח בוואטסאפ)",
+    // The cookie notice's button (story 5.23); its wording is content.
+    cookieNoticeAck: "הבנתי",
     // The public footer's legal links (its contact lines use contact.*).
     footer: {
       terms: "תנאי שימוש",
