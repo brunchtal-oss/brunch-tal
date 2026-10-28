@@ -393,6 +393,8 @@ export const SHOWN_AUDIT_ACTIONS: Record<string, readonly AuditRule[]> = {
   admin_update_marketing_reminder_text: [
     { entity: "marketing_reminder_texts", edit: true },
   ],
+  // Story 5.24: the marketing tool IDs.
+  admin_update_marketing_tags: [{ entity: "marketing_tags", edit: true }],
   admin_publish_content: [{ entity: "content_sections" }],
   admin_create_concept: [{ entity: "concepts" }],
   admin_update_concept: [{ entity: "concepts", edit: true }],

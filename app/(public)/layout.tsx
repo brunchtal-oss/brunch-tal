@@ -1,6 +1,7 @@
 import { Suspense } from "react"
 
 import { CookieNotice } from "@/components/public/cookie-notice"
+import { MarketingTags } from "@/components/public/marketing-tags"
 import { SiteFooter } from "@/components/public/site-footer"
 import { TopBar } from "@/components/public/top-bar"
 import { ViewerTopBar, ViewerWhatsapp } from "@/components/public/viewer-shell"
@@ -15,6 +16,7 @@ import {
   getPublishedSections,
   sectionContent,
 } from "@/lib/content/pages"
+import { getMarketingTags } from "@/lib/content/marketing-tags"
 import { footerLinks } from "@/lib/content/visible"
 import { cookieNoticeView } from "@/lib/cookie-notice"
 import { publicLegalNav, visibleLegalNav } from "@/lib/nav"
@@ -37,16 +39,19 @@ import { publicLegalNav, visibleLegalNav } from "@/lib/nav"
 // content:cookie-notice), right after the skip link; its link to /privacy
 // only once privacy is published. Whether this device clicked "הבנתי" is
 // read in the browser only (components/public/cookie-notice.tsx).
+// Story 5.24: the marketing tags (cached, tag marketing-tags) render last,
+// for every visitor, here only (components/public/marketing-tags.tsx).
 export default async function PublicLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const [details, legalSlugs, site, cookie] = await Promise.all([
+  const [details, legalSlugs, site, cookie, tags] = await Promise.all([
     getBusinessDetails(),
     getPublishedPageSlugs(publicLegalNav.map((item) => item.slug)),
     getPublishedSections("site"),
     getPublishedSections("cookie-notice"),
+    getMarketingTags(),
   ])
   const links = footerLinks(sectionContent(site, "footer", "footer")?.items)
   const name = businessNameOf(details)
@@ -74,6 +79,7 @@ export default async function PublicLayout({
         legal={visibleLegalNav(legalSlugs)}
         links={links}
       />
+      <MarketingTags {...tags} />
     </div>
   )
 }

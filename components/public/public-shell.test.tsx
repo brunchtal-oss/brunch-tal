@@ -1,3 +1,7 @@
+import { readdirSync, readFileSync } from "node:fs"
+import { join } from "node:path"
+import { fileURLToPath } from "node:url"
+
 import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it, vi } from "vitest"
 
@@ -439,5 +443,26 @@ describe("CookieNotice", () => {
     const html = renderToStaticMarkup(<CookieNoticePanel {...notice} preview />)
     expect(html).not.toContain("fixed")
     expect(html).not.toContain("data-cookie-notice")
+  })
+})
+
+// Story 5.24: the marketing tags load from the public layout only, never in
+// /me, /admin, the login or the token routes.
+describe("MarketingTags placement", () => {
+  it("only app/(public)/layout.tsx renders <MarketingTags>", () => {
+    const root = fileURLToPath(new URL("../../app/", import.meta.url))
+    const files: string[] = []
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        const path = join(dir, entry.name)
+        if (entry.isDirectory()) walk(path)
+        else if (/\.tsx?$/.test(entry.name)) files.push(path)
+      }
+    }
+    walk(root)
+    const using = files
+      .filter((path) => /<MarketingTags[\s/>]/.test(readFileSync(path, "utf8")))
+      .map((path) => path.slice(root.length).replaceAll("\\", "/"))
+    expect(using).toEqual(["(public)/layout.tsx"])
   })
 })

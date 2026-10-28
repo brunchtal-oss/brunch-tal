@@ -1057,6 +1057,33 @@ export type Database = {
         }
         Relationships: []
       }
+      marketing_tags: {
+        Row: {
+          ga4_measurement_id: string | null
+          gtm_container_id: string | null
+          id: boolean
+          meta_pixel_id: string | null
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          ga4_measurement_id?: string | null
+          gtm_container_id?: string | null
+          id?: boolean
+          meta_pixel_id?: string | null
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          ga4_measurement_id?: string | null
+          gtm_container_id?: string | null
+          id?: boolean
+          meta_pixel_id?: string | null
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
       media_assets: {
         Row: {
           alt_text: string | null
@@ -2321,6 +2348,16 @@ export type Database = {
           p_expected_version: number
           p_idempotency_key: string
           p_text_id: string
+        }
+        Returns: Json
+      }
+      admin_update_marketing_tags: {
+        Args: {
+          p_expected_version: number
+          p_ga4_measurement_id: string
+          p_gtm_container_id: string
+          p_idempotency_key: string
+          p_meta_pixel_id: string
         }
         Returns: Json
       }

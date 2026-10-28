@@ -7,6 +7,7 @@ import {
   HistoryIcon,
   HouseIcon,
   Link2Icon,
+  MegaphoneIcon,
   PackageIcon,
   ReceiptTextIcon,
   SettingsIcon,
@@ -36,6 +37,8 @@ const ICONS = {
   concepts: ShapesIcon,
   notes: StickyNoteIcon,
   audit: HistoryIcon,
+  // Story 5.24.
+  marketing: MegaphoneIcon,
 } satisfies Record<NavIconKey, unknown>
 
 // Decorative: the item's label is always visible next to it.
