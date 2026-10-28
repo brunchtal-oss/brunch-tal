@@ -21,6 +21,7 @@ export type NavIcon =
   | "notes"
   | "audit"
   | "concepts"
+  | "marketing"
 
 export type NavItem = {
   href: string
@@ -64,6 +65,12 @@ export const adminMoreNav: readonly {
     href: "/admin/concepts",
     label: adminCopy.concepts.title,
     icon: "concepts",
+  },
+  // Story 5.24: the marketing tool IDs, right before settings.
+  {
+    href: "/admin/marketing",
+    label: adminCopy.marketingTags.title,
+    icon: "marketing",
   },
   // Settings stay last (user decision 2026-10-10).
   {

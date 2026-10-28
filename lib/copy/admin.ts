@@ -1657,6 +1657,42 @@ export const adminCopy = {
       noActive: "אין נוסח פעיל, ולכן תזכורות השיווק לא נשלחות",
     },
   },
+  // /admin/marketing (story 5.24): the three tool IDs, never code.
+  marketingTags: {
+    title: "שיווק",
+    section: "כלי מדידה ופרסום",
+    intro:
+      "מדביקים כאן רק את המזהה של כל כלי, לא קוד. שדה ריק מכבה את הכלי. נמדדות כניסות לעמודים; לחיצות באתר מגדירים בתוך Tag Manager או Meta",
+    privacyNotice:
+      "לפני שמדביקים מזהה, צריך לעדכן את מדיניות הפרטיות: לכתוב באילו כלי מדידה ופרסום האתר משתמש ומה הם אוספים.",
+    privacyLink: "לעריכת מדיניות הפרטיות",
+    scope:
+      "חל על כל המבקרות באתר הציבורי, כמה דקות אחרי השמירה. לא באזור האישי ולא באדמין",
+    doubleCount:
+      "אם Google Analytics מוגדר בתוך Tag Manager, משאירים את השדה של Google Analytics ריק, כדי שכל כניסה לא תיספר פעמיים",
+    off: "כבוי",
+    labels: {
+      ga4: "מזהה Google Analytics 4",
+      gtm: "מזהה Google Tag Manager",
+      pixel: "מזהה הפיקסל של Meta",
+    },
+    // The field's name in the change line ("{name}: old ← new").
+    changeNames: {
+      ga4: "Google Analytics",
+      gtm: "Tag Manager",
+      pixel: "פיקסל Meta",
+    },
+    hints: {
+      ga4: "מתחיל ב-G, למשל G-AB12CD34EF",
+      gtm: "מתחיל ב-GTM, למשל GTM-AB12CD3",
+      pixel: "מספרים בלבד, למשל 123456789012345",
+    },
+    errors: {
+      ga4: "המזהה צריך להתחיל ב-G- ואחריו אותיות באנגלית ומספרים",
+      gtm: "המזהה צריך להתחיל ב-GTM- ואחריו אותיות באנגלית ומספרים",
+      pixel: "המזהה של הפיקסל הוא מספר של 10 עד 20 ספרות",
+    },
+  },
   // /admin/customers and the customer card (story 4.2, CAP-25; after the
   // phone check, user decision 2026-10-07). Internal notes are marked as
   // Tal's only.
@@ -2333,6 +2369,8 @@ export const adminCopy = {
       // Story 5.11.
       admin_add_marketing_reminder_text: "הוספת נוסח לתזכורות השיווק",
       admin_update_marketing_reminder_text: "עריכת נוסח לתזכורות השיווק",
+      // Story 5.24.
+      admin_update_marketing_tags: "עדכון כלי מדידה ופרסום",
     } as Record<string, string>,
     // Common keys of before/after; an unknown key shows its code.
     fields: {
@@ -2453,6 +2491,10 @@ export const adminCopy = {
       // Marketing reminders (story 5.11).
       marketing_reminder_schedule: "לוח תזכורות השיווק",
       last_sent_at: "נשלח לאחרונה",
+      // Marketing tags (story 5.24).
+      ga4_measurement_id: "מזהה Google Analytics 4",
+      gtm_container_id: "מזהה Google Tag Manager",
+      meta_pixel_id: "מזהה הפיקסל של Meta",
     } as Record<string, string>,
     // Known values of code columns (their CHECK constraints), per key; an
     // unknown value shows its code.

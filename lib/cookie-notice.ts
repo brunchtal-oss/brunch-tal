@@ -3,8 +3,8 @@
 // shown again when the value is missing, does not parse or is older than
 // ACK_MAX_AGE_DAYS. Changing the wording does not show it again. Every
 // storage access is in try/catch: a failed read shows the notice, a failed
-// write still closes it for this page load. The future tracking code (the
-// marketing tab) loads only when hasCookieAck() is true.
+// write still closes it for this page load. The marketing tags (story 5.24,
+// user decision 2026-10-28) are not gated by it.
 
 /** The localStorage key: the ISO time of the click. */
 export const COOKIE_NOTICE_KEY = "cookie_notice_ack"
@@ -26,7 +26,7 @@ export function isAckValid(value: string | null, now: number): boolean {
 let ackedThisLoad = false
 const listeners = new Set<() => void>()
 
-/** Whether this device clicked "הבנתי" (for the future tracking code). */
+/** Whether this device clicked "הבנתי". */
 export function hasCookieAck(): boolean {
   if (ackedThisLoad) return true
   try {

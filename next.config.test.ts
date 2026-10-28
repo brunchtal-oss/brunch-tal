@@ -1,3 +1,7 @@
+import { readdirSync } from "node:fs"
+import { join } from "node:path"
+import { fileURLToPath } from "node:url"
+
 import { describe, expect, it } from "vitest"
 
 import nextConfig from "./next.config.mjs"
@@ -107,4 +111,46 @@ describe("next.config", () => {
       expect(ignore.some((pattern) => pattern.test(path))).toBe(true)
     }
   })
+
+  // Story 5.24: the public site loads GA4 and Meta, which send
+  // document.referrer, so a full load from a token page must not carry the
+  // token. Every [token] route under app/ needs its no-referrer rule.
+  it("sends no-referrer on every [token] route under app/", async () => {
+    const rules = (await nextConfig.headers!()) as HeaderRule[]
+    const tokenPaths = findTokenRoutes(
+      fileURLToPath(new URL("./app/", import.meta.url))
+    )
+    expect(tokenPaths.length).toBeGreaterThanOrEqual(2)
+    for (const path of tokenPaths) {
+      const covered = rules.some(
+        (r) =>
+          !r.has &&
+          r.headers.some(
+            (h) => h.key === "Referrer-Policy" && h.value === "no-referrer"
+          ) &&
+          new RegExp(
+            `^${r.source.replace(/[.]/g, "\\.").replace("/:path*", "(?:/.*)?")}$`
+          ).test(path)
+      )
+      expect(covered, `no no-referrer rule for ${path}`).toBe(true)
+    }
+  })
 })
+
+// The URL of each [token] route (a sample token), without route groups;
+// another dynamic segment on the way is a sample value too.
+function findTokenRoutes(dir: string, url = ""): string[] {
+  const found: string[] = []
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue
+    const name = entry.name
+    const segment = /^\(.*\)$/.test(name)
+      ? ""
+      : /^\[.*\]$/.test(name)
+        ? "/sample"
+        : `/${name}`
+    if (name === "[token]") found.push(`${url}/sample-token`)
+    found.push(...findTokenRoutes(join(dir, name), url + segment))
+  }
+  return found
+}
