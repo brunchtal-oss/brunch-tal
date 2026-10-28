@@ -95,7 +95,6 @@ export function MarketingTagsEditor({ row }: { row: MarketingTagsEditorRow }) {
       <h2 id="marketing-tags" className={sectionTitleClass}>
         {copy.section}
       </h2>
-      <p className="text-[13px] text-muted-foreground">{copy.scope}</p>
       <ul className="flex flex-col divide-y divide-border border-b border-border">
         {TAG_FIELDS.map((field) => {
           const change = tagChange(field, row, draft[field])
@@ -126,9 +125,6 @@ export function MarketingTagsEditor({ row }: { row: MarketingTagsEditorRow }) {
           )
         })}
       </ul>
-      <p className="pt-3 text-[15px] text-muted-foreground">
-        {copy.doubleCount}
-      </p>
     </section>
   )
 }
@@ -186,25 +182,27 @@ function TagIdField({
   )
 }
 
-// What the screen is for and the privacy notice, with its link to the
-// privacy policy's editor.
+// What the screen is for.
 export function MarketingIntro() {
+  return <p className="text-base leading-normal text-pretty">{copy.intro}</p>
+}
+
+// The privacy notice, below the fields, with its link to the privacy
+// policy's editor.
+export function MarketingPrivacyNotice() {
   return (
-    <div className="flex flex-col gap-4">
-      <p className="text-base leading-normal text-pretty">{copy.intro}</p>
-      <InlineNotice
-        tone="warning"
-        actions={
-          <Link
-            href={PRIVACY_EDIT_HREF}
-            className="inline-flex min-h-11 items-center px-1 text-base text-foreground underline underline-offset-[3px]"
-          >
-            {copy.privacyLink}
-          </Link>
-        }
-      >
-        {copy.privacyNotice}
-      </InlineNotice>
-    </div>
+    <InlineNotice
+      tone="warning"
+      actions={
+        <Link
+          href={PRIVACY_EDIT_HREF}
+          className="inline-flex min-h-11 items-center px-1 text-base text-foreground underline underline-offset-[3px]"
+        >
+          {copy.privacyLink}
+        </Link>
+      }
+    >
+      {copy.privacyNotice}
+    </InlineNotice>
   )
 }

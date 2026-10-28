@@ -6,7 +6,11 @@ import { adminCopy } from "@/lib/copy/admin"
 import { shellCopy } from "@/lib/copy/shell"
 import { createClient } from "@/lib/supabase/server"
 
-import { MarketingIntro, MarketingTagsEditor } from "./marketing-tags-editor"
+import {
+  MarketingIntro,
+  MarketingPrivacyNotice,
+  MarketingTagsEditor,
+} from "./marketing-tags-editor"
 
 const copy = adminCopy.marketingTags
 
@@ -15,7 +19,7 @@ export const metadata: Metadata = {
 }
 
 // The marketing tool IDs (story 5.24), from "more": what the screen is for,
-// the privacy notice with its link, then the three IDs. Rendered inside the
+// the three IDs, then the privacy notice with its link. Rendered inside the
 // admin shell's <Suspense> gate; marketing_tags is read with the admin's
 // RLS.
 export default function MarketingPage() {
@@ -28,6 +32,7 @@ export default function MarketingPage() {
       >
         <MarketingContent />
       </Suspense>
+      <MarketingPrivacyNotice />
     </>
   )
 }
