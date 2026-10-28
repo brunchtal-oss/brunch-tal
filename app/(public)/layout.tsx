@@ -1,5 +1,6 @@
 import { Suspense } from "react"
 
+import { CookieNotice } from "@/components/public/cookie-notice"
 import { SiteFooter } from "@/components/public/site-footer"
 import { TopBar } from "@/components/public/top-bar"
 import { ViewerTopBar, ViewerWhatsapp } from "@/components/public/viewer-shell"
@@ -15,6 +16,7 @@ import {
   sectionContent,
 } from "@/lib/content/pages"
 import { footerLinks } from "@/lib/content/visible"
+import { cookieNoticeView } from "@/lib/cookie-notice"
 import { publicLegalNav, visibleLegalNav } from "@/lib/nav"
 
 // Public shell (AD-2, story 5.2): the sticky top-bar with the menu-sheet,
@@ -31,23 +33,33 @@ import { publicLegalNav, visibleLegalNav } from "@/lib/nav"
 // guest's, the bar's fallback is empty and the bar comes for anyone but a
 // signed-in customer. The footer keeps room for the bar only while it is
 // shown (app/globals.css › [data-site-footer]).
+// Story 5.23: the cookie notice (cookie-notice › notice, cached, tag
+// content:cookie-notice), right after the skip link; its link to /privacy
+// only once privacy is published. Whether this device clicked "הבנתי" is
+// read in the browser only (components/public/cookie-notice.tsx).
 export default async function PublicLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const [details, legalSlugs, site] = await Promise.all([
+  const [details, legalSlugs, site, cookie] = await Promise.all([
     getBusinessDetails(),
     getPublishedPageSlugs(publicLegalNav.map((item) => item.slug)),
     getPublishedSections("site"),
+    getPublishedSections("cookie-notice"),
   ])
   const links = footerLinks(sectionContent(site, "footer", "footer")?.items)
   const name = businessNameOf(details)
   const whatsappHref = guestWhatsappHref(details)
+  const notice = cookieNoticeView(
+    sectionContent(cookie, "notice", "cookie_notice"),
+    legalSlugs.includes("privacy")
+  )
 
   return (
     <div className="flex min-h-svh flex-col">
       <SkipLink />
+      {notice && <CookieNotice {...notice} />}
       <Suspense fallback={<TopBar name={name} />}>
         <ViewerTopBar name={name} />
       </Suspense>

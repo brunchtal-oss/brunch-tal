@@ -57,6 +57,7 @@ describe("content items", () => {
       "privacy",
       "terms",
       "accessibility",
+      "cookie-notice",
     ]) {
       expect(isEditableSlug(slug)).toBe(true)
     }
@@ -75,6 +76,7 @@ describe("content items", () => {
       "privacy",
       "terms",
       "accessibility",
+      "cookie-notice",
     ])
     expect(EDITABLE_PAGES.home.map((ref) => `${ref.slug}/${ref.key}`)).toEqual([
       "home/hero",
@@ -113,6 +115,7 @@ describe("content items", () => {
       "content:global",
     ])
     expect(publishTags("site")).toEqual(["content:site", "content:global"])
+    expect(publishTags("cookie-notice")).toEqual(["content:cookie-notice"])
   })
 
   it("compares content by value, not key order", () => {

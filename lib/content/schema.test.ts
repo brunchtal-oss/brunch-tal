@@ -4,6 +4,7 @@ import {
   ACCESSIBILITY_REQUIRED_FIELDS,
   accessibilityStatementSchema,
   businessDetailsSchema,
+  cookieNoticeSchema,
   faqSchema,
   footerSchema,
   heroSchema,
@@ -418,5 +419,46 @@ describe("promoBannerSchema", () => {
       promoBannerSchema.parse({ text: "בקרוב בראנצ׳ים 60+", hidden: true })
     ).toEqual({ text: "בקרוב בראנצ׳ים 60+", hidden: true })
     expect(schemaForKind("promo_banner")).toBe(promoBannerSchema)
+  })
+})
+
+// Story 5.23: cookie-notice › notice.
+describe("cookieNoticeSchema", () => {
+  it("parses a title with an emoji, a body and a link label", () => {
+    const value = {
+      title: "האתר משתמש בעוגיות 🍪",
+      body: "למידע נוסף אפשר לעיין ב",
+      link_label: "מדיניות הפרטיות שלנו",
+    }
+    expect(cookieNoticeSchema.parse(value)).toEqual(value)
+    expect(schemaForKind("cookie_notice")).toBe(cookieNoticeSchema)
+  })
+
+  it("takes every field as optional and reads blanks as missing", () => {
+    expect(cookieNoticeSchema.parse({})).toEqual({})
+    expect(
+      cookieNoticeSchema.parse({ title: " ", body: "", link_label: "  " })
+    ).toEqual({})
+  })
+
+  it.each([
+    ["title", 120],
+    ["body", 1000],
+    ["link_label", 80],
+  ])("refuses a %s over %i characters", (field, max) => {
+    expect(
+      cookieNoticeSchema.safeParse({ [field]: "א".repeat(max) }).success
+    ).toBe(true)
+    const long = cookieNoticeSchema.safeParse({ [field]: "א".repeat(max + 1) })
+    expect(long.error?.issues[0]).toMatchObject({
+      code: "too_big",
+      path: [field],
+    })
+  })
+
+  it("drops a hidden flag, so the notice cannot be hidden", () => {
+    expect(cookieNoticeSchema.parse({ hidden: true, body: "b" })).toEqual({
+      body: "b",
+    })
   })
 })

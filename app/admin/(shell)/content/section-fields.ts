@@ -387,6 +387,22 @@ export function sectionSpec(ref: SectionRef): SectionSpec {
       }
     case "accessibility_statement":
       return { hideable: false, fields: STATEMENT_FIELDS }
+    // Story 5.23: never hidden; shown with a title or a body.
+    case "cookie_notice":
+      return {
+        hideable: false,
+        fields: [
+          text("title", copy.cookieNotice.title, { maxLength: 120 }),
+          text("body", copy.cookieNotice.body, {
+            multiline: true,
+            maxLength: 1000,
+          }),
+          text("link_label", copy.cookieNotice.linkLabel, {
+            hint: copy.cookieNotice.linkHint,
+            maxLength: 80,
+          }),
+        ],
+      }
     default:
       return { hideable: false, fields: [] }
   }

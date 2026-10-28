@@ -355,6 +355,18 @@ export const ACCESSIBILITY_REQUIRED_FIELDS = [
   "contact_email",
 ] as const
 
+// cookie-notice › notice (story 5.23): the cookie notice at the bottom of
+// the public site. Every field is optional; the site shows it only with a
+// title or a body, and the link only with link_label and a published
+// privacy policy (lib/cookie-notice.ts). No hidden, like the legal kinds.
+export const cookieNoticeSchema = z.object({
+  title: optionalText(120),
+  body: optionalText(1000),
+  link_label: optionalText(80),
+})
+
+export type CookieNoticeContent = z.infer<typeof cookieNoticeSchema>
+
 // kind -> schema. A kind without a schema cannot be saved or published from
 // the editor.
 export const contentSchemas = {
@@ -370,6 +382,7 @@ export const contentSchemas = {
   footer: footerSchema,
   legal_text: legalTextSchema,
   accessibility_statement: accessibilityStatementSchema,
+  cookie_notice: cookieNoticeSchema,
 } as const
 
 export type ContentByKind = {

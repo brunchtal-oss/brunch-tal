@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest"
 
 import { shellCopy } from "@/lib/copy/shell"
 
+import { CookieNotice, CookieNoticePanel } from "./cookie-notice"
 import { ContactDetails, hasContactDetails, telHref } from "./contact-details"
 import { socialKind } from "./social-icon"
 import { EmptyPublicPage, PublicPageHeading } from "./public-page"
@@ -377,5 +378,66 @@ describe("public page", () => {
     expect(
       renderToStaticMarkup(<EmptyPublicPage whatsappHref={null} />)
     ).not.toContain("<a")
+  })
+})
+
+// Story 5.23: the cookie notice.
+describe("CookieNotice", () => {
+  const notice = {
+    title: "האתר משתמש בעוגיות 🍪",
+    body: "למידע נוסף אפשר לעיין ב",
+    linkLabel: "מדיניות הפרטיות שלנו",
+  }
+
+  it("renders nothing on the server (the snapshot is acked)", () => {
+    expect(renderToStaticMarkup(<CookieNotice {...notice} />)).toBe("")
+  })
+
+  it("is a non-modal dialog labelled by its title, fixed above the page", () => {
+    const html = renderToStaticMarkup(<CookieNoticePanel {...notice} />)
+    expect(html).toMatch(/^<div role="dialog" aria-modal="false"/)
+    const id = html.match(/aria-labelledby="([^"]+)"/)?.[1]
+    expect(id).toBeTruthy()
+    expect(html).toContain(`<h2 id="${id}"`)
+    expect(html).not.toContain("aria-label=")
+    expect(html).toContain("data-cookie-notice")
+    expect(html).toContain("fixed")
+    expect(html).toContain("z-30")
+    expect(html).toContain("max-h-[60svh]")
+    expect(html).toContain("print:hidden")
+    expect(html).toContain("min-h-12")
+    expect(html).toContain(`>${copy.cookieNoticeAck}</button>`)
+    expect(html).not.toMatch(/\b(ml|mr|pl|pr|left|right)-/)
+  })
+
+  it("joins the link to a one-letter prefix, and after a space otherwise", () => {
+    const joined = renderToStaticMarkup(<CookieNoticePanel {...notice} />)
+    expect(joined).toMatch(
+      /לעיין ב<a [^>]*href="\/privacy"[^>]*>מדיניות הפרטיות שלנו<\/a>/
+    )
+    const spaced = renderToStaticMarkup(
+      <CookieNoticePanel body="למידע נוסף ראו" linkLabel="מדיניות" />
+    )
+    expect(spaced).toMatch(/ראו <a [^>]*href="\/privacy"/)
+    expect(spaced).not.toContain("target=")
+  })
+
+  it("has no link without a label", () => {
+    const html = renderToStaticMarkup(<CookieNoticePanel title="t" body="b" />)
+    expect(html).not.toContain("/privacy")
+  })
+
+  it("is labelled by the body's first line without a title", () => {
+    const html = renderToStaticMarkup(
+      <CookieNoticePanel body={"שורה אחת\nשורה שתיים"} />
+    )
+    expect(html).toContain('aria-label="שורה אחת"')
+    expect(html).not.toContain("aria-labelledby")
+  })
+
+  it("is in the flow in the admin preview", () => {
+    const html = renderToStaticMarkup(<CookieNoticePanel {...notice} preview />)
+    expect(html).not.toContain("fixed")
+    expect(html).not.toContain("data-cookie-notice")
   })
 })

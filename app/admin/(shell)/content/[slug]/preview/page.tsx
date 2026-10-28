@@ -3,6 +3,7 @@ import { Suspense } from "react"
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
+import { CookieNoticePanel } from "@/components/public/cookie-notice"
 import {
   AccessibilityView,
   LegalTextView,
@@ -32,6 +33,7 @@ import {
   type PublishedSections,
 } from "@/lib/content/pages"
 import { footerLinks, visibleImages } from "@/lib/content/visible"
+import { cookieNoticeView } from "@/lib/cookie-notice"
 import { whatsappHref as plainWhatsappHref } from "@/lib/content/whatsapp"
 import { adminCopy } from "@/lib/copy/admin"
 import { joinCopy } from "@/lib/copy/join"
@@ -249,6 +251,23 @@ async function PageView({
           details={details}
         />
       )
+    // Story 5.23: the card in the flow (not fixed), the link whenever its
+    // label is filled.
+    case "cookie-notice": {
+      const notice = cookieNoticeView(
+        sectionContent(
+          previewSections(pages["cookie-notice"]),
+          "notice",
+          "cookie_notice"
+        ),
+        true
+      )
+      return (
+        <div className="flex flex-1 flex-col justify-end px-4 pt-12">
+          {notice && <CookieNoticePanel {...notice} preview />}
+        </div>
+      )
+    }
     case "site": {
       const legalSlugs = await getPublishedPageSlugs(
         publicLegalNav.map((item) => item.slug)
