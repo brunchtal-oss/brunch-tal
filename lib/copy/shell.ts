@@ -15,6 +15,8 @@ export function titleTemplateOf(name: string): string {
 export const shellCopy = {
   wordmark: WORDMARK,
   skipToMain: "דילוג לתוכן הראשי",
+  // The fixed accessibility button on every page but /admin (story 5.25).
+  accessibilityButton: "תפריט נגישות",
   loading: "טוען…",
   signOut: "התנתקות",
   // The admin top-bar's link to the public site (user decision 2026-10-06).

@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next"
 import { Assistant, Heebo, Rubik } from "next/font/google"
 
 import "./globals.css"
+import { AccessibilityButton } from "@/components/shared/accessibility-button"
 import { RouteFocus } from "@/components/shared/route-focus"
 import { ServiceWorkerRegister } from "@/components/shared/service-worker-register"
 import { getBusinessName } from "@/lib/content/business-details"
@@ -69,6 +70,10 @@ export default function RootLayout({
           <RouteFocus />
         </Suspense>
         {children}
+        {/* Story 5.25: every page but /admin (usePathname, own Suspense). */}
+        <Suspense fallback={null}>
+          <AccessibilityButton />
+        </Suspense>
         <ServiceWorkerRegister />
       </body>
     </html>

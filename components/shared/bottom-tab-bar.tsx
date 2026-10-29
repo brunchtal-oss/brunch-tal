@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useEffect, useRef } from "react"
 
 import { isCurrent, type NavItem } from "@/lib/nav"
 import { cn } from "@/lib/utils"
@@ -14,6 +15,9 @@ import { NavIcon } from "./nav-icon"
 // bar is shown, globals.css reserves its height at the bottom of the page
 // (padding-bottom and scroll-padding-bottom, [data-tab-bar]), so no content
 // or focused control hides under it. `mobileOnly` hides it from lg (admin).
+// It publishes its height as --tab-bar-height on <html> (labels may wrap to
+// two lines on a narrow phone), so the accessibility button (story 5.25)
+// sits 16px above it.
 export function BottomTabBar({
   items,
   label,
@@ -24,9 +28,29 @@ export function BottomTabBar({
   mobileOnly?: boolean
 }) {
   const pathname = usePathname()
+  const ref = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    const node = ref.current
+    if (!node || typeof ResizeObserver === "undefined") return
+    const root = document.documentElement
+    const publish = () =>
+      root.style.setProperty(
+        "--tab-bar-height",
+        `${node.getBoundingClientRect().height}px`
+      )
+    publish()
+    const observer = new ResizeObserver(publish)
+    observer.observe(node)
+    return () => {
+      observer.disconnect()
+      root.style.removeProperty("--tab-bar-height")
+    }
+  }, [])
 
   return (
     <nav
+      ref={ref}
       aria-label={label}
       data-tab-bar={mobileOnly ? "mobile" : "always"}
       className={cn(
