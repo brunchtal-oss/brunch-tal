@@ -31,8 +31,6 @@ export type {
 
 const copy = adminCopy.audit
 
-// admin_list_audit returns at most this many rows per page (then has_more).
-export const PAGE_SIZE = 50
 // The default range when the URL has no dates (user decision 2026-10-10).
 export const DEFAULT_DAYS = 30
 

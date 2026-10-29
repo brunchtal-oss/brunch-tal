@@ -559,6 +559,42 @@ describe("admin_void_purchase", { timeout: 60_000 }, () => {
     })
   })
 
+  it("mixed funding: a future booking drawn from the card and a single: MANUAL_HANDLING_REQUIRED, nothing changes (6.5)", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const card = await buy(db, f)
+      const event = await insertEvent(db, f, { dayOffset: 5 })
+      const other = await insertEvent(db, f, { dayOffset: 6 })
+      const single = await buyFor(db, f, f.customerA, f.single, other)
+      // A booking for two offset from two kinds (as cancel-booking.test.ts).
+      const { rows: mixed } = await db.query(
+        `insert into public.bookings (customer_id, event_id, party_size, booked_by, policy_snapshot)
+         values ($1, $2, 2, 'admin', '{"cancel_window_hours": 48, "reminder_lead_hours": 24}'::jsonb)
+         returning id`,
+        [f.customerA, event]
+      )
+      await db.query(
+        `insert into public.booking_allocations (booking_id, entitlement_id, units)
+         values ($1, $2, 1), ($1, $3, 1)`,
+        [mixed[0].id, card.entitlementId, single.entitlementId]
+      )
+
+      // Both purchases fund the booking: each void is refused.
+      for (const p of [card, single]) {
+        const before = await snapshot(db, p)
+        expect(await previewAs(db, f.admin, p.paymentId)).toEqual({
+          ok: false,
+          code: "MANUAL_HANDLING_REQUIRED",
+        })
+        expect(await voidError(db, f.admin, p.paymentId)).toMatchObject({
+          code: "P0001",
+          message: "MANUAL_HANDLING_REQUIRED",
+        })
+        expect(await snapshot(db, p)).toEqual(before)
+      }
+    })
+  })
+
   it("again: an already voided purchase is PURCHASE_VOIDED (bound, and unbound through the link lock)", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)

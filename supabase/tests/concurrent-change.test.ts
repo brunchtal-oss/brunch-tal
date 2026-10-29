@@ -5,7 +5,12 @@
 //     customer appeared while the session was locked;
 //   admin_complete_refund (3.9): the refund request was bound to a customer;
 //   admin_correct_entitlement, admin_settle_parked_purchase (3.13): the
-//     entitlement was bound to a customer.
+//     entitlement was bound to a customer;
+//   admin_void_purchase (2.14, tested in 6.5): an unbound purchase was
+//     joined while the void waited in lock_join_payment; a bound one's
+//     payment got another customer; a confirmed booking on its payment was
+//     added outside the locks. No RPC today makes the last two changes (they
+//     are defensive); the holder's direct write stands in for the race.
 // And private.job_complete_events (5.10): a credit that funds a booking is
 // locked by another transaction, so the session is skipped (CREDIT_LOCKED,
 // caught per session) and completed on the next run.
@@ -513,6 +518,89 @@ describe(
         [entitlement]
       )
       expect(after.n).toBe(0)
+    })
+
+    it("admin_void_purchase: an unbound purchase was joined while the void waited in lock_join_payment", async () => {
+      const adminId = await admin()
+      const joined = await customer("race_void_join")
+      const { payment } = await purchase(adminId, null)
+
+      const error = await raceError(
+        adminId,
+        // bind_purchase's step: the payment gets her id.
+        (holder) =>
+          holder.query(
+            "update public.payments set customer_id = $2 where id = $1",
+            [payment, joined]
+          ),
+        "select public.admin_void_purchase($1, null, true, $2) as r",
+        [payment, randomUUID()]
+      )
+      expect(error).toBe("CONCURRENT_CHANGE")
+      const [after] = await sql<{ status: string }>(
+        "select status from public.payments where id = $1",
+        [payment]
+      )
+      expect(after.status).toBe("approved")
+    })
+
+    it("admin_void_purchase: a bound purchase's payment got another customer while the void waited on the payment lock", async () => {
+      const adminId = await admin()
+      const owner = await customer("race_void_owner")
+      const other = await customer("race_void_other")
+      const { payment } = await purchase(adminId, owner)
+
+      const error = await raceError(
+        adminId,
+        (holder) =>
+          holder.query(
+            "update public.payments set customer_id = $2 where id = $1",
+            [payment, other]
+          ),
+        "select public.admin_void_purchase($1, null, true, $2) as r",
+        [payment, randomUUID()]
+      )
+      expect(error).toBe("CONCURRENT_CHANGE")
+      const [after] = await sql<{ status: string }>(
+        "select status from public.payments where id = $1",
+        [payment]
+      )
+      expect(after.status).toBe("approved")
+    })
+
+    it("admin_void_purchase: a confirmed future booking on its payment was added outside the locks", async () => {
+      const adminId = await admin()
+      const owner = await customer("race_void_booking")
+      const eventId = await session(5)
+      // Bound and pinned, with no booking yet: the void locks no session.
+      const { payment } = await purchase(adminId, owner, eventId)
+
+      const error = await raceError(
+        adminId,
+        async (holder) => {
+          await holder.query(
+            "select 1 from public.payments where id = $1 for update",
+            [payment]
+          )
+          // No customer_id: a key share on her profile would make the void
+          // wait in lock_customer instead, and then see the booking.
+          await holder.query(
+            `insert into public.bookings (
+               customer_id, payment_id, event_id, party_size, status, booked_by,
+               policy_snapshot)
+             values (null, $1, $2, 1, 'confirmed', 'admin', $3::jsonb)`,
+            [payment, eventId, POLICY]
+          )
+        },
+        "select public.admin_void_purchase($1, null, true, $2) as r",
+        [payment, randomUUID()]
+      )
+      expect(error).toBe("CONCURRENT_CHANGE")
+      const rows = await sql<{ status: string }>(
+        "select status from public.bookings where payment_id = $1",
+        [payment]
+      )
+      expect(rows).toEqual([{ status: "confirmed" }])
     })
   }
 )
