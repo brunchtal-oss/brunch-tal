@@ -31,7 +31,13 @@ export const customerCopy = {
   // Beside the number of free entries on home's home-card (design round,
   // the one new label the user approved on 2026-10-07).
   availableEntriesLabel: "כניסות זמינות",
-  emptyHomeTitle: "השולחן מחכה לפעם הבאה",
+  // The empty home (fixes-log row 23, user's wording 2026-10-29): the
+  // heading by whether she has past bookings, then one invitation and a
+  // link to the schedule.
+  emptyHomeTitleFirst: "עוד לא נרשמת לאף בראנץ׳.",
+  emptyHomeTitleAgain: "אין לך כרגע הרשמה לבראנץ׳ קרוב.",
+  emptyHomeInvite: "מוזמנת להציץ בבראנצ׳ים הקרובים ולהירשם.",
+  emptyHomeSessionsLink: "לבראנצ׳ים הקרובים",
   // Purchase history (story 4.12, user decision 2026-10-06; the tab and
   // the h1 are shellCopy.nav.purchases).
   purchasesEmpty: "עוד אין כאן רכישות",
