@@ -14,8 +14,6 @@ export const MAX_SOURCE_BYTES = 40 * 1024 * 1024
 export const MAX_SIDE = 2000
 export const JPEG_QUALITY = 0.85
 
-export type ImageProblem = "notSupported" | "tooLarge"
-
 // What is wrong with a chosen file before it is read, or null.
 export function checkSource(file: { type: string; size: number }) {
   if (!(ACCEPTED_TYPES as readonly string[]).includes(file.type)) {

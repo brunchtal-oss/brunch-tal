@@ -1056,6 +1056,75 @@ describe("change a session's time", { timeout: 60_000 }, () => {
     })
   })
 
+  it("a new day: an active or refunded pinned entitlement follows with one audit row; a voided (revoked) one keeps its expires_on, with no audit row (6.5)", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const ev = await insertEvent(db, f, { dayOffset: 3 })
+      const active = await pinned(db, f, ev.id)
+      const voided = await pinned(db, f, ev.id, f.customerB)
+      // 3.9 keeps a refunded purchase's terms: it still follows the session.
+      const refunded = await pinned(
+        db,
+        f,
+        ev.id,
+        await newCustomer(db, "refunded")
+      )
+      await db.query(
+        "update public.entitlements set status = 'refunded' where id = $1",
+        [refunded.entitlement]
+      )
+      await as(db, f.admin, () =>
+        db.query("select public.admin_void_purchase($1, $2, $3, $4) as r", [
+          voided.payment,
+          null,
+          true,
+          randomUUID(),
+        ])
+      )
+      const entitlement = async (id: string) => {
+        const { rows } = await db.query(
+          "select status, expires_on::text as d from public.entitlements where id = $1",
+          [id]
+        )
+        return rows[0]
+      }
+      const before = await entitlement(voided.entitlement)
+      expect(before.status).toBe("revoked")
+      const { rows: want } = await db.query(
+        "select ((now() at time zone 'Asia/Jerusalem')::date + 5)::text as d"
+      )
+      // Otherwise "unchanged" below would hold even if it were rewritten.
+      expect(before.d).not.toBe(want[0].d)
+
+      const start = await localInstant(db, 5, "10:00")
+      const end = await localInstant(db, 5, "12:00")
+      await reschedule(db, f, ev.id, start, end)
+
+      expect(await entitlement(active.entitlement)).toEqual({
+        status: "active",
+        d: want[0].d,
+      })
+      expect(await entitlement(refunded.entitlement)).toEqual({
+        status: "refunded",
+        d: want[0].d,
+      })
+      expect(await entitlement(voided.entitlement)).toEqual(before)
+
+      const auditCount = async (entitlementId: string) => {
+        const { rows } = await db.query(
+          `select count(*)::int as n from public.audit_log
+           where action = 'admin_reschedule_event'
+             and entity_type = 'entitlements' and entity_id = $1`,
+          [entitlementId]
+        )
+        return rows[0].n
+      }
+      expect(await auditCount(active.entitlement)).toBe(1)
+      expect(await auditCount(refunded.entitlement)).toBe(1)
+      expect(await auditCount(voided.entitlement)).toBe(0)
+    })
+  })
+
   it("an option moved to before its credit's origin: replaced (moved)", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)

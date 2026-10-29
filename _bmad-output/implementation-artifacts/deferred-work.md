@@ -707,7 +707,7 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-16-admin-credit-adjustments.md`
   summary: `supabase/tests/notifications.test.ts` "hold the approved seed" compares the whole template table with a SEED list that stopped at 18 templates, so it fails on every `test:db` run (the table has 20 before 3.16, 23 with 3.14 and 3.16).
   evidence: verification-gap review of 3.16; `settings-and-templates.test.ts` already counts 20+. Settle by updating the SEED list (or narrowing the test to the original 18 types) in the fixes round.
-  status: Closed in 5.10 (2026-10-20): SEED gains `credit_options_changed`, `credit_refund_requested` and `credit_expiring` (24 templates). Not yet run against the database (night run); confirm in the first `test:db`. 5.20 (B, 2026-10-22): עם הסרת `broadcast` הרשימה היא 23 תבניות. עוד לא הורץ מול המסד; מאמתים בהרצת test:db המלאה אחרי המיגרציה.
+  status: Closed in 5.10 (2026-10-20): SEED gains `credit_options_changed`, `credit_refund_requested` and `credit_expiring` (24 templates). Not yet run against the database (night run); confirm in the first `test:db`. 5.20 (B, 2026-10-22): עם הסרת `broadcast` הרשימה היא 23 תבניות. עוד לא הורץ מול המסד; מאמתים בהרצת test:db המלאה אחרי המיגרציה. נסגר ב-6.5 (בדיקת סגירה): "hold the approved seed" (23 תבניות) עבר בהרצת test:db המלאה של 5.20 (2026-10-22) ובהרצה החוזרת שאחריה (spec של 5.20, ‏Review Triage Log, ‏Item 29).
   target: 5.20 (אימות בהרצת test:db המלאה; שובץ 2026-10-22)
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-6-waitlist.md`
@@ -795,19 +795,19 @@
   target: תיקונים
   summary: ‏`admin_reschedule_event` עדיין משנה את `expires_on` של זכות מוצמדת שבוטלה (`revoked`) כשמועד המפגש שלה משתנה.
   evidence: לא מזיק: הזכות `revoked`, ו-`plan_funding`, משימות הכרטיסיות והאזור האישי דורשים `active`, כך שהתוקף החדש לא משמש לכלום. נרשם ב-spec של 2.14 (Code Map).
-  status: פתוח
+  status: נסגר ב-6.5 (2026-10-29): המיגרציה `reschedule_skip_revoked_pinned` מוסיפה ללולאה של הזכויות המוצמדות `and e.status <> 'revoked'` (זכות `active` או `refunded` ממשיכה כמו היום). בדיקה ב-`business-cancel.test.ts`: זכות פעילה זזה עם שורת יומן אחת, זכות שבוטלה נשארת בלי שורת יומן. בתוקף אחרי הרצת המיגרציה ומיזוג ה-PR.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-14-purchase-void.md`
   target: תיקונים
   summary: אין בדיקת מסד לחסימה `MANUAL_HANDLING_REQUIRED` בביטול רכישה (הרשמה של הרכישה שמומנה משני סוגי כניסה), ב-`preview_admin_void_purchase` וב-`admin_void_purchase`.
   evidence: ביקורת 2.14 (verification-gap). הכתיבה מוגנת גם בבדיקה של `cancel_core`, ולכן רק התצוגה המקדימה עלולה לסטות. נסגר בבדיקה שמממנת הרשמה אחת משני סוגי זכות ומצפה לקוד משתיהן.
-  status: פתוח
+  status: נסגר ב-6.5 (2026-10-29): בדיקה ב-`purchase-void.test.ts` (הרשמה לשתיים שמומנה מהכרטיסייה ומכניסה בודדת): התצוגה המקדימה מחזירה `MANUAL_HANDLING_REQUIRED`, הביטול נדחה באותו קוד, ושום דבר לא משתנה.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-14-purchase-void.md`
   target: תיקונים
   summary: לשלושת הענפים של `CONCURRENT_CHANGE` ב-`admin_void_purchase` (הצטרפות בין הקריאה לנעילה, לקוחה שהשתנתה, הרשמה מחוץ לקבוצה הנעולה) אין בדיקת מסד (medium, לא מאומת).
   evidence: ביקורת 2.14 (blind-hunter). צריך עסקה מקבילה שנעצרת באמצע, כמו ב-3.13 #15. נסגר בבדיקה עם שני חיבורים.
-  status: פתוח
+  status: נסגר ב-6.5 (2026-10-29): שלוש בדיקות ב-`concurrent-change.test.ts`, עם עסקה מחזיקה שמשנה את השורה שהביטול מחכה לה: הצטרפות בזמן ההמתנה ב-`lock_join_payment`, לקוחה אחרת על התשלום, והרשמה עתידית על התשלום מחוץ לנעילות. בכל אחת `CONCURRENT_CHANGE`, והתשלום או ההרשמה נשארים כמו שהיו. שני הענפים האחרונים הגנתיים (אף RPC היום לא עושה את השינוי הזה), והכתיבה הישירה של העסקה המחזיקה מדמה את המרוץ.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-23-cookie-notice.md`
   target: 6.1

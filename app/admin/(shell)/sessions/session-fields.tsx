@@ -15,7 +15,6 @@ import {
   normalizeProductIds,
   productLabel,
   type ConceptOption,
-  type EventKind,
   type ProductChoice,
   type SessionImage,
 } from "./session-draft"
@@ -188,35 +187,6 @@ export function ProductsField({
         </p>
       )}
     </fieldset>
-  )
-}
-
-export function KindField({
-  name,
-  value,
-  onChange,
-  hint,
-}: {
-  name: string
-  value: EventKind
-  onChange: (value: EventKind) => void
-  hint?: string | null
-}) {
-  return (
-    <div className="flex flex-col gap-2">
-      <RadioCardGroup
-        legend={`${copy.fields.kind} ${authCopy.required}`}
-        name={name}
-        options={(["regular", "couple"] as const).map((kind) => ({
-          value: kind,
-          label: copy.kinds[kind],
-        }))}
-        value={value}
-        onChange={(next) => onChange(next as EventKind)}
-        required
-      />
-      {hint && <p className="text-[13px] text-muted-foreground">{hint}</p>}
-    </div>
   )
 }
 
