@@ -191,7 +191,7 @@ describe("customer home", () => {
     expect(html).not.toContain(customerCopy.upcomingTitle)
     expect(html).not.toContain(customerCopy.moreUpcomingTitle)
     expect(html).toContain(customerCopy.allMyBookings)
-    expect(html).not.toContain(customerCopy.emptyHomeTitle)
+    expect(html).not.toContain(customerCopy.emptyHomeInvite)
     expect(html.match(/<section/g)).toHaveLength(1)
     expect(getPublicSession).not.toHaveBeenCalled()
   })
@@ -227,7 +227,7 @@ describe("customer home: a business cancel waiting for her choice (story 3.8)", 
     loadMyEntitlements.mockResolvedValue([])
     const html = renderToStaticMarkup(await Home())
     expect(html).toContain(customerCopy.pendingChoice.button)
-    expect(html).not.toContain(customerCopy.emptyHomeTitle)
+    expect(html).not.toContain(customerCopy.emptyHomeInvite)
   })
 
   it("after her choice of credit: the credit line, no pending card", async () => {
@@ -245,7 +245,7 @@ describe("customer home: credits (story 3.7)", () => {
     loadMyEntitlements.mockResolvedValue([])
     const html = renderToStaticMarkup(await Home())
     expect(html).toContain(customerCopy.homeCredit)
-    expect(html).not.toContain(customerCopy.emptyHomeTitle)
+    expect(html).not.toContain(customerCopy.emptyHomeInvite)
   })
 
   it("an exhausted credit: no credit line", async () => {
@@ -273,7 +273,7 @@ describe("customer home: credits (story 3.7)", () => {
     loadMyEntitlements.mockResolvedValue([])
     const html = renderToStaticMarkup(await Home())
     expect(html).not.toContain(customerCopy.homeCredit)
-    expect(html).toContain(customerCopy.emptyHomeTitle)
+    expect(html).toContain(customerCopy.emptyHomeTitleFirst)
   })
 })
 
@@ -298,7 +298,7 @@ describe("customer home: all bookings and the refund line (2026-10-10)", () => {
     expect(customerCopy.homeRefund).toBe("בקשת ההחזר שלך התקבלה")
     expect(html).toContain(customerCopy.homeRefund)
     expect(html).not.toContain(customerCopy.homeCredit)
-    expect(html).not.toContain(customerCopy.emptyHomeTitle)
+    expect(html).not.toContain(customerCopy.emptyHomeInvite)
     expect(html.indexOf(customerCopy.homeRefund)).toBeLessThan(
       html.indexOf(customerCopy.allMyBookings)
     )
@@ -309,12 +309,54 @@ describe("customer home: all bookings and the refund line (2026-10-10)", () => {
     bookings([], [], [booking("p1", NEXT, "2026-10-01T07:30:00Z")])
     loadMyEntitlements.mockResolvedValue([])
     let html = renderToStaticMarkup(await Home())
-    expect(html).toContain(customerCopy.emptyHomeTitle)
+    expect(html).toContain(customerCopy.emptyHomeTitleAgain)
     expect(html).toContain(customerCopy.allMyBookings)
 
     bookings([])
     html = renderToStaticMarkup(await Home())
-    expect(html).toContain(customerCopy.emptyHomeTitle)
+    expect(html).toContain(customerCopy.emptyHomeTitleFirst)
     expect(html).not.toContain(customerCopy.allMyBookings)
+  })
+})
+
+describe("customer home: the empty home's copy (fixes-log row 23)", () => {
+  const sessionsLink = `href="/me/sessions"`
+
+  it("the user's wording, word for word", () => {
+    expect(customerCopy.emptyHomeTitleFirst).toBe("עוד לא נרשמת לאף בראנץ׳.")
+    expect(customerCopy.emptyHomeTitleAgain).toBe(
+      "אין לך כרגע הרשמה לבראנץ׳ קרוב."
+    )
+    expect(customerCopy.emptyHomeInvite).toBe(
+      "מוזמנת להציץ בבראנצ׳ים הקרובים ולהירשם."
+    )
+    expect(customerCopy.emptyHomeSessionsLink).toBe("לבראנצ׳ים הקרובים")
+  })
+
+  it("no past bookings: the first-time heading, the invitation and the link", async () => {
+    bookings([])
+    loadMyEntitlements.mockResolvedValue([])
+    const html = renderToStaticMarkup(await Home())
+    expect(html).toContain(customerCopy.emptyHomeTitleFirst)
+    expect(html).not.toContain(customerCopy.emptyHomeTitleAgain)
+    expect(html).toContain(customerCopy.emptyHomeInvite)
+    expect(html).toContain(customerCopy.emptyHomeSessionsLink)
+    expect(html).toContain(sessionsLink)
+  })
+
+  it("past bookings: the heading for now, the link before all bookings", async () => {
+    bookings([], [], [booking("p1", NEXT, "2026-10-01T07:30:00Z")])
+    loadMyEntitlements.mockResolvedValue([])
+    const html = renderToStaticMarkup(await Home())
+    expect(html).toContain(customerCopy.emptyHomeTitleAgain)
+    expect(html).not.toContain(customerCopy.emptyHomeTitleFirst)
+    expect(html).toContain(customerCopy.emptyHomeInvite)
+    expect(html).toContain(sessionsLink)
+    expect(html.indexOf(customerCopy.emptyHomeInvite)).toBeLessThan(
+      html.indexOf(customerCopy.emptyHomeSessionsLink)
+    )
+    expect(html.indexOf(customerCopy.emptyHomeSessionsLink)).toBeLessThan(
+      html.indexOf(customerCopy.allMyBookings)
+    )
   })
 })

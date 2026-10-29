@@ -100,6 +100,7 @@ export async function Home() {
       <ResultNoticeHost>
         <EmptyHome
           contactHref={contactHref}
+          hasPast={myBookings.past.length > 0}
           bookingsLink={myBookings.past.length > 0 ? allBookingsLink : null}
         />
       </ResultNoticeHost>
@@ -251,13 +252,17 @@ function HomeSection({
 }
 
 // EXPERIENCE.md › State Patterns: no session ahead and no active card. The
-// contact button opens WhatsApp (to buy again); without published business
-// details it is left out. The purchases stay in their tab.
+// heading depends on whether she has past bookings (fixes-log row 23), and a
+// text link leads to the schedule. The contact button opens WhatsApp (to buy
+// again); without published business details it is left out. The purchases
+// stay in their tab.
 function EmptyHome({
   contactHref,
+  hasPast,
   bookingsLink,
 }: {
   contactHref: string | null
+  hasPast: boolean
   // "לכל ההרשמות שלי" when she has past bookings; null otherwise.
   bookingsLink: React.ReactNode
 }) {
@@ -266,12 +271,23 @@ function EmptyHome({
       aria-labelledby="empty-title"
       className="flex flex-col items-start gap-4 py-12"
     >
-      <h2
-        id="empty-title"
-        className="font-heading text-[26px] leading-[1.2] font-light"
+      <div className="flex flex-col gap-2">
+        <h2
+          id="empty-title"
+          className="font-heading text-[24px] leading-[1.25] font-light"
+        >
+          {hasPast
+            ? customerCopy.emptyHomeTitleAgain
+            : customerCopy.emptyHomeTitleFirst}
+        </h2>
+        <p className="text-[17px]">{customerCopy.emptyHomeInvite}</p>
+      </div>
+      <Link
+        href="/me/sessions"
+        className="inline-flex min-h-11 items-center self-start text-[15px] underline underline-offset-[3px]"
       >
-        {customerCopy.emptyHomeTitle}
-      </h2>
+        {customerCopy.emptyHomeSessionsLink}
+      </Link>
       {contactHref && (
         <a
           href={contactHref}
