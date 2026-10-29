@@ -64,6 +64,8 @@ describe("proxy", () => {
     "/_next/image",
     "/favicon.ico",
     "/a.png",
+    "/fonts/a11y/Lexend-Regular.woff2",
+    "/fonts/a11y/OpenDyslexic3-Regular.woff",
   ])("skips the session refresh on static %s", async (path) => {
     const response = await proxy(request(path, credentials))
     expect(response).toBeUndefined()

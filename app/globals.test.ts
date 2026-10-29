@@ -93,4 +93,64 @@ describe("globals.css", () => {
     const layer = css.indexOf("@layer base {")
     expect(css.indexOf(field)).toBeGreaterThan(css.indexOf("\n}\n", layer))
   })
+
+  // Story 5.25: the accessibility button above the bars and the notice, and
+  // the room the page keeps for it.
+  describe("accessibility button", () => {
+    const flat = css.replace(/\s+/g, " ")
+
+    function rule(selector: string) {
+      const start = flat.indexOf(`${selector} {`)
+      expect(start, `no ${selector} rule`).toBeGreaterThanOrEqual(0)
+      return flat.slice(start, flat.indexOf("}", start))
+    }
+
+    it("keeps --a11y-room while the button is in the page", () => {
+      const root = rule("html:has([data-a11y-button])")
+      expect(root).toContain("--a11y-room: 4rem")
+      expect(root).toContain("scroll-padding-bottom: var(--a11y-room)")
+    })
+
+    it("sits 16 above the bottom, the whatsapp-bar and the tab bar", () => {
+      expect(rule("[data-a11y-button]")).toContain(
+        "bottom: calc(1rem + env(safe-area-inset-bottom))"
+      )
+      expect(
+        rule("body:has([data-whatsapp-bar]) [data-a11y-button]")
+      ).toContain(
+        "bottom: calc(4.5rem + 1px + env(safe-area-inset-bottom) + 1rem)"
+      )
+      expect(rule("body:has([data-tab-bar]) [data-a11y-button]")).toContain(
+        "bottom: calc( var(--tab-bar-height, calc(4.25rem + 1px + env(safe-area-inset-bottom))) + 1rem )"
+      )
+    })
+
+    it("sits 8 above the open cookie notice", () => {
+      for (const selector of [
+        "body:has([data-cookie-notice]) [data-a11y-button]",
+        "body:has([data-whatsapp-bar]):has([data-cookie-notice]) [data-a11y-button]",
+      ])
+        expect(rule(selector)).toMatch(
+          /var\(--cookie-notice-height, 0px\) \+ 0\.5rem/
+        )
+    })
+
+    it("adds the room under the tab bar, the footer and a bare page", () => {
+      for (const selector of [
+        "html:has([data-tab-bar])",
+        "body:has([data-tab-bar])",
+        "html:has([data-whatsapp-bar])",
+        "body:has([data-whatsapp-bar]) [data-site-footer]",
+      ])
+        expect(rule(selector)).toContain("var(--a11y-room, 0px)")
+      expect(rule("body:has([data-a11y-button]) [data-site-footer]")).toContain(
+        "padding-bottom: var(--a11y-room)"
+      )
+      expect(
+        rule(
+          "body:has([data-a11y-button]):not(:has([data-tab-bar])):not( :has([data-site-footer]) ) #main"
+        )
+      ).toContain("padding-bottom: var(--a11y-room)")
+    })
+  })
 })

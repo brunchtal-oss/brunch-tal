@@ -274,3 +274,15 @@ after = [23]
 hitl = true
 risk = "medium"
 references = ["completion-plan-2026-10-10.md (סבב 9)", "spec-5-24-marketing-tags.md"]
+
+[[entry]]
+id = 25
+type = "story"
+title = "Accessibility widget — כפתור נגישות"
+description = "סיפור חדש (החלטת המשתמשת 2026-10-29): כפתור נגישות קבוע שלנו (עיגול זית 48px בתחתית, בצד ה-inline-end) בכל עמוד חוץ מ-/admin, שפותח את הפאנל של AccessibleWeb Widget (accessible-web-widget@1.6.2, חינמי, MIT): גודל טקסט, ניגודיות, גופן קריא ועוד. הספרייה מאוחסנת אצלנו ונטענת רק בלחיצה הראשונה, או מיד כשהמכשיר כבר שמר הגדרות; הגופנים הקריאים ב-public/fonts/a11y (SIL OFL), בלי CDN ובלי בקשה מחוץ לאתר. ההגדרות נשמרות במכשיר בלבד (localStorage). מעבר לאדמין אחרי שהספרייה נטענה הוא טעינה מלאה. הכפתור עולה מעל פס הוואטסאפ, הסרגל התחתון והודעת העוגיות, והעמוד שומר לו מקום בתחתית."
+verify = "בטלפון (390x844): הכפתור בבית, ב-/sessions, ב-/login וב-/me, ולא ב-/admin; לא מכסה את פס הוואטסאפ, הסרגל התחתון או הודעת העוגיות, ואין גלילה הצידה. הפאנל בעברית ומיושר לימין. גודל טקסט וניגודיות נשארים אחרי רענון. אין בקשה מחוץ לאתר. מקלדת: Tab לכפתור ו-Enter פותח."
+covers = []
+after = [24]
+hitl = true
+risk = "low"
+references = ["completion-plan-2026-10-10.md (סבב 9)", "spec-5-25-accessibility-widget.md"]

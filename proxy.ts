@@ -14,9 +14,10 @@ import {
 } from "@/lib/site-lock"
 import { updateSession } from "@/lib/supabase/proxy"
 
-// Static files never carry a Supabase session, so they skip the refresh.
+// Static files never carry a Supabase session, so they skip the refresh
+// (fonts: the accessibility widget's readable fonts, story 5.25).
 const STATIC_ASSET =
-  /^\/(?:_next\/static|_next\/image|favicon\.ico|.*\.(?:svg|png|jpg|jpeg|gif|webp)$)/
+  /^\/(?:_next\/static|_next\/image|favicon\.ico|.*\.(?:svg|png|jpg|jpeg|gif|webp|woff2?)$)/
 
 const SHELL_PATH = /^\/(me|admin)(\/|$)/
 

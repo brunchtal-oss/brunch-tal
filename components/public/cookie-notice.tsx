@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useId, useSyncExternalStore } from "react"
+import { useEffect, useId, useRef, useSyncExternalStore } from "react"
 
 import {
   hasCookieAck,
@@ -21,7 +21,9 @@ import { shellCopy } from "@/lib/copy/shell"
 // the server snapshot is "acked", so the server HTML has nothing and a
 // device that already clicked sees no flash. Where it sits (above the
 // whatsapp-bar while it is shown, bottom 0 below a 480px height):
-// app/globals.css › [data-cookie-notice].
+// app/globals.css › [data-cookie-notice]. While it is open it publishes its
+// height as --cookie-notice-height on <html>, so the accessibility button
+// (story 5.25) sits 8px above it.
 
 export function CookieNotice(props: CookieNoticeView) {
   const acked = useSyncExternalStore(subscribe, hasCookieAck, () => true)
@@ -51,9 +53,30 @@ export function CookieNoticePanel({
   preview = false,
 }: CookieNoticeView & { onAck?: () => void; preview?: boolean }) {
   const titleId = useId()
+  const ref = useRef<HTMLDivElement>(null)
   const label = title ? undefined : (body ?? "").split("\n")[0]
+
+  useEffect(() => {
+    const node = ref.current
+    if (preview || !node || typeof ResizeObserver === "undefined") return
+    const root = document.documentElement
+    const publish = () =>
+      root.style.setProperty(
+        "--cookie-notice-height",
+        `${node.getBoundingClientRect().height}px`
+      )
+    publish()
+    const observer = new ResizeObserver(publish)
+    observer.observe(node)
+    return () => {
+      observer.disconnect()
+      root.style.removeProperty("--cookie-notice-height")
+    }
+  }, [preview])
+
   return (
     <div
+      ref={ref}
       role="dialog"
       aria-modal="false"
       aria-labelledby={title ? titleId : undefined}
