@@ -8,6 +8,8 @@ type CookieMethods = {
 }
 
 let setCookies = false
+// The options Supabase sends with the refreshed cookie (story 6.6, T21).
+let cookieOptions: object = {}
 
 // getClaims() refreshes the session; with setCookies it rewrites cookies
 // through setAll, which rebuilds the response (the second NextResponse.next).
@@ -20,7 +22,9 @@ vi.mock("@supabase/ssr", () => ({
     auth: {
       getClaims: async () => {
         if (setCookies) {
-          cookies.setAll([{ name: "sb-token", value: "fresh", options: {} }])
+          cookies.setAll([
+            { name: "sb-token", value: "fresh", options: cookieOptions },
+          ])
         }
         return { data: null }
       },
@@ -51,6 +55,31 @@ describe("updateSession", () => {
     )
     if (refresh) {
       expect(response.cookies.get("sb-token")?.value).toBe("fresh")
+    }
+  })
+})
+
+// Story 6.6 (P8, T21): she stays signed in after closing the app because the
+// refreshed session cookie keeps the lifetime and path Supabase gave it; the
+// proxy must not drop them (a cookie without maxAge ends with the browser).
+describe("updateSession keeps the cookie options", () => {
+  it("the refreshed cookie keeps its maxAge and path on the response", async () => {
+    setCookies = true
+    cookieOptions = { maxAge: 400 * 24 * 60 * 60, path: "/", sameSite: "lax" }
+    try {
+      const response = await updateSession(request())
+      const cookie = response.cookies.get("sb-token")
+      expect(cookie).toMatchObject({
+        value: "fresh",
+        maxAge: 400 * 24 * 60 * 60,
+        path: "/",
+        sameSite: "lax",
+      })
+      const header = response.headers.get("set-cookie") ?? ""
+      expect(header).toContain("Max-Age=34560000")
+      expect(header).toContain("Path=/")
+    } finally {
+      cookieOptions = {}
     }
   })
 })

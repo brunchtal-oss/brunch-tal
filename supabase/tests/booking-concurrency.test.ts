@@ -592,3 +592,56 @@ describe("a customer's cancel and Tal's session cancel (story 3.8)", () => {
     expect(event.status).toBe("cancelled")
   }, 30_000)
 })
+
+// Story 6.6 (T12): one entry cannot fund two bookings at once. A card with
+// one entry left; A books session 1 in an open transaction; a second
+// booking of hers for session 2 (by her, or by Tal) waits on the lock, then
+// finds no entry left.
+describe("one entry, two sessions at once (story 6.6)", () => {
+  it.each(["book_session", "admin_book_customer"])(
+    "the second booking (%s) waits on the lock and gets NO_MATCHING_ENTITLEMENT; one booking, balance 0/1",
+    async (second) => {
+      const first = randomUUID()
+      const other = randomUUID()
+      const fixture = await seedRace(`one_entry_${second}`, [first, other])
+      const admin = await seedAdmin()
+      await insertEvent(first, { capacity: 4 })
+      await insertEvent(other, { capacity: 4 })
+      const entitlement = fixture.entitlementOf[fixture.customerA]
+      // Three of the four entries are gone (as the owner): one is left.
+      await sql(
+        `insert into public.entitlement_movements (entitlement_id, action, units)
+         values ($1, 'adjust', -3)`,
+        [entitlement]
+      )
+
+      const result = await race({
+        hold: async (a) => {
+          await asAuthenticated(a, fixture.customerA)
+          const booked = await a.query(BOOK, [first, randomUUID()])
+          expect(booked.rows[0].r).toEqual({ booking_id: expect.any(String) })
+        },
+        customer: second === "book_session" ? fixture.customerA : admin,
+        query: second === "book_session" ? BOOK : ADMIN_BOOK,
+        params:
+          second === "book_session"
+            ? [other, randomUUID()]
+            : [fixture.customerA, other, randomUUID()],
+        release: "commit",
+      })
+      expect(result.error).toMatchObject({
+        code: "P0001",
+        message: "NO_MATCHING_ENTITLEMENT",
+      })
+
+      const bookings = await sql<{ event_id: string; status: string }>(
+        "select event_id, status from public.bookings where customer_id = $1",
+        [fixture.customerA]
+      )
+      expect(bookings).toEqual([{ event_id: first, status: "confirmed" }])
+      const byId = await balances(fixture)
+      expect(byId[entitlement]).toMatchObject({ available: 0, reserved: 1 })
+    },
+    30_000
+  )
+})
