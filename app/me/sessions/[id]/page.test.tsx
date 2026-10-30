@@ -138,3 +138,78 @@ describe("the customer's session page and the waitlist", () => {
     expect(html).not.toContain(copy.fullOffer)
   })
 })
+
+// Story 6.7, T22 (SN7): a customer never sees the session's kind, also on a
+// couple session, whatever the preview says, and also once she is booked
+// there with her couple booking (the companion note shows).
+const KIND_WORDS = ["זוגי", "זוגית", "זוגיים", "רגיל", "לשני מבוגרים"]
+const COUPLE_BOOKING = {
+  booking_id: "b1",
+  event_id: ID,
+  status: "confirmed",
+  starts_at: "2099-10-12T07:00:00+00:00",
+  concept_name: "Grandma",
+  party_size: 2,
+  guest_details: "COMPANION_NOTE_TEXT",
+  guest_details_editable: true,
+}
+
+describe("the customer's session page and the session kind", () => {
+  it.each<[string, { ok: boolean; source?: string; code?: string }, unknown[]]>(
+    [
+      ["bookable", { ok: true, source: "entitlement" }, []],
+      ["full", { ok: false, code: "EVENT_FULL" }, []],
+      [
+        "no matching entitlement",
+        { ok: false, code: "NO_MATCHING_ENTITLEMENT" },
+        [],
+      ],
+      [
+        "booked, with her couple booking",
+        { ok: true, booked: true, booking_id: "b1" } as { ok: boolean },
+        [COUPLE_BOOKING],
+      ],
+    ]
+  )(
+    "a couple session (%s) renders no kind word",
+    async (_label, preview, upcoming) => {
+      const kind = SESSION_ROW.kind
+      SESSION_ROW.kind = "couple"
+      try {
+        callRpc.mockImplementation(async (_client: unknown, name: string) =>
+          name === "preview_book_session"
+            ? preview.ok
+              ? { ok: true, data: preview }
+              : { ok: false, code: preview.code }
+            : name === "get_event_availability"
+              ? {
+                  ok: true,
+                  data: [
+                    {
+                      event_id: ID,
+                      label: "last_places",
+                      registration_open: true,
+                    },
+                  ],
+                }
+              : name === "get_my_bookings"
+                ? { ok: true, data: { upcoming, past: [] } }
+                : { ok: true, data: [] }
+        )
+        const html = await render()
+        expect(html).toContain("Grandma")
+        if (upcoming.length > 0) {
+          expect(html).toContain(customerCopy.companion.label)
+          expect(html).toContain("COMPANION_NOTE_TEXT")
+        } else {
+          expect(html).not.toContain(customerCopy.companion.label)
+        }
+        for (const word of KIND_WORDS) {
+          expect(html).not.toContain(word)
+        }
+      } finally {
+        SESSION_ROW.kind = kind
+      }
+    }
+  )
+})
