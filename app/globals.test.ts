@@ -154,3 +154,83 @@ describe("globals.css", () => {
     })
   })
 })
+
+// Story 6.7, T23 (SC10, SN7): every text colour reaches WCAG AA (4.5:1) on
+// the surfaces it is drawn on. The values are read from globals.css itself.
+// brand-accent is not a text colour (graphics only, 3:1); its use on screen
+// is checked in the browser (MA3).
+describe("text contrast of the palette", () => {
+  const root = block(":root")
+  const theme = block("@theme inline")
+
+  function hex(name: string): string {
+    const raw = value(root, name) ?? value(theme, name)
+    expect(raw, `${name} is not set`).toMatch(/^#[0-9a-f]{6}$/i)
+    return raw!
+  }
+
+  // WCAG 2.x relative luminance and contrast ratio.
+  function luminance(color: string): number {
+    const [r, g, b] = [1, 3, 5].map((i) => {
+      const c = parseInt(color.slice(i, i + 2), 16) / 255
+      return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+    })
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+  }
+  function ratio(a: string, b: string): number {
+    const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x)
+    return (hi + 0.05) / (lo + 0.05)
+  }
+
+  const TEXT = [
+    "--foreground",
+    "--card-foreground",
+    "--muted-foreground",
+    "--primary",
+    "--destructive",
+    "--color-success",
+    "--color-warning",
+    "--color-error",
+    "--color-pending",
+    "--color-expired",
+  ]
+  // The page, the card and the filled surfaces text sits on (bg-muted,
+  // bg-secondary, bg-accent hover, a popover). There is no
+  // --destructive-foreground token, so no pair for it.
+  const SURFACES = [
+    "--background",
+    "--card",
+    "--muted",
+    "--secondary",
+    "--accent",
+    "--popover",
+  ]
+  const STATUS = ["success", "warning", "error", "pending", "expired"]
+  const pairs: Array<[string, string]> = [
+    ...TEXT.flatMap((text) =>
+      SURFACES.map((surface): [string, string] => [text, surface])
+    ),
+    ["--primary-foreground", "--primary"],
+    ["--popover-foreground", "--popover"],
+    ["--secondary-foreground", "--secondary"],
+    ["--accent-foreground", "--accent"],
+    // A status chip: the status colour on its own tint.
+    ...STATUS.map((s): [string, string] => [
+      `--color-${s}`,
+      `--color-${s}-tint`,
+    ]),
+  ]
+
+  it.each(pairs)("%s on %s is at least 4.5:1", (text, surface) => {
+    const r = ratio(hex(text), hex(surface))
+    expect(
+      r,
+      `${text} on ${surface}: ${r.toFixed(2)}:1`
+    ).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it("the ratio is computed correctly (ink on white 21:1, a grey on white about 4.5:1)", () => {
+    expect(ratio("#000000", "#ffffff")).toBeCloseTo(21, 5)
+    expect(ratio("#767676", "#ffffff")).toBeCloseTo(4.54, 2)
+  })
+})
