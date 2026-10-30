@@ -47,6 +47,11 @@ export default defineConfig({
           // Loads .env.local, checks DEV_DATABASE_URL before connecting,
           // runs cleanups and closes the pool after each file.
           setupFiles: ["supabase/tests/support/setup.ts"],
+          // The afterAll cleanup deletes committed fixtures one query at a
+          // time over the remote pooler: booking-concurrency.test.ts takes
+          // about 10 s alone (story 6.6), so the 10 s default cut it short
+          // and left test_ rows behind.
+          hookTimeout: 60_000,
         },
       },
     ],
