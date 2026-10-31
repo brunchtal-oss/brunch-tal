@@ -562,6 +562,7 @@ export type Database = {
           page_slug: string
           published_at: string | null
           published_content: Json | null
+          published_content_full: Json | null
           sort_order: number
           updated_at: string
           updated_by: string | null
@@ -576,6 +577,7 @@ export type Database = {
           page_slug: string
           published_at?: string | null
           published_content?: Json | null
+          published_content_full?: Json | null
           sort_order?: number
           updated_at?: string
           updated_by?: string | null
@@ -590,6 +592,7 @@ export type Database = {
           page_slug?: string
           published_at?: string | null
           published_content?: Json | null
+          published_content_full?: Json | null
           sort_order?: number
           updated_at?: string
           updated_by?: string | null

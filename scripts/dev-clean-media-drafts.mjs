@@ -49,6 +49,7 @@ const CANDIDATES = `
       select 1 from public.content_sections s
       where strpos(coalesce(s.draft_content::text, ''), m.id::text) > 0
          or strpos(coalesce(s.published_content::text, ''), m.id::text) > 0
+         or strpos(coalesce(s.published_content_full::text, ''), m.id::text) > 0
     )
     and not exists (
       select 1 from public.content_pages p

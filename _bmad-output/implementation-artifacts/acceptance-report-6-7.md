@@ -16,13 +16,14 @@
 | [acceptance-cancellation.test.ts](../../supabase/tests/acceptance-cancellation.test.ts) | 3 (T1, T2a, T2b) | pass |
 | [acceptance-notifications.test.ts](../../supabase/tests/acceptance-notifications.test.ts) | 9 (T3a, T3b, T4–T9, and the queue check's positive control) | pass |
 | [acceptance-content-values.test.ts](../../supabase/tests/acceptance-content-values.test.ts) | 8 (T10, T12–T14, T15 ×2, T16, T17) | pass |
+| [acceptance-public-reads.test.ts](../../supabase/tests/acceptance-public-reads.test.ts) | 10 (T11 ×7, T18 ×3) | pass (2026-10-31, `fix-public-read-leaks`) |
 | [empty-content.test.tsx](../../components/public/empty-content.test.tsx) | 4 (T19: home, how it works, gallery, contact) | pass |
 | [no-hardcoded-contact.test.ts](../../test/no-hardcoded-contact.test.ts) | 3 (T20 and two checks of the scan itself) | pass |
 | [push-permission-on-click.test.ts](../../test/push-permission-on-click.test.ts) | 3 (T21) | pass |
 | [app/me/sessions/[id]/page.test.tsx](<../../app/me/sessions/[id]/page.test.tsx>) | 9 (5 existing + T22 ×4) | pass |
 | [app/globals.test.ts](../../app/globals.test.ts) | 105 (35 existing + T23 ×70) | pass |
 
-T11 and T18 are not written here: they ship with the `fix-public-read-leaks` PR (spec-gate decision 1, deferred-work item of spec 6.7).
+T11 and T18 were not written in 6.7: they shipped with the `fix-public-read-leaks` PR (spec-gate decision 1; `spec-fix-public-read-leaks.md`), with migrations `20261031201729_close_public_read_leaks.sql` and `20261031203914_concepts_policies_per_role.sql`. Run 2026-10-31: the new file and `grants`, `content`, `content-publish`, `media`, `concepts-admin`, `acceptance-content-values` pass (7 files, 101 tests); cleanup dry run "אין נתוני בדיקה במסד". Deliberate break inside each test's transaction: `concepts` policy back to `using (true)` → T18 (archived without a session) fails; the trigger without the strip → 4 T11 tests fail.
 
 Notes on the new tests:
 
@@ -97,6 +98,7 @@ Legend (the number after the colon is the it() line; T1–T23 are the new tests,
 | SH | [shopping-items.test.ts](../../supabase/tests/shopping-items.test.ts) |
 | NOTE | [notes.test.ts](../../supabase/tests/notes.test.ts) |
 | CON | [concepts-admin.test.ts](../../supabase/tests/concepts-admin.test.ts) |
+| PRD | [acceptance-public-reads.test.ts](../../supabase/tests/acceptance-public-reads.test.ts) |
 | J | [join.test.ts](../../supabase/tests/join.test.ts) |
 | OC | [open-cards.test.ts](../../supabase/tests/open-cards.test.ts) |
 | CU | [customers.test.ts](../../supabase/tests/customers.test.ts) |
@@ -170,7 +172,7 @@ Legend (the number after the colon is the it() line; T1–T23 are the new tests,
 | PC6 "ואת העמודות שנבחרו" | הוחלף בהחלטה | completion-plan:22 (user decision 2026-10-13): fixed columns name, phone, email; CX:112 proves only those are written |
 | PC7 סכומים מוצגים בשקלים (₪), ונשמרים באגורות בלי עיגול שגוי | עובר | MO:6, RP:618, MO:19, MO:32; T10 |
 | PC8 עריכת תוכן נשארת טיוטה עד הפרסום; סקשן או פריט מוסתר לא מוצג בעמודים | עובר | CP:148, CT:92, PV:20, LP:87, MD:527 |
-| PC8 "תוכן מוסתר לא דולף לנתיב ציבורי" (פריט מוסתר דרך ה-API) | לא עובר: תיקון מתוזמן | Spec-gate decision 1: a hidden item inside a published section is readable by anon through the API. Fix and T11 in `fix-public-read-leaks`, after 6.7 and before 6.1 (deferred-work, item of spec 6.7) |
+| PC8 "תוכן מוסתר לא דולף לנתיב ציבורי" (פריט מוסתר דרך ה-API) | עובר | T11 (PRD:190, PRD:223, PRD:252, PRD:291, PRD:348, PRD:363, PRD:405). Fixed in `fix-public-read-leaks` (2026-10-31): `published_content` is the public copy without hidden content, the full copy is admin-only |
 
 ### ערכים ותוכן שנערכים באדמין
 
@@ -198,7 +200,7 @@ Legend (the number after the colon is the it() line; T1–T23 are the new tests,
 | SC3 יום ה׳: עמודות ד׳ וה׳; יום ב׳: א׳ וב׳; "+ יום הכנה" רק למפגש הזה; עמודה ריקה לא מודפסת | עובר | WS:127, WS:151 (fixed dates), WS:182, WSX:522 |
 | SC4 הדפסת דף העבודה כוללת...; ייצוא רשימת הקניות פותח וואטסאפ עם הפריטים שעוד לא נקנו | עובר (+ MA9 עובר) | WSX:522, WSX:548, WSX:153, SM:41, SM:63, WSX:269. The browser's print preview: MA9 |
 | SC5 לקוחה לא יכולה לקרוא דף עבודה, פתקים | עובר | WS:584, WS:671, SH:373, NOTE:488 |
-| SC5 "או קונספטים בארכיון, גם בפנייה ישירה ל-API" | לא עובר: תיקון מתוזמן | Spec-gate decision 1: `concepts_public_select using (true)` (20261004145805_concepts_and_events.sql:163). Fix and T18 in `fix-public-read-leaks` (deferred-work, item of spec 6.7) |
+| SC5 "או קונספטים בארכיון, גם בפנייה ישירה ל-API" | עובר | T18 (PRD:553, PRD:566, PRD:584). Fixed in `fix-public-read-leaks` (2026-10-31): an archived concept is readable only through a session that is not a draft (past bookings keep its name), and always by the admin |
 | SC6 אפשר להצטרף בלי אישור תמונות; נשמר עם מועד וגרסה; משתנה בפרופיל | עובר | J:209, PR:358, PR:455, PSEC:181, app/me/profile/actions.test.ts:285 |
 | SC7 "עם סבתוש" זוגי עם מכסה 14; שינוי שדה במפגש לא משנה את הקונספט; קונספט עם מפגשים לארכיון | עובר | EVA:134, EVA:944, CON:451, CON:380; T17 |
 | SC7 "וערכת העיצוב של הקונספט" | הוחלף בהחלטה | UX memlog:131 (user decision 2026-10-04: concept colours dropped) |
@@ -220,7 +222,7 @@ Legend (the number after the colon is the it() line; T1–T23 are the new tests,
 | SN7 תווית סוג המפגש לא מוצגת לאורחת וללקוחה | עובר (+ MA5 עובר) | PSX `expectNoPlacesOrKind` (:50, used at :103, :144, :171); T22 |
 | SN7 "הטקסט על צבע כל קונספט עומד בניגודיות 4.5:1" | הוחלף בהחלטה + עובר על הצבעים שנשארו | UX memlog:131 (no concept colours); the palette's text tokens: T23 |
 
-**Summary:** of the 47 clauses, every one is marked עובר or הוחלף בהחלטה, except two parts: PC8 (a hidden item through the API) and SC5 (an archived concept through the API), marked "לא עובר: תיקון מתוזמן" with the fix in `fix-public-read-leaks`. Fully superseded: NT3, PC4, AV8, AV10. All 12 M-auto checks pass (2026-10-30, planning session). M-user (2026-10-31, the user, Samsung S26+, Android, Chrome): MU1 passes on the guest pages (the signed-in steps were not run; the sheets are covered by MA2), MU2 passes with one note (fix 24 in fixes-log), MU3 not run (no iPhone).
+**Summary:** of the 47 clauses, every one is marked עובר or הוחלף בהחלטה. PC8 (a hidden item through the API) and SC5 (an archived concept through the API) pass since `fix-public-read-leaks` (2026-10-31, T11 and T18). Fully superseded: NT3, PC4, AV8, AV10. All 12 M-auto checks pass (2026-10-30, planning session). M-user (2026-10-31, the user, Samsung S26+, Android, Chrome): MU1 passes on the guest pages (the signed-in steps were not run; the sheets are covered by MA2), MU2 passes with one note (fix 24 in fixes-log), MU3 not run (no iPhone).
 
 ## Known risks
 
