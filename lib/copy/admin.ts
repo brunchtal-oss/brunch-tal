@@ -2448,6 +2448,7 @@ export const adminCopy = {
       published_at: "מועד פרסום",
       draft_content: "טיוטה",
       published_content: "תוכן שפורסם",
+      published_content_full: "תוכן מלא שפורסם",
       default_validity_days: "תוקף למוצר חדש (ימים)",
       registration_close_days_before: "סגירת הרשמה (ימים לפני)",
       registration_close_local_time: "שעת סגירת הרשמה",

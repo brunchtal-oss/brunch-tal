@@ -343,6 +343,7 @@ describe("labels seen in the dev database", () => {
       "validity_mode",
       "intro_only",
       "published_content",
+      "published_content_full",
       "draft_content",
       "publish_state",
       "published_at",

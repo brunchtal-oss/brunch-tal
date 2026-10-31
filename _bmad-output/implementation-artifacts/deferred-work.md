@@ -831,10 +831,28 @@
   target: תיקון קצר אחרי 6.7, לפני 6.1 (fix-public-read-leaks)
   summary: שתי קריאות ציבוריות שסותרות את בדיקות הקבלה. (1) PC8: פריט מוסתר בתוך סקשן שפורסם (המלצה, תמונה בגלריה, באנר כבוי) קריא לאורחת ולכל משתמשת דרך ה-API, כי `published_content` נקרא כולו. מסמך המקור (שורה 417) ו-spec 5.3:41: "תוכן מוסתר אינו דולף לנתיב ציבורי". (2) SC5: קונספט בארכיון קריא ללקוחה ולאורחת, והסעיף אומר "גם בפנייה ישירה ל-API". באותו PR נכתבות T11 (פריט מוסתר לא נקרא כאורחת) ו-T18 (קונספט בארכיון: 0 שורות ללקוחה ולאורחת) של spec 6.7.
   evidence: ה-policy ‏`content_sections_public_select` (anon, authenticated) מסנן רק `published_content is not null and not hidden` של הסקשן כולו, ולא פריט עם `hidden: true` בתוך התוכן. בפיתוח (2026-10-30) הסקשן של `home` עם `{"text": "בקרוב! בראנץ' 60+", "hidden": true}` קריא לאורחת. קובצי התמונות של פריט מוסתר כבר יורדים מהאחסון הציבורי (5.4). ה-policy ‏`concepts_public_select` (anon, authenticated) הוא `using (true)` (`20261004145805_concepts_and_events.sql:163`). התיקון ל-SC5 קטן: `alter policy` בלי drop (לא בארכיון, או שמפגש שאינו טיוטה משתמש בו, או אדמין). הכרעת מנהל העבודה 4 בשער ה-spec של 6.7 (2026-10-30, באישורים שהמשתמשת מסרה לו).
-  status: פתוח
+  status: סגור (PR ‏#142, ‏2026-10-31)
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-6-7-acceptance-suite-rest.md`
   target: לפני 6.4 (המפגש עם טל)
   summary: בעורך המוצר יש שני שדות, "הודעה אחרי הצטרפות" ותווית הכפתור (`products.post_join_message`, ‏`post_join_button_label`), ששום מסך לא מציג. להסיר אותם מהעורך (או להחליט אחרת), כדי שטל לא תערוך טקסט שלא מופיע בשום מקום.
   evidence: ההחלטה ב-memlog של ה-UX (שורה 143, ‏USER 2026-10-06, בדיקת הטלפון של 4.12): בבית של הלקוחה אין הודעות, גם לא ההודעה והכפתור אחרי הצטרפות. השדות עדיין נערכים ב-`app/admin/(shell)/products/product-draft.ts:180` וב-`lib/copy/admin.ts:2474`, ושום קוד לא מציג אותם. הכרעת מנהל העבודה 4 בשער ה-spec של 6.7 (2026-10-30).
+  status: פתוח
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-fix-public-read-leaks.md`
+  target: 6.1
+  summary: העתקת תוכן האתר לפרודקשן מעתיקה את `draft_content` ואת `published_content_full` של `content_sections` (ה-trigger ‏`content_sections_public_copy` גוזר ממנה את `published_content`), ולא רק את `published_content`, שהוא העותק הציבורי בלי מוסתרים.
+  evidence: מאז fix-public-read-leaks העמודה `published_content` לא מכילה פריטים או קטעים מוסתרים. העתקה שלה בלבד מאבדת אותם, למשל את הבאנר הכבוי של `home/promo_banner`, שהטקסט שלו נמצא רק ב-`published_content_full`.
+  status: פתוח
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-fix-public-read-leaks.md`
+  target: עדכון AGENTS.md הבא (סשן התכנון)
+  summary: להוסיף ל"מלכודות ידועות" ב-AGENTS.md: מיגרציית נתונים על תוכן האתר משנה את `published_content_full`, אף פעם לא את `published_content`. כתיבה ל-`published_content` לבדה הופכת לעותק המלא, ולכן `set published_content = f(published_content)` מוחק לצמיתות פריטים מוסתרים, גם מהעורך.
+  evidence: ממצא 2 בביקורת של fix-public-read-leaks. הכלל כבר כתוב בהערה על העמודה וב-`data-model.md`. AGENTS.md הוא קובץ הקשר לסוכנים, ולכן לא נערך מתוך סיפור.
+  status: סגור (נוסף ל-AGENTS.md על ידי סשן התכנון ב-PR ‏#142)
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-fix-public-read-leaks.md`
+  target: לא נקבע
+  summary: התמונה של קונספט בארכיון נשארת ב-`media-public`, כי `private.used_media_ids` סופרת את `default_image_id` של כל קונספט, גם בארכיון. התיקון ל-SC5 סוגר את שורת הקונספט ב-API, לא את קובץ התמונה שלו.
+  evidence: ממצא 6 בביקורת של fix-public-read-leaks (low). הבעיה קיימת מלפני התיקון. תיקון אפשרי: לספור רק קונספט שלא בארכיון או שמפגש שאינו טיוטה משתמש בו, בדיוק כמו ה-policy.
   status: פתוח
