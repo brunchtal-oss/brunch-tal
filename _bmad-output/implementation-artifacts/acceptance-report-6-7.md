@@ -205,7 +205,7 @@ Legend (the number after the colon is the it() line; T1–T23 are the new tests,
 | SC8 מסך הכרטיסיות הפתוחות... תואם את מסך היתרה; 3+1 מופיעה; יורדת אחרי הרביעי ובתפוגה; לקוחה לא ניגשת | עובר | OC:260, OC:305, OC:288, OC:324, CU:535, OC:450 |
 | SC9 כל פריט חדש ניתן להוספה, עריכה ומחיקה או ארכיון | עובר | WS:436, WS:182, WS:221, WS:287, SH:125, SH:236, SH:297, NOTE:182, NOTE:394, NOTE:258, NOTE:285, CON:172, CON:310, CON:380, CON:425, SF:257, SF:149 |
 | SC9 "נושא" | הוחלף בהחלטה | SPEC memlog:313 (user decision 2026-10-21) |
-| SC10 נבדקים: תצוגת טלפון, RTL, מקלדת, ניגודיות וקורא מסך | עובר בקוד (+ MA1, MA2, MA3 עוברים; MU1, MU2 ממתינים) | ESL:265, SL:249; T23. The phone, keyboard and screen-reader parts are manual only |
+| SC10 נבדקים: תצוגת טלפון, RTL, מקלדת, ניגודיות וקורא מסך | עובר (+ MA1, MA2, MA3 עוברים; MU1 עובר כאורחת, MU2 עובר עם הערה) | ESL:265, SL:249; T23. The phone, keyboard and screen-reader parts are manual only |
 
 ### השלמות › התראות, PWA ואדמין
 
@@ -220,7 +220,7 @@ Legend (the number after the colon is the it() line; T1–T23 are the new tests,
 | SN7 תווית סוג המפגש לא מוצגת לאורחת וללקוחה | עובר (+ MA5 עובר) | PSX `expectNoPlacesOrKind` (:50, used at :103, :144, :171); T22 |
 | SN7 "הטקסט על צבע כל קונספט עומד בניגודיות 4.5:1" | הוחלף בהחלטה + עובר על הצבעים שנשארו | UX memlog:131 (no concept colours); the palette's text tokens: T23 |
 
-**Summary:** of the 47 clauses, every one is marked עובר or הוחלף בהחלטה, except two parts: PC8 (a hidden item through the API) and SC5 (an archived concept through the API), marked "לא עובר: תיקון מתוזמן" with the fix in `fix-public-read-leaks`. Fully superseded: NT3, PC4, AV8, AV10. All 12 M-auto checks pass (2026-10-30, planning session). Still pending: MU1 and MU2 (SC10: phone feel and screen reader), MU3 optional.
+**Summary:** of the 47 clauses, every one is marked עובר or הוחלף בהחלטה, except two parts: PC8 (a hidden item through the API) and SC5 (an archived concept through the API), marked "לא עובר: תיקון מתוזמן" with the fix in `fix-public-read-leaks`. Fully superseded: NT3, PC4, AV8, AV10. All 12 M-auto checks pass (2026-10-30, planning session). M-user (2026-10-31, the user, Samsung S26+, Android, Chrome): MU1 passes on the guest pages (the signed-in steps were not run; the sheets are covered by MA2), MU2 passes with one note (fix 24 in fixes-log), MU3 not run (no iPhone).
 
 ## Known risks
 
@@ -270,7 +270,7 @@ Run 2026-10-30 by the planning session on the live site (same code, dev database
 
 1. לגלול את לו״ז הבראנצ׳ים מלמעלה עד למטה.
    - מה אמור לקרות: הגלילה חלקה, ושום דבר לא זז לצדדים.
-2. לפתוח את חלון ההרשמה של מפגש ולסגור אותו. לפתוח את חלון הביטול ב"ההרשמות שלי" ולסגור אותו. לא לאשר באף אחד מהם.
+2. לפתוח את חלון ההרשמה של מפגש ולסגור אותו. לפתוח את חלון הביטול ("ביטול ההרשמה" בעמוד של מפגש שנרשמת אליו) ולסגור אותו. לא לאשר באף אחד מהם.
    - מה אמור לקרות: החלון נפתח ונסגר בקלות, וכפתור האישור נראה בלי לגלול הרבה.
 3. במסך ההתחברות, להקליד בשדות.
    - מה אמור לקרות: השדה שמקלידות בו נשאר גלוי מעל המקלדת.
@@ -290,9 +290,9 @@ Run 2026-10-30 by the planning session on the live site (same code, dev database
 
 | # | Device and browser | Result |
 |---|---|---|
-| MU1 | | ממתין |
-| MU2 | | ממתין |
-| MU3 | | ממתין (רשות) |
+| MU1 | Samsung S26+, Android, Chrome, TalkBack (קול Google בעברית) | עובר כאורחת (שלבים 2–3): כל פריט מוקרא בשם ברור. שלבים 4–6 (לקוחה ואדמין) לא בוצעו, כי העבודה עם TalkBack קשה מדי לבדיקה ארוכה; חלון ההרשמה נבדק במקלדת ב-MA2. הערה: עם קול באנגלית TalkBack מדלג על העברית ומקריא רק "visited" ומספרים; זו הגדרת הטלפון, לא האתר |
+| MU2 | Samsung S26+, Android, Chrome | עובר עם הערה: שלבים 1–4 תקינים (חלון הביטול נבדק במחשב ב-MA2, כי ללקוחה הבדויה אין הרשמה עתידית). שלב 5: בדף העבודה, אחרי "+ פריט", השדה גלוי אבל כפתור האישור מוסתר מתחת למקלדת וצריך לגלול. לא חוסם (המשתמשת); תיקון 24 ב-fixes-log |
+| MU3 | | לא בוצע: אין אייפון. נשאר לפי ההחלטה מ-2026-10-10 (פוש באייפון נדחה, אולי עד אחרי ההשקה) |
 
 ## Wording notes
 
