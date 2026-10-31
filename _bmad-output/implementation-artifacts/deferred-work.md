@@ -831,7 +831,7 @@
   target: תיקון קצר אחרי 6.7, לפני 6.1 (fix-public-read-leaks)
   summary: שתי קריאות ציבוריות שסותרות את בדיקות הקבלה. (1) PC8: פריט מוסתר בתוך סקשן שפורסם (המלצה, תמונה בגלריה, באנר כבוי) קריא לאורחת ולכל משתמשת דרך ה-API, כי `published_content` נקרא כולו. מסמך המקור (שורה 417) ו-spec 5.3:41: "תוכן מוסתר אינו דולף לנתיב ציבורי". (2) SC5: קונספט בארכיון קריא ללקוחה ולאורחת, והסעיף אומר "גם בפנייה ישירה ל-API". באותו PR נכתבות T11 (פריט מוסתר לא נקרא כאורחת) ו-T18 (קונספט בארכיון: 0 שורות ללקוחה ולאורחת) של spec 6.7.
   evidence: ה-policy ‏`content_sections_public_select` (anon, authenticated) מסנן רק `published_content is not null and not hidden` של הסקשן כולו, ולא פריט עם `hidden: true` בתוך התוכן. בפיתוח (2026-10-30) הסקשן של `home` עם `{"text": "בקרוב! בראנץ' 60+", "hidden": true}` קריא לאורחת. קובצי התמונות של פריט מוסתר כבר יורדים מהאחסון הציבורי (5.4). ה-policy ‏`concepts_public_select` (anon, authenticated) הוא `using (true)` (`20261004145805_concepts_and_events.sql:163`). התיקון ל-SC5 קטן: `alter policy` בלי drop (לא בארכיון, או שמפגש שאינו טיוטה משתמש בו, או אדמין). הכרעת מנהל העבודה 4 בשער ה-spec של 6.7 (2026-10-30, באישורים שהמשתמשת מסרה לו).
-  status: פתוח
+  status: סגור (PR ‏#142, ‏2026-10-31)
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-6-7-acceptance-suite-rest.md`
   target: לפני 6.4 (המפגש עם טל)
@@ -849,7 +849,7 @@
   target: עדכון AGENTS.md הבא (סשן התכנון)
   summary: להוסיף ל"מלכודות ידועות" ב-AGENTS.md: מיגרציית נתונים על תוכן האתר משנה את `published_content_full`, אף פעם לא את `published_content`. כתיבה ל-`published_content` לבדה הופכת לעותק המלא, ולכן `set published_content = f(published_content)` מוחק לצמיתות פריטים מוסתרים, גם מהעורך.
   evidence: ממצא 2 בביקורת של fix-public-read-leaks. הכלל כבר כתוב בהערה על העמודה וב-`data-model.md`. AGENTS.md הוא קובץ הקשר לסוכנים, ולכן לא נערך מתוך סיפור.
-  status: פתוח
+  status: סגור (נוסף ל-AGENTS.md על ידי סשן התכנון ב-PR ‏#142)
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-fix-public-read-leaks.md`
   target: לא נקבע
