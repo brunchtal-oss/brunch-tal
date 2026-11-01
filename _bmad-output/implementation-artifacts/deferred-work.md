@@ -837,7 +837,7 @@
   target: לפני 6.4 (המפגש עם טל)
   summary: בעורך המוצר יש שני שדות, "הודעה אחרי הצטרפות" ותווית הכפתור (`products.post_join_message`, ‏`post_join_button_label`), ששום מסך לא מציג. להסיר אותם מהעורך (או להחליט אחרת), כדי שטל לא תערוך טקסט שלא מופיע בשום מקום.
   evidence: ההחלטה ב-memlog של ה-UX (שורה 143, ‏USER 2026-10-06, בדיקת הטלפון של 4.12): בבית של הלקוחה אין הודעות, גם לא ההודעה והכפתור אחרי הצטרפות. השדות עדיין נערכים ב-`app/admin/(shell)/products/product-draft.ts:180` וב-`lib/copy/admin.ts:2474`, ושום קוד לא מציג אותם. הכרעת מנהל העבודה 4 בשער ה-spec של 6.7 (2026-10-30).
-  status: פתוח
+  status: סגור (PR ‏#144, `spec-fix-pre-meeting-cleanup.md`, ‏2026-11-01)
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-fix-public-read-leaks.md`
   target: 6.1

@@ -29,8 +29,6 @@ const CARD: ProductRow = {
   eligible_event_kind: "regular",
   party_size: 1,
   intro_only: false,
-  post_join_message: null,
-  post_join_button_label: "Go",
   active: true,
 }
 
@@ -75,26 +73,22 @@ describe("draftForType (the type fills defaults)", () => {
     })
   })
 
-  it("keeps the name, price and texts when the type changes", () => {
+  it("keeps the name and price when the type changes", () => {
     const base = {
       ...draftForType("single", 49),
       name: "N",
       priceText: "100",
-      postJoinMessage: "M",
-      postJoinButtonLabel: "B",
     }
     expect(draftForType("couple", 49, base)).toMatchObject({
       name: "N",
       priceText: "100",
-      postJoinMessage: "M",
-      postJoinButtonLabel: "B",
       partySize: 2,
     })
   })
 })
 
 describe("createPayload", () => {
-  it("builds p_product in agorot, every day as null, empty texts as null", () => {
+  it("builds p_product in agorot, every day as null, without the post-join texts", () => {
     const draft = {
       ...draftForType("couple", 49),
       name: "  Couple ",
@@ -113,8 +107,6 @@ describe("createPayload", () => {
         eligible_event_kind: "couple",
         party_size: 2,
         intro_only: false,
-        post_join_message: null,
-        post_join_button_label: null,
       },
     })
   })
@@ -193,8 +185,6 @@ describe("fieldChange (the editor's old ← new)", () => {
       "eventKind",
       "partySize",
       "introOnly",
-      "postJoinMessage",
-      "postJoinButtonLabel",
     ] as const) {
       expect(fieldChange(field, CARD, draft), field).toBeNull()
     }
@@ -227,7 +217,7 @@ describe("fieldChange (the editor's old ← new)", () => {
     })
   })
 
-  it("weekdays, yes / no and an emptied optional text", () => {
+  it("weekdays and yes / no", () => {
     const draft = draftFromRow(CARD)
     expect(
       fieldChange("weekdays", CARD, {
@@ -242,16 +232,6 @@ describe("fieldChange (the editor's old ← new)", () => {
     expect(
       fieldChange("introOnly", CARD, { ...draft, introOnly: true })
     ).toEqual({ from: copy.no, to: copy.yes, changes: { intro_only: true } })
-    expect(
-      fieldChange("postJoinButtonLabel", CARD, {
-        ...draft,
-        postJoinButtonLabel: "  ",
-      })
-    ).toEqual({
-      from: "Go",
-      to: copy.empty,
-      changes: { post_join_button_label: null },
-    })
   })
 
   it("the price change in agorot, formatted", () => {

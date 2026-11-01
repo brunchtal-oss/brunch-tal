@@ -4,7 +4,6 @@ import { RadioCardGroup } from "@/components/admin/radio-card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import { adminCopy } from "@/lib/copy/admin"
 import { authCopy } from "@/lib/copy/auth"
 import { errorMessage } from "@/lib/errors"
@@ -44,7 +43,6 @@ export function TextField({
   numeric = false,
   decimal = false,
   maxLength,
-  multiline = false,
 }: {
   id: string
   label: string
@@ -56,7 +54,6 @@ export function TextField({
   numeric?: boolean
   decimal?: boolean
   maxLength?: number
-  multiline?: boolean
 }) {
   const errorId = `${id}-error`
   const shared = {
@@ -74,22 +71,14 @@ export function TextField({
         {label}
         {required && ` ${authCopy.required}`}
       </FieldLabel>
-      {multiline ? (
-        <Textarea
-          {...shared}
-          onChange={(event) => onChange(event.target.value)}
-          className="min-h-24 text-base"
-        />
-      ) : (
-        <Input
-          {...shared}
-          autoComplete="off"
-          inputMode={numeric ? "numeric" : decimal ? "decimal" : undefined}
-          dir={numeric || decimal ? "ltr" : undefined}
-          onChange={(event) => onChange(event.target.value)}
-          className={`${INPUT} ${numeric || decimal ? "text-start" : ""}`}
-        />
-      )}
+      <Input
+        {...shared}
+        autoComplete="off"
+        inputMode={numeric ? "numeric" : decimal ? "decimal" : undefined}
+        dir={numeric || decimal ? "ltr" : undefined}
+        onChange={(event) => onChange(event.target.value)}
+        className={`${INPUT} ${numeric || decimal ? "text-start" : ""}`}
+      />
       {problem && (
         <p id={errorId} className="text-[15px] text-error">
           {problemText(problem, invalidText)}

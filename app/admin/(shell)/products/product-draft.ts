@@ -33,8 +33,6 @@ export type ProductRow = {
   eligible_event_kind: EventKind
   party_size: number
   intro_only: boolean
-  post_join_message: string | null
-  post_join_button_label: string | null
   active: boolean
 }
 
@@ -51,8 +49,6 @@ export type ProductDraft = {
   eventKind: EventKind
   partySize: 1 | 2
   introOnly: boolean
-  postJoinMessage: string
-  postJoinButtonLabel: string
 }
 
 export type DraftField =
@@ -70,8 +66,6 @@ export function draftForType(
   return {
     name: base?.name ?? "",
     priceText: base?.priceText ?? "",
-    postJoinMessage: base?.postJoinMessage ?? "",
-    postJoinButtonLabel: base?.postJoinButtonLabel ?? "",
     weekdays: [...ALL_WEEKDAYS],
     type,
     unitsText: "1",
@@ -102,8 +96,6 @@ export function draftFromRow(row: ProductRow): ProductDraft {
     eventKind: row.eligible_event_kind,
     partySize: row.party_size === 2 ? 2 : 1,
     introOnly: row.intro_only,
-    postJoinMessage: row.post_join_message ?? "",
-    postJoinButtonLabel: row.post_join_button_label ?? "",
   }
 }
 
@@ -177,8 +169,6 @@ export function createPayload(
       eligible_event_kind: draft.eventKind,
       party_size: draft.partySize,
       intro_only: draft.introOnly,
-      post_join_message: draft.postJoinMessage.trim() || null,
-      post_join_button_label: draft.postJoinButtonLabel.trim() || null,
     },
   }
 }
@@ -199,11 +189,6 @@ export function weekdaysText(weekdays: readonly number[] | null): string {
 
 export function yesNo(value: boolean): string {
   return value ? copy.yes : copy.no
-}
-
-export function optionalText(value: string | null): string {
-  const trimmed = value?.trim() ?? ""
-  return trimmed === "" ? copy.empty : trimmed
 }
 
 // The list row's summary: "{price} · {N} כניסות · {validity}".
@@ -234,8 +219,6 @@ export type EditorField =
   | "eventKind"
   | "partySize"
   | "introOnly"
-  | "postJoinMessage"
-  | "postJoinButtonLabel"
 
 export function fieldChange(
   field: EditorField,
@@ -320,20 +303,6 @@ export function fieldChange(
             to: yesNo(draft.introOnly),
             changes: { intro_only: draft.introOnly },
           }
-    case "postJoinMessage":
-    case "postJoinButtonLabel": {
-      const column =
-        field === "postJoinMessage"
-          ? "post_join_message"
-          : "post_join_button_label"
-      const next = draft[field].trim() || null
-      if (next === row[column]) return null
-      return {
-        from: optionalText(row[column]),
-        to: optionalText(next),
-        changes: { [column]: next },
-      }
-    }
   }
 }
 

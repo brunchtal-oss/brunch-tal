@@ -184,7 +184,9 @@ describe("SI1: one intro at a time", () => {
         )
       ).toBe(0)
     })
-  })
+    // The seed, an approval, a cancel and two refused calls take seconds; a
+    // slow full test:db run passed the 5s default once (2026-10-31).
+  }, 60_000)
 })
 
 describe("SI4: no deadline to choose after a business cancel", () => {
