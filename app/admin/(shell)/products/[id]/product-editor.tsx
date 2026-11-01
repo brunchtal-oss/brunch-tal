@@ -51,8 +51,6 @@ const DRAFT_KEYS: Record<EditorField, readonly (keyof ProductDraft)[]> = {
   eventKind: ["eventKind"],
   partySize: ["partySize"],
   introOnly: ["introOnly"],
-  postJoinMessage: ["postJoinMessage"],
-  postJoinButtonLabel: ["postJoinButtonLabel"],
 }
 
 // The editor of one product (story 2.6): each field in its own
@@ -301,35 +299,6 @@ export function ProductEditor({ row }: { row: ProductRow }) {
               id="introOnly"
               value={draft.introOnly}
               onChange={(introOnly) => update({ introOnly })}
-            />
-          )}
-        </li>
-        <li className="py-6">
-          {fieldRow(
-            "postJoinMessage",
-            copy.fields.postJoinMessage,
-            <TextField
-              id="postJoinMessage"
-              label={copy.fields.postJoinMessage}
-              value={draft.postJoinMessage}
-              onChange={(postJoinMessage) => update({ postJoinMessage })}
-              maxLength={1000}
-              multiline
-            />
-          )}
-        </li>
-        <li className="py-6">
-          {fieldRow(
-            "postJoinButtonLabel",
-            copy.fields.postJoinButtonLabel,
-            <TextField
-              id="postJoinButtonLabel"
-              label={copy.fields.postJoinButtonLabel}
-              value={draft.postJoinButtonLabel}
-              onChange={(postJoinButtonLabel) =>
-                update({ postJoinButtonLabel })
-              }
-              maxLength={100}
             />
           )}
         </li>

@@ -32,8 +32,6 @@ const CARD: ProductRow = {
   eligible_event_kind: "regular",
   party_size: 1,
   intro_only: false,
-  post_join_message: null,
-  post_join_button_label: null,
   active: true,
 }
 
@@ -55,12 +53,13 @@ describe("ProductCreateForm", () => {
       copy.fields.eventKind,
       copy.fields.partySize,
       copy.fields.introOnly,
-      copy.fields.postJoinMessage,
-      copy.fields.postJoinButtonLabel,
       copy.create.submit,
     ]) {
       expect(html, text).toContain(text)
     }
+    // No post-join message fields: no screen shows them (deferred-work,
+    // closed 2026-11-01).
+    expect(html).not.toContain("postJoin")
     // Every day by default: the weekday picker stays closed behind the link.
     expect(html).not.toContain(copy.fields.weekdays)
   })
@@ -91,6 +90,7 @@ describe("ProductEditor", () => {
     expect(html).toContain('value="472"')
     expect(html).toContain('value="49"')
     expect(html).not.toContain(adminCopy.valueChange.save)
+    expect(html).not.toContain("postJoin")
   })
 
   it("offers to show a hidden product", () => {

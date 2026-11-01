@@ -20,8 +20,6 @@ const row = (overrides: Partial<ProductRow> = {}): ProductRow => ({
   eligible_event_kind: "regular",
   party_size: 1,
   intro_only: false,
-  post_join_message: null,
-  post_join_button_label: null,
   active: true,
   ...overrides,
 })

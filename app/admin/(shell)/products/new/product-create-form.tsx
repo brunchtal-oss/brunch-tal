@@ -200,21 +200,6 @@ export function ProductCreateForm({
         value={draft.introOnly}
         onChange={(introOnly) => update({ introOnly })}
       />
-      <TextField
-        id="postJoinMessage"
-        label={copy.fields.postJoinMessage}
-        value={draft.postJoinMessage}
-        onChange={(postJoinMessage) => update({ postJoinMessage })}
-        maxLength={1000}
-        multiline
-      />
-      <TextField
-        id="postJoinButtonLabel"
-        label={copy.fields.postJoinButtonLabel}
-        value={draft.postJoinButtonLabel}
-        onChange={(postJoinButtonLabel) => update({ postJoinButtonLabel })}
-        maxLength={100}
-      />
 
       {serverError && (
         <InlineNotice tone="error">{errorMessage(serverError)}</InlineNotice>

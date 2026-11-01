@@ -527,8 +527,6 @@ export const adminCopy = {
       eventKind: "סוג מפגש",
       partySize: "מספר מבוגרים",
       introOnly: "להיכרות בלבד",
-      postJoinMessage: "הודעה אחרי רכישה (לא חובה)",
-      postJoinButtonLabel: "תווית הכפתור (לא חובה)",
     },
     types: {
       single: "בודד",
