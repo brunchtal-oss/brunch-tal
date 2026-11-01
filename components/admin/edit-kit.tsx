@@ -1,11 +1,15 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { ArrowDownIcon, ArrowUpIcon, XIcon } from "lucide-react"
 
 import { buttonClass } from "@/components/shared/button-class"
 import { InlineNotice } from "@/components/shared/inline-notice"
 import { OnlineButton, useOnlineGuard } from "@/components/shared/online-button"
+import {
+  useKeyboardInset,
+  type KeyboardInset,
+} from "@/components/shared/use-keyboard-inset"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import {
@@ -49,6 +53,21 @@ export function Busy({ pending }: { pending: boolean }) {
   return pending ? <Spinner aria-hidden /> : null
 }
 
+const PANEL =
+  "mx-auto max-h-[90vh] w-full max-w-[720px] gap-0 overflow-y-auto rounded-t-xl border-0 bg-card px-6 pt-2 pb-[calc(1.5rem+env(safe-area-inset-bottom))] text-base shadow-none [&_[type=submit]]:scroll-mb-6"
+
+// While the keyboard is open the sheet stands on it, and its 90vh becomes
+// 90% of the area left above it (DESIGN › bottom-sheet).
+export function keyboardStyle(
+  keyboard: KeyboardInset | null
+): React.CSSProperties | undefined {
+  if (!keyboard) return undefined
+  return {
+    bottom: keyboard.bottom,
+    maxHeight: Math.floor(keyboard.height * 0.9),
+  }
+}
+
 // A bottom-sheet (EXPERIENCE › bottom-sheet), as on the customer's cancel:
 // it stays open while a change is on its way.
 export function WorkPanel({
@@ -65,6 +84,22 @@ export function WorkPanel({
   children: React.ReactNode
 }) {
   const titleRef = useRef<HTMLHeadingElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
+  const keyboard = useKeyboardInset(open)
+
+  // With the keyboard open, the field being typed in and its form's button
+  // are both brought into the sheet's view (fix 24).
+  useEffect(() => {
+    if (!keyboard) return
+    const focused = document.activeElement
+    if (!(focused instanceof HTMLElement)) return
+    if (!panelRef.current?.contains(focused)) return
+    const submit = focused
+      .closest("form")
+      ?.querySelector<HTMLElement>('[type="submit"]')
+    submit?.scrollIntoView({ block: "nearest" })
+  }, [keyboard])
+
   return (
     <Sheet
       open={open}
@@ -73,11 +108,15 @@ export function WorkPanel({
       }}
     >
       <SheetContent
+        ref={panelRef}
         side="bottom"
         showCloseButton={false}
         aria-modal="true"
         initialFocus={titleRef}
-        className="mx-auto max-h-[90vh] w-full max-w-[720px] gap-0 overflow-y-auto rounded-t-xl border-0 bg-card px-6 pt-2 pb-[calc(1.5rem+env(safe-area-inset-bottom))] text-base shadow-none"
+        data-keyboard={keyboard ? "" : undefined}
+        // Stands on the keyboard, within the visible area (fix 24).
+        style={keyboardStyle(keyboard)}
+        className={PANEL}
       >
         <span
           aria-hidden

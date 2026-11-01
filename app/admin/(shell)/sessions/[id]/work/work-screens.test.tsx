@@ -22,6 +22,8 @@ const { WorkSheetView } = await import("./work-sheet")
 const { WorkSheetHead } = await import("./work-head")
 const { AddItemsForm } = await import("./shopping-list")
 const { loadWorkSheet } = await import("./load-work-sheet")
+const { keyboardStyle } = await import("@/components/admin/edit-kit")
+const { keyboardInset } = await import("@/components/shared/use-keyboard-inset")
 
 const copy = adminCopy.work
 const ID = "33333333-3333-4333-8333-333333333333"
@@ -570,5 +572,33 @@ describe("the work sheet's print markup (story 4.10)", () => {
     )
     const printed = between(full, "data-work-sheet-print")
     expect(printed).toMatch(/class="line-through"><span aria-hidden="true">☑ /)
+  })
+})
+
+describe("a work window over the phone's keyboard (fix 24)", () => {
+  const viewport = { height: 844, offsetTop: 0, scale: 1 }
+
+  it("no keyboard: the window stays as it is", () => {
+    expect(keyboardInset(844, viewport)).toBeNull()
+    expect(keyboardStyle(null)).toBeUndefined()
+  })
+
+  it("a keyboard of 414px: the window stands on it, at most 90% of the visible area", () => {
+    const inset = keyboardInset(844, { ...viewport, height: 430 })
+    expect(inset).toEqual({ bottom: 414, height: 430 })
+    expect(keyboardStyle(inset)).toEqual({ bottom: 414, maxHeight: 387 })
+  })
+
+  it("a page panned up by the browser still gives the keyboard's height", () => {
+    expect(
+      keyboardInset(844, { height: 430, offsetTop: 120, scale: 1 })
+    ).toEqual({ bottom: 294, height: 430 })
+  })
+
+  it("a browser bar or a pinch zoom is not a keyboard", () => {
+    expect(keyboardInset(844, { ...viewport, height: 790 })).toBeNull()
+    expect(
+      keyboardInset(844, { height: 422, offsetTop: 0, scale: 2 })
+    ).toBeNull()
   })
 })
