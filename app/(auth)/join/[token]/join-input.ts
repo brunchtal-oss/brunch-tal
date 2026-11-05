@@ -1,4 +1,5 @@
 import type { JoinErrorKey } from "@/lib/copy/join"
+import { isEmailShape } from "@/lib/email"
 import type { ErrorCode } from "@/lib/errors"
 
 // The join form's fields and their validation before any call to the
@@ -8,8 +9,12 @@ import type { ErrorCode } from "@/lib/errors"
 const MIN_PASSWORD_LENGTH = 8
 // The same limit as join_complete.
 export const MAX_BABIES = 10
-// Soft format checks only (AD-9): the server normalizes and decides.
-const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
+// The same text limits as join_complete, checked before any other check.
+const MAX_FULL_NAME = 200
+const MAX_DIETARY_NOTES = 2000
+const MAX_BABY_NAME = 100
+// Soft format checks only (AD-9): the server normalizes and decides. The
+// email: lib/email.ts (length first, then a linear regex).
 const PHONE = /^\+?[\d\s().-]{9,20}$/
 const DATE = /^\d{4}-\d{2}-\d{2}$/
 
@@ -73,10 +78,18 @@ export function validateJoin(
   const dates = formData.getAll("birthDate").map((v) => String(v).trim())
 
   if (!fullName) errors.push({ field: "fullName", message: "FIELD_REQUIRED" })
+  else if (fullName.length > MAX_FULL_NAME) {
+    errors.push({ field: "fullName", message: "INVALID_INPUT" })
+  }
   if (!phone) errors.push({ field: "phone", message: "FIELD_REQUIRED" })
   else if (!PHONE.test(phone)) errors.push({ field: "phone", message: "phone" })
   if (!email) errors.push({ field: "email", message: "FIELD_REQUIRED" })
-  else if (!EMAIL.test(email)) errors.push({ field: "email", message: "email" })
+  else if (!isEmailShape(email)) {
+    errors.push({ field: "email", message: "email" })
+  }
+  if (dietary.length > MAX_DIETARY_NOTES) {
+    errors.push({ field: "dietaryNotes", message: "INVALID_INPUT" })
+  }
 
   const rows = Math.max(names.length, dates.length, 1)
   if (rows > MAX_BABIES) {
@@ -85,6 +98,8 @@ export function validateJoin(
   for (let index = 0; index < Math.min(rows, MAX_BABIES); index++) {
     if (!names[index]) {
       errors.push({ field: "babyName", index, message: "FIELD_REQUIRED" })
+    } else if (names[index].length > MAX_BABY_NAME) {
+      errors.push({ field: "babyName", index, message: "INVALID_INPUT" })
     }
     const date = dates[index] ?? ""
     if (!date) {

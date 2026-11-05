@@ -13,7 +13,7 @@ import type {
 } from "@/lib/content/schema"
 import { whatsappHref as plainWhatsappHref } from "@/lib/content/whatsapp"
 import { shellCopy } from "@/lib/copy/shell"
-import { formatLocalPhone } from "@/lib/phone"
+import { formatLocalPhone, normalizePhone } from "@/lib/phone"
 import { formatFullDate, formatLocalDate } from "@/lib/time"
 
 const copy = shellCopy.public.legal
@@ -33,16 +33,12 @@ const LINK =
   "inline-flex min-h-11 items-center font-semibold underline underline-offset-4"
 
 // A typed phone as the site shows phones ("054-425-6456"): an Israeli
-// number through formatLocalPhone; anything else as typed.
+// number through normalizePhone and formatLocalPhone; anything else as typed.
 export function displayPhone(raw: string): string {
-  const cleaned = raw.replace(/[\s().-]/g, "")
-  const e164 = /^0\d{8,9}$/.test(cleaned)
-    ? `+972${cleaned.slice(1)}`
-    : /^00\d+$/.test(cleaned)
-      ? `+${cleaned.slice(2)}`
-      : cleaned
-  const formatted = formatLocalPhone(e164)
-  return formatted === e164 ? raw : formatted
+  const digits = normalizePhone(raw)
+  if (!digits) return raw
+  const formatted = formatLocalPhone(`+${digits}`)
+  return formatted === `+${digits}` ? raw : formatted
 }
 
 // "עודכן לאחרונה DD.MM.YYYY" under the h1, from content_pages.published_at.

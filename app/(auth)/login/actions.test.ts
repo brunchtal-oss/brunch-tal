@@ -16,8 +16,9 @@ class RedirectSignal extends Error {
 const hitRateLimit = vi.fn<(...args: unknown[]) => Promise<string>>(
   async () => "allowed"
 )
+let ip = "203.0.113.7"
 vi.mock("@/lib/server/privileged/rate-limit", () => ({
-  clientIp: async () => "203.0.113.7",
+  clientIp: async () => ip,
   hitRateLimit: (...args: unknown[]) => hitRateLimit(...args),
   rateLimitCode: (v: string) =>
     v === "allowed"
@@ -61,6 +62,7 @@ function signedInAs(role: string) {
 }
 
 beforeEach(() => {
+  ip = "203.0.113.7"
   hitRateLimit.mockReset()
   hitRateLimit.mockResolvedValue("allowed")
   signInWithPassword.mockReset()
@@ -70,7 +72,7 @@ beforeEach(() => {
 })
 
 describe("loginAction", () => {
-  it("stops at the rate limit before Auth, keyed by IP and normalized email (story 2.8)", async () => {
+  it("stops at the rate limit before Auth, keyed by IP and the account from that IP (story 2.8)", async () => {
     hitRateLimit.mockResolvedValue("blocked")
 
     await expect(
@@ -85,8 +87,42 @@ describe("loginAction", () => {
     })
     expect(hitRateLimit).toHaveBeenCalledWith("login", {
       ip: "203.0.113.7",
-      id: "dev-customer@example.com",
+      id: "203.0.113.7 dev-customer@example.com",
     })
+    expect(signInWithPassword).not.toHaveBeenCalled()
+  })
+
+  it("keys the account per IP, so a lockout on one IP does not block another", async () => {
+    // The limiter blocks only the key of IP A for this account.
+    hitRateLimit.mockImplementation(async (_bucket, keys) =>
+      (keys as { id: string }).id === "203.0.113.7 dev-customer@example.com"
+        ? "blocked"
+        : "allowed"
+    )
+    signedInAs("customer")
+
+    await expect(loginAction(null, form(credentials))).resolves.toEqual({
+      ok: false,
+      code: "TOO_MANY_ATTEMPTS",
+      email: "dev-customer@example.com",
+    })
+    ip = "198.51.100.9"
+    expect(await redirectTarget(loginAction(null, form(credentials)))).toBe(
+      "/me"
+    )
+    expect(hitRateLimit).toHaveBeenLastCalledWith("login", {
+      ip: "198.51.100.9",
+      id: "198.51.100.9 dev-customer@example.com",
+    })
+  })
+
+  it("answers INVALID_CREDENTIALS for an email over 254 characters, after the rate limit and without Auth", async () => {
+    const email = `${"a".repeat(243)}@example.com`
+
+    await expect(
+      loginAction(null, form({ email, password: "x" }))
+    ).resolves.toEqual({ ok: false, code: "INVALID_CREDENTIALS", email })
+    expect(hitRateLimit).toHaveBeenCalledTimes(1)
     expect(signInWithPassword).not.toHaveBeenCalled()
   })
 
