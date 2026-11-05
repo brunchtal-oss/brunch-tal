@@ -150,6 +150,17 @@ export function selectableRows(
   })
 }
 
+/**
+ * The most dates one book_sessions call takes (bookSessionsAction checks the
+ * same number).
+ */
+export const MAX_BOOK_DATES = 20
+
+/** How many dates can be ticked: her available entries, at most 20. */
+export function selectionCap(available: number): number {
+  return Math.min(available, MAX_BOOK_DATES)
+}
+
 /** "לבחור כמה תאריכים" is offered from 2 available entries. */
 export function showsSelectEntry(available: number): boolean {
   return available >= 2

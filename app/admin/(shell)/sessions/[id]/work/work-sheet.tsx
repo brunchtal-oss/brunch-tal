@@ -291,7 +291,12 @@ function AddDishButton({
           id={`${id}-name`}
           label={copy.dishName}
           value={name}
-          onChange={setName}
+          // A changed input is a new request (AD-5): an unchanged retry
+          // after a lost answer keeps its key.
+          onChange={(value) => {
+            setName(value)
+            setKey(newIdempotencyKey())
+          }}
           submitLabel={copy.add}
           pending={pending}
           onSubmit={() =>

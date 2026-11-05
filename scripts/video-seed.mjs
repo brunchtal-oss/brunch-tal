@@ -243,6 +243,13 @@ async function settleAnchor(today) {
     if (error) throw new Error(`createUser: ${error.code ?? error.status}`)
     adminId = data.user.id
   } else {
+    // Only an account the script created may be adopted: a customer's
+    // account under that email is never made the filming admin.
+    if ((await q("select 1 from public.profiles where id = $1", [adminId])).length) {
+      fail(
+        `לחשבון ${FILMING_ADMIN_EMAIL} יש פרופיל של לקוחה, ולכן הסקריפט לא הופך אותו לאדמין צילום. בודקים את החשבון ידנית.`
+      )
+    }
     await setAnchor(adminId, anchor)
   }
   return { adminId, generation: anchor.generation, complete: false, fresh: true }

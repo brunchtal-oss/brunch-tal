@@ -4,6 +4,8 @@ import type { ActionResult } from "@/lib/errors"
 import { callRpc } from "@/lib/rpc"
 import { createClient } from "@/lib/supabase/server"
 
+import { MAX_BOOK_DATES } from "./select/selection"
+
 // Self-booking (story 3.2). book_session runs with the customer's own
 // session and checks everything again (customer, session, places, funding);
 // this action checks only the shape. The idempotency key is made when the
@@ -44,7 +46,7 @@ export async function bookSessionsAction(input: {
   if (
     !Array.isArray(ids) ||
     ids.length < 1 ||
-    ids.length > 20 ||
+    ids.length > MAX_BOOK_DATES ||
     !ids.every((id) => typeof id === "string" && UUID.test(id)) ||
     new Set(ids.map((id: string) => id.toLowerCase())).size !== ids.length ||
     typeof input.idempotencyKey !== "string" ||

@@ -18,6 +18,26 @@ export function selectionCap(freeEntries: number): number {
   return Math.min(Math.max(freeEntries, 0), MAX_SESSIONS)
 }
 
+// The idempotency keys of the chosen dates (AD-5), one per date. "send": the
+// keys a confirm sends and stores first (a date's kept key, else a new one).
+// After the answer: "booked" clears them, "refused" gives every chosen date a
+// new key for the next try, "lost" (no answer: the server may have booked)
+// keeps the sent ones for an unchanged retry.
+export function bookingKeys(
+  ids: readonly string[],
+  keys: Readonly<Record<string, string>>,
+  outcome: "send" | "booked" | "refused" | "lost",
+  newKey: () => string
+): Record<string, string> {
+  if (outcome === "booked") return {}
+  return Object.fromEntries(
+    ids.map((id) => [
+      id,
+      outcome === "refused" ? newKey() : (keys[id] ?? newKey()),
+    ])
+  )
+}
+
 // One date in the sheet: what funds it, or why it is refused (the existing
 // preview_admin_book_customer result).
 export function previewLine(preview: BookPreview): {

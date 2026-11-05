@@ -875,6 +875,12 @@
   evidence: נבדק לפני 6.1 (2026-11-04); אף אחד מהם לא משפיע על לקוחות היום.
   status: פתוח
 
+- source_spec: `_bmad-output/implementation-artifacts/spec-fix-small-cleanups.md`
+  target: לא נקבע (קטנים, לפי הזדמנות)
+  summary: בטופס יצירת מוצר (`app/admin/(shell)/products/new/product-create-form.tsx`) מפתח ה-idempotency מתחדש רק אחרי הצלחה. תיקון: לחדש אותו בכל שינוי בשדה, כמו ב-`concept-create-form.tsx`, ולשמור עליו בניסיון חוזר בלי שינוי.
+  evidence: נמצא בסריקה של R11 ב-fix-small-cleanups (2026-11-04). אחרי תשובה שאבדה, שמירה עם שדה ששונה נכשלת ב-`IDEMPOTENCY_KEY_REUSED` עד טעינה מחדש. לא תוקן שם, כי לשונית אחרת שינתה את הקובץ באותו זמן (מנהל העבודה).
+  status: פתוח
+
 - source_spec: `_bmad-output/implementation-artifacts/spec-fix-hardening-code.md`
   target: 6.9
   summary: להפעיל CAPTCHA של Supabase Auth בכל התחברות בסיסמה מהשרת (ההתחברות, וההתחברות האוטומטית אחרי הצטרפות ואחרי איפוס), כדי להגביל ניחוש של חשבון אחד מהרבה כתובות IP. מאז fix-hardening-code ההגבלה לכל חשבון נספרת לפי ה-IP והמייל יחד, ועד אז רק המגבלה לכל IP והמגבלות של Supabase עומדות מול ניחוש כזה.

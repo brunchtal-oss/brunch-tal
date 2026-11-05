@@ -60,7 +60,14 @@ export function CustomerSearch({
     if (!canSearch(query)) return
     const timer = setTimeout(() => {
       startTransition(async () => {
-        const result = await searchCustomersAction(query)
+        // A rejected call (network, deploy) is a SERVER_ERROR shown inline;
+        // a stale one is ignored like a stale answer.
+        let result: Awaited<ReturnType<typeof searchCustomersAction>>
+        try {
+          result = await searchCustomersAction(query)
+        } catch {
+          result = { ok: false, code: "SERVER_ERROR" }
+        }
         if (request !== latest.current) return
         const asked = query.trim()
         setAnswer(

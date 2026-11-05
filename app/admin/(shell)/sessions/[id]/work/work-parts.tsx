@@ -184,7 +184,12 @@ function TaskPanel({
         id={`${id}-body`}
         label={copy.taskBody}
         value={body}
-        onChange={setBody}
+        // A changed input is a new request (AD-5): an unchanged retry after
+        // a lost answer keeps its key.
+        onChange={(value) => {
+          setBody(value)
+          setKey(newIdempotencyKey())
+        }}
         submitLabel={copy.save}
         pending={pending}
         onSubmit={() =>
@@ -207,7 +212,10 @@ function TaskPanel({
           id={`${id}-day`}
           prepDays={prepDays}
           value={day}
-          onChange={setDay}
+          onChange={(value) => {
+            setDay(value)
+            setKey(newIdempotencyKey())
+          }}
         />
       </TextForm>
       <MoveButtons
@@ -310,7 +318,12 @@ export function AddTask({
         id={`${id}-body`}
         label={day ? copy.addTaskFor(dayHeading(day)) : copy.taskBody}
         value={body}
-        onChange={setBody}
+        // A changed input is a new request (AD-5): an unchanged retry after
+        // a lost answer keeps its key.
+        onChange={(value) => {
+          setBody(value)
+          setKey(newIdempotencyKey())
+        }}
         submitLabel={copy.add}
         pending={pending}
         inputRef={inputRef}
@@ -341,7 +354,10 @@ export function AddTask({
               label: dayDate(d),
             }))}
             value={String(effectiveOffset)}
-            onChange={(value) => setOffset(Number(value))}
+            onChange={(value) => {
+              setOffset(Number(value))
+              setKey(newIdempotencyKey())
+            }}
           />
         )}
       </TextForm>
@@ -426,7 +442,12 @@ function DishPanel({
         id={`${id}-name`}
         label={copy.dishName}
         value={name}
-        onChange={setName}
+        // A changed input is a new request (AD-5): an unchanged retry after
+        // a lost answer keeps its key.
+        onChange={(value) => {
+          setName(value)
+          setKey(newIdempotencyKey())
+        }}
         submitLabel={copy.save}
         pending={pending}
         onSubmit={() =>

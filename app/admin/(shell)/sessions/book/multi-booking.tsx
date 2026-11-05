@@ -38,6 +38,7 @@ import {
 } from "../[id]/book/preview"
 import { adminBookSessionsAction } from "./actions"
 import {
+  bookingKeys,
   previewLine,
   resultItems,
   resultsHeading,
@@ -166,19 +167,26 @@ export function MultiBooking({
     if (busy || chosen.length === 0) return
     setBusy(true)
     setError(null)
+    // The keys sent are stored first, so a retry after a lost answer sends
+    // the very same ones (AD-5).
+    const ids = chosen.map((row) => row.id)
+    const sent = bookingKeys(ids, keys, "send", newIdempotencyKey)
+    setKeys(sent)
     let answered = false
+    let booked = false
     let failure: ErrorCode | null = null
     try {
       const result = await adminBookSessionsAction({
         customerId: customer.id,
         items: chosen.map((row) => ({
           eventId: row.id,
-          idempotencyKey: keys[row.id] ?? newIdempotencyKey(),
+          idempotencyKey: sent[row.id],
         })),
       })
       answered = true
       const parsed = result.ok ? parseBookResults(result.data) : null
       if (parsed) {
+        booked = true
         setOpen(false)
         setResults(parsed)
       } else {
@@ -191,8 +199,14 @@ export function MultiBooking({
       setBusy(false)
     }
     setError(failure)
-    // After an answer the next try is a new request (AD-5).
-    if (answered) setKeys({})
+    // After an answer the next try is a new request (AD-5): fresh keys for
+    // the chosen dates, which the next confirm sends. No answer: the sent
+    // keys stay.
+    if (answered) {
+      setKeys(
+        bookingKeys(ids, sent, booked ? "booked" : "refused", newIdempotencyKey)
+      )
+    }
   }
 
   return (
@@ -310,7 +324,9 @@ export function MultiBooking({
       </fieldset>
 
       {chosen.length > 0 && (
-        <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-30 border-t border-border bg-background lg:start-60 lg:bottom-0">
+        // Right above the bottom-tab-bar, which publishes its height
+        // (--tab-bar-height, bottom-tab-bar.tsx); none on desktop.
+        <div className="fixed inset-x-0 bottom-[var(--tab-bar-height,calc(4.25rem+1px+env(safe-area-inset-bottom)))] z-30 border-t border-border bg-background lg:start-60 lg:bottom-0">
           <div className="mx-auto flex max-w-[720px] flex-col items-center gap-2 px-6 py-3">
             <p
               id={counterId}

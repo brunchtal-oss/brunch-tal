@@ -526,7 +526,12 @@ function DuplicateBox({ row }: { row: SessionRow }) {
         date={when.date}
         startTime={when.startTime}
         endTime={when.endTime}
-        onChange={(patch) => setWhen((current) => ({ ...current, ...patch }))}
+        onChange={(patch) => {
+          setWhen((current) => ({ ...current, ...patch }))
+          // A changed date or time is a new request (AD-5): an unchanged
+          // retry after a lost answer keeps its key.
+          setKey(newIdempotencyKey())
+        }}
         problems={{
           date: problem("date"),
           startTime: problem("startTime"),

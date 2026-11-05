@@ -210,7 +210,12 @@ function NotePanel({
         id={`${id}-body`}
         label={copy.noteBody}
         value={body}
-        onChange={setBody}
+        // A changed text is a new request (AD-5): an unchanged retry after a
+        // lost answer keeps its key.
+        onChange={(value) => {
+          setBody(value)
+          setKey(newIdempotencyKey())
+        }}
         max={MAX_NOTE_BODY}
         multiline
         submitLabel={copy.save}
@@ -363,7 +368,12 @@ export function AddNote({ wide = false }: { wide?: boolean }) {
           id={`${id}-body`}
           label={copy.noteBody}
           value={body}
-          onChange={setBody}
+          // A changed text is a new request (AD-5): an unchanged retry
+          // after a lost answer keeps its key.
+          onChange={(value) => {
+            setBody(value)
+            setKey(newIdempotencyKey())
+          }}
           max={MAX_NOTE_BODY}
           multiline
           submitLabel={copy.add}

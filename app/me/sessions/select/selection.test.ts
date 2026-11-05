@@ -3,11 +3,13 @@ import { describe, expect, it } from "vitest"
 import { customerCopy } from "@/lib/copy/customer"
 
 import {
+  MAX_BOOK_DATES,
   parseBookResults,
   parseSelectionPreview,
   pruneSelection,
   resultsHeading,
   selectableRows,
+  selectionCap,
   showsSelectEntry,
   toggleSelection,
   unavailableReason,
@@ -174,6 +176,25 @@ describe("pruneSelection", () => {
     expect(pruneSelection([C, A], sessions, 1)).toEqual([C])
     expect(pruneSelection([C, A], sessions, 0)).toEqual([])
     expect(pruneSelection(["gone"], sessions, 3)).toEqual([])
+  })
+})
+
+describe("selectionCap", () => {
+  it("is her available entries, never above 20", () => {
+    expect(MAX_BOOK_DATES).toBe(20)
+    expect(selectionCap(3)).toBe(3)
+    expect(selectionCap(20)).toBe(20)
+    expect(selectionCap(25)).toBe(20)
+  })
+
+  it("caps 30 sessions with 25 entries at 20 chosen", () => {
+    const ids = Array.from({ length: 30 }, (_, i) => `s${i}`)
+    const cap = selectionCap(25)
+    let chosen: string[] = []
+    for (const id of ids) chosen = toggleSelection(chosen, id, cap)
+    expect(chosen).toEqual(ids.slice(0, 20))
+    const sessions = ids.map((id) => ({ id, ok: true }))
+    expect(pruneSelection(ids, sessions, cap)).toHaveLength(20)
   })
 })
 
