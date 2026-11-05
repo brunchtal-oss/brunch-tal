@@ -41,7 +41,7 @@ context:
 - Sheet = `WorkPanel` (`components/admin/edit-kit.tsx`). Tile buttons create data, so they use `useOnlineGuard`/`OnlineButton`; the opening button only opens a view.
 - Copy in `lib/copy/admin.ts` › `image`; new error codes only in `lib/errors.ts`. Screen work starts with the `frontend-design` skill, within DESIGN.md and EXPERIENCE.md.
 
-**Never:** sharing one `media_id` between two places; changes to `hide_unused_media`, `used_media_ids`, publish RPCs or `admin_set_*_image`; deleting images or draft files; editing PR B's files before PR B is merged (`content-editor.tsx`, `section-fields.ts`, `content-items.ts`, `lib/content/*`, `lib/seo/*`); `test:db`, migration apply, `demo:*`, `video:*` without the manager's go; any mention of an external report.
+**Never:** sharing one `media_id` between two places; changes to `hide_unused_media`, `used_media_ids`, publish RPCs or `admin_set_*_image`; deleting images or draft files; editing PR B's files before PR B is merged (`content-editor.tsx`, `section-fields.ts`, `content-items.ts`, `lib/content/*`, `lib/seo/*`); `test:db`, migration apply, `demo:*`, `video:*` without the manager's go.
 
 ## I/O & Edge-Case Matrix
 
