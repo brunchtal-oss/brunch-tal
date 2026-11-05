@@ -119,6 +119,7 @@ context:
 ## Spec Change Log
 
 - 2026-11-05, user decisions after her check of the editor (relayed by the manager); microcopy and order only, no behavior change. (1) Each SEO field label keeps its Hebrew text and adds the professional term in English, LTR, small and secondary, as part of the same label (read by screen readers; one label per field): "הכותרת הראשית של העמוד" + H1, "כותרת בגוגל (לא חובה)" + Title tag, "תיאור בגוגל (לא חובה)" + Meta description, "תמונת שיתוף לעמוד (לא חובה)" + og:image, "תמונת שיתוף לכל האתר" (site record) + og:image. The outline keeps its H2/H3 as is. LTR through `dir="ltr"` on an element, never a direction character. (2) The editor page is named "SEO" everywhere (title, content list row, back link, any mention), placed in the content list below the footer and above the privacy policy. KEEP: everything else.
+- 2026-11-05, user decision before merging #151: the SEO editor's labels drop "(לא חובה)" ("כותרת בגוגל", "תיאור בגוגל", "תמונת שיתוף לעמוד"); each field's hint already says what happens when it is empty. Only the SEO editor; the rest of the admin and the join form keep it.
 
 ## Review Triage Log
 

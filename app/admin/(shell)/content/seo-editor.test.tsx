@@ -155,9 +155,9 @@ describe("the SEO editor (fix-seo-editor)", () => {
     const terms = copy.seo.terms
     for (const [label, term] of [
       ["הכותרת הראשית של העמוד", terms.h1],
-      ["כותרת בגוגל (לא חובה)", terms.title],
-      ["תיאור בגוגל (לא חובה)", terms.description],
-      ["תמונת שיתוף לעמוד (לא חובה)", terms.image],
+      ["כותרת בגוגל", terms.title],
+      ["תיאור בגוגל", terms.description],
+      ["תמונת שיתוף לעמוד", terms.image],
     ]) {
       // One label element holding both, the term in its own ltr span.
       expect(html).toMatch(
