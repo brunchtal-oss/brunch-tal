@@ -4,6 +4,7 @@ import { LoginScreen, loginTitle } from "../../login/login-screen"
 
 export const metadata: Metadata = {
   title: loginTitle("admin"),
+  robots: { index: false, follow: false },
 }
 
 // Admin entrance (source §3), outside the admin shell, with the same form and

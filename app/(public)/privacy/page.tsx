@@ -9,7 +9,10 @@ import {
 } from "@/lib/content/pages"
 import { shellCopy } from "@/lib/copy/shell"
 
-export const metadata: Metadata = { title: shellCopy.public.footer.privacy }
+export const metadata: Metadata = {
+  title: shellCopy.public.footer.privacy,
+  alternates: { canonical: "/privacy" },
+}
 
 // /privacy (story 5.5, CAP-29): the published privacy policy from the cache
 // (content:privacy), with "last updated" from its last publish; the empty

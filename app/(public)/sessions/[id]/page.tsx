@@ -1,5 +1,5 @@
-import { Suspense } from "react"
-import type { Metadata } from "next"
+import { cache, Suspense } from "react"
+import type { Metadata, ResolvingMetadata } from "next"
 import { notFound } from "next/navigation"
 import { connection } from "next/server"
 
@@ -13,10 +13,25 @@ import {
   guestWhatsappHref,
 } from "@/lib/content/business-details"
 import { shellCopy } from "@/lib/copy/shell"
+import { sessionMetadata } from "@/lib/seo/metadata"
 import { getPublicSession } from "@/lib/sessions/public"
 
-// Like /me/sessions/[id]: the list's name, no query in the metadata.
-export const metadata: Metadata = { title: shellCopy.nav.publicSessions }
+// One read per request, shared by the metadata and the page.
+const getSession = cache((id: string) => getPublicSession(id))
+
+// The session's own metadata (sessionMetadata, fix-search-ready); dynamic
+// like the page (AD-2).
+export async function generateMetadata(
+  { params }: { params: Promise<{ id: string }> },
+  parent: ResolvingMetadata
+): Promise<Metadata> {
+  const { id } = await params
+  await connection()
+  const session = await getSession(id)
+  if (!session) return sessionMetadata(null, { openGraph: null, twitter: null })
+  const { openGraph, twitter } = await parent
+  return sessionMetadata(session, { openGraph, twitter })
+}
 
 // One public session (story 5.16, CAP-1, CAP-12): the concept-header, the
 // display price when Tal set one, the action (a signed-in customer:
@@ -46,7 +61,7 @@ async function SessionContent({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   await connection()
   const [session, role, details] = await Promise.all([
-    getPublicSession(id),
+    getSession(id),
     getViewerRole(),
     getBusinessDetails(),
   ])

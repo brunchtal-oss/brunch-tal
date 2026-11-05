@@ -8,7 +8,10 @@ import {
 import { getPublishedPage } from "@/lib/content/pages"
 import { shellCopy } from "@/lib/copy/shell"
 
-export const metadata: Metadata = { title: shellCopy.nav.gallery }
+export const metadata: Metadata = {
+  title: shellCopy.nav.gallery,
+  alternates: { canonical: "/gallery" },
+}
 
 // /gallery (stories 5.2, 5.3, 5.4): the photos and the testimonials
 // (GalleryView, shared with the admin preview), published content and

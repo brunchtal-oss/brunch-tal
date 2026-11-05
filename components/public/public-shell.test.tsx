@@ -255,9 +255,12 @@ describe("sections", () => {
     expect(html).toContain("<ol")
     expect(html.match(/<li/g)).toHaveLength(2)
     expect(html).toMatch(/<h3[^>]*>s1<\/h3>/)
-    // Without a title the section is named by its label.
-    expect(html).toContain('aria-label="steps"')
-    expect(html).not.toContain("<h2")
+    // Without a title the section is named by a hidden h2 with its label,
+    // so the headings go h1, h2, h3 (fix-search-ready).
+    expect(html).toMatch(/<h2 id="([^"]+)" class="sr-only">steps<\/h2>/)
+    const id = /<h2 id="([^"]+)"/.exec(html)![1]
+    expect(html).toContain(`aria-labelledby="${id}"`)
+    expect(html).not.toContain('aria-label="steps"')
   })
 
   it("opens each answer from its question", () => {

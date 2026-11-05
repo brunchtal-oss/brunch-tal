@@ -1,4 +1,5 @@
 import { Suspense } from "react"
+import type { Metadata } from "next"
 
 import { SideNav } from "@/components/admin/side-nav"
 import { AppTopBar } from "@/components/shared/app-top-bar"
@@ -17,6 +18,11 @@ import { getUnreadCount, markRead, registerPush } from "./notifications/actions"
 
 // Allowed only here and in /me (AD-16).
 export const instant = false
+
+// /admin is never indexed (fix-search-ready), with the X-Robots-Tag header.
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+}
 
 // Admin shell (AD-2): the sticky olive top-bar across the whole width (name,
 // bell, sign-out; story 5.7), then main with the bottom-tab-bar until lg, or

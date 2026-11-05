@@ -9,7 +9,10 @@ import {
 } from "@/lib/content/pages"
 import { shellCopy } from "@/lib/copy/shell"
 
-export const metadata: Metadata = { title: shellCopy.public.footer.terms }
+export const metadata: Metadata = {
+  title: shellCopy.public.footer.terms,
+  alternates: { canonical: "/terms" },
+}
 
 // /terms (story 5.5): the published terms of use from the cache
 // (content:terms), with "last updated" from its last publish; the empty

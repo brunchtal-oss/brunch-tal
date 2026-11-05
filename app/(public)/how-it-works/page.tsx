@@ -8,7 +8,10 @@ import {
 import { getPublishedSections } from "@/lib/content/pages"
 import { shellCopy } from "@/lib/copy/shell"
 
-export const metadata: Metadata = { title: shellCopy.nav.howItWorks }
+export const metadata: Metadata = {
+  title: shellCopy.nav.howItWorks,
+  alternates: { canonical: "/how-it-works" },
+}
 
 // /how-it-works (stories 5.2, 5.3): the numbered steps and the questions and
 // answers (HowItWorksView, shared with the admin preview), published content
