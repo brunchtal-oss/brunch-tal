@@ -1099,6 +1099,7 @@ export type Database = {
           publish_started_at: string | null
           publish_state: string
           published_at: string | null
+          source_id: string | null
           storage_path: string
           updated_at: string
         }
@@ -1113,6 +1114,7 @@ export type Database = {
           publish_started_at?: string | null
           publish_state?: string
           published_at?: string | null
+          source_id?: string | null
           storage_path: string
           updated_at?: string
         }
@@ -1127,10 +1129,19 @@ export type Database = {
           publish_started_at?: string | null
           publish_state?: string
           published_at?: string | null
+          source_id?: string | null
           storage_path?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "media_assets_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "media_assets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notes: {
         Row: {
@@ -2047,6 +2058,10 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_copy_media: {
+        Args: { p_idempotency_key: string; p_source_id: string }
+        Returns: Json
+      }
       admin_correct_entitlement: {
         Args: {
           p_confirmed: boolean
@@ -2191,6 +2206,7 @@ export type Database = {
         Returns: Json
       }
       admin_list_links: { Args: never; Returns: Json }
+      admin_list_media: { Args: never; Returns: Json }
       admin_list_open_cards: { Args: { p_filter: string }; Returns: Json }
       admin_list_payments: { Args: never; Returns: Json }
       admin_list_refund_requests: { Args: never; Returns: Json }

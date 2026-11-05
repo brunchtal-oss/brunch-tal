@@ -126,6 +126,9 @@ export const ERROR_MESSAGES = {
   MEDIA_NOT_UPLOADED: "העלאת התמונה לא הסתיימה. אפשר להעלות אותה שוב",
   MEDIA_NOT_COPIED: "פרסום התמונה לא הסתיים. אפשר לנסות שוב",
   MEDIA_NOT_PUBLISHED: "התמונה עוד לא פורסמה. אפשר לנסות לשמור שוב",
+  // Choosing an uploaded image (fix-media-picker): the copy of its draft
+  // file did not finish (choosing it again continues it).
+  MEDIA_COPY_FAILED: "לא הצלחנו להשתמש בתמונה הזו. אפשר לבחור אותה שוב",
   // Tal books a customer after the session's end (story 3.4).
   EVENT_ENDED: "המפגש כבר הסתיים",
   // preview_book_session of a completed session with her booking (story

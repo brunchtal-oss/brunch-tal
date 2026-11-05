@@ -927,6 +927,10 @@
   summary: The robots noindex `metadata` exports on /login, /admin/login, /offline, /install and the /me and /admin layouts have no automated test.
   evidence: Review of fix-search-ready (verification-gap). The X-Robots-Tag header still covers these paths in both states; check the meta with curl on the live site in 6.9.
 
+- source_spec: `_bmad-output/implementation-artifacts/spec-fix-media-picker.md`
+  summary: Each choice in the image picker makes a draft row and a draft file, so abandoned picks (like abandoned uploads) add orphan drafts; the production draft cleanup must also skip or handle rows that other rows reference through `media_assets.source_id` (FK without on delete).
+  evidence: Review of fix-media-picker (blind, verification-gap). Only `scripts/dev-clean-media-drafts.mjs` cleans drafts today, in dev; production cleanup is decided in 6.1.
+
 - source_spec: `_bmad-output/implementation-artifacts/spec-fix-seo-editor.md`
   summary: The SEO editor's `seoExtras` (published rows to outline rows, the Google preview context) has no automated test.
   evidence: Review of fix-seo-editor (verification-gap). Admin guidance only, the public site is unaffected; covering it needs a pure `outlineRows`/preview-context extraction first.
