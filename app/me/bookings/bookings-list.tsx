@@ -84,19 +84,24 @@ export async function Bookings() {
     pending.length === 0 &&
     waitlist.length === 0
   ) {
+    // Inside the same host as the lists, so the notice of the last
+    // waitlist exit stays, with its focus, above the empty state (the host
+    // keeps its state while the root element stays the same).
     return (
-      <section className="flex flex-col items-start gap-4 py-6">
-        <p className="text-[17px]">{customerCopy.bookingsEmpty}</p>
-        <Link
-          href="/me/sessions"
-          className={buttonClass({
-            size: "lg",
-            className: "h-12 w-full max-w-xs text-base",
-          })}
-        >
-          {customerCopy.toSchedule}
-        </Link>
-      </section>
+      <ResultNoticeHost className="flex flex-col gap-8 pb-8">
+        <section className="flex flex-col items-start gap-4 py-6">
+          <p className="text-[17px]">{customerCopy.bookingsEmpty}</p>
+          <Link
+            href="/me/sessions"
+            className={buttonClass({
+              size: "lg",
+              className: "h-12 w-full max-w-xs text-base",
+            })}
+          >
+            {customerCopy.toSchedule}
+          </Link>
+        </section>
+      </ResultNoticeHost>
     )
   }
 

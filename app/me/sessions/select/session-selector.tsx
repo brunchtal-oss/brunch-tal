@@ -35,6 +35,7 @@ import {
   parseBookResults,
   pruneSelection,
   resultsHeading,
+  selectionCap,
   toggleSelection,
   unavailableReason,
   usesByProduct,
@@ -48,7 +49,8 @@ const LINK = "font-semibold underline underline-offset-[3px]"
 // session-row, selection variant; EXPERIENCE.md session-row and
 // bottom-sheet). Each row is the <label> of a real checkbox; a date the
 // server refused is aria-disabled with its reason; no more than `available`
-// dates. The counter and "להמשך" stay above the bottom-tab-bar. One summary
+// dates, and at most 20 (selectionCap). The counter and "להמשך" stay above
+// the bottom-tab-bar. One summary
 // sheet (the dates, what is used, what remains, no cancel deadline, one
 // confirm) with a key made when it opens and a new one after every answer
 // (AD-5). The results then replace the selection, and focus moves to their
@@ -73,18 +75,42 @@ export function SessionSelector({
   const titleRef = useRef<HTMLHeadingElement>(null)
   const resultsRef = useRef<HTMLHeadingElement>(null)
   const counterId = useId()
+  const barRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (results) resultsRef.current?.focus()
   }, [results])
 
+  // The bar's height as --selection-bar-height on <html>, for the
+  // accessibility button above it (like bottom-tab-bar.tsx).
+  const showsBar = results === null
+  useEffect(() => {
+    const node = barRef.current
+    if (!showsBar || !node || typeof ResizeObserver === "undefined") return
+    const root = document.documentElement
+    const publish = () =>
+      root.style.setProperty(
+        "--selection-bar-height",
+        `${node.getBoundingClientRect().height}px`
+      )
+    publish()
+    const observer = new ResizeObserver(publish)
+    observer.observe(node)
+    return () => {
+      observer.disconnect()
+      root.style.removeProperty("--selection-bar-height")
+    }
+  }, [showsBar])
+
   const byId = new Map(sessions.map((s) => [s.id, s]))
+  // At most her available entries, and never more than one call takes.
+  const cap = selectionCap(available)
   // After a refresh only dates that can still be chosen stay chosen, at most
-  // `available`.
-  const current = pruneSelection(selected, sessions, available)
+  // `cap`.
+  const current = pruneSelection(selected, sessions, cap)
   // In the order of the list (by date), whatever the order of the clicks.
   const chosen = sessions.filter((s) => current.includes(s.id))
-  const full = current.length >= available
+  const full = current.length >= cap
 
   if (results) {
     return (
@@ -98,7 +124,7 @@ export function SessionSelector({
   }
 
   function toggle(session: SelectableSession) {
-    setSelected(toggleSelection(current, session.id, available, session.ok))
+    setSelected(toggleSelection(current, session.id, cap, session.ok))
   }
 
   async function confirm() {
@@ -231,14 +257,21 @@ export function SessionSelector({
         </ul>
       </fieldset>
 
-      <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-30 border-t border-border bg-background">
+      {/* Right above the bottom-tab-bar (its --tab-bar-height); the bar
+          publishes its own height, and the accessibility button sits above
+          it while it is shown (globals.css). */}
+      <div
+        ref={barRef}
+        data-selection-bar
+        className="fixed inset-x-0 bottom-[var(--tab-bar-height,calc(4.25rem+1px+env(safe-area-inset-bottom)))] z-30 border-t border-border bg-background"
+      >
         <div className="mx-auto flex max-w-[720px] flex-col items-center gap-2 px-6 pt-3 pb-2">
           <p
             id={counterId}
             aria-live="polite"
             className="text-[15px] font-semibold"
           >
-            {copy.selectedCount(chosen.length, available)}
+            {copy.selectedCount(chosen.length, cap)}
           </p>
           <Sheet
             open={open}

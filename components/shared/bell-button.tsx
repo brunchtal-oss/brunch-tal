@@ -99,6 +99,17 @@ export function BellButton({
     }
   }, [apply, load])
 
+  // A refresh of the page (router.refresh after a booking) brings a new
+  // count from the server: it wins, and an older load() still on its way is
+  // dropped.
+  const lastInitial = useRef(initialCount)
+  useEffect(() => {
+    if (initialCount === null || initialCount === lastInitial.current) return
+    lastInitial.current = initialCount
+    ++requestSeq.current
+    apply(initialCount)
+  }, [initialCount, apply])
+
   // Every route change after the first render asks the server again.
   useEffect(() => {
     if (firstPath.current) {

@@ -5,6 +5,8 @@ import { usePathname, useSearchParams } from "next/navigation"
 
 import {
   APPROVED_PARAM,
+  catalogKey,
+  formRemountKey,
   newIdempotencyKey,
   nextApprovalPhase,
   type ApprovalPhase,
@@ -46,10 +48,14 @@ export function PaymentFormHost({
     key: string
     phase: ApprovalPhase
   }>({ id: 0, key: idempotencyKey, phase: "form" })
+  // The catalog the form was touched under (approval-history.ts
+  // formRemountKey); null while untouched.
+  const [frozenCatalog, setFrozenCatalog] = useState<string | null>(null)
 
   const phase = nextApprovalPhase(session.phase, approvedInUrl)
   if (phase === "reset") {
     setSession({ id: session.id + 1, key: newIdempotencyKey(), phase: "form" })
+    setFrozenCatalog(null)
   } else if (phase !== session.phase) {
     setSession({ ...session, phase })
   }
@@ -70,12 +76,15 @@ export function PaymentFormHost({
   // Next keeps a visited page's state (cacheComponents), so a form opened
   // before a catalog change would keep the old price as its amount (phone
   // test 2026-10-04). A change in the offered products or their prices
-  // starts the form again.
-  const catalog = products.map((p) => `${p.id}:${p.priceAgorot}`).join(",")
+  // starts an untouched form again; a touched one keeps Tal's input.
+  const catalog = catalogKey(products)
+  const onTouched = () => {
+    setFrozenCatalog((current) => current ?? catalog)
+  }
 
   return (
     <PaymentForm
-      key={`${session.id}|${catalog}`}
+      key={formRemountKey(session.id, catalog, frozenCatalog)}
       customer={customer}
       products={products}
       methods={methods}
@@ -83,6 +92,7 @@ export function PaymentFormHost({
       today={today}
       idempotencyKey={session.key}
       onApproved={onApproved}
+      onTouched={onTouched}
     />
   )
 }

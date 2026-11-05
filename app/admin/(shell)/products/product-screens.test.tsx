@@ -20,6 +20,17 @@ vi.mock("next/navigation", () => ({
 
 const copy = adminCopy.products
 
+// The labels of the post-join fields removed in PR #144 (bae7ebc): no
+// screen shows them, so neither form may.
+const REMOVED_LABELS = ["הודעה אחרי רכישה (לא חובה)", "תווית הכפתור (לא חובה)"]
+
+function expectNoPostJoinFields(html: string) {
+  expect(html).not.toContain("postJoin")
+  for (const label of REMOVED_LABELS) {
+    expect(html, label).not.toContain(label)
+  }
+}
+
 const CARD: ProductRow = {
   id: "11111111-1111-4111-8111-111111111111",
   name: "Card",
@@ -59,7 +70,7 @@ describe("ProductCreateForm", () => {
     }
     // No post-join message fields: no screen shows them (deferred-work,
     // closed 2026-11-01).
-    expect(html).not.toContain("postJoin")
+    expectNoPostJoinFields(html)
     // Every day by default: the weekday picker stays closed behind the link.
     expect(html).not.toContain(copy.fields.weekdays)
   })
@@ -90,7 +101,7 @@ describe("ProductEditor", () => {
     expect(html).toContain('value="472"')
     expect(html).toContain('value="49"')
     expect(html).not.toContain(adminCopy.valueChange.save)
-    expect(html).not.toContain("postJoin")
+    expectNoPostJoinFields(html)
   })
 
   it("offers to show a hidden product", () => {

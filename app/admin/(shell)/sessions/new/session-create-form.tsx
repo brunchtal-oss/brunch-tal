@@ -18,7 +18,9 @@ import {
   draftFieldOf,
   draftForConcept,
   fieldError,
+  newSubmitKeys,
   productChoicesFor,
+  submitKey,
   type CapacityDefaults,
   type ConceptOption,
   type ProductChoice,
@@ -59,7 +61,8 @@ const FIELD_SELECTORS: Record<DraftField, string> = {
 // with. Errors show under their field once she tried to save; nothing is
 // sent until they are fixed. "יצירת טיוטה" saves a draft and "פרסום" saves
 // and publishes in one request (user decision 2026-10-04). One idempotency
-// key per session (AD-5); a success goes back to the list. Story 5.4: an
+// key per button, renewed by any edit and by a success (AD-5,
+// newSubmitKeys); a success goes back to the list. Story 5.4: an
 // optional image, saved (published) right after the session is created; if
 // that fails the session exists, so the form goes to its editor, which says
 // the image was not saved and offers to save it again. Story 3.18: the
@@ -79,9 +82,8 @@ export function SessionCreateForm({
   products?: readonly ProductChoice[]
 }) {
   const router = useRouter()
-  const [idempotencyKey, setIdempotencyKey] = useState(() =>
-    newIdempotencyKey()
-  )
+  const [keys, setKeys] = useState(() => newSubmitKeys(newIdempotencyKey))
+  const renewKeys = () => setKeys(newSubmitKeys(newIdempotencyKey))
   const formRef = useRef<HTMLFormElement>(null)
   const [draft, setDraft] = useState<SessionDraft>(() =>
     concepts[0]
@@ -108,8 +110,12 @@ export function SessionCreateForm({
   } | null>(null)
 
   const concept = concepts.find((c) => c.id === draft.conceptId)
-  const update = (patch: Partial<SessionDraft>) =>
+  // Any edit is a new request: a retry after a lost answer keeps the keys
+  // only while the form is unchanged.
+  const update = (patch: Partial<SessionDraft>) => {
     setDraft((current) => ({ ...current, ...patch }))
+    renewKeys()
+  }
   const problem = (field: DraftField) => {
     if (serverError?.field === field) return "invalid"
     return tried ? fieldError(field, draft) : null
@@ -143,18 +149,18 @@ export function SessionCreateForm({
       try {
         const result = await createEventAction({
           event: payload.event,
-          idempotencyKey,
+          idempotencyKey: submitKey(keys, publish),
         })
         if (result.ok) {
           if (image && !(await saveImage(result.data.eventId, image))) {
             // The session exists: its image is saved again in its editor.
-            setIdempotencyKey(newIdempotencyKey())
+            renewKeys()
             router.push(
               `/admin/sessions/${result.data.eventId}/edit?image=failed`
             )
             return
           }
-          setIdempotencyKey(newIdempotencyKey())
+          renewKeys()
           router.push("/admin/sessions")
           router.refresh()
           return
@@ -188,6 +194,7 @@ export function SessionCreateForm({
             setDraft((current) =>
               draftForConcept(next, capacityDefaults, current)
             )
+            renewKeys()
           }
         }}
         problem={problem("concept")}

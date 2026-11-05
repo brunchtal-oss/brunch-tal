@@ -571,3 +571,17 @@ export function fieldChange(
     }
   }
 }
+
+// The create form's idempotency keys (AD-5), one per submit button: "יצירת
+// טיוטה" and "פרסום" send different requests, so after a lost answer the
+// other button is a new request, while the same button sends the same key
+// again. Any edit of the form, and a success, take a new pair.
+export type SubmitKeys = { draft: string; publish: string }
+
+export function newSubmitKeys(newKey: () => string): SubmitKeys {
+  return { draft: newKey(), publish: newKey() }
+}
+
+export function submitKey(keys: SubmitKeys, publish: boolean): string {
+  return publish ? keys.publish : keys.draft
+}

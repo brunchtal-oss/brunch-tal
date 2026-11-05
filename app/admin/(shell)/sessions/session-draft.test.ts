@@ -12,6 +12,8 @@ import {
   fieldError,
   imageChanged,
   listOccupancy,
+  newSubmitKeys,
+  submitKey,
   rescheduleRequest,
   listSummary,
   localDateTime,
@@ -505,5 +507,19 @@ describe("rescheduleRequest", () => {
       rescheduleRequest("when", { ok: false, code: "INVALID_INPUT" }, draft)
     ).toBeNull()
     expect(rescheduleRequest("when", { ok: true }, draft)).toBeNull()
+  })
+})
+
+describe("submitKey", () => {
+  it("gives the draft and the publish button their own key, the same on a retry", () => {
+    let n = 0
+    const keys = newSubmitKeys(() => `k${++n}`)
+    expect(submitKey(keys, false)).toBe("k1")
+    expect(submitKey(keys, true)).toBe("k2")
+    expect(submitKey(keys, true)).toBe(submitKey(keys, true))
+    expect(newSubmitKeys(() => `k${++n}`)).toEqual({
+      draft: "k3",
+      publish: "k4",
+    })
   })
 })

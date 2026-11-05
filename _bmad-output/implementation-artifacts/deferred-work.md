@@ -856,3 +856,9 @@
   summary: התמונה של קונספט בארכיון נשארת ב-`media-public`, כי `private.used_media_ids` סופרת את `default_image_id` של כל קונספט, גם בארכיון. התיקון ל-SC5 סוגר את שורת הקונספט ב-API, לא את קובץ התמונה שלו.
   evidence: ממצא 6 בביקורת של fix-public-read-leaks (low). הבעיה קיימת מלפני התיקון. תיקון אפשרי: לספור רק קונספט שלא בארכיון או שמפגש שאינו טיוטה משתמש בו, בדיוק כמו ה-policy.
   status: פתוח
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-fix-small-cleanups.md`
+  target: לא נקבע (קטנים, לפי הזדמנות)
+  summary: בטופס יצירת מוצר (`app/admin/(shell)/products/new/product-create-form.tsx`) מפתח ה-idempotency מתחדש רק אחרי הצלחה. תיקון: לחדש אותו בכל שינוי בשדה, כמו ב-`concept-create-form.tsx`, ולשמור עליו בניסיון חוזר בלי שינוי.
+  evidence: נמצא בסריקה של R11 ב-fix-small-cleanups (2026-11-04). אחרי תשובה שאבדה, שמירה עם שדה ששונה נכשלת ב-`IDEMPOTENCY_KEY_REUSED` עד טעינה מחדש. לא תוקן שם, כי לשונית אחרת שינתה את הקובץ באותו זמן (מנהל העבודה).
+  status: פתוח
