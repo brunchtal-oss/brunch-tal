@@ -875,6 +875,18 @@
   evidence: נבדק לפני 6.1 (2026-11-04); אף אחד מהם לא משפיע על לקוחות היום.
   status: פתוח
 
+- source_spec: `_bmad-output/implementation-artifacts/spec-fix-hardening-db.md`
+  target: אחרי fix-small-cleanups (כש-`product-screens.test.tsx` פנוי)
+  summary: בדיקת אינטראקציה לשני טופסי המוצר: בחירת סוג מפגש (או מספר משתתפות) שולחת זוג תואם, וביטול שורה בעורך מחזיר את שני השדות.
+  evidence: ממצא verification-gap בביקורת fix-hardening-db. היום הקישור נבדק רק דרך `eventKindPatch`, ‏`partySizePatch` ו-`fieldChange` ב-`product-draft.test.ts`. שינוי של `onChange` או של `DRAFT_KEYS` לא ייתפס. המקום הטבעי הוא `product-screens.test.tsx`, שהלשונית של fix-small-cleanups משנה, ובפרויקט אין ספריית אינטראקציה.
+  status: פתוח
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-fix-hardening-db.md`
+  target: לא נקבע
+  summary: check constraint ב-`products`: ‏`(eligible_event_kind = 'couple') = (party_size = 2)`, כדי שגם כתיבה שעוקפת את `apply_product_changes` (סקריפט, SQL Editor) לא תיצור מוצר לא תואם.
+  evidence: ממצא של blind-hunter (שני מבקרים). היום הכלל נאכף רק ב-RPC, ותיקון הנתונים רץ פעם אחת. שיבוץ, הצצה וסגירה ממתינה כבר לוקחים את מספר המשתתפות מסוג המפגש, ולכן מוצר לא תואם כבר לא גורם לתפוסה שגויה. צריך מיגרציה, ולבדוק שה-seed וסקריפטי הווידאו מכניסים זוגות תואמים.
+  status: פתוח
+
 - source_spec: `_bmad-output/implementation-artifacts/spec-fix-small-cleanups.md`
   target: לא נקבע (קטנים, לפי הזדמנות)
   summary: בטופס יצירת מוצר (`app/admin/(shell)/products/new/product-create-form.tsx`) מפתח ה-idempotency מתחדש רק אחרי הצלחה. תיקון: לחדש אותו בכל שינוי בשדה, כמו ב-`concept-create-form.tsx`, ולשמור עליו בניסיון חוזר בלי שינוי.

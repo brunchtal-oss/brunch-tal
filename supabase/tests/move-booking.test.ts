@@ -1563,3 +1563,45 @@ describe("admin_get_customer: a moved booking", { timeout: 60_000 }, () => {
     })
   })
 })
+
+// Fix fix-hardening-db (R7): an option Tal adds while moving a booking is
+// added_by 'admin', also when the row existed (on conflict).
+describe("admin move: the added option is Tal's", { timeout: 60_000 }, () => {
+  async function addedBy(db: Db, creditId: string, eventId: string) {
+    const { rows } = await db.query(
+      "select added_by from public.credit_options where credit_id = $1 and event_id = $2",
+      [creditId, eventId]
+    )
+    return rows.map((r) => r.added_by)
+  }
+
+  it("a new option outside the options: added_by admin", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const a = await insertEvent(db, f, { dayOffset: 5 })
+      await insertEvent(db, f, { dayOffset: 6 })
+      await insertEvent(db, f, { dayOffset: 7 })
+      const d = await insertEvent(db, f, { dayOffset: 8 })
+      const p = await grant(db, f, f.single, { eventId: a })
+
+      await adminMove(db, f, p.booking!, d)
+      const credit = await creditOf(db, p.booking!)
+      expect(await addedBy(db, credit.id, d)).toEqual(["admin"])
+    })
+  })
+
+  it("an existing (replaced, system) row: active again and added_by admin", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const a = await insertEvent(db, f, { dayOffset: 5 })
+      const b = await insertEvent(db, f, { dayOffset: 6 })
+      const x = await insertEvent(db, f, { dayOffset: 7 })
+      const { creditId, booking } = await creditFunded(db, f, a, b)
+      await replaceOption(db, creditId, x)
+      expect(await addedBy(db, creditId, x)).toEqual(["system"])
+
+      await adminMove(db, f, booking, x)
+      expect(await addedBy(db, creditId, x)).toEqual(["admin"])
+    })
+  })
+})

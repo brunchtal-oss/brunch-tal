@@ -544,6 +544,25 @@ describe("job_auto_extend", { timeout: 60_000 }, () => {
   })
 })
 
+// Fix fix-hardening-db (R9): as job_expiry_alerts, a card of an anonymized
+// customer is not extended (a card not bound yet still is, above).
+describe("an anonymized customer's card", { timeout: 60_000 }, () => {
+  it("is not extended and sends nothing", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const id = await card(db, f, "2099-03-01", "2099-03-05")
+      await db.query(
+        "update public.profiles set anonymized_at = now() where id = $1",
+        [f.customerA]
+      )
+      expect(await run(db, "2099-03-08", [id])).toBe(0)
+      expect(await expiresOn(db, id)).toBe("2099-03-05")
+      expect(await corrections(db, id)).toEqual([])
+      expect(await notifications(db, f.customerA)).toEqual([])
+    })
+  })
+})
+
 describe("a locked card", { timeout: 30_000 }, () => {
   it("a card held by another transaction is skipped on this run and extended on the next", async () => {
     const customer = randomUUID()

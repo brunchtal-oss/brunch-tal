@@ -271,8 +271,6 @@ describe("admin_create_product", () => {
           price_agorot: 25000,
           eligible_event_kind: "couple",
           party_size: 2,
-          post_join_message: "  ",
-          post_join_button_label: " label ",
         }),
         randomUUID(),
       ])
@@ -288,8 +286,6 @@ describe("admin_create_product", () => {
         eligible_event_kind: "couple",
         party_size: 2,
         intro_only: false,
-        post_join_message: null,
-        post_join_button_label: "label",
         active: true,
       })
       const audit = await auditOf(db, f.admin, result.product_id)
@@ -444,6 +440,150 @@ describe("admin_update_product refuses invalid changes", () => {
       expect(JSON.parse((error as { detail: string }).detail)).toEqual({
         field: "allowed_weekdays",
       })
+    })
+  })
+})
+
+// Fix fix-hardening-db: R17, the retired post-join fields are refused
+// (the columns stay); R8, party_size must follow eligible_event_kind
+// (couple 2, regular 1), checked on the merged row.
+describe("fix-hardening-db: refused product fields", () => {
+  async function refusedField(db: Db, text: string, params: unknown[]) {
+    await db.query("savepoint refused")
+    try {
+      await db.query(text, params)
+      await db.query("release savepoint refused")
+      return null
+    } catch (error) {
+      await db.query("rollback to savepoint refused")
+      const { message, detail } = error as { message: string; detail?: string }
+      return {
+        message,
+        field: detail ? (JSON.parse(detail) as { field?: string }).field : null,
+      }
+    }
+  }
+
+  it("post_join_message or post_join_button_label on create or update: INVALID_INPUT with that field", async () => {
+    await inRollback(async (db) => {
+      const f = await seedMoney(db)
+      await asAuthenticated(db, f.admin)
+      for (const key of ["post_join_message", "post_join_button_label"]) {
+        expect(
+          await refusedField(db, CREATE, [
+            newProduct({ [key]: "text" }),
+            randomUUID(),
+          ]),
+          key
+        ).toEqual({ message: "INVALID_INPUT", field: key })
+        expect(
+          await refusedField(db, UPDATE, [
+            f.card,
+            { [key]: null },
+            randomUUID(),
+          ]),
+          key
+        ).toEqual({ message: "INVALID_INPUT", field: key })
+      }
+    })
+  })
+
+  it("party_size that disagrees with the kind: PARTY_SIZE_KIND_MISMATCH (party_size) on create, alone or with a kind; agreeing values save", async () => {
+    await inRollback(async (db) => {
+      const f = await seedMoney(db)
+      await asAuthenticated(db, f.admin)
+      for (const product of [
+        newProduct({ eligible_event_kind: "couple", party_size: 1 }),
+        newProduct({ eligible_event_kind: "regular", party_size: 2 }),
+      ]) {
+        expect(
+          await refusedField(db, CREATE, [product, randomUUID()]),
+          JSON.stringify(product)
+        ).toEqual({ message: "PARTY_SIZE_KIND_MISMATCH", field: "party_size" })
+      }
+
+      // The card is regular, party 1. A party size sent alone is checked
+      // against the stored kind; both sent and disagreeing are refused.
+      const before = await productRow(db, f.card)
+      for (const changes of [
+        { party_size: 2 },
+        { eligible_event_kind: "regular", party_size: 2 },
+        { eligible_event_kind: "couple", party_size: 1 },
+      ]) {
+        expect(
+          await refusedField(db, UPDATE, [f.card, changes, randomUUID()]),
+          JSON.stringify(changes)
+        ).toEqual({ message: "PARTY_SIZE_KIND_MISMATCH", field: "party_size" })
+      }
+      expect(await productRow(db, f.card)).toEqual(before)
+
+      const couple = await one(db, CREATE, [
+        newProduct({ eligible_event_kind: "couple", party_size: 2 }),
+        randomUUID(),
+      ])
+      expect(await productRow(db, couple.product_id)).toMatchObject({
+        eligible_event_kind: "couple",
+        party_size: 2,
+      })
+      expect(
+        await one(db, UPDATE, [
+          couple.product_id,
+          { eligible_event_kind: "regular", party_size: 1 },
+          randomUUID(),
+        ])
+      ).toEqual({ product_id: couple.product_id })
+      expect(await productRow(db, couple.product_id)).toMatchObject({
+        eligible_event_kind: "regular",
+        party_size: 1,
+      })
+    })
+  })
+
+  it("a kind sent alone sets the party size (the editor saves one field), in the same log row", async () => {
+    await inRollback(async (db) => {
+      const f = await seedMoney(db)
+      await asAuthenticated(db, f.admin)
+      const product = await one(db, CREATE, [newProduct(), randomUUID()])
+      for (const [kind, size] of [
+        ["couple", 2],
+        ["regular", 1],
+      ] as const) {
+        expect(
+          await one(db, UPDATE, [
+            product.product_id,
+            { eligible_event_kind: kind },
+            randomUUID(),
+          ])
+        ).toEqual({ product_id: product.product_id })
+        expect(await productRow(db, product.product_id)).toMatchObject({
+          eligible_event_kind: kind,
+          party_size: size,
+        })
+      }
+      const audit = await auditOf(db, f.admin, product.product_id)
+      // One transaction: the rows share created_at, so they are matched,
+      // not read in order. Each change is one row with both fields.
+      expect(audit.map((row) => row.action).sort()).toEqual([
+        "admin_create_product",
+        "admin_update_product",
+        "admin_update_product",
+      ])
+      const updates = audit.filter(
+        (row) => row.action === "admin_update_product"
+      )
+      expect(
+        updates.map((row) => [
+          row.before.eligible_event_kind,
+          row.before.party_size,
+          row.after.eligible_event_kind,
+          row.after.party_size,
+        ])
+      ).toEqual(
+        expect.arrayContaining([
+          ["regular", 1, "couple", 2],
+          ["couple", 2, "regular", 1],
+        ])
+      )
     })
   })
 })

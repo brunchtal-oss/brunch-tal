@@ -1088,4 +1088,76 @@ describe("admin_settle_parked_purchase", { timeout: 60_000 }, () => {
       ).toHaveLength(1)
     })
   })
+
+  // Fix fix-hardening-db (R8): the parked booking and its credit take the
+  // party size from the session kind, not from the product.
+  it("a couple product saved with party_size 1, parked on a couple session: booking and credit party_size 2", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const { rows: product } = await db.query(
+        `insert into public.products (
+           name, type, price_agorot, units, validity_mode, validity_days,
+           allowed_weekdays, eligible_event_kind, party_size)
+         values ($1, 'couple', 25000, 1, 'session', null, null, 'couple', 1)
+         returning id`,
+        [testName("couple_mismatch")]
+      )
+      // One place: a couple does not fit, so the purchase is parked.
+      const { rows: event } = await db.query(
+        `insert into public.events (
+           concept_id, kind, starts_at, ends_at, capacity_adults,
+           registration_closes_at, registration_close_overridden, status)
+         select $1, 'couple', s.t, s.t + interval '2 hours', 1, s.t, true, 'published'
+         from (
+           select (((now() at time zone 'Asia/Jerusalem')::date + 5)
+                   + time '10:00') at time zone 'Asia/Jerusalem' as t
+         ) s
+         returning id`,
+        [f.mothers]
+      )
+      const ev = event[0].id as string
+      const { rows } = await db.query(
+        `select private.approve_payment_core(
+           'online', null, 'system', $5, $1, $2, 25000, null, $3::date,
+           null, null, null, 'test_provider', $4, 'park') as id`,
+        [
+          product[0].id,
+          ev,
+          f.today,
+          testName(`tx_${randomUUID()}`),
+          f.customerA,
+        ]
+      )
+      const { rows: e } = await db.query(
+        "select id from public.entitlements where payment_id = $1",
+        [rows[0].id]
+      )
+      const { rows: placed } = await db.query(
+        "select count(*)::int as n from public.bookings where payment_id = $1",
+        [rows[0].id]
+      )
+      expect(placed[0].n).toBe(0)
+      await as(db, f.admin, () => db.query(CANCEL_EVENT, [ev, randomUUID()]))
+
+      const r = await as(db, f.admin, async () => {
+        const { rows: settled } = await db.query(SETTLE, [
+          e[0].id,
+          null,
+          true,
+          randomUUID(),
+        ])
+        return settled[0].r
+      })
+      const { rows: booking } = await db.query(
+        "select party_size from public.bookings where id = $1",
+        [r.booking_id]
+      )
+      expect(booking).toEqual([{ party_size: 2 }])
+      const { rows: credit } = await db.query(
+        "select party_size, event_kind from public.cancellation_credits where id = $1",
+        [r.credit_id]
+      )
+      expect(credit).toEqual([{ party_size: 2, event_kind: "couple" }])
+    })
+  })
 })

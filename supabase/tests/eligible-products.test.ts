@@ -883,6 +883,8 @@ describe(
         expect(
           await updateProduct(db, f, f.holiday, {
             eligible_event_kind: "couple",
+            // Fix fix-hardening-db (R8): the party size follows the kind.
+            party_size: 2,
           })
         ).toEqual({ code: "P0001", message: "PRODUCT_IN_USE" })
         expect(await kindOf(db, f.holiday)).toBe("regular")
@@ -924,6 +926,8 @@ describe(
         expect(
           await updateProduct(db, f, f.holiday, {
             eligible_event_kind: "couple",
+            // Fix fix-hardening-db (R8): the party size follows the kind.
+            party_size: 2,
           })
         ).toBeNull()
         expect(await kindOf(db, f.holiday)).toBe("couple")
@@ -947,6 +951,8 @@ describe(
         expect(
           await updateProduct(db, f, f.holiday, {
             eligible_event_kind: "couple",
+            // Fix fix-hardening-db (R8): the party size follows the kind.
+            party_size: 2,
           })
         ).toBeNull()
 

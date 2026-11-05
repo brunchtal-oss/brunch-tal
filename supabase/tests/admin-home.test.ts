@@ -831,6 +831,39 @@ describe("admin_get_home", () => {
     })
   })
 
+  // Fix fix-hardening-db (R9): an anonymized customer's card is not listed;
+  // an unbound purchase (no customer) still is.
+  it("expiring cards: an anonymized customer's card is out, an unbound purchase is in", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const gone = (await approveAs(db, f, { customerId: f.customerA }))
+        .entitlement_id as string
+      const kept = (await approveAs(db, f, { customerId: f.customerB }))
+        .entitlement_id as string
+      const unbound = (await approveAs(db, f, { customerId: null }))
+        .entitlement_id as string
+      const cards = [gone, kept, unbound]
+      await db.query(
+        "update public.business_settings set admin_expiring_days = 21"
+      )
+      await db.query(
+        `update public.entitlements
+         set expires_on = (now() at time zone 'Asia/Jerusalem')::date + 21
+         where id = any($1)`,
+        [cards]
+      )
+      await db.query(
+        "update public.profiles set anonymized_at = now() where id = $1",
+        [f.customerA]
+      )
+      const listed = (await home(db, f)).expiring_cards
+        .map((c) => c.entitlement_id as string)
+        .filter((id) => cards.includes(id))
+        .sort()
+      expect(listed).toEqual([kept, unbound].sort())
+    })
+  })
+
   it("upcoming sessions: published and not ended, with occupied places; a draft and an ended session are out", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)

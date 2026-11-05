@@ -73,8 +73,6 @@ const EXPECTED_GRANTS = [
   "column public.events.starts_at authenticated SELECT",
   "column public.events.status anon SELECT",
   "column public.events.status authenticated SELECT",
-  "column public.events.waitlist_cycle anon SELECT",
-  "column public.events.waitlist_cycle authenticated SELECT",
   "column public.marketing_tags.ga4_measurement_id anon SELECT",
   "column public.marketing_tags.gtm_container_id anon SELECT",
   "column public.marketing_tags.meta_pixel_id anon SELECT",
@@ -427,12 +425,13 @@ describe("grants", () => {
     expect(await actualGrants()).toEqual(EXPECTED_GRANTS)
   })
 
-  it("story 5.20: events is readable by anon and authenticated in every column but capacity_adults", async () => {
+  // Fix fix-hardening-db (S6): waitlist_cycle is not public either.
+  it("story 5.20: events is readable by anon and authenticated in every column but capacity_adults and waitlist_cycle", async () => {
     const [columns, granted] = await Promise.all([
       sql<{ c: string }>(
         `select column_name as c from information_schema.columns
          where table_schema = 'public' and table_name = 'events'
-           and column_name <> 'capacity_adults'
+           and column_name not in ('capacity_adults', 'waitlist_cycle')
          order by 1`
       ),
       sql<{ role: string; c: string }>(
