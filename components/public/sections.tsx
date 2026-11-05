@@ -160,9 +160,17 @@ export function StepsSection({
   label: string
 }) {
   const id = useId()
+  // Without a title the steps still get an h2 (hidden, the section's name),
+  // so the page's headings go h1, h2, h3 (fix-search-ready).
   return (
-    <PublicSection titleId={content.title ? id : undefined} label={label}>
-      {content.title && <SectionHeading id={id} title={content.title} />}
+    <PublicSection titleId={id}>
+      {content.title ? (
+        <SectionHeading id={id} title={content.title} />
+      ) : (
+        <h2 id={id} className="sr-only">
+          {label}
+        </h2>
+      )}
       <ol className={cn("border-t border-border", content.title && "mt-6")}>
         {content.items.map((step, index) => (
           <li

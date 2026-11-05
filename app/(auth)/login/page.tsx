@@ -4,6 +4,7 @@ import { LoginScreen, loginTitle } from "./login-screen"
 
 export const metadata: Metadata = {
   title: loginTitle("customer"),
+  robots: { index: false, follow: false },
 }
 
 export default function LoginPage({

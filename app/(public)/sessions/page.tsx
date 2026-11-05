@@ -14,7 +14,10 @@ import { listUpcomingPublicSessions } from "@/lib/sessions/public"
 
 const title = shellCopy.nav.publicSessions
 
-export const metadata: Metadata = { title }
+export const metadata: Metadata = {
+  title,
+  alternates: { canonical: "/sessions" },
+}
 
 // /sessions (story 5.16, CAP-1): every published session that has not
 // started, by date, as a session-card linking to /sessions/[id]. Nothing

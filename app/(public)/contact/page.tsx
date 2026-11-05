@@ -5,7 +5,10 @@ import { getBusinessDetails } from "@/lib/content/business-details"
 import { getPublishedSections } from "@/lib/content/pages"
 import { shellCopy } from "@/lib/copy/shell"
 
-export const metadata: Metadata = { title: shellCopy.nav.contact }
+export const metadata: Metadata = {
+  title: shellCopy.nav.contact,
+  alternates: { canonical: "/contact" },
+}
 
 // /contact (stories 5.2, 5.3): contact › intro and the published business
 // details (content:contact, content:global), through ContactView, shared

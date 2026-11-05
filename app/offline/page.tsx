@@ -9,7 +9,10 @@ import { pwaCopy } from "@/lib/copy/pwa"
 
 const copy = pwaCopy.offline
 
-export const metadata: Metadata = { title: copy.title }
+export const metadata: Metadata = {
+  title: copy.title,
+  robots: { index: false, follow: false },
+}
 
 // /offline (story 5.9): fully static (no database, no cookies), outside the
 // shells. The service worker stores it at install and shows it when a

@@ -904,3 +904,25 @@
   summary: במגבלות הקצב של ההתחברות ושל פעולות הטוקן, לספור כתובת IPv6 לפי הקידומת /64 שלה (גם במפתח ה-IP וגם במפתח החשבון), כי משתמש אחד ב-IPv6 מחזיק /64 שלם ומקבל מונה חדש לכל כתובת.
   evidence: ביקורת fix-hardening-code. במפתח ה-IP זה קיים מלפני התיקון; מפתח החשבון תלוי עכשיו גם הוא ב-IP. להחליט יחד עם ה-CAPTCHA שלמעלה.
   status: פתוח
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-fix-search-ready.md`
+  target: PR ב של fix-search-ready (לשונית SEO בעורך)
+  summary: שישה סימנים של סקיל seo-geo-aeo שלא נבנו ב-fix-search-ready (החלטת מנהל העבודה, 2026-11-05), שורה לכל אחד:
+    - FAQPage: נתונים מובנים לשאלות הנפוצות שב-`/how-it-works`.
+    - Event: נתונים מובנים לכל מפגש שפורסם.
+    - llms.txt: קובץ שמתאר את האתר למנועי AI.
+    - אזהרת טקסט חלופי: התראה בעורך התוכן על תמונה בלי טקסט חלופי.
+    - `htmlLimitedBots`: הגדרה של Next לבוטים שלא מריצים JavaScript (המטא-דאטה נשלח לפני הדף).
+    - founder: ‏Person של המייסדת בנתונים המובנים.
+  evidence: בדיקה על האתר החי אחרי הדומיין תראה מה מהם באמת חסר ומה משתלם.
+  status: פתוח
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-fix-search-ready.md`
+  target: לא נקבע
+  summary: התמונה של about › main היא PNG של 2.5MB ששמור כ-`.jpg` (1672×941). לבדוק למה תהליך ההעלאה לא דחס אותה ולא המיר אותה.
+  evidence: נמצא בבדיקת התמונה בזמן כתיבת ה-spec של fix-search-ready (2026-11-05). ‏next/image מקטין אותה בתצוגה, אבל הקובץ המקורי כבד.
+  status: פתוח
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-fix-search-ready.md`
+  summary: The robots noindex `metadata` exports on /login, /admin/login, /offline, /install and the /me and /admin layouts have no automated test.
+  evidence: Review of fix-search-ready (verification-gap). The X-Robots-Tag header still covers these paths in both states; check the meta with curl on the live site in 6.9.

@@ -8,7 +8,10 @@ import { getBusinessName } from "@/lib/content/business-details"
 
 const copy = pwaCopy.install
 
-export const metadata: Metadata = { title: copy.title }
+export const metadata: Metadata = {
+  title: copy.title,
+  robots: { index: false, follow: false },
+}
 
 // /install (story 5.9): the install guide, linked from the public footer.
 // On top, the icon with its name as it will sit on the home screen (the

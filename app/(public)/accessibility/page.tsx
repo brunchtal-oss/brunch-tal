@@ -11,6 +11,7 @@ import { shellCopy } from "@/lib/copy/shell"
 
 export const metadata: Metadata = {
   title: shellCopy.public.footer.accessibility,
+  alternates: { canonical: "/accessibility" },
 }
 
 // /accessibility (story 5.5, CAP-33): the published accessibility statement

@@ -6,8 +6,10 @@ import "./globals.css"
 import { AccessibilityButton } from "@/components/shared/accessibility-button"
 import { RouteFocus } from "@/components/shared/route-focus"
 import { ServiceWorkerRegister } from "@/components/shared/service-worker-register"
-import { getBusinessName } from "@/lib/content/business-details"
 import { rootMetadata } from "@/lib/root-metadata"
+import { pageDescription, shareImage } from "@/lib/seo/metadata"
+import { getSiteSeo } from "@/lib/seo/site-seo"
+import { siteUrl } from "@/lib/site-url"
 import { cn } from "@/lib/utils"
 
 // Fonts per DESIGN.md: Assistant for body text, Heebo for headings. Both are
@@ -35,9 +37,18 @@ const fontPromo = Rubik({
 })
 
 // "{page name} · {business name}" on every page: the published name
-// (story 5.20), else the WORDMARK.
+// (story 5.20), else the WORDMARK. The site description and share image
+// come from the published home hero, else the default image
+// (fix-search-ready); both readers are
+// cached, so the metadata stays in the static shell.
 export async function generateMetadata(): Promise<Metadata> {
-  return rootMetadata(await getBusinessName())
+  const seo = await getSiteSeo()
+  const base = siteUrl()
+  return rootMetadata(seo.name, {
+    siteUrl: base,
+    description: pageDescription(null, seo),
+    image: shareImage(seo, base),
+  })
 }
 
 // The olive of the manifest's theme_color (DESIGN.md primary).

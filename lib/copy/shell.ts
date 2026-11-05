@@ -123,6 +123,16 @@ export const shellCopy = {
       body: "ייתכן שהמפגש הוסר או שהקישור שגוי.",
       toSessions: "לכל המפגשים",
     },
+    // An address that matches no page (app/not-found.tsx, fix-search-ready).
+    notFound: {
+      title: "העמוד לא נמצא",
+      body: "ייתכן שהקישור שגוי או שהעמוד הוסר.",
+      toSessions: "למפגשים",
+      toHome: "לדף הבית",
+    },
+    // The alt of the default share image (public/og-default.jpg), used
+    // when the home hero has no published photo (fix-search-ready).
+    ogDefaultAlt: "שולחן בראנץ׳ ערוך מלמעלה",
     // A public page with no published section yet.
     emptyPage: "התוכן של העמוד הזה עוד בהכנה",
     emptyPageWhatsapp: "לשאלות אפשר לפנות בוואטסאפ",

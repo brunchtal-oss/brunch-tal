@@ -140,13 +140,26 @@ describe("public code", () => {
     })
   }
 
+  // The one exception is the JSON-LD script (fix-search-ready): JSON, with
+  // every "<" escaped by jsonLdString (tested in lib/seo).
+  const JSON_LD = join("components", "public", "json-ld.tsx")
+
   it("never sets inner HTML", () => {
     const sources = [...files("components/public"), ...files("app/(public)")]
       .filter((path) => /\.tsx?$/.test(path) && !path.includes(".test."))
+      .filter((path) => path !== JSON_LD)
       .map((path) => readFileSync(path, "utf8"))
     expect(sources.length).toBeGreaterThan(5)
     for (const source of sources) {
       expect(source).not.toContain("dangerouslySetInnerHTML")
     }
+  })
+
+  it("sets the JSON-LD script only through jsonLdString", () => {
+    const source = readFileSync(JSON_LD, "utf8")
+    expect(source.match(/dangerouslySetInnerHTML/g)).toHaveLength(1)
+    expect(source).toContain(
+      "dangerouslySetInnerHTML={{ __html: jsonLdString(data) }}"
+    )
   })
 })

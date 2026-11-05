@@ -122,6 +122,8 @@
 - [ ] ‏`SITE_LOCK_USER` ו-`SITE_LOCK_PASSWORD` (ו-`SITE_LOCKED` רק כשפותחים את האתר).
 - [ ] ‏`CRON_SECRET`: ערך אקראי ארוך (למשל `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"`), זהה ל-`cron_secret` ב-Vault. בלעדיו `/api/jobs/push` מחזיר 503.
 - [ ] זוג VAPID (`npx web-push generate-vapid-keys`), אחד לכל פרויקט Supabase: ‏`NEXT_PUBLIC_VAPID_PUBLIC_KEY` (היחיד שמגיע לדפדפן), ‏`VAPID_PRIVATE_KEY` ו-`VAPID_SUBJECT` (‏`mailto:` של העסק; ערך שגוי ← Apple מחזירה 403). ב-production וב-preview, ובמחשב ב-`.env.local`. אחרי שינוי של המפתח הציבורי פורסים מחדש (הוא נכנס לקוד בזמן ה-build).
+- [ ] ‏`SITE_INDEXABLE` (משתנה שרת): ריק או `false` עד 6.9. ‏`true` פותח את האתר למנועי חיפוש רק ב-production (ב-preview אף פעם): ‏robots.txt מתיר, מפת האתר מופיעה, וה-`noindex` נשאר רק על האזור האישי, האדמין, ההתחברות, נתיבי הטוקן, ‏`/offline`, ‏`/install` ו-`/api`. נקרא בזמן ה-build, ולכן אחרי שינוי פורסים מחדש. לא קשור לנעילה (`SITE_LOCKED`). לפני שמפעילים אותו, ממלאים את `NEXT_PUBLIC_SITE_URL` בדומיין הסופי, אחרת ה-canonical ומפת האתר מצביעים על כתובת ה-vercel.app.
+- [ ] ‏`NEXT_PUBLIC_SITE_URL`: הדומיין הסופי, בלי `/` בסוף, בהעברה. ריק: הכתובת של production ב-Vercel. אחרי שינוי פורסים מחדש.
 - [ ] אף סוד לא במשתנה `NEXT_PUBLIC_*`.
 - [ ] לא לכבות את "Automatically expose System Environment Variables", כי הנעילה מזהה שהיא רצה ב-Vercel לפי `VERCEL_ENV`.
 

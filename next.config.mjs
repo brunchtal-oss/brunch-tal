@@ -1,5 +1,7 @@
 import { networkInterfaces } from "node:os"
 
+import { isIndexable, NOINDEX_SOURCES } from "./lib/seo/indexing.mjs"
+
 // Private IPv4 addresses of this machine, so a phone on the home network can
 // open the dev server (http://<ip>:3000). Dev only; ignored by `next build`.
 function privateIPv4Addresses() {
@@ -13,6 +15,19 @@ function privateIPv4Addresses() {
 }
 
 const noStore = { key: "Cache-Control", value: "private, no-store" }
+
+const noindex = { key: "X-Robots-Tag", value: "noindex, nofollow" }
+
+// Story 5.15 (moved forward, user decision 2026-10-10): the site is open
+// without the lock but kept out of search engines until the launch (6.9),
+// with app/robots.ts. fix-search-ready: once SITE_INDEXABLE is on in
+// production, only the private, auth, token, app-only and API paths keep the
+// header. The env is read each time headers() runs, which in practice is at
+// build, so a change needs a redeploy.
+function noindexRules(env = process.env) {
+  if (!isIndexable(env)) return [{ source: "/:path*", headers: [noindex] }]
+  return NOINDEX_SOURCES.map((source) => ({ source, headers: [noindex] }))
+}
 
 // Published images (story 5.4): next/image optimizes only the public files
 // of the Supabase project (media-public). Drafts are never optimized (the
@@ -65,20 +80,15 @@ const nextConfig = {
   },
 
   // About is a section of the home page, not a page (user decision
-  // 2026-10-04); an old /about link lands on home.
+  // 2026-10-04); an old /about link lands on home, for good (308, so a
+  // search engine moves the link to home; fix-search-ready).
   async redirects() {
-    return [{ source: "/about", destination: "/", permanent: false }]
+    return [{ source: "/about", destination: "/", permanent: true }]
   },
 
   async headers() {
     return [
-      // Story 5.15 (moved forward, user decision 2026-10-10): the site is
-      // open without the lock but kept out of search engines until the
-      // launch (6.9), with app/robots.ts.
-      {
-        source: "/:path*",
-        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
-      },
+      ...noindexRules(),
       // Token routes (AD-16): no referrer leaks the token, nothing is cached.
       {
         source: "/reset/:path*",

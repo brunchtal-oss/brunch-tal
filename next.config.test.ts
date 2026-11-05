@@ -2,8 +2,9 @@ import { readdirSync } from "node:fs"
 import { join } from "node:path"
 import { fileURLToPath } from "node:url"
 
-import { describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
+import { NOINDEX_SOURCES } from "./lib/seo/indexing.mjs"
 import nextConfig from "./next.config.mjs"
 
 type HeaderRule = {
@@ -20,9 +21,53 @@ async function headersFor(source: string) {
 }
 
 describe("next.config", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
   it("keeps every page out of search engines until the launch (story 5.15)", async () => {
+    vi.stubEnv("SITE_INDEXABLE", "")
     const headers = await headersFor("/:path*")
     expect(headers["X-Robots-Tag"]).toBe("noindex, nofollow")
+    const rules = (await nextConfig.headers!()) as HeaderRule[]
+    expect(
+      rules.filter((r) => r.headers.some((h) => h.key === "X-Robots-Tag"))
+    ).toHaveLength(1)
+  })
+
+  it("keeps the noindex rule for every path in preview even when switched on", async () => {
+    vi.stubEnv("SITE_INDEXABLE", "true")
+    vi.stubEnv("VERCEL_ENV", "preview")
+    const headers = await headersFor("/:path*")
+    expect(headers["X-Robots-Tag"]).toBe("noindex, nofollow")
+  })
+
+  it("keeps noindex only on the private paths when indexable (fix-search-ready)", async () => {
+    vi.stubEnv("SITE_INDEXABLE", "true")
+    vi.stubEnv("VERCEL_ENV", "production")
+    vi.resetModules()
+    const { default: config } = await import("./next.config.mjs")
+    const rules = (await config.headers!()) as HeaderRule[]
+    const noindex = rules.filter((r) =>
+      r.headers.some(
+        (h) => h.key === "X-Robots-Tag" && h.value === "noindex, nofollow"
+      )
+    )
+    expect(noindex.map((r) => r.source)).toEqual([...NOINDEX_SOURCES])
+    expect(rules.some((r) => r.source === "/:path*")).toBe(false)
+    // Every other rule is the same as when the switch is off.
+    vi.unstubAllEnvs()
+    const off = (await nextConfig.headers!()) as HeaderRule[]
+    expect(rules.filter((r) => !noindex.includes(r))).toEqual(
+      off.filter((r) => r.source !== "/:path*")
+    )
+  })
+
+  it("redirects /about to home for good (308)", async () => {
+    const redirects = await nextConfig.redirects!()
+    expect(redirects).toEqual([
+      { source: "/about", destination: "/", permanent: true },
+    ])
   })
 
   it.each(["/reset/:path*", "/join/:path*"])(

@@ -1,4 +1,5 @@
 import { Suspense } from "react"
+import type { Metadata } from "next"
 
 import { AppTopBar } from "@/components/shared/app-top-bar"
 import { BottomTabBar } from "@/components/shared/bottom-tab-bar"
@@ -17,6 +18,11 @@ import { getUnreadCount, markRead, registerPush } from "./notifications/actions"
 // Allowed only here and in /admin/(shell) (AD-16): the route reads the
 // session on every request, so it blocks instead of instant navigation.
 export const instant = false
+
+// /me is never indexed (fix-search-ready), with the X-Robots-Tag header.
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+}
 
 // Customer shell (AD-2): the sticky olive top-bar (name, bell, sign-out;
 // story 5.7), main, and the bottom-tab-bar at every width. globals.css keeps
