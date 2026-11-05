@@ -1001,3 +1001,51 @@ describe("token_view of a pinned purchase", () => {
     })
   })
 })
+
+// Fix fix-hardening-db (R8): the preview and the placement take the party
+// size from the session kind, not from a product whose party_size
+// disagrees with its kind.
+describe("party size from the session kind", () => {
+  async function mismatch(db: Db, f: Fixture) {
+    await db.query("update public.products set party_size = 1 where id = $1", [
+      f.couple,
+    ])
+  }
+
+  it("a couple product saved with party_size 1: placed as 2 places", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      await mismatch(db, f)
+      const eventId = await insertEvent(db, f, { kind: "couple" })
+      await fill(db, f, eventId, 12)
+
+      const r = await approveAs(
+        db,
+        f,
+        pinnedInput(f, f.couple, eventId, { customerId: f.customerA })
+      )
+      const { rows } = await db.query(
+        "select party_size from public.bookings where id = $1",
+        [r.booking_id]
+      )
+      expect(rows).toEqual([{ party_size: 2 }])
+      expect(await occupied(db, eventId)).toBe(14)
+    })
+  })
+
+  it("the same product with one free place: EVENT_FULL at preview and approval", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      await mismatch(db, f)
+      const eventId = await insertEvent(db, f, { kind: "couple" })
+      await fill(db, f, eventId, 13)
+      expect(await previewError(db, f, null, f.couple, eventId)).toMatchObject({
+        message: "EVENT_FULL",
+      })
+      expect(
+        await approveError(db, f, pinnedInput(f, f.couple, eventId))
+      ).toMatchObject({ code: "P0001", message: "EVENT_FULL" })
+      expect(await occupied(db, eventId)).toBe(13)
+    })
+  })
+})

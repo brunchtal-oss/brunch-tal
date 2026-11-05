@@ -80,6 +80,22 @@ export function draftForType(
   }
 }
 
+// The event kind and the party size go together (couple 2, regular 1; fix
+// fix-hardening-db, 2026-11-05): picking either one sets the other in the
+// draft. The RPC refuses a disagreeing pair (PARTY_SIZE_KIND_MISMATCH),
+// and a kind saved alone sets the size in the database.
+export function eventKindPatch(
+  eventKind: EventKind
+): Pick<ProductDraft, "eventKind" | "partySize"> {
+  return { eventKind, partySize: eventKind === "couple" ? 2 : 1 }
+}
+
+export function partySizePatch(
+  partySize: 1 | 2
+): Pick<ProductDraft, "eventKind" | "partySize"> {
+  return eventKindPatch(partySize === 2 ? "couple" : "regular")
+}
+
 // The draft of a saved product (the editor's starting values).
 export function draftFromRow(row: ProductRow): ProductDraft {
   return {
@@ -293,7 +309,12 @@ export function fieldChange(
         : {
             from: String(row.party_size),
             to: String(draft.partySize),
-            changes: { party_size: draft.partySize },
+            // With the kind, so this row saves in either order with the
+            // kind row (a size alone is checked against the saved kind).
+            changes: {
+              eligible_event_kind: draft.eventKind,
+              party_size: draft.partySize,
+            },
           }
     case "introOnly":
       return draft.introOnly === row.intro_only

@@ -916,3 +916,137 @@ describe("admin_update_event reopens registration", { timeout: 60_000 }, () => {
     })
   })
 })
+
+// Fix fix-hardening-db (R3): a reschedule that reopens registration tells
+// the waitlist, as admin_update_event (5.20).
+describe(
+  "admin_reschedule_event reopens registration",
+  { timeout: 60_000 },
+  () => {
+    const RESCHEDULE =
+      "select public.admin_reschedule_event($1, $2, $3, $4, $5, $6) as r"
+
+    // As the owner: the close follows the settings (not overridden), then
+    // closed a minute ago (the trigger keeps a value given with no override).
+    async function closeBySettings(db: Db, event: string) {
+      await db.query(
+        "update public.events set registration_close_overridden = false where id = $1",
+        [event]
+      )
+      await db.query(
+        "update public.events set registration_closes_at = now() - interval '1 minute' where id = $1",
+        [event]
+      )
+    }
+
+    async function rescheduleTo(
+      db: Db,
+      f: Fixture,
+      event: string,
+      dayOffset: number
+    ) {
+      const { rows } = await db.query(
+        `select s.t as starts_at, s.t + interval '2 hours' as ends_at
+       from (
+         select (((now() at time zone 'Asia/Jerusalem')::date + $1::int)
+                 + time '10:00') at time zone 'Asia/Jerusalem' as t
+       ) s`,
+        [dayOffset]
+      )
+      return as(db, f.admin, async () => {
+        const r = await db.query(RESCHEDULE, [
+          event,
+          rows[0].starts_at,
+          rows[0].ends_at,
+          true,
+          "Moved",
+          randomUUID(),
+        ])
+        return r.rows[0].r
+      })
+    }
+
+    async function isOpen(db: Db, event: string): Promise<boolean> {
+      const { rows } = await db.query(
+        "select registration_closes_at > now() as open from public.events where id = $1",
+        [event]
+      )
+      return rows[0].open
+    }
+
+    it("closed, a place free, a waiter; the move reopens it: one waitlist_spot", async () => {
+      await inRollback(async (db) => {
+        const f = await seed(db)
+        const event = await insertEvent(db, f)
+        const a = await book(db, f.customerA, event)
+        await join(db, f.customerC, event)
+        await closeBySettings(db, event)
+        await as(db, f.admin, () =>
+          db.query(ADMIN_CANCEL, [a, true, randomUUID()])
+        )
+        expect(await spots(db, f.customerC)).toEqual([])
+
+        await rescheduleTo(db, f, event, 20)
+        expect(await isOpen(db, event)).toBe(true)
+        expect(await cycleOf(db, event)).toBe(1)
+        expect((await spots(db, f.customerC)).map((s) => s.dedupe_key)).toEqual(
+          [`waitlist_spot:${f.customerC}:${event}:1:1`]
+        )
+      })
+    })
+
+    it("registration already open, a place and a told waiter: no second notice", async () => {
+      await inRollback(async (db) => {
+        const f = await seed(db)
+        const event = await insertEvent(db, f)
+        const a = await book(db, f.customerA, event)
+        await join(db, f.customerC, event)
+        await as(db, f.admin, () =>
+          db.query(ADMIN_CANCEL, [a, true, randomUUID()])
+        )
+        expect(await spots(db, f.customerC)).toHaveLength(1)
+
+        await rescheduleTo(db, f, event, 20)
+        expect(await cycleOf(db, event)).toBe(1)
+        expect(await spots(db, f.customerC)).toHaveLength(1)
+      })
+    })
+
+    it("an overridden close does not move: no notice", async () => {
+      await inRollback(async (db) => {
+        const f = await seed(db)
+        // insertEvent's close is overridden: closed a minute ago, it stays.
+        const event = await insertEvent(db, f)
+        const a = await book(db, f.customerA, event)
+        await join(db, f.customerC, event)
+        await db.query(
+          "update public.events set registration_closes_at = now() - interval '1 minute' where id = $1",
+          [event]
+        )
+        await as(db, f.admin, () =>
+          db.query(ADMIN_CANCEL, [a, true, randomUUID()])
+        )
+
+        await rescheduleTo(db, f, event, 20)
+        expect(await isOpen(db, event)).toBe(false)
+        expect(await cycleOf(db, event)).toBe(0)
+        expect(await spots(db, f.customerC)).toEqual([])
+      })
+    })
+
+    it("reopened but full: no notice", async () => {
+      await inRollback(async (db) => {
+        const f = await seed(db)
+        const event = await insertEvent(db, f)
+        await book(db, f.customerA, event)
+        await join(db, f.customerC, event)
+        await closeBySettings(db, event)
+
+        await rescheduleTo(db, f, event, 20)
+        expect(await isOpen(db, event)).toBe(true)
+        expect(await cycleOf(db, event)).toBe(0)
+        expect(await spots(db, f.customerC)).toEqual([])
+      })
+    })
+  }
+)

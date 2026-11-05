@@ -434,6 +434,31 @@ describe("admin_list_open_cards", { timeout: 60_000 }, () => {
     })
   })
 
+  // Fix fix-hardening-db (R9): an anonymized customer's card is not
+  // listed; an unbound purchase (no customer) still is.
+  it("an anonymized customer's card is out of every filter; an unbound purchase is in", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const gone = await grant(db, f, { customerId: f.customerA })
+      const kept = await grant(db, f, { customerId: f.customerB })
+      const unbound = await grant(db, f, {
+        customerId: null,
+        payerLabel: testName("payer_anon"),
+      })
+      for (const id of [gone, kept, unbound]) await endIn(db, id, 5)
+      await db.query(
+        "update public.profiles set anonymized_at = now() where id = $1",
+        [f.customerA]
+      )
+      for (const filter of ["all", "available", "expiring"] as const) {
+        const ids = (await list(db, f, filter)).map((c) => c.entitlement_id)
+        expect(ids, filter).not.toContain(gone)
+        expect(ids, filter).toContain(kept)
+        expect(ids, filter).toContain(unbound)
+      }
+    })
+  })
+
   it("a bad filter: INVALID_INPUT", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)

@@ -655,14 +655,16 @@ describe("publishing", () => {
     })
   })
 
-  it("the settings start a new session at 10:30-14:30", async () => {
+  // The hours are a business value Tal edits (14:30 until 2026-11-03, then
+  // 14:00), so the test checks that they exist and that the end follows the
+  // start, not a fixed time.
+  it("the settings hold the default session hours, the end after the start", async () => {
     await inRollback(async (db) => {
       const { rows } = await db.query(
-        `select to_char(default_session_start_time, 'HH24:MI') as start,
-           to_char(default_session_end_time, 'HH24:MI') as end
+        `select default_session_start_time < default_session_end_time as ordered
          from public.business_settings`
       )
-      expect(rows).toEqual([{ start: "10:30", end: "14:30" }])
+      expect(rows).toEqual([{ ordered: true }])
       expect(
         await queryError(
           db,
@@ -955,6 +957,67 @@ describe("schema", () => {
         { theme_key: "grandpa", default_kind: "couple" },
         { theme_key: "greek", default_kind: "regular" },
       ])
+    })
+  })
+})
+
+// Fix fix-hardening-db (R4): the copy takes the concept's current kind; a
+// changed kind takes that kind's default capacity, no display price and
+// only the products of that kind. Same kind: as today (the test above).
+describe("duplicating after the concept's kind changed", () => {
+  it("a couple source of a concept now regular: a regular copy, regular capacity, no price, no couple product", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const { rows: products } = await db.query(
+        `insert into public.products (
+           name, type, price_agorot, units, validity_mode, validity_days,
+           allowed_weekdays, eligible_event_kind, party_size)
+         values ($1, 'couple', 25000, 1, 'session', null, null, 'couple', 2)
+         returning id`,
+        [testName("couple_product")]
+      )
+      const source = await create(db, f, {
+        concept_id: f.concepts.grandma,
+        ...WHEN,
+        capacity_adults: 16,
+        display_price_agorot: 25000,
+        product_ids: [products[0].id],
+      })
+      expect((await eventRow(db, source)).kind).toBe("couple")
+      // As the owner, inside this transaction only.
+      await db.query(
+        "update public.concepts set default_kind = 'regular' where id = $1",
+        [f.concepts.grandma]
+      )
+
+      const copy = await asAdmin(db, f.admin, () =>
+        one(db, DUPLICATE, [
+          source,
+          "2027-01-05",
+          "09:30",
+          "11:30",
+          randomUUID(),
+        ])
+      )
+      const { rows: settings } = await db.query(
+        "select default_capacity_regular from public.business_settings"
+      )
+      expect(await eventRow(db, copy.event_id)).toMatchObject({
+        kind: "regular",
+        capacity_adults: settings[0].default_capacity_regular,
+        display_price_agorot: null,
+        status: "draft",
+      })
+      const { rows } = await db.query(
+        "select product_id from public.event_products where event_id = $1",
+        [copy.event_id]
+      )
+      expect(rows).toEqual([])
+      const { rows: kept } = await db.query(
+        "select product_id from public.event_products where event_id = $1",
+        [source]
+      )
+      expect(kept).toEqual([{ product_id: products[0].id }])
     })
   })
 })

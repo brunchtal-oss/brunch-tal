@@ -1256,3 +1256,128 @@ describe("review fixes", { timeout: 60_000 }, () => {
     })
   })
 })
+
+// Fix fix-hardening-db (R2): a passed option (registration reopened) that
+// Tal picks again is active again, and options_count is counted after the
+// upsert. A passed pick still goes through the plan.
+describe(
+  "fix-hardening-db: re-picking a passed option",
+  { timeout: 60_000 },
+  () => {
+    async function markPassed(db: Db, creditId: string, eventId: string) {
+      await db.query(
+        "update public.credit_options set state = 'passed' where credit_id = $1 and event_id = $2",
+        [creditId, eventId]
+      )
+    }
+
+    it("A passed, B active; Tal picks A+B: both active, count = used + passed + active", async () => {
+      await inRollback(async (db) => {
+        const f = await seed(db)
+        const origin = await insertEvent(db, f, 5)
+        const a = await insertEvent(db, f, 6)
+        const b = await insertEvent(db, f, 7)
+        const { creditId } = await creditOn(db, f, origin)
+        await markPassed(db, creditId, a)
+
+        const r = await change(db, f, creditId, [a, b])
+        expect(r.options_count).toBe(2)
+        expect(await options(db, creditId)).toEqual([
+          [a, "active", null, "admin"],
+          [b, "active", null, "system"],
+        ])
+        expect(await credit(db, creditId)).toMatchObject({ options_count: 2 })
+      })
+    })
+
+    it("picks only A: A active, B replaced (admin), the credit has an active option", async () => {
+      await inRollback(async (db) => {
+        const f = await seed(db)
+        const origin = await insertEvent(db, f, 5)
+        const a = await insertEvent(db, f, 6)
+        const b = await insertEvent(db, f, 7)
+        const { creditId } = await creditOn(db, f, origin)
+        await markPassed(db, creditId, a)
+
+        const r = await change(db, f, creditId, [a])
+        expect(r.options_count).toBe(1)
+        expect(await options(db, creditId)).toEqual([
+          [a, "active", null, "admin"],
+          [b, "replaced", "admin", "system"],
+        ])
+        const [mine] = await myCredits(db, f.customerA)
+        expect(mine).toMatchObject({ exhausted: false })
+      })
+    })
+
+    it("a passed pick whose session started, is full or does not fit: refused by the plan, the option stays passed", async () => {
+      await inRollback(async (db) => {
+        const f = await seed(db)
+        const origin = await insertEvent(db, f, 5)
+        const a = await insertEvent(db, f, 6, { capacity: 1 })
+        const b = await insertEvent(db, f, 7)
+        const c = await insertEvent(db, f, 8)
+        const { creditId } = await creditOn(db, f, origin)
+        await markPassed(db, creditId, a)
+        await markPassed(db, creditId, b)
+        // c: a third, passed option (the credit has two; as the owner).
+        await db.query(
+          "insert into public.credit_options (credit_id, event_id, state) values ($1, $2, 'passed')",
+          [creditId, c]
+        )
+        // c no longer fits: a couple session for a regular credit (as the
+        // owner, inside this transaction only).
+        await db.query(
+          "update public.events set kind = 'couple' where id = $1",
+          [c]
+        )
+
+        // a fills: customer B books its only place.
+        await as(db, f.admin, () =>
+          approve(db, {
+            customerId: f.customerB,
+            productId: f.card,
+            amount: 47200,
+            paidOn: f.today,
+            methodId: f.method,
+            duplicateConfirmed: true,
+            key: randomUUID(),
+          })
+        )
+        await as(db, f.customerB, () => db.query(BOOK, [a, randomUUID()]))
+        // b started.
+        await db.query(
+          `update public.events
+         set starts_at = now() - interval '1 minute',
+             ends_at = now() + interval '2 hours',
+             registration_closes_at = now() - interval '2 minutes',
+             registration_close_overridden = true
+         where id = $1`,
+          [b]
+        )
+
+        for (const picked of [a, b, c]) {
+          expect(
+            await failure(db, f.admin, CHANGE, [
+              creditId,
+              [picked],
+              null,
+              true,
+              randomUUID(),
+            ]),
+            picked
+          ).toEqual({ message: "INVALID_INPUT", field: "events" })
+        }
+        const after = await options(db, creditId)
+        expect(after).toHaveLength(3)
+        expect(after).toEqual(
+          expect.arrayContaining([
+            [a, "passed", null, "system"],
+            [b, "passed", null, "system"],
+            [c, "passed", null, "system"],
+          ])
+        )
+      })
+    })
+  }
+)

@@ -6,6 +6,8 @@ import {
   createPayload,
   draftForType,
   draftFromRow,
+  eventKindPatch,
+  partySizePatch,
   fieldChange,
   fieldError,
   priceChange,
@@ -253,5 +255,59 @@ describe("productSummary", () => {
         validity_days: null,
       })
     ).toBe("128 ₪ · כניסה אחת · מוצמד למפגש")
+  })
+})
+
+// Fix fix-hardening-db: picking a kind in either form sets the party size
+// that goes with it, so the pair sent always agrees.
+describe("eventKindPatch (kind sets the party size)", () => {
+  it("create form: a card switched to couple sends couple with 2, back to regular with 1", () => {
+    const base = { ...draftForType("card", 49), name: "Card", priceText: "472" }
+    const couple = createPayload({ ...base, ...eventKindPatch("couple") })
+    expect(couple.ok && couple.product).toMatchObject({
+      eligible_event_kind: "couple",
+      party_size: 2,
+    })
+    const regular = createPayload({
+      ...base,
+      ...eventKindPatch("couple"),
+      ...eventKindPatch("regular"),
+    })
+    expect(regular.ok && regular.product).toMatchObject({
+      eligible_event_kind: "regular",
+      party_size: 1,
+    })
+  })
+
+  it("editor: couple picked on a regular product changes the kind and the party size together", () => {
+    const draft = { ...draftFromRow(CARD), ...eventKindPatch("couple") }
+    expect(fieldChange("eventKind", CARD, draft)?.changes).toEqual({
+      eligible_event_kind: "couple",
+    })
+    // The size row sends the kind too, so it saves before or after the
+    // kind row.
+    expect(fieldChange("partySize", CARD, draft)?.changes).toEqual({
+      eligible_event_kind: "couple",
+      party_size: 2,
+    })
+    // After the kind is saved, the database sets the size too (the RPC), so
+    // the refreshed row matches the draft and no size change is left.
+    const saved = {
+      ...CARD,
+      eligible_event_kind: "couple" as const,
+      party_size: 2,
+    }
+    expect(fieldChange("partySize", saved, draft)).toBeNull()
+  })
+
+  it("a party size picked in either form sets the kind with it", () => {
+    expect(partySizePatch(2)).toEqual({ eventKind: "couple", partySize: 2 })
+    expect(partySizePatch(1)).toEqual({ eventKind: "regular", partySize: 1 })
+    const base = { ...draftForType("card", 49), name: "Card", priceText: "472" }
+    const couple = createPayload({ ...base, ...partySizePatch(2) })
+    expect(couple.ok && couple.product).toMatchObject({
+      eligible_event_kind: "couple",
+      party_size: 2,
+    })
   })
 })

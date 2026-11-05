@@ -14,6 +14,8 @@ import { createProductAction } from "../actions"
 import {
   createPayload,
   draftForType,
+  eventKindPatch,
+  partySizePatch,
   fieldError,
   type DraftField,
   type ProductDraft,
@@ -188,12 +190,12 @@ export function ProductCreateForm({
       <EventKindField
         name="eventKind"
         value={draft.eventKind}
-        onChange={(eventKind) => update({ eventKind })}
+        onChange={(eventKind) => update(eventKindPatch(eventKind))}
       />
       <PartySizeField
         name="partySize"
         value={draft.partySize}
-        onChange={(partySize) => update({ partySize })}
+        onChange={(partySize) => update(partySizePatch(partySize))}
       />
       <IntroOnlyField
         id="introOnly"

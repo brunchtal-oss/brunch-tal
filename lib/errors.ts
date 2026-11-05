@@ -172,6 +172,10 @@ export const ERROR_MESSAGES = {
   // is still ahead (story 5.20, user decision 2026-10-22).
   PRODUCT_IN_USE:
     "המוצר מסומן כתקף במפגשים קרובים, ולכן אי אפשר לשנות את סוג המפגש שלו. קודם צריך להוריד אותו מהמפגשים האלה.",
+  // A product whose party size disagrees with its event kind (fix
+  // fix-hardening-db, 2026-11-05); detail.field = party_size.
+  PARTY_SIZE_KIND_MISMATCH:
+    "מספר המשתתפות צריך להתאים לסוג המפגש: 2 בזוגי, 1 ברגיל",
   // Account changes through Tal (story 2.8). EMAIL_TAKEN and PHONE_TAKEN
   // come from the result { result: 'taken' } (the RPC answers the block
   // without raising; a blocked phone change is logged, a blocked email

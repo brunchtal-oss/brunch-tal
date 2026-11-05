@@ -21,6 +21,8 @@ import {
 } from "../actions"
 import {
   draftFromRow,
+  eventKindPatch,
+  partySizePatch,
   fieldChange,
   fieldError,
   priceChange,
@@ -48,8 +50,10 @@ const DRAFT_KEYS: Record<EditorField, readonly (keyof ProductDraft)[]> = {
   units: ["unitsText"],
   validity: ["validityMode", "validityDaysText"],
   weekdays: ["weekdays"],
-  eventKind: ["eventKind"],
-  partySize: ["partySize"],
+  // The kind and the party size set each other in the draft
+  // (eventKindPatch, partySizePatch), so either row's cancel returns both.
+  eventKind: ["eventKind", "partySize"],
+  partySize: ["partySize", "eventKind"],
   introOnly: ["introOnly"],
 }
 
@@ -276,7 +280,7 @@ export function ProductEditor({ row }: { row: ProductRow }) {
             <EventKindField
               name="eventKind"
               value={draft.eventKind}
-              onChange={(eventKind) => update({ eventKind })}
+              onChange={(eventKind) => update(eventKindPatch(eventKind))}
             />
           )}
         </li>
@@ -287,7 +291,7 @@ export function ProductEditor({ row }: { row: ProductRow }) {
             <PartySizeField
               name="partySize"
               value={draft.partySize}
-              onChange={(partySize) => update({ partySize })}
+              onChange={(partySize) => update(partySizePatch(partySize))}
             />
           )}
         </li>

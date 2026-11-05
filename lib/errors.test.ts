@@ -27,6 +27,13 @@ describe("errors", () => {
     expect(errorMessage("NOT_FOUND")).toBe(ERROR_MESSAGES.NOT_FOUND)
   })
 
+  it("maps PARTY_SIZE_KIND_MISMATCH (fix-hardening-db) to its microcopy", () => {
+    expect(isErrorCode("PARTY_SIZE_KIND_MISMATCH")).toBe(true)
+    expect(errorMessage("PARTY_SIZE_KIND_MISMATCH")).toBe(
+      "מספר המשתתפות צריך להתאים לסוג המפגש: 2 בזוגי, 1 ברגיל"
+    )
+  })
+
   it("shows an unknown code as a server error", () => {
     expect(errorMessage("NOPE")).toBe(ERROR_MESSAGES.SERVER_ERROR)
   })
