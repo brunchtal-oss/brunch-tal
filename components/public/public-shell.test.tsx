@@ -128,7 +128,7 @@ describe("SiteFooter", () => {
     )
     expect(html).toMatch(/^<footer[^>]*data-site-footer/)
     expect(html).toContain("bg-foreground")
-    expect(html).toContain('href="tel:0501234567"')
+    expect(html).toContain('href="tel:+972501234567"')
     expect(html).toMatch(
       /href="https:\/\/waze\.com\/ul\?q=x" target="_blank"[^>]*>(?:(?!<\/a>)[\s\S])*addr/
     )
@@ -301,7 +301,7 @@ describe("ContactDetails", () => {
     const html = renderToStaticMarkup(<ContactDetails details={full} />)
     expect(html).toContain("bg-card")
     expect(html.match(/<li>/g)).toHaveLength(2)
-    expect(html).toMatch(/<a href="tel:0501234567"[^>]*>.*050-123 4567/)
+    expect(html).toMatch(/<a href="tel:\+972501234567"[^>]*>.*050-123 4567/)
     // The whole address row opens the navigation app, in a new window.
     expect(html).toMatch(
       /<a href="https:\/\/maps\.example\.com\/x" target="_blank" rel="noopener noreferrer"[^>]*>.*addr/
@@ -363,8 +363,10 @@ describe("ContactDetails", () => {
     expect(hasContactDetails(null)).toBe(false)
   })
 
-  it("dials digits only", () => {
+  it("dials the international number", () => {
     expect(telHref("+972 (54) 425-6456")).toBe("tel:+972544256456")
+    expect(telHref("0544256456")).toBe("tel:+972544256456")
+    expect(telHref("\u202A+972 054-425-6456\u202C")).toBe("tel:+972544256456")
   })
 })
 

@@ -26,3 +26,28 @@ export function nextApprovalPhase(
 
 // Shared with the other admin forms (lib/idempotency.ts).
 export { newIdempotencyKey } from "@/lib/idempotency"
+
+// The remount key of the form (payment-form-host.tsx). Next keeps a visited
+// page's state, so an untouched form remounts on a catalog change and takes
+// the new prices. Once Tal typed, chose or got an answer, the catalog part
+// is frozen (`frozenCatalog`): the refresh after CONFIRM_REQUIRED must not
+// wipe her input; the amount she kept then asks for the price change. A
+// product of the frozen catalog no longer offered (hidden, deactivated)
+// remounts the form anyway: her choice may be gone.
+export function catalogKey(
+  products: readonly { id: string; priceAgorot: number }[]
+): string {
+  return products.map((p) => `${p.id}:${p.priceAgorot}`).join(",")
+}
+
+export function formRemountKey(
+  sessionId: number,
+  catalog: string,
+  frozenCatalog: string | null
+): string {
+  const ids = (key: string) => key.split(",").map((part) => part.split(":")[0])
+  const offered = new Set(ids(catalog))
+  const keep =
+    frozenCatalog !== null && ids(frozenCatalog).every((id) => offered.has(id))
+  return `${sessionId}|${keep ? frozenCatalog : catalog}`
+}

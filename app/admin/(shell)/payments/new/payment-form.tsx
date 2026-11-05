@@ -143,6 +143,7 @@ export function PaymentForm({
   today,
   idempotencyKey,
   onApproved,
+  onTouched,
 }: {
   customer: CustomerOption | null
   products: readonly ProductOption[]
@@ -154,6 +155,9 @@ export function PaymentForm({
   // Called once when the approval succeeded (payment-form-host.tsx pushes
   // the history entry of the success screen).
   onApproved?: () => void
+  // Called on any edit of the form and on any server answer, so the host
+  // stops remounting it on a catalog change (payment-form-host.tsx).
+  onTouched?: () => void
 }) {
   const router = useRouter()
   const formRef = useRef<HTMLFormElement>(null)
@@ -246,6 +250,15 @@ export function PaymentForm({
     // currentKey covers every input of the preview.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentKey, previewNonce])
+
+  // An answer touches the form: the refresh below must not remount it.
+  const onTouchedRef = useRef(onTouched)
+  useEffect(() => {
+    onTouchedRef.current = onTouched
+  })
+  useEffect(() => {
+    if (state) onTouchedRef.current?.()
+  }, [state])
 
   // A method hidden, a price changed or a session filled or closed in the
   // meantime: reload the lists. A
@@ -396,6 +409,7 @@ export function PaymentForm({
     <form
       ref={formRef}
       onSubmit={onSubmit}
+      onChange={() => onTouchedRef.current?.()}
       className="flex flex-col gap-6"
       noValidate
     >

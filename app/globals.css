@@ -361,6 +361,15 @@ body:has([data-whatsapp-bar]):has([data-cookie-notice]) [data-a11y-button] {
       var(--cookie-notice-height, 0px) + 0.5rem
   );
 }
+/* The customer's multi-date selection bar sits right above the tab bar and
+   publishes its height as --selection-bar-height: while it is shown the
+   button is 16 above it, clear of "ביטול הבחירה" and "להמשך". */
+body:has([data-selection-bar]) [data-a11y-button] {
+  bottom: calc(
+    var(--tab-bar-height, calc(4.25rem + 1px + env(safe-area-inset-bottom))) +
+      var(--selection-bar-height, 0px) + 1rem
+  );
+}
 @media (max-height: 479.98px) {
   body:has([data-whatsapp-bar]) [data-a11y-button] {
     bottom: calc(1rem + env(safe-area-inset-bottom));

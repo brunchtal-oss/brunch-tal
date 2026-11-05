@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-import { whatsappHref } from "./whatsapp"
+import { normalizePhone } from "@/lib/phone"
 
 // One schema per content_sections.kind (AD-16). The editor checks against it
 // before saving and before publishing (the Server Action), and the site
@@ -16,13 +16,14 @@ function optionalText(max: number) {
   )
 }
 
-// A phone that a wa.me link can be built from (lib/content/whatsapp.ts).
+// An Israeli phone (lib/phone.ts normalizePhone), so every wa.me and tel:
+// link built from it works.
 const phone = z
   .string()
   .trim()
   .min(1)
   .max(30)
-  .refine((value) => whatsappHref(value) !== null)
+  .refine((value) => normalizePhone(value) !== null)
 
 // join-form › photo_consent (CAP-40, story 2.13): two consents, the
 // atmosphere photos (published) and the personal photos (the WhatsApp

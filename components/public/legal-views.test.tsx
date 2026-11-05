@@ -74,7 +74,7 @@ describe("AccessibilityView (story 5.5)", () => {
     expect(html).toMatch(/<h2[^>]*>intro-h<\/h2>/)
     expect(html).toMatch(/<h2[^>]*>פרטי קשר לנגישות<\/h2>/)
     expect(html).toContain("contact-name")
-    expect(html).toContain('href="tel:0544256456"')
+    expect(html).toContain('href="tel:+972544256456"')
     // Shown as the site shows phones, whatever was typed.
     expect(html).toContain("054-425-6456")
     expect(html).toContain('href="mailto:a11y@example.com"')
@@ -93,7 +93,7 @@ describe("AccessibilityView (story 5.5)", () => {
     )
     expect(html).toContain(a11y.soon)
     expect(html).toContain(a11y.soonContact)
-    expect(html).toContain('href="tel:0544256456"')
+    expect(html).toContain('href="tel:+972544256456"')
     // The plain number, without the prepared message (user decision
     // 2026-10-06).
     expect(html).toContain('href="https://wa.me/972544256456"')

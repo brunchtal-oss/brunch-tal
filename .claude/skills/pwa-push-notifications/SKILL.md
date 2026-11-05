@@ -39,7 +39,7 @@ exact icon paths, the debug checklist.
 | `notificationclick` opens `data.url` | Opens `target_path` (`/me…` for customers, `/admin…` for admins). Every `push` event ends in `showNotification` (no silent push on iOS). |
 | SW may cache freely | Cache only `/_next/static`, icons and `/offline`. Never `/me`, `/admin` HTML or `/api`. Navigation network-only with `/offline` fallback. |
 | `VAPID_SUBJECT=mailto:you@example.com` | The business `mailto:` (Apple returns 403 on a bad value). Private key server-only, one VAPID pair per Supabase project. |
-| `create table push_subscriptions …` here | Migration via `npx supabase migration new`, RLS `user_id = (select auth.uid())`, explicit grants, then `get_advisors`. |
+| `create table push_subscriptions …` here | The table already exists (`20261006184326_push_pipeline.sql`): RLS on, no policy, no table grant to any role (`revoke all`); only the definer RPCs (`register_push_subscription`, `unregister_push_subscription`, the push worker's) reach it. A schema change starts with `npx supabase migration new`, then `get_advisors`. |
 | Toast text in English | Hebrew micro-copy in `lib/copy/*`, errors via `lib/errors.ts`. |
 
 Building the enable-notifications prompt or settings screen starts with the

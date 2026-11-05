@@ -4,6 +4,7 @@ import { adminCopy } from "@/lib/copy/admin"
 
 import {
   MAX_SESSIONS,
+  bookingKeys,
   previewLine,
   resultItems,
   resultsHeading,
@@ -11,6 +12,33 @@ import {
 } from "./booking-results"
 
 const many = adminCopy.sessions.bookMany
+
+describe("bookingKeys", () => {
+  let n = 0
+  const newKey = () => `k${++n}`
+
+  it("sends a date's kept key and a new one for a date without", () => {
+    n = 0
+    expect(bookingKeys(["a", "b"], { a: "old" }, "send", newKey)).toEqual({
+      a: "old",
+      b: "k1",
+    })
+  })
+
+  it("an answered refusal gives every chosen date a new key", () => {
+    n = 0
+    const next = bookingKeys(["a", "b"], { a: "x", b: "y" }, "refused", newKey)
+    expect(next).toEqual({ a: "k1", b: "k2" })
+    // The next confirm sends exactly those.
+    expect(bookingKeys(["a", "b"], next, "send", newKey)).toEqual(next)
+  })
+
+  it("a lost answer keeps the sent keys; a booking clears them", () => {
+    const sent = { a: "x", b: "y" }
+    expect(bookingKeys(["a", "b"], sent, "lost", newKey)).toEqual(sent)
+    expect(bookingKeys(["a", "b"], sent, "booked", newKey)).toEqual({})
+  })
+})
 
 describe("several sessions for one customer", () => {
   it("the copy of the bar, the sheet and the results", () => {
