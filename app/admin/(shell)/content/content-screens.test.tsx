@@ -372,6 +372,22 @@ describe("image fields", () => {
     expect(filled).toContain(imageCopy.replace)
   })
 
+  it("offers the same choice in both SEO share images (site and page)", () => {
+    for (const [sectionKey, kind] of [
+      ["site", "seo_site"],
+      ["home", "page_seo"],
+    ] as const) {
+      const html = editor({
+        slug: "seo",
+        sectionKey,
+        kind,
+        initial: { text: {}, items: [], hidden: false },
+        previewHref: `/admin/content/seo/preview?section=${sectionKey}`,
+      })
+      expect(html).toContain(imageCopy.pick)
+    }
+  })
+
   it("shows a saved photo with its focus point, alt (recommended) and remove", () => {
     const html = editor({
       initial: {

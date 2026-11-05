@@ -199,3 +199,33 @@ function findTokenRoutes(dir: string, url = ""): string[] {
   }
   return found
 }
+
+// fix-seo-editor: the AI crawlers get the whole HTML at once, and Next's own
+// list stays in (an upgrade that changes it fails here).
+describe("htmlLimitedBots", () => {
+  it("is Next's installed default plus the AI crawlers", async () => {
+    const { HTML_LIMITED_BOT_UA_RE } =
+      await import("next/dist/shared/lib/router/utils/html-bots.js")
+    const bots = nextConfig.htmlLimitedBots as RegExp
+    expect(bots.source.startsWith(`${HTML_LIMITED_BOT_UA_RE.source}|`)).toBe(
+      true
+    )
+    expect(bots.flags).toContain("i")
+    for (const agent of [
+      "GPTBot/1.2",
+      "OAI-SearchBot/1.0",
+      "ChatGPT-User/1.0",
+      "ClaudeBot/1.0",
+      "Claude-SearchBot/1.0",
+      "Claude-User/1.0",
+      "PerplexityBot/1.0",
+      "Perplexity-User/1.0",
+      "CCBot/2.0",
+      "Mozilla/5.0 (compatible; Googlebot/2.1) AdsBot-Google",
+      "WhatsApp/2.23",
+    ]) {
+      expect(bots.test(agent), agent).toBe(true)
+    }
+    expect(bots.test("Mozilla/5.0 (iPhone) Safari/604.1")).toBe(false)
+  })
+})

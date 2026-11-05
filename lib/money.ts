@@ -22,6 +22,21 @@ export function formatAgorot(agorot: number): string {
 }
 
 /**
+ * "128", "127.50": a sum in shekels as a plain decimal (no grouping, no
+ * sign), for structured data (an Offer's price, fix-seo-editor). Integer
+ * arithmetic only. Throws on a value that is not a safe, non-negative
+ * integer.
+ */
+export function agorotToDecimal(agorot: number): string {
+  if (!Number.isSafeInteger(agorot) || agorot < 0) {
+    throw new RangeError("agorotToDecimal expects a non-negative integer")
+  }
+  const rest = agorot % 100
+  const shekels = String((agorot - rest) / 100)
+  return rest === 0 ? shekels : `${shekels}.${String(rest).padStart(2, "0")}`
+}
+
+/**
  * The value of an amount field: formatAgorot without the sign ("472",
  * "1,234", "127.50"), which parseShekelsToAgorot reads back exactly.
  */

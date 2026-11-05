@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest"
 
-import { formatAgorot, formatAgorotInput, parseShekelsToAgorot } from "./money"
+import {
+  agorotToDecimal,
+  formatAgorot,
+  formatAgorotInput,
+  parseShekelsToAgorot,
+} from "./money"
 
 describe("formatAgorot", () => {
   it.each([
@@ -86,5 +91,19 @@ describe("formatAgorotInput", () => {
   ])("formats %i as %s and parses it back", (agorot, text) => {
     expect(formatAgorotInput(agorot)).toBe(text)
     expect(parseShekelsToAgorot(text)).toBe(agorot)
+  })
+})
+
+describe("agorotToDecimal (fix-seo-editor)", () => {
+  it("whole shekels and agorot, without grouping or sign", () => {
+    expect(agorotToDecimal(12800)).toBe("128")
+    expect(agorotToDecimal(12750)).toBe("127.50")
+    expect(agorotToDecimal(123456705)).toBe("1234567.05")
+    expect(agorotToDecimal(0)).toBe("0")
+  })
+
+  it("throws on a negative or non-integer value", () => {
+    expect(() => agorotToDecimal(-1)).toThrow(RangeError)
+    expect(() => agorotToDecimal(1.5)).toThrow(RangeError)
   })
 })

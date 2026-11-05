@@ -111,9 +111,12 @@ export function HomeView({
 
 // /how-it-works: the numbered steps and the questions and answers.
 export function HowItWorksView({
+  heading = shellCopy.nav.howItWorks,
   sections,
   whatsappHref,
 }: {
+  // The page's H1 (the content editor's SEO page, fix-seo-editor).
+  heading?: string
   sections: PublishedSections
   whatsappHref: string | null
 }) {
@@ -121,7 +124,7 @@ export function HowItWorksView({
   const faq = sectionContent(sections, "faq", "faq")
   return (
     <>
-      <PublicPageHeading>{shellCopy.nav.howItWorks}</PublicPageHeading>
+      <PublicPageHeading>{heading}</PublicPageHeading>
       {steps && <StepsSection content={steps} label={copy.sections.steps} />}
       {faq && <FaqSection content={faq} label={copy.sections.faq} />}
       {!steps && !faq && <EmptyPublicPage whatsappHref={whatsappHref} />}
@@ -132,10 +135,13 @@ export function HowItWorksView({
 // /gallery: the photos (gallery › photos, story 5.4), then the testimonials
 // (text and image).
 export function GalleryView({
+  heading = shellCopy.nav.gallery,
   sections,
   images = {},
   whatsappHref,
 }: {
+  // The page's H1 (the content editor's SEO page, fix-seo-editor).
+  heading?: string
   sections: PublishedSections
   images?: ImageMap
   whatsappHref: string | null
@@ -144,7 +150,7 @@ export function GalleryView({
   const testimonials = sectionContent(sections, "testimonials", "testimonials")
   return (
     <>
-      <PublicPageHeading>{shellCopy.nav.gallery}</PublicPageHeading>
+      <PublicPageHeading>{heading}</PublicPageHeading>
       {photos && (
         <GallerySection
           content={photos}
@@ -169,16 +175,19 @@ export function GalleryView({
 // /contact: contact › intro and the business details (phone, address,
 // arrival instructions, a navigation link). WhatsApp is the whatsapp-bar.
 export function ContactView({
+  heading = shellCopy.nav.contact,
   sections,
   details,
 }: {
+  // The page's H1 (the content editor's SEO page, fix-seo-editor).
+  heading?: string
   sections: PublishedSections
   details: BusinessDetailsContent | null
 }) {
   const intro = sectionContent(sections, "intro", "text_block")
   return (
     <>
-      <PublicPageHeading>{shellCopy.nav.contact}</PublicPageHeading>
+      <PublicPageHeading>{heading}</PublicPageHeading>
       {intro && <TextBlockSection content={intro} />}
       {hasContactDetails(details) ? (
         <PublicSection label={copy.contact.label} className="pt-8">

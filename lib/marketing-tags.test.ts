@@ -167,6 +167,8 @@ describe("the private prefixes cover every route outside (public)", () => {
       .filter((entry) => entry.isDirectory())
       .map((entry) => entry.name)
       .filter((name) => !name.startsWith("_") && !name.startsWith("@"))
+      // A file route (llms.txt, fix-seo-editor) is not a document: no tags.
+      .filter((name) => !name.includes("."))
   const segments: string[] = []
   for (const name of dirs(appDir)) {
     if (name === "(public)") continue

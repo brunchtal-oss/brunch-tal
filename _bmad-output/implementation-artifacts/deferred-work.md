@@ -915,7 +915,7 @@
     - `htmlLimitedBots`: הגדרה של Next לבוטים שלא מריצים JavaScript (המטא-דאטה נשלח לפני הדף).
     - founder: ‏Person של המייסדת בנתונים המובנים.
   evidence: בדיקה על האתר החי אחרי הדומיין תראה מה מהם באמת חסר ומה משתלם.
-  status: פתוח
+  status: סגור (fix-seo-editor, 2026-11-05). נבנו: FAQPage ב-`/how-it-works` (רק שאלות גלויות עם תשובה), ‏Event בכל עמוד מפגש שהאתר מציג, ‏`/llms.txt` (‏404 כל עוד המתג כבוי), אזהרת טקסט חלופי בעורך התוכן בלבד (כולל עמוד ה-SEO), ו-`htmlLimitedBots` (ברירת המחדל של Next ועוד בוטי AI; נבדק מקומית ב-`next start`: ל-GPTBot הכותרת הראשית בתוך `<main>` בלי תוכן מוזרם, ולכן נשאר). ‏founder נסגר בלי בנייה (החלטת המשתמשת, 2026-11-05).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-fix-search-ready.md`
   target: לא נקבע
@@ -930,3 +930,7 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-fix-media-picker.md`
   summary: Each choice in the image picker makes a draft row and a draft file, so abandoned picks (like abandoned uploads) add orphan drafts; the production draft cleanup must also skip or handle rows that other rows reference through `media_assets.source_id` (FK without on delete).
   evidence: Review of fix-media-picker (blind, verification-gap). Only `scripts/dev-clean-media-drafts.mjs` cleans drafts today, in dev; production cleanup is decided in 6.1.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-fix-seo-editor.md`
+  summary: The SEO editor's `seoExtras` (published rows to outline rows, the Google preview context) has no automated test.
+  evidence: Review of fix-seo-editor (verification-gap). Admin guidance only, the public site is unaffected; covering it needs a pure `outlineRows`/preview-context extraction first.

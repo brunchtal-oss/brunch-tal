@@ -17,6 +17,9 @@ const ALWAYS_FILLED: readonly string[] = [
   "business_details",
   "photo_consent",
   "accessibility_statement",
+  // fix-seo-editor: the H1 is required. seo_site is not here: without an
+  // image it has nothing, and the site falls back.
+  "page_seo",
 ]
 
 // A value the site can show: a non-blank text, an image, a non-empty list.

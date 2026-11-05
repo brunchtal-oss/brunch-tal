@@ -40,6 +40,7 @@ import { joinCopy } from "@/lib/copy/join"
 import { shellCopy } from "@/lib/copy/shell"
 import { draftImageMap } from "@/lib/media/drafts"
 import { publicLegalNav, visibleLegalNav } from "@/lib/nav"
+import { getPageSeo, pageH1 } from "@/lib/seo/page-seo"
 import { createClient } from "@/lib/supabase/server"
 
 import {
@@ -121,8 +122,9 @@ async function Preview({
   searchParams: Promise<{ section?: string | string[] }>
 }) {
   const [{ slug }, { section }] = await Promise.all([params, searchParams])
-  if (!isEditorPageId(slug)) notFound()
-  const id: EditorPageId = slug
+  // The SEO page (fix-seo-editor) is not a page of the site.
+  if (!isEditorPageId(slug) || slug === "seo") notFound()
+  const id: Exclude<EditorPageId, "seo"> = slug
   const pages = await loadContentPages(slugsOf(id))
 
   const pending = slugsOf(id)
@@ -153,10 +155,11 @@ async function PageView({
   id,
   pages,
 }: {
-  id: EditorPageId
+  id: Exclude<EditorPageId, "seo">
   pages: Record<string, ContentPage>
 }) {
-  const details = await getBusinessDetails()
+  // The H1s are the published SEO page's, as on the site (fix-seo-editor).
+  const [details, seo] = await Promise.all([getBusinessDetails(), getPageSeo()])
   const whatsappHref = guestWhatsappHref(details)
 
   switch (id) {
@@ -171,7 +174,7 @@ async function PageView({
           about={preview.sections[1]}
           gallery={gallery.sections}
           images={{ ...gallery.images, ...preview.images }}
-          name={businessNameOf(details)}
+          name={pageH1(seo, "home", businessNameOf(details))}
           whatsappHref={whatsappHref}
           sessions={
             <Suspense fallback={null}>
@@ -184,6 +187,7 @@ async function PageView({
     case "how-it-works":
       return (
         <HowItWorksView
+          heading={pageH1(seo, "how_it_works", "")}
           sections={previewSections(pages["how-it-works"])}
           whatsappHref={whatsappHref}
         />
@@ -192,6 +196,7 @@ async function PageView({
       const preview = await previewPages([pages.gallery])
       return (
         <GalleryView
+          heading={pageH1(seo, "gallery", "")}
           sections={preview.sections[0]}
           images={preview.images}
           whatsappHref={whatsappHref}
@@ -202,6 +207,7 @@ async function PageView({
       const sections = previewSections(pages.contact)
       return (
         <ContactView
+          heading={pageH1(seo, "contact", "")}
           sections={sections}
           details={sectionContent(
             sections,
@@ -229,7 +235,7 @@ async function PageView({
     case "terms":
       return (
         <LegalTextView
-          title={shellCopy.public.footer[id]}
+          title={pageH1(seo, id, "")}
           content={sectionContent(
             previewSections(pages[id]),
             "body",
@@ -242,6 +248,7 @@ async function PageView({
     case "accessibility":
       return (
         <AccessibilityView
+          heading={pageH1(seo, "accessibility", "")}
           content={sectionContent(
             previewSections(pages.accessibility),
             "statement",

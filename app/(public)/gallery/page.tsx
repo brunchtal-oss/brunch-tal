@@ -6,11 +6,15 @@ import {
   guestWhatsappHref,
 } from "@/lib/content/business-details"
 import { getPublishedPage } from "@/lib/content/pages"
-import { shellCopy } from "@/lib/copy/shell"
+import { getPageSeo, pageH1, pageMetadata } from "@/lib/seo/page-seo"
+import { getSiteSeo } from "@/lib/seo/site-seo"
+import { siteUrl } from "@/lib/site-url"
 
-export const metadata: Metadata = {
-  title: shellCopy.nav.gallery,
-  alternates: { canonical: "/gallery" },
+// Title, canonical and, when set in the content editor's SEO page, the
+// description and share image (pageMetadata, fix-seo-editor). Cached readers.
+export async function generateMetadata(): Promise<Metadata> {
+  const [seo, site] = await Promise.all([getPageSeo(), getSiteSeo()])
+  return pageMetadata(seo, "gallery", site, siteUrl())
 }
 
 // /gallery (stories 5.2, 5.3, 5.4): the photos and the testimonials
@@ -18,12 +22,14 @@ export const metadata: Metadata = {
 // published images from the cache (content:gallery); hidden items are left
 // out.
 export default async function GalleryPage() {
-  const [page, details] = await Promise.all([
+  const [page, details, seo] = await Promise.all([
     getPublishedPage("gallery"),
     getBusinessDetails(),
+    getPageSeo(),
   ])
   return (
     <GalleryView
+      heading={pageH1(seo, "gallery", "")}
       sections={page.sections}
       images={page.images}
       whatsappHref={guestWhatsappHref(details)}

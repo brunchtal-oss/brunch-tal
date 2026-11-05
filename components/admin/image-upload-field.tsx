@@ -70,6 +70,7 @@ const OUTLINE =
 export function ImageUploadField({
   id,
   label,
+  labelTerm,
   hint,
   altHint = copy.altHint,
   aspectRatio,
@@ -79,9 +80,13 @@ export function ImageUploadField({
   onChange,
   createMedia,
   removable = true,
+  altWarning = null,
 }: {
   id: string
   label: string
+  // A professional term after the label, small and muted, read left to
+  // right (the SEO page's "og:image").
+  labelTerm?: string
   hint?: string
   altHint?: string
   // width / height of the main place the image is shown; none: shown whole
@@ -99,10 +104,14 @@ export function ImageUploadField({
   // false inside a list item, where deleting the item removes the image
   // (user decision 2026-10-06: a second remove button there confuses).
   removable?: boolean
+  // A soft warning under the alt text (the content editor's images without
+  // one, fix-seo-editor); never blocks anything.
+  altWarning?: string | null
 }) {
   const inputRef = useRef<HTMLInputElement>(null)
   const hintId = useId()
   const altHintId = useId()
+  const altWarningId = useId()
   const errorId = useId()
   const [busy, setBusy] = useState(false)
   const [problem, setProblem] = useState<Problem | null>(null)
@@ -271,6 +280,15 @@ export function ImageUploadField({
     >
       <p id={`${id}-label`} className="text-[15px] font-semibold">
         {label}
+        {labelTerm && " "}
+        {labelTerm && (
+          <span
+            dir="ltr"
+            className="ms-2 text-[13px] font-normal text-muted-foreground"
+          >
+            {labelTerm}
+          </span>
+        )}
       </p>
       {hint && (
         <p id={hintId} className="-mt-2 text-[13px] text-muted-foreground">
@@ -367,7 +385,9 @@ export function ImageUploadField({
               value={value.alt}
               maxLength={300}
               autoComplete="off"
-              aria-describedby={altHintId}
+              aria-describedby={
+                altWarning ? `${altHintId} ${altWarningId}` : altHintId
+              }
               onChange={(event) =>
                 onChange({ ...value, alt: event.target.value })
               }
@@ -379,6 +399,14 @@ export function ImageUploadField({
             >
               {altHint}
             </p>
+            {altWarning && (
+              <p
+                id={altWarningId}
+                className="text-[13px] text-pretty text-warning"
+              >
+                {altWarning}
+              </p>
+            )}
           </div>
 
           <div className="flex flex-wrap gap-3">

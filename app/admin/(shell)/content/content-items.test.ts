@@ -15,6 +15,7 @@ import {
   missingStatementFields,
   pageStatus,
   publishTags,
+  editorPreviewHref,
   sameContent,
   sectionHidden,
   sectionRefOf,
@@ -73,11 +74,36 @@ describe("content items", () => {
       "contact",
       "join-form",
       "site",
+      // Below the footer, above the privacy policy (user decision).
+      "seo",
       "privacy",
       "terms",
       "accessibility",
       "cookie-notice",
     ])
+    // fix-seo-editor: the site's share image, then one record per page, all
+    // on one slug (publishing SEO never publishes a page's own drafts).
+    expect(EDITABLE_PAGES.seo.map((ref) => ref.key)).toEqual([
+      "site",
+      "home",
+      "sessions",
+      "how_it_works",
+      "gallery",
+      "contact",
+      "privacy",
+      "terms",
+      "accessibility",
+    ])
+    expect(slugsOf("seo")).toEqual(["seo"])
+    expect(publishTags("seo")).toEqual(["content:seo"])
+    // The SEO page has nothing to preview; every other page does.
+    expect(editorPreviewHref("seo", "gallery")).toBeUndefined()
+    expect(editorPreviewHref("gallery", "photos")).toBe(
+      "/admin/content/gallery/preview?section=photos"
+    )
+    expect(editorPreviewHref("home", "main")).toBe(
+      "/admin/content/home/preview?section=main"
+    )
     expect(EDITABLE_PAGES.home.map((ref) => `${ref.slug}/${ref.key}`)).toEqual([
       "home/hero",
       "home/promo_banner",

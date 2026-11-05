@@ -229,6 +229,8 @@ export const adminCopy = {
       accessibility: "הצהרת נגישות",
       // Story 5.23.
       "cookie-notice": "הודעת עוגיות",
+      // fix-seo-editor.
+      seo: "SEO",
     },
     // The sections, by "slug/key".
     sections: {
@@ -249,7 +251,63 @@ export const adminCopy = {
       "terms/body": "נוסח התנאים",
       "accessibility/statement": "נוסח ההצהרה",
       "cookie-notice/notice": "נוסח ההודעה",
+      // fix-seo-editor: the site's share image and one record per page.
+      "seo/site": "תמונת שיתוף לכל האתר",
+      "seo/home": "דף הבית",
+      "seo/sessions": "לו״ז בראנצ׳ים",
+      "seo/how_it_works": "איך זה עובד ושאלות נפוצות",
+      "seo/gallery": "גלריה והמלצות",
+      "seo/contact": "יצירת קשר",
+      "seo/privacy": "מדיניות פרטיות",
+      "seo/terms": "תנאי שימוש",
+      "seo/accessibility": "הצהרת נגישות",
     } as Record<string, string>,
+    // The SEO page (fix-seo-editor): per page, its H1, Google title,
+    // description and share image. The warnings never block a save.
+    seo: {
+      siteImage: "תמונת שיתוף לכל האתר",
+      // The professional term after each field's label (user decision
+      // 2026-11-05): small, muted, left to right, part of the label.
+      terms: {
+        h1: "H1",
+        title: "Title tag",
+        description: "Meta description",
+        image: "og:image",
+      },
+      siteImageHint:
+        "מוצגת כששולחים קישור לאתר בוואטסאפ או ברשתות, בכל עמוד שאין לו תמונה משלו. בלי תמונה כאן מוצגת תמונת ההירו",
+      h1: "הכותרת הראשית של העמוד",
+      h1Hint: "הכותרת הגדולה בראש העמוד. גוגל קורא אותה כדי להבין על מה העמוד",
+      title: "כותרת בגוגל",
+      titleHint:
+        "מוצגת בתוצאות החיפוש ובלשונית של הדפדפן. בלי כותרת כאן נבנית כותרת מהכותרת הראשית ומשם העסק. כותרת שממלאים כאן מוצגת כמו שהיא, ושם העסק לא נוסף אליה",
+      description: "תיאור בגוגל",
+      descriptionHint:
+        "השורות שמתחת לכותרת בתוצאות החיפוש ובשיתוף קישור. בלי תיאור כאן מוצג התיאור מההירו של דף הבית",
+      image: "תמונת שיתוף לעמוד",
+      imageHint:
+        "מוצגת כששולחים קישור לעמוד הזה. בלי תמונה כאן מוצגת תמונת השיתוף של האתר",
+      // The soft counter under the Google title and description.
+      counter: (n: number, max: number) => `${n} מתוך ${max} תווים מומלצים`,
+      over: (max: number) =>
+        `גוגל מציג בערך ${max} תווים, והשאר עלול להיחתך. אפשר לשמור גם כך`,
+      preview: "כך העמוד עשוי להיראות בגוגל",
+      previewHint: "תצוגה משוערת. גוגל מחליט בעצמו מה להציג",
+      outline: "הכותרות בעמוד",
+      outlineHint:
+        "כותרות המשנה שמתחת לכותרת הראשית, כמו שהן מוצגות עכשיו באתר. לחיצה על כותרת פותחת את העריכה שלה",
+      outlineEmpty: "אין בעמוד כותרות משנה",
+      // A heading of the system (not content): shown without a link.
+      outlineFixed: "קבועה באתר",
+      outlineAuto: "שמות המפגשים, אוטומטי",
+      // Under the SEO page's list: the session pages are automatic.
+      sessionsLine:
+        "עמוד של כל מפגש מקבל כותרת, תיאור ותמונת שיתוף אוטומטית מפרטי המפגש",
+    },
+    // Under an image of the content editor without alt text
+    // (fix-seo-editor): a warning only, saving is allowed.
+    altMissing:
+      "אין טקסט חלופי. מומלץ להוסיף תיאור קצר, בשביל גוגל ובשביל מי שלא רואה את התמונה. אפשר לשמור גם כך",
     // The row of "site" that leads to the business details (the footer's
     // phone and address come from there).
     footerDetails: {
@@ -267,7 +325,9 @@ export const adminCopy = {
     notShown: "לא מוצג באתר עד שיפורסם",
     changedHint: "יש טיוטה שעוד לא פורסמה",
     backToList: "לכל התוכן",
-    backToPage: (page: string) => `חזרה ל${page}`,
+    // A name in Latin letters ("SEO") takes a hyphen: "חזרה ל-SEO".
+    backToPage: (page: string) =>
+      /^[A-Za-z]/.test(page) ? `חזרה ל-${page}` : `חזרה ל${page}`,
     saveDraft: "שמירת טיוטה",
     publish: "פרסום",
     preview: "תצוגה מקדימה",
