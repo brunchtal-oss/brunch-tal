@@ -7,7 +7,11 @@ import { AccessibilityButton } from "@/components/shared/accessibility-button"
 import { RouteFocus } from "@/components/shared/route-focus"
 import { ServiceWorkerRegister } from "@/components/shared/service-worker-register"
 import { rootMetadata } from "@/lib/root-metadata"
-import { pageDescription, shareImage } from "@/lib/seo/metadata"
+import {
+  getPageSeo,
+  pageSeoDescription,
+  pageShareImage,
+} from "@/lib/seo/page-seo"
 import { getSiteSeo } from "@/lib/seo/site-seo"
 import { siteUrl } from "@/lib/site-url"
 import { cn } from "@/lib/utils"
@@ -39,15 +43,16 @@ const fontPromo = Rubik({
 // "{page name} · {business name}" on every page: the published name
 // (story 5.20), else the WORDMARK. The site description and share image
 // come from the published home hero, else the default image
-// (fix-search-ready); both readers are
-// cached, so the metadata stays in the static shell.
+// (fix-search-ready); the share image is the content editor's site image
+// first (fix-search-ready, fix-seo-editor). All readers are cached, so the
+// metadata stays in the static shell.
 export async function generateMetadata(): Promise<Metadata> {
-  const seo = await getSiteSeo()
+  const [site, seo] = await Promise.all([getSiteSeo(), getPageSeo()])
   const base = siteUrl()
-  return rootMetadata(seo.name, {
+  return rootMetadata(site.name, {
     siteUrl: base,
-    description: pageDescription(null, seo),
-    image: shareImage(seo, base),
+    description: pageSeoDescription(seo, null, site),
+    image: pageShareImage(seo, null, site, base),
   })
 }
 

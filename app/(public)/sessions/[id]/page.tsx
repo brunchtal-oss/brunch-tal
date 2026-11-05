@@ -3,17 +3,21 @@ import type { Metadata, ResolvingMetadata } from "next"
 import { notFound } from "next/navigation"
 import { connection } from "next/server"
 
+import { JsonLd } from "@/components/public/json-ld"
 import {
   PublicSessionAction,
   PublicSessionView,
 } from "@/components/public/public-sessions"
 import { getViewerRole } from "@/lib/auth/viewer-role"
 import {
+  businessNameOf,
   getBusinessDetails,
   guestWhatsappHref,
 } from "@/lib/content/business-details"
 import { shellCopy } from "@/lib/copy/shell"
 import { sessionMetadata } from "@/lib/seo/metadata"
+import { buildEventData } from "@/lib/seo/structured-data"
+import { siteUrl } from "@/lib/site-url"
 import { getPublicSession } from "@/lib/sessions/public"
 
 // One read per request, shared by the metadata and the page.
@@ -67,8 +71,18 @@ async function SessionContent({ params }: { params: Promise<{ id: string }> }) {
   ])
   if (!session) notFound()
 
+  // The session as an Event, only what the page shows (fix-seo-editor). A
+  // session the site does not show is notFound() above, so it has none.
   return (
     <div className="pb-12">
+      <JsonLd
+        data={buildEventData({
+          session,
+          name: businessNameOf(details),
+          details,
+          url: siteUrl(),
+        })}
+      />
       <PublicSessionView
         session={session}
         action={

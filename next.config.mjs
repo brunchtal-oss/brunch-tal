@@ -55,12 +55,29 @@ function supabaseImagePatterns() {
 // sent as a referrer. The value may arrive encoded (%2F).
 const LOGIN_WITH_JOIN_NEXT = /^\/login\?(?:.*&)?next=(?:\/|%2F)join(?:\/|%2F)/i
 
+// Bots that get the whole HTML at once (metadata in <head>, no streamed
+// Suspense content) instead of the streamed page (fix-seo-editor). Next's
+// own list, copied from the installed version
+// (next/dist/shared/lib/router/utils/html-bots.js; next.config.test.ts checks
+// it is still all here after an upgrade), plus the AI search and answer
+// crawlers, which read the HTML without running scripts.
+const NEXT_HTML_LIMITED_BOTS =
+  "[\\w-]+-Google|Google-[\\w-]+|Chrome-Lighthouse|Slurp|DuckDuckBot|baiduspider|yandex|sogou|bitlybot|tumblr|vkShare|quora link preview|redditbot|ia_archiver|Bingbot|BingPreview|applebot|facebookexternalhit|facebookcatalog|Twitterbot|LinkedInBot|Slackbot|Discordbot|WhatsApp|SkypeUriPreview|Yeti|googleweblight"
+const AI_HTML_LIMITED_BOTS =
+  "GPTBot|OAI-SearchBot|ChatGPT-User|ClaudeBot|Claude-SearchBot|Claude-User|PerplexityBot|Perplexity-User|CCBot"
+export const HTML_LIMITED_BOTS = new RegExp(
+  `${NEXT_HTML_LIMITED_BOTS}|${AI_HTML_LIMITED_BOTS}`,
+  "i"
+)
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Required for 'use cache' / cacheTag / updateTag (architecture spine AD-16).
   cacheComponents: true,
 
   allowedDevOrigins: privateIPv4Addresses(),
+
+  htmlLimitedBots: HTML_LIMITED_BOTS,
 
   images: {
     remotePatterns: supabaseImagePatterns(),

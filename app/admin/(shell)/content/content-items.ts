@@ -44,6 +44,20 @@ export const EDITABLE_PAGES = {
     { slug: "join-form", key: "photo_consent", kind: "photo_consent" },
   ],
   site: [{ slug: "site", key: "footer", kind: "footer" }],
+  // fix-seo-editor: search and shares. The site's share image, then one
+  // record per public page (lib/seo/page-seo.ts › SEO_PAGE_KEYS), one slug,
+  // so publishing an SEO change never publishes a page's pending content.
+  seo: [
+    { slug: "seo", key: "site", kind: "seo_site" },
+    { slug: "seo", key: "home", kind: "page_seo" },
+    { slug: "seo", key: "sessions", kind: "page_seo" },
+    { slug: "seo", key: "how_it_works", kind: "page_seo" },
+    { slug: "seo", key: "gallery", kind: "page_seo" },
+    { slug: "seo", key: "contact", kind: "page_seo" },
+    { slug: "seo", key: "privacy", kind: "page_seo" },
+    { slug: "seo", key: "terms", kind: "page_seo" },
+    { slug: "seo", key: "accessibility", kind: "page_seo" },
+  ],
   // Story 5.5: the legal pages, one block each.
   privacy: [{ slug: "privacy", key: "body", kind: "legal_text" }],
   terms: [{ slug: "terms", key: "body", kind: "legal_text" }],
@@ -81,6 +95,7 @@ export const EDITABLE_SLUGS = [
   "terms",
   "accessibility",
   "cookie-notice",
+  "seo",
 ] as const
 
 export type EditableSlug = (typeof EDITABLE_SLUGS)[number]
@@ -304,7 +319,9 @@ export function sectionSummary(content: ContentObject): string {
   if (Array.isArray(content.items)) {
     return adminCopy.content.itemCount(content.items.length)
   }
+  // h1: an SEO record (fix-seo-editor), named by its page's H1.
   for (const name of [
+    "h1",
     "title",
     "question",
     "business_name",
@@ -367,4 +384,16 @@ export function editorStatementBlock(section: ContentSection): boolean {
   return (
     section.kind === "accessibility_statement" && !section.published_content
   )
+}
+
+// The section editor's preview link: the page's preview, opened at the
+// section. The SEO page (fix-seo-editor) is not a page of the site, so it
+// has none.
+export function editorPreviewHref(
+  pageId: EditorPageId,
+  key: string
+): string | undefined {
+  return pageId === "seo"
+    ? undefined
+    : `/admin/content/${pageId}/preview?section=${key}`
 }

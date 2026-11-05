@@ -92,16 +92,25 @@ async function Sections({ params }: { params: Promise<{ slug: string }> }) {
           />
         )}
       </ul>
+      {/* fix-seo-editor: the session pages are automatic, not rows here. */}
+      {id === "seo" && (
+        <p className="text-[15px] text-pretty text-muted-foreground">
+          {copy.seo.sessionsLine}
+        </p>
+      )}
       <div className="flex flex-col gap-3">
-        <Link
-          href={`/admin/content/${id}/preview`}
-          className={cn(
-            buttonVariants({ variant: "outline", size: "lg" }),
-            "h-12 self-start rounded-[4px] border-foreground bg-transparent text-base"
-          )}
-        >
-          {copy.preview}
-        </Link>
+        {/* The SEO page is not a page of the site: nothing to preview. */}
+        {id !== "seo" && (
+          <Link
+            href={`/admin/content/${id}/preview`}
+            className={cn(
+              buttonVariants({ variant: "outline", size: "lg" }),
+              "h-12 self-start rounded-[4px] border-foreground bg-transparent text-base"
+            )}
+          >
+            {copy.preview}
+          </Link>
+        )}
         <Link
           href="/admin/content"
           className="inline-flex min-h-11 items-center self-start text-[15px] underline underline-offset-4"

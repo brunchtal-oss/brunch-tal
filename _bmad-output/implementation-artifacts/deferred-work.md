@@ -915,7 +915,7 @@
     - `htmlLimitedBots`: הגדרה של Next לבוטים שלא מריצים JavaScript (המטא-דאטה נשלח לפני הדף).
     - founder: ‏Person של המייסדת בנתונים המובנים.
   evidence: בדיקה על האתר החי אחרי הדומיין תראה מה מהם באמת חסר ומה משתלם.
-  status: פתוח
+  status: סגור (fix-seo-editor, 2026-11-05). נבנו: FAQPage ב-`/how-it-works` (רק שאלות גלויות עם תשובה), ‏Event בכל עמוד מפגש שהאתר מציג, ‏`/llms.txt` (‏404 כל עוד המתג כבוי), אזהרת טקסט חלופי בעורך התוכן בלבד (כולל עמוד ה-SEO), ו-`htmlLimitedBots` (ברירת המחדל של Next ועוד בוטי AI; נבדק מקומית ב-`next start`: ל-GPTBot הכותרת הראשית בתוך `<main>` בלי תוכן מוזרם, ולכן נשאר). ‏founder נסגר בלי בנייה (החלטת המשתמשת, 2026-11-05).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-fix-search-ready.md`
   target: לא נקבע
@@ -926,3 +926,7 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-fix-search-ready.md`
   summary: The robots noindex `metadata` exports on /login, /admin/login, /offline, /install and the /me and /admin layouts have no automated test.
   evidence: Review of fix-search-ready (verification-gap). The X-Robots-Tag header still covers these paths in both states; check the meta with curl on the live site in 6.9.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-fix-seo-editor.md`
+  summary: The SEO editor's `seoExtras` (published rows to outline rows, the Google preview context) has no automated test.
+  evidence: Review of fix-seo-editor (verification-gap). Admin guidance only, the public site is unaffected; covering it needs a pure `outlineRows`/preview-context extraction first.

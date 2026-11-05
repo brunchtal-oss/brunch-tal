@@ -110,19 +110,20 @@ export function LegalTextView({
 // line with the contact details that are already published (the phone and
 // WhatsApp of the business details); without them, the first sentence only.
 export function AccessibilityView({
+  heading = shellCopy.public.footer.accessibility,
   content,
   publishedAt,
   details,
 }: {
+  // The page's H1 (the content editor's SEO page, fix-seo-editor).
+  heading?: string
   content: AccessibilityStatementContent | null
   publishedAt: string | null
   details: BusinessDetailsContent | null
 }) {
   return (
     <>
-      <PublicPageHeading>
-        {shellCopy.public.footer.accessibility}
-      </PublicPageHeading>
+      <PublicPageHeading>{heading}</PublicPageHeading>
       {content ? (
         <>
           <div className={COLUMN}>

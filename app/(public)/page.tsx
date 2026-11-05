@@ -10,19 +10,22 @@ import {
   guestWhatsappHref,
 } from "@/lib/content/business-details"
 import { getPublishedPage, sectionContent } from "@/lib/content/pages"
-import { homeTitle, shareImage } from "@/lib/seo/metadata"
+import {
+  getPageSeo,
+  pageH1,
+  pageMetadata,
+  pageShareImage,
+} from "@/lib/seo/page-seo"
 import { getSiteSeo } from "@/lib/seo/site-seo"
 import { buildStructuredData } from "@/lib/seo/structured-data"
 import { siteUrl } from "@/lib/site-url"
 
-// "{name} · {hero title}" as is (no template), else the name alone; the
-// canonical is the site's root (fix-search-ready). Cached readers only.
+// The SEO page's Google title, else "{name} · {hero title}" as is (no
+// template), else the name alone; the canonical is the site's root
+// (fix-search-ready, fix-seo-editor). Cached readers only.
 export async function generateMetadata(): Promise<Metadata> {
-  const { name, heroTitle } = await getSiteSeo()
-  return {
-    title: { absolute: homeTitle(name, heroTitle) },
-    alternates: { canonical: "/" },
-  }
+  const [seo, site] = await Promise.all([getPageSeo(), getSiteSeo()])
+  return pageMetadata(seo, "home", site, siteUrl())
 }
 
 // The home page (stories 5.1, 5.2, 5.16, 5.3): HomeView (the hero, the
@@ -35,14 +38,17 @@ export async function generateMetadata(): Promise<Metadata> {
 // The business and the website as structured data (JSON-LD), from the same
 // published content (fix-search-ready).
 export default async function HomePage() {
-  const [home, about, gallery, details, site, seo] = await Promise.all([
-    getPublishedPage("home"),
-    getPublishedPage("about"),
-    getPublishedPage("gallery"),
-    getBusinessDetails(),
-    getPublishedPage("site"),
-    getSiteSeo(),
-  ])
+  const [home, about, gallery, details, site, seo, pageSeo] = await Promise.all(
+    [
+      getPublishedPage("home"),
+      getPublishedPage("about"),
+      getPublishedPage("gallery"),
+      getBusinessDetails(),
+      getPublishedPage("site"),
+      getSiteSeo(),
+      getPageSeo(),
+    ]
+  )
 
   return (
     <>
@@ -52,7 +58,7 @@ export default async function HomePage() {
           url: siteUrl(),
           details,
           description: seo.description,
-          image: shareImage(seo, siteUrl()).url,
+          image: pageShareImage(pageSeo, null, seo, siteUrl()).url,
           footer: sectionContent(site.sections, "footer", "footer"),
         })}
       />
@@ -61,7 +67,8 @@ export default async function HomePage() {
         about={about.sections}
         gallery={gallery.sections}
         images={{ ...home.images, ...about.images, ...gallery.images }}
-        name={businessNameOf(details)}
+        // The H1: the SEO page's, else the business name (fix-seo-editor).
+        name={pageH1(pageSeo, "home", businessNameOf(details))}
         whatsappHref={guestWhatsappHref(details)}
         sessions={
           <Suspense fallback={null}>

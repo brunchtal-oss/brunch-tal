@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { babyAgeText } from "./copy/baby-age"
 import {
+  formatIsraelIsoDateTime,
   addMonthsToPlainDate,
   babyAge,
   birthDateRange,
@@ -267,5 +268,16 @@ describe("addMonthsToPlainDate / birthDateRange (story 5.20)", () => {
       max: "2027-07-22",
     })
     expect(birthDateRange("bad")).toBeNull()
+  })
+})
+
+describe("formatIsraelIsoDateTime (fix-seo-editor)", () => {
+  it("Israel's local time with its offset, summer and winter", () => {
+    expect(formatIsraelIsoDateTime("2026-06-10T07:00:00Z")).toBe(
+      "2026-06-10T10:00:00+03:00"
+    )
+    expect(formatIsraelIsoDateTime("2026-12-01T22:30:00Z")).toBe(
+      "2026-12-02T00:30:00+02:00"
+    )
   })
 })
