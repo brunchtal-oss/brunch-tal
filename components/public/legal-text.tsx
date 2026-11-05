@@ -1,6 +1,7 @@
 import { Fragment } from "react"
 
 import { shellCopy } from "@/lib/copy/shell"
+import { normalizePhone } from "@/lib/phone"
 import { cn } from "@/lib/utils"
 
 // The text of a legal page (story 5.5): plain text Tal writes in the editor,
@@ -52,12 +53,11 @@ export function safeHref(
       return null
     }
   }
-  // At least one digit: "tel:()" is not a phone.
-  if (/^tel:\+?[\d\-\s()]+$/i.test(url) && /\d/.test(url)) {
-    return {
-      href: `tel:${url.slice(4).replace(/[^\d+]/g, "")}`,
-      external: false,
-    }
+  // An Israeli number only (normalizePhone): "tel:()" or a foreign number is
+  // not a link.
+  if (/^tel:/i.test(url)) {
+    const digits = normalizePhone(url.slice(4))
+    return digits ? { href: `tel:+${digits}`, external: false } : null
   }
   if (/^mailto:[^\s@<>"]+@[^\s@<>"]+$/i.test(url)) {
     return { href: url, external: false }

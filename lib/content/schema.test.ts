@@ -158,6 +158,11 @@ describe("businessDetailsSchema", () => {
   it.each([
     ["a WhatsApp number that cannot be read", { whatsapp_phone: "abc" }],
     ["a phone that cannot be read", { phone: "12" }],
+    ["a foreign WhatsApp number", { whatsapp_phone: "+44 20 7946 0958" }],
+    ["a foreign phone", { phone: "+44 20 7946 0958" }],
+    ["a WhatsApp number without its 0", { whatsapp_phone: "544256456" }],
+    ["a phone without its 0", { phone: "544256456" }],
+    ["a mobile with a digit missing", { whatsapp_phone: "054425645" }],
     ["a navigation link over http", { navigation_url: "http://x.example" }],
     ["a navigation link that is not a URL", { navigation_url: "maps" }],
   ])("refuses %s", (_label, change) => {
@@ -377,6 +382,12 @@ describe("accessibilityStatementSchema", () => {
       accessibilityStatementSchema.safeParse({
         ...statement,
         contact_phone: "abc",
+      }).success
+    ).toBe(false)
+    expect(
+      accessibilityStatementSchema.safeParse({
+        ...statement,
+        contact_phone: "+44 20 7946 0958",
       }).success
     ).toBe(false)
   })

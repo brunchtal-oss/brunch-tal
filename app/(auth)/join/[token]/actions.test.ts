@@ -159,6 +159,54 @@ describe("validateJoin", () => {
     })
   })
 
+  it.each([
+    ["too long", `${"a".repeat(243)}@example.com`],
+    ["crafted", `a@${".".repeat(100_000)}@`],
+    ["dots only after the @", "a@b..c"],
+  ])("rejects a %s email at once", (_label, email) => {
+    const started = performance.now()
+    const result = validateJoin(form({ email }))
+    expect(performance.now() - started).toBeLessThan(1000)
+    expect(result).toEqual({
+      ok: false,
+      errors: [{ field: "email", message: "email" }],
+    })
+  })
+
+  it("rejects text fields over the database limits", () => {
+    expect(validateJoin(form({ fullName: "a".repeat(200) })).ok).toBe(true)
+    expect(validateJoin(form({ dietaryNotes: "a".repeat(2000) })).ok).toBe(true)
+    expect(
+      validateJoin(
+        form({
+          babyName: ["A", "b".repeat(100)],
+          birthDate: ["2026-09-01", "2026-09-02"],
+        })
+      ).ok
+    ).toBe(true)
+    expect(validateJoin(form({ dietaryNotes: "a".repeat(2001) }))).toEqual({
+      ok: false,
+      errors: [{ field: "dietaryNotes", message: "INVALID_INPUT" }],
+    })
+    expect(
+      validateJoin(
+        form({
+          fullName: "a".repeat(201),
+          dietaryNotes: "a".repeat(2001),
+          babyName: ["A", "b".repeat(101)],
+          birthDate: ["2026-09-01", "2026-09-02"],
+        })
+      )
+    ).toEqual({
+      ok: false,
+      errors: [
+        { field: "fullName", message: "INVALID_INPUT" },
+        { field: "dietaryNotes", message: "INVALID_INPUT" },
+        { field: "babyName", index: 1, message: "INVALID_INPUT" },
+      ],
+    })
+  })
+
   it("flags the second baby by its index", () => {
     const result = validateJoin(
       form({ babyName: ["A", ""], birthDate: ["2026-09-01", ""] })

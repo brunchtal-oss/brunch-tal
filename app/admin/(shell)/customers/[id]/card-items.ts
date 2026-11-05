@@ -3,6 +3,7 @@ import { METER_MAX } from "@/components/customer/entry-meter"
 import type { StatusTone } from "@/components/shared/status-chip"
 import { consentLines } from "@/lib/admin/photo-consents"
 import { adminCopy } from "@/lib/copy/admin"
+import { isEmailShape } from "@/lib/email"
 import { formatAgorot } from "@/lib/money"
 import { formatLocalPhone } from "@/lib/phone"
 import {
@@ -444,12 +445,9 @@ export function accountView(account: CardAccount): AccountView {
   }
 }
 
-// A soft check before "save" (the RPC checks again): one @, a dot after it,
-// no spaces.
-const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-
 // The edited email when it is a change worth sending, else null (unchanged
-// or not an address yet). resume (the change is stuck): the same address
+// or not an address yet: isEmailShape, a soft check before "save"; the RPC
+// checks again). resume (the change is stuck): the same address
 // may be sent again, since Auth may already hold it and
 // admin_begin_email_change resumes on the same hash.
 export function emailChange(
@@ -458,7 +456,7 @@ export function emailChange(
   resume = false
 ): string | null {
   const next = edited.trim().toLowerCase()
-  if (!EMAIL_SHAPE.test(next) || next.length > 254) return null
+  if (!isEmailShape(next)) return null
   return !resume && next === saved.trim().toLowerCase() ? null : next
 }
 

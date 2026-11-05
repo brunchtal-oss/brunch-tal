@@ -495,6 +495,13 @@ describe("the account section (story 2.8)", () => {
     expect(emailChange("roni@example.test", "roni@")).toBeNull()
     expect(emailChange("roni@example.test", "ro ni@example.test")).toBeNull()
     expect(emailChange("", "new@example.test")).toBe("new@example.test")
+    const long = `${"a".repeat(243)}@example.com`
+    expect(emailChange("roni@example.test", long)).toBeNull()
+    const started = performance.now()
+    expect(
+      emailChange("roni@example.test", `a@${".".repeat(100_000)}@`)
+    ).toBeNull()
+    expect(performance.now() - started).toBeLessThan(1000)
   })
 
   it("emailChange while stuck: the saved address may be sent again", () => {

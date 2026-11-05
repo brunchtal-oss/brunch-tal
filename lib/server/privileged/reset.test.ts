@@ -184,7 +184,7 @@ describe("completeReset", () => {
     expect(completeCalls).toBe(2)
   })
 
-  it("continues to the password update when begin answers already_completed (lost response)", async () => {
+  it("never touches the password when begin answers already_completed (a used form)", async () => {
     rpc.mockImplementation(async (name: string) =>
       name === "reset_begin"
         ? { data: { ...beginOk.data, already_completed: true }, error: null }
@@ -192,12 +192,12 @@ describe("completeReset", () => {
     )
     updateUserById.mockResolvedValue(updateOk)
 
-    await expect(completeReset(TOKEN, "Test-pass-123", KEY)).resolves.toEqual({
+    await expect(completeReset(TOKEN, "Other-pass-456", KEY)).resolves.toEqual({
       ok: true,
-      data: { email: "dev-customer@example.com" },
+      data: { email: null },
     })
-    expect(rpcNames()).toEqual(["reset_begin", "reset_complete"])
-    expect(updateUserById).toHaveBeenCalledTimes(1)
+    expect(rpcNames()).toEqual(["reset_begin"])
+    expect(updateUserById).not.toHaveBeenCalled()
   })
 
   it("never logs the token, password or email", async () => {
