@@ -97,6 +97,7 @@
 ### Supabase Auth
 
 - [ ] הרשמה ציבורית כבויה (Authentication → Sign In / Providers → Allow new users to sign up). גם ב-`supabase/config.toml`.
+- [ ] כניסה אנונימית כבויה (Authentication → Sign In / Providers → Allow anonymous sign-ins). גם ב-`supabase/config.toml`.
 - [ ] ‏Confirm email כבוי.
 - [ ] ‏Site URL ו-Redirect URLs לכתובת של הסביבה (localhost, ‏preview, ‏production).
 - [ ] "Automatically expose new tables" כבוי (גם בפיתוח).
