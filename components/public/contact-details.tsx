@@ -2,6 +2,7 @@ import { MapPinIcon, PhoneIcon } from "lucide-react"
 
 import type { BusinessDetailsContent } from "@/lib/content/schema"
 import { shellCopy } from "@/lib/copy/shell"
+import { normalizePhone } from "@/lib/phone"
 import { cn } from "@/lib/utils"
 
 const copy = shellCopy.public.contact
@@ -15,10 +16,12 @@ export function hasContactDetails(
   return Boolean(details && (details.phone || details.address))
 }
 
-// A tel: link for a phone from the business details (digits and a leading
-// "+" only).
+// A tel: link for a phone from the content: international, "tel:+972…", so
+// it dials from abroad too. The content schema accepts only a phone that
+// normalizes; anything else keeps its digits and a leading "+".
 export function telHref(phone: string): string {
-  return `tel:${phone.replace(/[^\d+]/g, "")}`
+  const digits = normalizePhone(phone)
+  return digits ? `tel:+${digits}` : `tel:${phone.replace(/[^\d+]/g, "")}`
 }
 
 const ROW = "flex min-h-16 items-center gap-4 py-3"

@@ -9,6 +9,11 @@ describe("whatsappHref", () => {
     ["+972 54 425 6456", "https://wa.me/972544256456"],
     ["00972544256456", "https://wa.me/972544256456"],
     ["972544256456", "https://wa.me/972544256456"],
+    // Copied from WhatsApp: wrapped in direction marks.
+    ["\u202A+972 54-425-6456\u202C", "https://wa.me/972544256456"],
+    ["\u200E+972 54-425-6456", "https://wa.me/972544256456"],
+    ["+972 054-425-6456", "https://wa.me/972544256456"],
+    ["00972-054-425-6456", "https://wa.me/972544256456"],
   ])("reads %s as an international number", (phone, href) => {
     expect(whatsappHref(phone)).toBe(href)
   })
@@ -35,10 +40,17 @@ describe("whatsappHref", () => {
     expect(whatsappHref("abc", "hi")).toBeNull()
   })
 
-  it.each([null, undefined, "", "abc", "05", "+0123456789", "1".repeat(16)])(
-    "gives no link for %j",
-    (phone) => {
-      expect(whatsappHref(phone)).toBeNull()
-    }
-  )
+  it.each([
+    null,
+    undefined,
+    "",
+    "abc",
+    "05",
+    "+0123456789",
+    "1".repeat(16),
+    "544256456",
+    "+44 20 7946 0958",
+  ])("gives no link for %j", (phone) => {
+    expect(whatsappHref(phone)).toBeNull()
+  })
 })

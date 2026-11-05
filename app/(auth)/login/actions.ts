@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation"
 
 import { destinationFor, toSessionRole } from "@/lib/auth/destination"
+import { MAX_EMAIL_LENGTH } from "@/lib/email"
 import type { ErrorCode } from "@/lib/errors"
 import { callRpc } from "@/lib/rpc"
 import {
@@ -47,15 +48,24 @@ export async function loginAction(
   }
 
   // The rate limit (story 2.8) before any call to Auth: per IP and per
-  // account (the normalized email), counted whether the account exists or
-  // not, with one message for both.
+  // account from this IP (IP first, then the normalized email: the key is
+  // cut at 512 characters, so a long email never drops the IP). Wrong
+  // logins from one IP never block the account from another one. Counted
+  // whether the account exists or not, with one message for both.
+  const ip = await clientIp()
   const limited = rateLimitCode(
     await hitRateLimit("login", {
-      ip: await clientIp(),
-      id: email.trim().toLowerCase(),
+      ip,
+      id: `${ip} ${email.trim().toLowerCase()}`,
     })
   )
   if (limited) return { ok: false, code: limited, email }
+
+  // Not an address any field accepts: the same answer as a wrong password,
+  // without a call to Auth.
+  if (email.trim().length > MAX_EMAIL_LENGTH) {
+    return { ok: false, code: "INVALID_CREDENTIALS", email }
+  }
 
   const supabase = await createClient()
   const { error } = await supabase.auth.signInWithPassword({

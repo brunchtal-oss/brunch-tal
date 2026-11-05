@@ -58,6 +58,12 @@ describe("LegalText (story 5.5)", () => {
     expect(safeHref("tel:abc")).toBeNull()
     expect(safeHref("tel:()")).toBeNull()
     expect(safeHref("tel:--")).toBeNull()
+    expect(safeHref("tel:+44 20 7946 0958")).toBeNull()
+    expect(safeHref("tel:544256456")).toBeNull()
+    expect(safeHref("tel:054-425-6456")).toEqual({
+      href: "tel:+972544256456",
+      external: false,
+    })
     expect(safeHref("https://e.com")).toEqual({
       href: "https://e.com",
       external: true,

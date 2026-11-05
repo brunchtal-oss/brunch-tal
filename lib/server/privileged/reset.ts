@@ -11,10 +11,12 @@ import { createServiceClient } from "@/lib/server/privileged/service-client"
 // the Auth update; reset_complete locks and re-checks the token again.
 // A retry after a failure in the middle continues from the stored state:
 // the token stays `pending` until reset_complete, and updating the password
-// again is idempotent. The idempotency key (one per page load, AD-5) makes a
-// retry after a lost reset_complete response succeed: reset_begin answers
-// already_completed and reset_complete returns its stored result. Logs carry
-// only ids and error codes, never the token, password or email.
+// again is idempotent. A retry with the same idempotency key (one per page
+// load, AD-5) after the link was consumed never touches the password:
+// reset_begin answers already_completed and the action succeeds with no
+// email (the "saved, log in" screen), so a form used once cannot change the
+// password again. Logs carry only ids and error codes, never the token,
+// password or email.
 
 export type { ResetLinkState }
 
@@ -56,10 +58,15 @@ export async function completeReset(
 
   const begin = await callRpc(supabase, "reset_begin", args)
   if (!begin.ok) return begin
-  // already_completed: this key already consumed the link and only the
-  // response was lost. The password update below is repeated (idempotent)
-  // and reset_complete returns its stored result.
-  const { token_id: tokenId, user_id: userId } = begin.data as BeginResult
+  const {
+    token_id: tokenId,
+    user_id: userId,
+    already_completed: alreadyCompleted,
+  } = begin.data as BeginResult
+  // already_completed: this key already consumed the link (only the response
+  // was lost, or the form was submitted again). The password stays as it
+  // is; no automatic sign-in, she logs in herself.
+  if (alreadyCompleted) return { ok: true, data: { email: null } }
 
   const updated = await supabase.auth.admin.updateUserById(userId, { password })
   if (updated.error) {

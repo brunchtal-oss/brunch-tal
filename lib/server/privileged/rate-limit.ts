@@ -9,7 +9,11 @@ import { createServiceClient } from "@/lib/server/privileged/service-client"
 // decision 2026-10-13): public.rate_limit_hit in our database, fixed
 // 15-minute window, counted per IP and per account or token. This file is
 // its only caller. The thresholds live in the SQL:
-//   login: 20 per IP, 8 per account (normalized email)
+//   login: 20 per IP, 8 per account from one IP (the key "<ip> <normalized
+//          email>"). The account key carries the IP so wrong logins from
+//          one IP never lock the account for everyone (the admin too).
+//          Guessing one account from many IPs is left to the CAPTCHA of
+//          story 6.9.
 //   token: 20 per IP, 10 per token (join submit, claim, reset submit)
 // The keys reach the database only to be hashed there; they are never
 // logged here (AD-22).
@@ -19,7 +23,7 @@ export type RateLimitBucket = "login" | "token"
 export type RateLimitKeys = {
   // The client IP (clientIp()).
   ip: string
-  // The account (normalized email) or the raw token.
+  // The account ("<ip> <normalized email>", login) or the raw token.
   id: string
 }
 
