@@ -133,6 +133,13 @@ export const shellCopy = {
     // The alt of the default share image (public/og-default.jpg), used
     // when the home hero has no published photo (fix-search-ready).
     ogDefaultAlt: "שולחן בראנץ׳ ערוך מלמעלה",
+    // The section headings of /llms.txt (fix-seo-editor); the rest of the
+    // file is published content and the sessions.
+    llms: {
+      pages: "עמודי האתר",
+      sessions: "בראנצ׳ים קרובים",
+      policies: "מדיניות ונגישות",
+    },
     // A public page with no published section yet.
     emptyPage: "התוכן של העמוד הזה עוד בהכנה",
     emptyPageWhatsapp: "לשאלות אפשר לפנות בוואטסאפ",

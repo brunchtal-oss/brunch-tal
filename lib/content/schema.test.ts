@@ -9,10 +9,12 @@ import {
   footerSchema,
   heroSchema,
   legalTextSchema,
+  pageSeoSchema,
   photoConsentQuestion,
   photoConsentSchema,
   promoBannerSchema,
   schemaForKind,
+  seoSiteSchema,
   schemaForSection,
   stepsSchema,
   testimonialsSchema,
@@ -471,5 +473,48 @@ describe("cookieNoticeSchema", () => {
     expect(cookieNoticeSchema.parse({ hidden: true, body: "b" })).toEqual({
       body: "b",
     })
+  })
+})
+
+describe("SEO records (fix-seo-editor)", () => {
+  const MEDIA = "11111111-1111-4111-8111-111111111111"
+
+  it("page_seo: a required H1, optional title, description and image", () => {
+    expect(
+      pageSeoSchema.parse({ h1: " גלריה ", title: "", description: "  " })
+    ).toEqual({ h1: "גלריה" })
+    expect(
+      pageSeoSchema.parse({
+        h1: "h",
+        title: "t",
+        description: "d",
+        image: { media_id: MEDIA, focus_x: 50, focus_y: 50 },
+        hidden: true,
+      })
+    ).toEqual({
+      h1: "h",
+      title: "t",
+      description: "d",
+      image: { media_id: MEDIA, focus_x: 50, focus_y: 50 },
+    })
+    expect(pageSeoSchema.safeParse({ h1: "" }).success).toBe(false)
+    expect(pageSeoSchema.safeParse({}).success).toBe(false)
+    expect(pageSeoSchema.safeParse({ h1: "x".repeat(81) }).success).toBe(false)
+    expect(
+      pageSeoSchema.safeParse({ h1: "h", title: "x".repeat(71) }).success
+    ).toBe(false)
+    expect(
+      pageSeoSchema.safeParse({ h1: "h", description: "x".repeat(301) }).success
+    ).toBe(false)
+    // Long for Google, still allowed (a soft warning in the editor).
+    expect(
+      pageSeoSchema.safeParse({ h1: "h", title: "x".repeat(70) }).success
+    ).toBe(true)
+  })
+
+  it("seo_site: an optional image only", () => {
+    expect(seoSiteSchema.parse({})).toEqual({})
+    expect(schemaForKind("seo_site")).toBe(seoSiteSchema)
+    expect(schemaForKind("page_seo")).toBe(pageSeoSchema)
   })
 })

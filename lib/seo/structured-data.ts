@@ -1,8 +1,13 @@
 import type {
   BusinessDetailsContent,
+  FaqContent,
   FooterContent,
 } from "@/lib/content/schema"
 import { footerLinks, visibleSection } from "@/lib/content/visible"
+import { customerCopy } from "@/lib/copy/customer"
+import { agorotToDecimal } from "@/lib/money"
+import type { PublicSession } from "@/lib/sessions/public"
+import { formatIsraelIsoDateTime } from "@/lib/time"
 
 // The home page's structured data (JSON-LD, fix-search-ready): the business
 // and the website, from published content only (the business details, the
@@ -76,6 +81,105 @@ export function buildStructuredData(input: StructuredDataInput) {
     publisher: { "@id": `${input.url}/#business` },
   }
   return { "@context": "https://schema.org", "@graph": [business, website] }
+}
+
+/**
+ * /how-it-works' questions and answers as an FAQPage (fix-seo-editor): only
+ * what the page shows (faq: the visible, published section), and of it only
+ * the items with both a question and an answer (the page opens those). null
+ * when none is left.
+ */
+export function buildFaqData(faq: FaqContent | null) {
+  const items = (faq?.items ?? []).flatMap((item) => {
+    const question = filled(item.question)
+    const answer = filled(item.answer)
+    return item.hidden !== true && question && answer
+      ? [
+          {
+            "@type": "Question",
+            name: question,
+            acceptedAnswer: { "@type": "Answer", text: answer },
+          },
+        ]
+      : []
+  })
+  if (items.length === 0) return null
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: items,
+  }
+}
+
+export type EventDataInput = {
+  /** A session the public site shows (getPublicSession). */
+  session: Pick<
+    PublicSession,
+    | "id"
+    | "concept_name"
+    | "starts_at"
+    | "description"
+    | "display_price_agorot"
+    | "photo"
+  >
+  /** The business name (the place's name). */
+  name: string
+  details: BusinessDetailsContent | null
+  /** The site's base URL (siteUrl()). */
+  url: string
+}
+
+/**
+ * A session page's Event (fix-seo-editor): only what the page shows. Its
+ * title ("בראנץ׳ {concept}", as the page's <title>), the business as the
+ * organizer, the start in Israel time with its offset, always
+ * scheduled (a cancelled or past session has no page), in person, at the
+ * business (its published address when there is one, shown in the footer),
+ * the photo, the description, and the display price when one is set. Never
+ * places, availability or the session's kind.
+ */
+export function buildEventData(input: EventDataInput) {
+  const { session } = input
+  const pageUrl = `${input.url}/sessions/${session.id}`
+  const address = filled(input.details?.address)
+  const price = session.display_price_agorot
+  return withoutEmpty({
+    "@context": "https://schema.org",
+    "@type": "Event",
+    // The session's title, as its <title> and llms.txt name it.
+    name: customerCopy.sessionTitle(session.concept_name),
+    startDate: formatIsraelIsoDateTime(session.starts_at),
+    eventStatus: "https://schema.org/EventScheduled",
+    eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+    location: withoutEmpty({
+      "@type": "Place",
+      name: input.name,
+      address: address
+        ? {
+            "@type": "PostalAddress",
+            streetAddress: address,
+            addressCountry: "IL",
+          }
+        : undefined,
+    }),
+    image: session.photo?.photoUrl,
+    description: filled(session.description),
+    url: pageUrl,
+    offers:
+      price !== null
+        ? {
+            "@type": "Offer",
+            price: agorotToDecimal(price),
+            priceCurrency: "ILS",
+            url: pageUrl,
+          }
+        : undefined,
+    organizer: {
+      "@type": "Organization",
+      name: input.name,
+      url: `${input.url}/`,
+    },
+  })
 }
 
 /**

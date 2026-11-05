@@ -123,6 +123,27 @@ export function formatSessionDate(value: DateInput): string {
   return `${formatWeekday(value)} ${formatDayMonth(value)}`
 }
 
+/**
+ * "2026-10-12T10:00:00+03:00": an instant as Israel's local date and time
+ * with its offset (summer time included), for structured data (an Event's
+ * startDate, fix-seo-editor).
+ */
+export function formatIsraelIsoDateTime(value: DateInput): string {
+  const p = parts(value, "en-CA", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+    timeZoneName: "longOffset",
+  })
+  // "GMT+03:00", or "GMT" at a zero offset.
+  const offset = p.timeZoneName.replace(/^GMT/, "") || "+00:00"
+  return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}:${p.second}${offset}`
+}
+
 /** "יום שני, 12 באוקטובר, 10:00" - the full text for screen readers. */
 export function formatAccessibleDateTime(value: DateInput): string {
   return `${formatAccessibleDate(value)}, ${formatTime(value)}`

@@ -10,25 +10,29 @@ import {
   guestWhatsappHref,
 } from "@/lib/content/business-details"
 import { shellCopy } from "@/lib/copy/shell"
+import { getPageSeo, pageH1, pageMetadata } from "@/lib/seo/page-seo"
+import { getSiteSeo } from "@/lib/seo/site-seo"
 import { listUpcomingPublicSessions } from "@/lib/sessions/public"
+import { siteUrl } from "@/lib/site-url"
 
-const title = shellCopy.nav.publicSessions
-
-export const metadata: Metadata = {
-  title,
-  alternates: { canonical: "/sessions" },
+// Title, canonical and, when set in the content editor's SEO page, the
+// description and share image (pageMetadata, fix-seo-editor). Cached readers.
+export async function generateMetadata(): Promise<Metadata> {
+  const [seo, site] = await Promise.all([getPageSeo(), getSiteSeo()])
+  return pageMetadata(seo, "sessions", site, siteUrl())
 }
 
 // /sessions (story 5.16, CAP-1): every published session that has not
 // started, by date, as a session-card linking to /sessions/[id]. Nothing
 // about places and no type label; a signed-in customer sees "נרשמת" on her
 // own sessions (story 5.21). Dynamic (AD-2): the list is read with the
-// anon client inside <Suspense> after connection(); the heading is static. A
-// read error goes to the error boundary.
-export default function PublicSessionsPage() {
+// anon client inside <Suspense> after connection(); the heading (the SEO
+// page's H1, cached) is static. A read error goes to the error boundary.
+export default async function PublicSessionsPage() {
+  const seo = await getPageSeo()
   return (
     <div className="pb-12">
-      <PublicPageHeading>{title}</PublicPageHeading>
+      <PublicPageHeading>{pageH1(seo, "sessions", "")}</PublicPageHeading>
       <Suspense
         fallback={
           <p className="mx-auto w-full max-w-[720px] px-6 pt-8 text-center text-muted-foreground">

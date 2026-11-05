@@ -38,6 +38,7 @@ import {
 } from "./content-items"
 import { ContentStatusChip } from "./content-status-chip"
 import { GalleryArrange } from "./gallery-arrange"
+import { SeoPreview, type SeoPreviewContext } from "./seo-preview"
 import {
   addItem,
   fieldId,
@@ -93,7 +94,11 @@ export function ContentEditor({
   backLabel = copy.backToList,
   previewUrls = {},
   statementBlock = false,
+  seo,
 }: {
+  // An SEO record (fix-seo-editor): the live Google-style preview's context,
+  // and the page's heading outline (rendered on the server).
+  seo?: { preview: SeoPreviewContext; outline: React.ReactNode }
   // The accessibility statement before its first publish (story 5.5):
   // "publish" is aria-disabled, with the list of the missing required
   // fields above it, while the form lacks one.
@@ -510,6 +515,16 @@ export function ContentEditor({
         )
       )}
 
+      {seo && (
+        <SeoPreview
+          context={seo.preview}
+          h1={state.text.h1 ?? ""}
+          title={state.text.title ?? ""}
+          description={state.text.description ?? ""}
+        />
+      )}
+      {seo?.outline}
+
       {spec.hideable && spec.hideAsSwitch && (
         <ShowSwitch
           label={spec.hideAsSwitch.label}
@@ -683,7 +698,11 @@ function TextInput({
   const id = fieldId(path)
   const hintId = field.hint ? `${id}-hint` : undefined
   const errorId = error ? `${id}-error` : undefined
-  const describedBy = [hintId, errorId].filter(Boolean).join(" ")
+  // A recommended length (fix-seo-editor): the count, and a warning past it.
+  const length = value.trim().length
+  const over = field.softMax !== undefined && length > field.softMax
+  const counterId = field.softMax !== undefined ? `${id}-count` : undefined
+  const describedBy = [hintId, counterId, errorId].filter(Boolean).join(" ")
   const common = {
     id,
     name: path,
@@ -698,7 +717,15 @@ function TextInput({
   }
   return (
     <Field data-invalid={error ? true : undefined}>
-      <FieldLabel htmlFor={id}>{field.label}</FieldLabel>
+      <FieldLabel htmlFor={id}>
+        {field.label}
+        {field.term && (
+          <>
+            {" "}
+            <LabelTerm term={field.term} />
+          </>
+        )}
+      </FieldLabel>
       {field.multiline ? (
         <Textarea
           {...common}
@@ -717,6 +744,22 @@ function TextInput({
       {field.hint && (
         <FieldDescription id={hintId}>{field.hint}</FieldDescription>
       )}
+      {field.softMax !== undefined && (
+        <p
+          id={counterId}
+          className={cn(
+            "text-[13px] text-pretty",
+            over ? "text-warning" : "text-muted-foreground"
+          )}
+        >
+          <span className="tabular-nums">
+            {copy.seo.counter(length, field.softMax)}
+          </span>
+          {over && (
+            <span className="block">{copy.seo.over(field.softMax)}</span>
+          )}
+        </p>
+      )}
       {error && (
         <p id={errorId} className="text-[15px] text-error">
           {fieldErrorMessage(error)}
@@ -726,8 +769,68 @@ function TextInput({
   )
 }
 
-// An image field (story 5.4): image-upload-field with the field's aspect,
-// its saved draft file as the preview, and its error under it.
+// The control an image field edits its value with. Today the upload
+// (image-upload-field); a later "pick from uploaded images" control plugs in
+// here, through ImageInput's `control`, without changing the fields that
+// use it (the SEO images among them, fix-seo-editor).
+export type ImageControlProps = {
+  id: string
+  field: ImageField
+  value: ImageValue | null
+  previewUrl: string | null
+  error: string | null
+  removable: boolean
+  // A soft warning under the alt text.
+  altWarning: string | null
+  onChange: (value: ImageValue | null) => void
+}
+
+function UploadImageControl({
+  id,
+  field,
+  value,
+  previewUrl,
+  error,
+  removable,
+  altWarning,
+  onChange,
+}: ImageControlProps) {
+  return (
+    <ImageUploadField
+      id={id}
+      label={field.label}
+      labelTerm={field.term}
+      hint={field.hint}
+      altHint={field.altHint}
+      aspectRatio={field.aspects[0]?.ratio}
+      value={value}
+      previewUrl={previewUrl}
+      error={error}
+      onChange={onChange}
+      createMedia={createMediaAction}
+      removable={removable}
+      altWarning={altWarning}
+    />
+  )
+}
+
+// The professional term after a label (the SEO page, user decision
+// 2026-11-05): small and muted, read left to right, inside the label so a
+// screen reader reads it with the label.
+function LabelTerm({ term }: { term: string }) {
+  return (
+    <span
+      dir="ltr"
+      className="ms-2 text-[13px] font-normal text-muted-foreground"
+    >
+      {term}
+    </span>
+  )
+}
+
+// An image field (story 5.4): its control with the field's aspect, its
+// saved draft file as the preview, and its error under it. An image without
+// alt text gets a soft warning (fix-seo-editor; content editor only).
 function ImageInput({
   field,
   path,
@@ -735,8 +838,10 @@ function ImageInput({
   previewUrls,
   error,
   removable = true,
+  control: Control = UploadImageControl,
   onChange,
 }: {
+  control?: React.ComponentType<ImageControlProps>
   field: ImageField
   path: string
   value: ImageValue | null
@@ -747,18 +852,15 @@ function ImageInput({
   onChange: (value: ImageValue | null) => void
 }) {
   return (
-    <ImageUploadField
+    <Control
       id={fieldId(path)}
-      label={field.label}
-      hint={field.hint}
-      altHint={field.altHint}
-      aspectRatio={field.aspects[0]?.ratio}
+      field={field}
       value={value}
-      previewUrl={value ? previewUrls[value.media_id] : null}
+      previewUrl={value ? (previewUrls[value.media_id] ?? null) : null}
       error={error ? fieldErrorMessage(error) : null}
-      onChange={onChange}
-      createMedia={createMediaAction}
       removable={removable}
+      altWarning={value && !value.alt.trim() ? copy.altMissing : null}
+      onChange={onChange}
     />
   )
 }

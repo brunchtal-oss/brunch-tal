@@ -368,6 +368,28 @@ export const cookieNoticeSchema = z.object({
 
 export type CookieNoticeContent = z.infer<typeof cookieNoticeSchema>
 
+// seo › <page> (fix-seo-editor): what search engines and shares say about one
+// public page. The H1 is required (the page always has one); the Google
+// title, the description and the share image are optional, and without them
+// the site uses its automatic values (lib/seo/page-seo.ts). The image sits at
+// $.image, the only path publishing and the site resolve. No hidden.
+export const pageSeoSchema = z.object({
+  h1: requiredText(80),
+  title: optionalText(70),
+  description: optionalText(300),
+  image: imageSchema.optional(),
+})
+
+export type PageSeoContent = z.infer<typeof pageSeoSchema>
+
+// seo › site (fix-seo-editor): the share image of every page that has none
+// of its own.
+export const seoSiteSchema = z.object({
+  image: imageSchema.optional(),
+})
+
+export type SeoSiteContent = z.infer<typeof seoSiteSchema>
+
 // kind -> schema. A kind without a schema cannot be saved or published from
 // the editor.
 export const contentSchemas = {
@@ -384,6 +406,8 @@ export const contentSchemas = {
   legal_text: legalTextSchema,
   accessibility_statement: accessibilityStatementSchema,
   cookie_notice: cookieNoticeSchema,
+  page_seo: pageSeoSchema,
+  seo_site: seoSiteSchema,
 } as const
 
 export type ContentByKind = {

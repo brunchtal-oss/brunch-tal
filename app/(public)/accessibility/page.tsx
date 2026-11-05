@@ -7,11 +7,15 @@ import {
   getPublishedSections,
   sectionContent,
 } from "@/lib/content/pages"
-import { shellCopy } from "@/lib/copy/shell"
+import { getPageSeo, pageH1, pageMetadata } from "@/lib/seo/page-seo"
+import { getSiteSeo } from "@/lib/seo/site-seo"
+import { siteUrl } from "@/lib/site-url"
 
-export const metadata: Metadata = {
-  title: shellCopy.public.footer.accessibility,
-  alternates: { canonical: "/accessibility" },
+// Title, canonical and, when set in the content editor's SEO page, the
+// description and share image (pageMetadata, fix-seo-editor). Cached readers.
+export async function generateMetadata(): Promise<Metadata> {
+  const [seo, site] = await Promise.all([getPageSeo(), getSiteSeo()])
+  return pageMetadata(seo, "accessibility", site, siteUrl())
 }
 
 // /accessibility (story 5.5, CAP-33): the published accessibility statement
@@ -19,13 +23,15 @@ export const metadata: Metadata = {
 // publish. Before the first publish: the interim line with the published
 // contact details (content:global). No sign-in; always linked.
 export default async function AccessibilityPage() {
-  const [sections, publishedAt, details] = await Promise.all([
+  const [sections, publishedAt, details, seo] = await Promise.all([
     getPublishedSections("accessibility"),
     getPublishedAt("accessibility"),
     getBusinessDetails(),
+    getPageSeo(),
   ])
   return (
     <AccessibilityView
+      heading={pageH1(seo, "accessibility", "")}
       content={sectionContent(sections, "statement", "accessibility_statement")}
       publishedAt={publishedAt}
       details={details}

@@ -28,6 +28,12 @@ export type TextField = {
   // Numbers and links read left to right inside the RTL form.
   ltr?: boolean
   showWhen?: ShowWhen
+  // A recommended length (fix-seo-editor): a counter under the field and a
+  // warning past it; never blocks a save (maxLength does).
+  softMax?: number
+  // The professional term after the label, part of it (the SEO page:
+  // "H1", "Title tag"...).
+  term?: string
 }
 
 // An aspect the image is shown in on the site (width / height); the editor
@@ -42,6 +48,8 @@ export type ImageField = {
   label: string
   hint?: string
   altHint?: string
+  // The professional term after the label, part of it ("og:image").
+  term?: string
   aspects: readonly ImageAspect[]
   showWhen?: ShowWhen
 }
@@ -97,6 +105,8 @@ const image = (
 // (min-height 560px at 360px), about and the gallery are 4:5.
 const HERO_ASPECTS: readonly ImageAspect[] = [{ ratio: 360 / 560 }]
 const PORTRAIT_ASPECTS: readonly ImageAspect[] = [{ ratio: 4 / 5 }]
+// A share image (WhatsApp, social networks) is shown at about 1.91:1.
+const SHARE_ASPECTS: readonly ImageAspect[] = [{ ratio: 1200 / 630 }]
 
 const listTitle = text("title", copy.listTitle, { maxLength: 120 })
 
@@ -400,6 +410,48 @@ export function sectionSpec(ref: SectionRef): SectionSpec {
           text("link_label", copy.cookieNotice.linkLabel, {
             hint: copy.cookieNotice.linkHint,
             maxLength: 80,
+          }),
+        ],
+      }
+    // fix-seo-editor: the SEO page. Lengths per Google's display (title
+    // about 60, description about 155): a soft warning only.
+    case "seo_site":
+      return {
+        hideable: false,
+        fields: [
+          image("image", copy.seo.siteImage, {
+            hint: copy.seo.siteImageHint,
+            term: copy.seo.terms.image,
+            aspects: SHARE_ASPECTS,
+          }),
+        ],
+      }
+    case "page_seo":
+      return {
+        hideable: false,
+        fields: [
+          text("h1", copy.seo.h1, {
+            hint: copy.seo.h1Hint,
+            term: copy.seo.terms.h1,
+            maxLength: 80,
+          }),
+          text("title", copy.seo.title, {
+            hint: copy.seo.titleHint,
+            term: copy.seo.terms.title,
+            maxLength: 70,
+            softMax: 60,
+          }),
+          text("description", copy.seo.description, {
+            hint: copy.seo.descriptionHint,
+            term: copy.seo.terms.description,
+            multiline: true,
+            maxLength: 300,
+            softMax: 155,
+          }),
+          image("image", copy.seo.image, {
+            hint: copy.seo.imageHint,
+            term: copy.seo.terms.image,
+            aspects: SHARE_ASPECTS,
           }),
         ],
       }

@@ -163,15 +163,17 @@ export function shareImage(
 }
 
 /**
- * A page's description for search results and shares. Today every page
- * (null: the site-wide default of the root layout) gets the site
- * description, the home hero's. This is the single place where a per-page
- * description from the content editor will plug in (PR B).
+ * A page's description for search results and shares: the description Tal
+ * set for the page in the content editor's SEO page (fix-seo-editor), else
+ * the site description, the home hero's. page null: the root layout's
+ * site-wide default.
  */
 export function pageDescription(
   page: string | null,
-  site: Pick<SiteSeo, "description">
+  site: Pick<SiteSeo, "description">,
+  seo?: { pages: Partial<Record<string, { description?: string }>> }
 ): string | null {
-  void page
-  return site.description
+  const record =
+    page && seo && Object.hasOwn(seo.pages, page) ? seo.pages[page] : undefined
+  return record?.description?.trim() || site.description
 }
