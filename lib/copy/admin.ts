@@ -502,6 +502,19 @@ export const adminCopy = {
     focusAt: (x: number, y: number) =>
       `נקודת המוקד: ${x}% מהשמאל, ${y}% מלמעלה`,
     previewAlt: "תצוגה מקדימה של התמונה",
+    // Choosing an image already on the site (fix-media-picker): the sheet.
+    pick: "בחירה מהתמונות שבאתר",
+    pickTitle: "תמונות שבאתר",
+    pickHint:
+      "הבחירה יוצרת עותק: הטקסט החלופי והמוקד שתשני כאן לא ישנו את התמונה במקום אחר",
+    pickSearch: "חיפוש לפי הטקסט החלופי",
+    pickLoading: "טוען את התמונות…",
+    pickEmpty: "עוד אין באתר תמונות לבחירה. אפשר להעלות תמונה חדשה",
+    pickNoMatch: "אין תמונה שהטקסט החלופי שלה מתאים לחיפוש",
+    // A tile without alt text, by its place in the grid.
+    pickNoAlt: (n: number) => `תמונה ${n} בלי טקסט חלופי`,
+    pickCount: (n: number) => (n === 1 ? "תמונה אחת" : `${n} תמונות`),
+    picked: "התמונה נבחרה. היא תוצג באתר אחרי הפרסום",
   },
   // /admin/products (story 2.6, wording approved by the user on 2026-10-04).
   products: {

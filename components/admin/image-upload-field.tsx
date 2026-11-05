@@ -2,8 +2,12 @@
 
 import { useEffect, useId, useRef, useState } from "react"
 import Image from "next/image"
-import { ImagePlusIcon } from "lucide-react"
+import { ImagePlusIcon, ImagesIcon } from "lucide-react"
 
+import {
+  MediaPickerSheet,
+  type ChosenMedia,
+} from "@/components/admin/media-picker-sheet"
 import { InlineNotice } from "@/components/shared/inline-notice"
 import { OnlineButton, useOnlineGuard } from "@/components/shared/online-button"
 import { Button } from "@/components/ui/button"
@@ -32,6 +36,17 @@ export type ImageFieldValue = {
   focus_y: number
 }
 
+// The field's value for a chosen image: the copy's own row, with the alt
+// and focus of the image on the site, pre-filled and editable.
+export function chosenValue(chosen: ChosenMedia): ImageFieldValue {
+  return {
+    media_id: chosen.mediaId,
+    alt: chosen.alt,
+    focus_x: chosen.focusX,
+    focus_y: chosen.focusY,
+  }
+}
+
 type Problem =
   "notSupported" | "tooLarge" | "uploadFailed" | "unreadable" | { code: string }
 
@@ -49,6 +64,9 @@ const OUTLINE =
 // dimmed). Then "alt text (recommended)": not required (user decision
 // 2026-10-05); empty is alt="". The file is never cropped. Nothing is public
 // until the page (or the session) is published.
+// fix-media-picker (user decision 2026-11-05): "choose from the images on
+// the site" opens MediaPickerSheet; a choice is a copy with its own row, so
+// from here on it is exactly a fresh upload (alt and focus pre-filled).
 export function ImageUploadField({
   id,
   label,
@@ -93,6 +111,11 @@ export function ImageUploadField({
   const [local, setLocal] = useState<Record<string, string>>({})
   const [ratio, setRatio] = useState<number | null>(null)
   const [announce, setAnnounce] = useState("")
+  const [picking, setPicking] = useState(false)
+  // A fresh sheet (list, search) for every opening; the keys of the copies
+  // stay for the field's life (a retry after closing reuses its key).
+  const [pickings, setPickings] = useState(0)
+  const [pickKeys] = useState(() => new Map<string, string>())
 
   useEffect(
     () => () => {
@@ -185,6 +208,39 @@ export function ImageUploadField({
     }
   }
 
+  function onChosen(chosen: ChosenMedia) {
+    const previewUrl = chosen.previewUrl
+    if (previewUrl) {
+      setLocal((current) => ({ ...current, [chosen.mediaId]: previewUrl }))
+    }
+    setProblem(null)
+    setPending(null)
+    setRatio(null)
+    onChange(chosenValue(chosen))
+    setAnnounce(copy.picked)
+    setPicking(false)
+    // The opener may be gone (the empty field became the preview): focus
+    // goes back to the field's own button once the sheet has closed.
+    window.setTimeout(() => document.getElementById(id)?.focus(), 250)
+  }
+
+  const pickButton = (
+    <Button
+      type="button"
+      variant="outline"
+      className={OUTLINE}
+      aria-haspopup="dialog"
+      disabled={busy}
+      onClick={() => {
+        setPickings((n) => n + 1)
+        setPicking(true)
+      }}
+    >
+      <ImagesIcon aria-hidden strokeWidth={1.5} />
+      {copy.pick}
+    </Button>
+  )
+
   function setFocus(focusX: number, focusY: number) {
     if (!value) return
     onChange({ ...value, focus_x: focusX, focus_y: focusY })
@@ -239,7 +295,7 @@ export function ImageUploadField({
         }}
       />
 
-      {value === null ? (
+      {value === null && (
         <button
           id={id}
           type="button"
@@ -272,7 +328,9 @@ export function ImageUploadField({
             </>
           )}
         </button>
-      ) : (
+      )}
+      {value === null && <div className="flex">{pickButton}</div>}
+      {value !== null && (
         <div className="flex flex-col gap-4">
           {src ? (
             <FocusPreview
@@ -338,6 +396,7 @@ export function ImageUploadField({
               {busy && <Spinner aria-hidden />}
               {copy.replace}
             </OnlineButton>
+            {pickButton}
             {removable && (
               <Button
                 type="button"
@@ -383,6 +442,14 @@ export function ImageUploadField({
           {error}
         </p>
       )}
+
+      <MediaPickerSheet
+        key={pickings}
+        open={picking}
+        onOpenChange={setPicking}
+        onChosen={onChosen}
+        keys={pickKeys}
+      />
     </div>
   )
 }

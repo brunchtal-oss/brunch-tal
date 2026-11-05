@@ -14,6 +14,10 @@ vi.mock("./actions", () => ({
   publishContentAction: vi.fn(),
   createMediaAction: vi.fn(),
 }))
+vi.mock("@/app/admin/(shell)/media/actions", () => ({
+  listMediaAction: vi.fn(),
+  copyMediaAction: vi.fn(),
+}))
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }),
   usePathname: () => "/admin/content/home",
@@ -347,6 +351,25 @@ describe("image fields", () => {
     expect(html).toContain(copy.blockImage)
     expect(html).toContain(imageCopy.choose)
     expect(html).toContain('accept="image/jpeg,image/png,image/webp"')
+  })
+
+  it("offers to choose an image already on the site, empty or filled", () => {
+    // The opener only opens the sheet: never a write button (no offline
+    // guard), and the sheet stays closed until it is tapped.
+    expect(editor()).toContain(imageCopy.pick)
+    expect(editor()).toContain('aria-haspopup="dialog"')
+    expect(editor()).not.toContain(imageCopy.pickHint)
+    const filled = editor({
+      initial: {
+        ...HERO,
+        images: {
+          image: { media_id: IMAGE_ID, alt: "", focus_x: 50, focus_y: 50 },
+        },
+      },
+      previewUrls: { [IMAGE_ID]: "https://x.example/signed" },
+    })
+    expect(filled).toContain(imageCopy.pick)
+    expect(filled).toContain(imageCopy.replace)
   })
 
   it("shows a saved photo with its focus point, alt (recommended) and remove", () => {
