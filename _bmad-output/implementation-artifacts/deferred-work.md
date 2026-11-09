@@ -873,7 +873,7 @@
   target: לא נקבע (קטנים, לפי הזדמנות)
   summary: (1) סקריפטי המסד של הפיתוח מקבלים כל תעודת TLS: לרכז אותם בעזר אחד שמאמת. (2) בדיקת מקביליות שמשחזרת חסימה הדדית (deadlock) נדירה בין שתי הרשמות עם זיכויים, לפני שבוחרים תיקון. (3) אזהרה בלי חסימה כשמפרסמים תמונה בלי טקסט חלופי. (4) `sizes` של תמונת "אודות" לפי היחס שלה, רק אם היא לאורך. (5) העברת `adminCopy.products.empty` לקופי משותף, ופירוק `shared` ב-`product-fields.tsx`.
   evidence: נבדק לפני 6.1 (2026-11-04); אף אחד מהם לא משפיע על לקוחות היום.
-  status: פתוח
+  status: פתוח, חוץ מ-(3): נסגר ב-fix-seo-editor (PR ‏#151, ‏2026-11-05), אזהרה בעורך התוכן.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-fix-hardening-db.md`
   target: אחרי fix-small-cleanups (כש-`product-screens.test.tsx` פנוי)
