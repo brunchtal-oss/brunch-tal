@@ -192,6 +192,29 @@ describe("the shared form with a result of the fill (story 2.15)", () => {
     expect(page).toContain("dev-fill@example.com")
     expect(page).not.toContain("<form")
     expect(page).not.toContain('name="password"')
+    // The guidance lines belong to the form only.
+    expect(page).not.toContain("ממלאים את הטופס יחד עם הלקוחה")
+    expect(page).not.toContain("בשליחה נוצר ללקוחה חשבון")
+  })
+
+  it("the guidance lines show with the form, also with an error, not on other screens", () => {
+    expect(form()).toContain("ממלאים את הטופס יחד עם הלקוחה")
+    expect(form()).toContain("בשליחה נוצר ללקוחה חשבון")
+    actionState.current = {
+      status: "error",
+      code: "SERVER_ERROR",
+      errors: [],
+      token: null,
+    }
+    expect(form()).toContain("ממלאים את הטופס יחד עם הלקוחה")
+    for (const status of ["used", "voided"] as const) {
+      actionState.current = { status, token: null }
+      const page = form()
+      expect(page).not.toContain("ממלאים את הטופס יחד עם הלקוחה")
+      expect(page).not.toContain("בשליחה נוצר ללקוחה חשבון")
+    }
+    actionState.current = { status: "conflict", reason: null, token: null }
+    expect(form()).not.toContain("ממלאים את הטופס יחד עם הלקוחה")
   })
 
   it("in progress: a notice above the form, which stays", () => {
@@ -199,7 +222,8 @@ describe("the shared form with a result of the fill (story 2.15)", () => {
     const page = form()
     expect(page).toContain("הטופס של הרכישה הזו כבר באמצע מילוי")
     expect(page).toContain("<form")
-    expect(page.indexOf("ממש עכשיו")).toBeLessThan(
+    expect(page.indexOf("באמצע מילוי")).toBeGreaterThan(-1)
+    expect(page.indexOf("באמצע מילוי")).toBeLessThan(
       page.indexOf('name="fullName"')
     )
   })

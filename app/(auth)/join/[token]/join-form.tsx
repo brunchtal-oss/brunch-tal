@@ -114,7 +114,11 @@ export function JoinForm({
   photoConsent,
   today,
   privacyHref = null,
+  lead = null,
 }: {
+  // Lines shown above the fields only while the form itself is shown (Tal's
+  // fill guidance); an outcome screen replaces them with the form.
+  lead?: React.ReactNode
   // The link of the first attempt; null: the action issues one (Tal's fill)
   // and hands it back in its result.
   token: string | null
@@ -407,6 +411,8 @@ export function JoinForm({
       {Object.entries(hidden).map(([name, value]) => (
         <input key={name} type="hidden" name={name} value={value} />
       ))}
+
+      {lead}
 
       {productName && amountAgorot !== null && (
         <p className="text-base font-semibold">
