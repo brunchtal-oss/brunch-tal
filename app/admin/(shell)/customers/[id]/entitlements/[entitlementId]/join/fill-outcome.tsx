@@ -306,6 +306,12 @@ export function FillJoinForm({
       specialBrunch={specialBrunch}
       today={today}
       privacyHref={privacyHref}
+      lead={
+        <div className="flex flex-col gap-2 text-base">
+          <p>{copy.together}</p>
+          <p>{copy.onSubmit}</p>
+        </div>
+      }
     />
   )
 }

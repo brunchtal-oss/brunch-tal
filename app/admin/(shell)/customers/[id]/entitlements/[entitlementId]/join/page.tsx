@@ -110,10 +110,8 @@ async function FillJoinContent({
   return (
     <div className="flex flex-col gap-6">
       {header}
-      <div className="flex flex-col gap-2 text-base">
-        <p>{copy.together}</p>
-        <p>{copy.onSubmit}</p>
-      </div>
+      {/* The two guidance lines are inside the form (FillJoinForm): an
+          outcome screen replaces them with the form. */}
       {photoConsent ? (
         <FillJoinForm
           entitlementId={entitlementId}
