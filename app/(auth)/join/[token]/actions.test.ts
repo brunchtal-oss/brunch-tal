@@ -385,10 +385,11 @@ describe("submitJoinAction", () => {
 
   it.each([
     ["voided", { status: "voided" }],
+    ["used", { status: "used" }],
     ["expired", { status: "expired" }],
     ["active", { status: "expired" }],
   ])(
-    "LINK_EXPIRED reads the link again: %s (story 2.14)",
+    "LINK_EXPIRED reads the link again: %s (stories 2.14, 2.15)",
     async (state, expected) => {
       submitJoin.mockResolvedValue({ ok: false, code: "LINK_EXPIRED" })
       getJoinTokenView.mockResolvedValue({ state })

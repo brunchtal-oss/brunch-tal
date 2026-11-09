@@ -139,8 +139,10 @@ export type JoinInput = {
 // stopped, with the reason for the wording (null when unknown).
 // email_exists: Auth refused the email; the link stays open for a corrected
 // email (story 2.4).
+// customerId: the new account (join_complete's stored result; null only for
+// a result stored before it carried one).
 export type JoinOutcome =
-  | { outcome: "joined"; email: string }
+  | { outcome: "joined"; email: string; customerId: string | null }
   | { outcome: "existing_account" }
   | { outcome: "identity_retry" }
   | { outcome: "email_exists" }
@@ -151,7 +153,7 @@ type BeginResult =
   | { outcome: "existing_account"; token_id: string }
   | { outcome: "identity_retry"; token_id: string }
   | { outcome: "conflict"; token_id: string; reason?: string | null }
-  | { outcome: "joined"; token_id: string }
+  | { outcome: "joined"; token_id: string; customer_id?: string | null }
   | {
       outcome: "discard_pending_user"
       token_id: string
@@ -159,7 +161,7 @@ type BeginResult =
     }
 
 type CompleteResult =
-  | { outcome: "joined"; token_id: string }
+  | { outcome: "joined"; token_id: string; customer_id?: string | null }
   | { outcome: "conflict"; token_id: string; reason?: string | null }
 
 type ServiceClient = ReturnType<typeof createServiceClient>
@@ -260,7 +262,7 @@ export function joinStepKey(
   pageKey: string,
   email: string,
   phone: string,
-  step: "begin" | "after_discard"
+  step: "begin" | "after_discard" | "fill"
 ): string {
   const hex = createHash("sha256")
     .update(
@@ -332,7 +334,17 @@ export async function submitJoin(
   input: JoinInput,
   idempotencyKey: string
 ): Promise<ActionResult<JoinOutcome>> {
-  const supabase = createServiceClient()
+  return runJoin(createServiceClient(), token, input, idempotencyKey)
+}
+
+// The join core with one link (steps 1 to 3 above), shared by the
+// customer's link and Tal's fill (story 2.15). No sign-in: the caller decides.
+async function runJoin(
+  supabase: ServiceClient,
+  token: string,
+  input: JoinInput,
+  idempotencyKey: string
+): Promise<ActionResult<JoinOutcome>> {
   // The same normalization as private.join_identity, for Auth and sign-in.
   const email = input.email.trim().toLowerCase()
 
@@ -379,7 +391,14 @@ export async function submitJoin(
   // This key already completed the join and only the response was lost: no
   // Auth change, just sign in.
   if (started.outcome === "joined") {
-    return { ok: true, data: { outcome: "joined", email } }
+    return {
+      ok: true,
+      data: {
+        outcome: "joined",
+        email,
+        customerId: started.customer_id ?? null,
+      },
+    }
   }
 
   const tokenId = started.token_id
@@ -428,5 +447,76 @@ export async function submitJoin(
     await deleteOrphanUser(supabase, started.pending_user_id, tokenId)
     return conflict(done.reason)
   }
-  return { ok: true, data: { outcome: "joined", email } }
+  return {
+    ok: true,
+    data: { outcome: "joined", email, customerId: done.customer_id ?? null },
+  }
+}
+
+// Tal fills the join form for a customer who paid (story 2.15, user decision
+// 2026-11-09). The first attempt (token null) calls admin_begin_join_fill
+// with the admin's own session (private.is_admin() inside, AD-4): it revokes
+// the purchase's live link without an audit row and returns a fresh internal
+// one (1 hour) once. The pending Auth user of a stuck link it revoked is
+// deleted (a failure is only logged). Then the join core runs with that link
+// exactly as for the customer, with the service role and the same step keys,
+// and never signs in: Tal's session stays as it is. The token goes back to
+// the form for the next attempt (a retry continues the same claiming link);
+// null drops it (the next attempt begins again). The password is never
+// returned.
+export type FillOutcome = JoinOutcome | { outcome: "details_taken" }
+
+export type FillResult = {
+  token: string | null
+  result: ActionResult<FillOutcome>
+}
+
+type BeginFillResult =
+  | { outcome: "details_taken" }
+  | {
+      outcome: "ready"
+      token_id: string
+      token?: string
+      revoked_pending_user_id?: string | null
+      reissue_required: boolean
+    }
+
+type SessionClient = Parameters<typeof callRpc>[0]
+
+export async function submitJoinFill(
+  session: SessionClient,
+  paymentId: string,
+  input: JoinInput,
+  pageKey: string,
+  token: string | null
+): Promise<FillResult> {
+  const service = createServiceClient()
+  let current = token
+  if (!current) {
+    const begun = await callRpc(session, "admin_begin_join_fill", {
+      p_payment_id: paymentId,
+      p_email: input.email,
+      p_phone: input.phone,
+      p_idempotency_key: joinStepKey(pageKey, input.email, input.phone, "fill"),
+    })
+    if (!begun.ok) return { token: null, result: begun }
+    const ready = begun.data as BeginFillResult
+    if (ready.outcome === "details_taken") {
+      return { token: null, result: { ok: true, data: ready } }
+    }
+    // The same key again after a lost response: the raw token is gone.
+    if (ready.reissue_required || !ready.token) {
+      return { token: null, result: { ok: false, code: "CONCURRENT_CHANGE" } }
+    }
+    if (ready.revoked_pending_user_id) {
+      await deleteOrphanUser(
+        service,
+        ready.revoked_pending_user_id,
+        ready.token_id
+      )
+    }
+    current = ready.token
+  }
+  const result = await runJoin(service, current, input, pageKey)
+  return { token: current, result }
 }

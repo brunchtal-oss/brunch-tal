@@ -1992,6 +1992,15 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_begin_join_fill: {
+        Args: {
+          p_email: string
+          p_idempotency_key: string
+          p_payment_id: string
+          p_phone: string
+        }
+        Returns: Json
+      }
       admin_begin_media_publish: {
         Args: {
           p_alt_text: string

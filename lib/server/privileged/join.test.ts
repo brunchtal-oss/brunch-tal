@@ -5,6 +5,7 @@ import {
   getJoinTokenView,
   joinStepKey,
   submitJoin,
+  submitJoinFill,
   type JoinInput,
 } from "./join"
 import { joinCopy } from "@/lib/copy/join"
@@ -305,7 +306,11 @@ describe("submitJoin", () => {
 
     await expect(submitJoin(TOKEN, INPUT, KEY)).resolves.toEqual({
       ok: true,
-      data: { outcome: "joined", email: "dev-join@example.com" },
+      data: {
+        outcome: "joined",
+        email: "dev-join@example.com",
+        customerId: USER_ID,
+      },
     })
     expect(order).toEqual([
       "join_begin",
@@ -443,7 +448,11 @@ describe("submitJoin", () => {
 
     await expect(submitJoin(TOKEN, INPUT, KEY)).resolves.toEqual({
       ok: true,
-      data: { outcome: "joined", email: "dev-join@example.com" },
+      data: {
+        outcome: "joined",
+        email: "dev-join@example.com",
+        customerId: USER_ID,
+      },
     })
     expect(getUserById).not.toHaveBeenCalled()
     expect(rpcNames()).toEqual(["join_begin"])
@@ -724,7 +733,11 @@ describe("submitJoin", () => {
       })
       await expect(submitJoin(TOKEN, INPUT, KEY)).resolves.toEqual({
         ok: true,
-        data: { outcome: "joined", email: "dev-join@example.com" },
+        data: {
+          outcome: "joined",
+          email: "dev-join@example.com",
+          customerId: USER_ID,
+        },
       })
       expect(createUser).toHaveBeenCalledTimes(1)
     })
@@ -814,5 +827,159 @@ describe("deleteOrphanUser", () => {
       deleteOrphanUser(createServiceClient(), USER_ID, "tok-1")
     ).resolves.toBe(false)
     expect(deleteUser).not.toHaveBeenCalled()
+  })
+})
+
+describe("submitJoinFill (story 2.15)", () => {
+  const PAYMENT = "33333333-3333-4333-8333-333333333333"
+  const FILL_TOKEN = "f".repeat(43)
+  const STUCK_USER = "44444444-4444-4444-8444-444444444444"
+  const sessionRpc = vi.fn()
+  const signInWithPassword = vi.fn()
+  const session = () =>
+    ({
+      rpc: sessionRpc,
+      auth: { signInWithPassword },
+    }) as unknown as Parameters<typeof submitJoinFill>[0]
+  const ready = (extra: object = {}) => ({
+    data: {
+      outcome: "ready",
+      token_id: "tok-fill",
+      revoked_pending_user_id: null,
+      reissue_required: false,
+      token: FILL_TOKEN,
+      ...extra,
+    },
+    error: null,
+  })
+
+  beforeEach(() => {
+    sessionRpc.mockReset()
+    signInWithPassword.mockReset()
+    rpc.mockImplementation(async (name: string) =>
+      name === "join_begin" ? claiming : joined
+    )
+    getUserById.mockResolvedValue(notFound)
+    createUser.mockResolvedValue(ok)
+  })
+
+  it("begins with the admin's session, joins with the new link and never signs in", async () => {
+    sessionRpc.mockResolvedValue(ready())
+
+    await expect(
+      submitJoinFill(session(), PAYMENT, INPUT, KEY, null)
+    ).resolves.toEqual({
+      token: FILL_TOKEN,
+      result: {
+        ok: true,
+        data: {
+          outcome: "joined",
+          email: "dev-join@example.com",
+          customerId: USER_ID,
+        },
+      },
+    })
+    expect(sessionRpc).toHaveBeenCalledWith("admin_begin_join_fill", {
+      p_payment_id: PAYMENT,
+      p_email: INPUT.email,
+      p_phone: INPUT.phone,
+      p_idempotency_key: joinStepKey(KEY, INPUT.email, INPUT.phone, "fill"),
+    })
+    expect(rpc).toHaveBeenCalledWith(
+      "join_begin",
+      expect.objectContaining({
+        p_token: FILL_TOKEN,
+        p_idempotency_key: BEGIN_KEY,
+      })
+    )
+    expect(signInWithPassword).not.toHaveBeenCalled()
+    expect(deleteUser).not.toHaveBeenCalled()
+  })
+
+  it("deletes the pending Auth user of the stuck link it revoked", async () => {
+    sessionRpc.mockResolvedValue(ready({ revoked_pending_user_id: STUCK_USER }))
+    await submitJoinFill(session(), PAYMENT, INPUT, KEY, null)
+    expect(profileRead).toHaveBeenCalledWith("profiles", STUCK_USER)
+    expect(deleteUser).toHaveBeenCalledWith(STUCK_USER)
+  })
+
+  it("a retry with the carried token skips the begin and continues the same link", async () => {
+    rpc.mockImplementation(async (name: string) =>
+      name === "join_begin"
+        ? claiming
+        : { data: null, error: { code: "XX000" } }
+    )
+    sessionRpc.mockResolvedValue(ready())
+    const first = await submitJoinFill(session(), PAYMENT, INPUT, KEY, null)
+    expect(first).toEqual({
+      token: FILL_TOKEN,
+      result: { ok: false, code: "SERVER_ERROR" },
+    })
+
+    rpc.mockImplementation(async (name: string) =>
+      name === "join_begin" ? claiming : joined
+    )
+    getUserById.mockResolvedValue(found)
+    updateUserById.mockResolvedValue(ok)
+    tokenView.mockResolvedValue({
+      data: { state_public: "active" },
+      error: null,
+    })
+    const second = await submitJoinFill(
+      session(),
+      PAYMENT,
+      INPUT,
+      KEY,
+      first.token
+    )
+    expect(second.result.ok).toBe(true)
+    expect(sessionRpc).toHaveBeenCalledTimes(1)
+    expect(createUser).toHaveBeenCalledTimes(1)
+  })
+
+  it("answers CONCURRENT_CHANGE when the stored result has no token (reissue_required)", async () => {
+    sessionRpc.mockResolvedValue({
+      data: {
+        outcome: "ready",
+        token_id: "tok-fill",
+        revoked_pending_user_id: null,
+        reissue_required: true,
+      },
+      error: null,
+    })
+    await expect(
+      submitJoinFill(session(), PAYMENT, INPUT, KEY, null)
+    ).resolves.toEqual({
+      token: null,
+      result: { ok: false, code: "CONCURRENT_CHANGE" },
+    })
+    expect(rpc).not.toHaveBeenCalled()
+  })
+
+  it("details of an existing account: nothing else runs", async () => {
+    sessionRpc.mockResolvedValue({
+      data: { outcome: "details_taken" },
+      error: null,
+    })
+    await expect(
+      submitJoinFill(session(), PAYMENT, INPUT, KEY, null)
+    ).resolves.toEqual({
+      token: null,
+      result: { ok: true, data: { outcome: "details_taken" } },
+    })
+    expect(rpc).not.toHaveBeenCalled()
+  })
+
+  it("passes the begin's business codes through, without a token", async () => {
+    sessionRpc.mockResolvedValue({
+      data: null,
+      error: p0001("LINK_IN_PROGRESS"),
+    })
+    await expect(
+      submitJoinFill(session(), PAYMENT, INPUT, KEY, null)
+    ).resolves.toEqual({
+      token: null,
+      result: { ok: false, code: "LINK_IN_PROGRESS" },
+    })
   })
 })

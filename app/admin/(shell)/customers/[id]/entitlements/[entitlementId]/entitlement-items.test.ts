@@ -17,6 +17,8 @@ import {
   termRows,
   weekLine,
   canVoid,
+  canFillJoin,
+  fillJoinHref,
   parseVoidPlan,
   showsBalance,
   voidBookingLine,
@@ -461,5 +463,21 @@ describe("purchase void (story 2.14)", () => {
         voidNotificationLines({ kind, bookings: booking.bookings })
       ).toEqual([none])
     }
+  })
+})
+
+describe("canFillJoin (story 2.15)", () => {
+  it("only an approved purchase that is not bound", () => {
+    expect(canFillJoin(PAGE)).toBe(false)
+    expect(canFillJoin({ ...PAGE, customer_id: null })).toBe(true)
+    expect(
+      canFillJoin({ ...PAGE, customer_id: null, payment_status: "voided" })
+    ).toBe(false)
+  })
+
+  it("the fill page sits under the unbound purchase", () => {
+    expect(fillJoinHref(ID)).toBe(
+      `/admin/customers/unbound/entitlements/${ID}/join`
+    )
   })
 })

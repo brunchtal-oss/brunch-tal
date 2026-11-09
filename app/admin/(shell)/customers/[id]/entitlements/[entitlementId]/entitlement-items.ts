@@ -434,6 +434,19 @@ export function canVoid(
   return page.payment_status === "approved" && page.status === "active"
 }
 
+// Story 2.15: Tal may fill the join form while the purchase is not bound and
+// not voided (also after its link expired).
+export function canFillJoin(
+  page: Pick<EntitlementPage, "customer_id" | "payment_status">
+): boolean {
+  return page.customer_id === null && page.payment_status === "approved"
+}
+
+// The fill page of an unbound purchase.
+export function fillJoinHref(entitlementId: string): string {
+  return `${entitlementHref(null, entitlementId)}/join`
+}
+
 export function isVoided(page: Pick<EntitlementPage, "payment_status">) {
   return page.payment_status === "voided"
 }

@@ -1,5 +1,5 @@
-import type { JoinFormState } from "./actions"
 import type { JoinField, JoinFieldError } from "./join-input"
+import type { SharedFormState } from "./join-view"
 
 // The two steps of the join form (story 2.13, user decision 2026-10-07).
 // Client side only: one form, one Server Action that checks every field.
@@ -41,7 +41,7 @@ export function stepForErrors(errors: readonly JoinFieldError[]): JoinStep {
 // email_exists and identity_retry (the email or phone to check) go back to
 // step 1; an error on a consent, or one without a field, stays in step 2.
 // null: the result replaces the form (or there is none yet), the step stays.
-export function stepForState(state: JoinFormState): JoinStep | null {
+export function stepForState(state: SharedFormState): JoinStep | null {
   if (!state) return null
   if (state.status === "email_exists" || state.status === "identity_retry") {
     return 1
@@ -61,7 +61,7 @@ export type FocusRequest =
 // focus goes there (the usual rule for errors; the step 1 heading for
 // email_exists and identity_retry, whose message sits under it).
 export function afterResult(
-  state: JoinFormState,
+  state: SharedFormState,
   currentStep: JoinStep
 ): { step: JoinStep; focus: FocusRequest | null } {
   const step = stepForState(state) ?? currentStep

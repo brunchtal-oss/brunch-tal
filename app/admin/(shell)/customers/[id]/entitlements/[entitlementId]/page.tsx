@@ -1,11 +1,13 @@
 import { Suspense } from "react"
 import type { Metadata } from "next"
+import Link from "next/link"
 import { notFound } from "next/navigation"
 
 import { EntryMeter, METER_MAX } from "@/components/customer/entry-meter"
 import { PageHeading } from "@/components/shared/page-heading"
 import { ResultNoticeHost } from "@/components/shared/result-notice"
 import { StatusChip } from "@/components/shared/status-chip"
+import { buttonClass } from "@/components/shared/button-class"
 import { adminCopy } from "@/lib/copy/admin"
 import { shellCopy } from "@/lib/copy/shell"
 import { formatLocalDate, formatShortDate } from "@/lib/time"
@@ -17,9 +19,11 @@ import { OPEN_CARDS_PATH } from "../../../open-cards/open-cards-items"
 import { BackLink } from "../../back-link"
 import { CorrectionRow } from "./correction-row"
 import {
+  canFillJoin,
   canVoid,
   draftOf,
   fieldEditable,
+  fillJoinHref,
   meterTotal,
   historyItems,
   nameOf,
@@ -232,6 +236,23 @@ async function EntitlementContent({
           </ol>
         )}
       </PageSection>
+
+      {/* Story 2.15: Tal fills the join form with the customer. */}
+      {canFillJoin(page) && (
+        <PageSection id="entitlement-join" title={copy.fill.sectionTitle}>
+          <p className="text-base">{copy.fill.sectionIntro}</p>
+          <Link
+            href={fillJoinHref(page.entitlement_id)}
+            className={buttonClass({
+              variant: "outline",
+              size: "lg",
+              className: "h-12 self-start text-base",
+            })}
+          >
+            {copy.fill.open}
+          </Link>
+        </PageSection>
+      )}
 
       {canVoid(page) && (
         <PageSection id="entitlement-void" title={copy.void.title}>

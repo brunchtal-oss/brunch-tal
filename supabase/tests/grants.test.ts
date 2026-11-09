@@ -111,6 +111,7 @@ const EXPECTED_GRANTS = [
   "function public.admin_anonymize_customer(p_customer_id uuid, p_confirmed boolean, p_idempotency_key uuid) authenticated EXECUTE",
   "function public.admin_approve_payment(p_customer_id uuid, p_payer_label text, p_product_id uuid, p_event_id uuid, p_amount_agorot integer, p_amount_override_reason text, p_paid_on date, p_payment_method_id uuid, p_reference text, p_note text, p_confirmed boolean, p_duplicate_confirmed boolean, p_idempotency_key uuid) authenticated EXECUTE",
   "function public.admin_begin_email_change(p_customer_id uuid, p_email text, p_idempotency_key uuid) authenticated EXECUTE",
+  "function public.admin_begin_join_fill(p_payment_id uuid, p_email text, p_phone text, p_idempotency_key uuid) authenticated EXECUTE",
   "function public.admin_begin_media_publish(p_media_id uuid, p_alt_text text, p_focus_x integer, p_focus_y integer) authenticated EXECUTE",
   "function public.admin_book_customer(p_customer_id uuid, p_event_id uuid, p_idempotency_key uuid) authenticated EXECUTE",
   "function public.admin_cancel_booking(p_booking_id uuid, p_confirmed boolean, p_idempotency_key uuid, p_reason text, p_choice text) authenticated EXECUTE",
