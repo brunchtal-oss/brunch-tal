@@ -10,6 +10,7 @@ import {
   listHref,
   listRequest,
   parseActivity,
+  parseInterest,
   parseQuery,
   shownList,
   toCustomerItem,
@@ -60,10 +61,12 @@ describe("listRequest (story 5.13)", () => {
     expect(listRequest(" רונ ", null)).toEqual({
       query: "רונ",
       activity: "all",
+      interest: null,
     })
     expect(listRequest("רונ", "inactive")).toEqual({
       query: "רונ",
       activity: "all",
+      interest: null,
     })
   })
 
@@ -71,8 +74,13 @@ describe("listRequest (story 5.13)", () => {
     expect(listRequest("", "inactive")).toEqual({
       query: "",
       activity: "inactive",
+      interest: null,
     })
-    expect(listRequest("  ", "all")).toEqual({ query: "", activity: "all" })
+    expect(listRequest("  ", "all")).toEqual({
+      query: "",
+      activity: "all",
+      interest: null,
+    })
     expect(listRequest("", null)).toBeNull()
   })
 
@@ -83,35 +91,54 @@ describe("listRequest (story 5.13)", () => {
 })
 
 describe("answerForFilter (story 5.13)", () => {
-  const answer = { query: "רונ", activity: "all" as const, ok: true }
+  const answer = {
+    query: "רונ",
+    activity: "all" as const,
+    interest: null,
+    ok: true,
+  }
 
   it("the answer for the same request", () => {
-    expect(answerForFilter({ query: "רונ", activity: "all" }, answer)).toBe(
-      answer
-    )
+    expect(
+      answerForFilter({ query: "רונ", activity: "all", interest: null }, answer)
+    ).toBe(answer)
   })
 
   it("null for another query or category, no request or no answer", () => {
     expect(
-      answerForFilter({ query: "רוני", activity: "all" }, answer)
+      answerForFilter(
+        { query: "רוני", activity: "all", interest: null },
+        answer
+      )
     ).toBeNull()
     expect(
-      answerForFilter({ query: "רונ", activity: "inactive" }, answer)
+      answerForFilter(
+        { query: "רונ", activity: "inactive", interest: null },
+        answer
+      )
     ).toBeNull()
-    expect(answerForFilter({ query: "", activity: "all" }, answer)).toBeNull()
+    expect(
+      answerForFilter({ query: "", activity: "all", interest: null }, answer)
+    ).toBeNull()
     expect(answerForFilter(null, answer)).toBeNull()
-    expect(answerForFilter({ query: "רונ", activity: "all" }, null)).toBeNull()
+    expect(
+      answerForFilter({ query: "רונ", activity: "all", interest: null }, null)
+    ).toBeNull()
   })
 })
 
 describe("emptyText (story 5.13)", () => {
   it("a search, or each category's own", () => {
-    expect(emptyText({ query: "רונ", activity: "all" })).toBe("לא נמצאו לקוחות")
-    expect(emptyText({ query: "", activity: "all" })).toBe("אין עדיין לקוחות")
-    expect(emptyText({ query: "", activity: "active" })).toBe(
+    expect(emptyText({ query: "רונ", activity: "all", interest: null })).toBe(
+      "לא נמצאו לקוחות"
+    )
+    expect(emptyText({ query: "", activity: "all", interest: null })).toBe(
+      "אין עדיין לקוחות"
+    )
+    expect(emptyText({ query: "", activity: "active", interest: null })).toBe(
       "אין לקוחות פעילות"
     )
-    expect(emptyText({ query: "", activity: "inactive" })).toBe(
+    expect(emptyText({ query: "", activity: "inactive", interest: null })).toBe(
       "אין לקוחות לא פעילות"
     )
   })
@@ -130,15 +157,15 @@ describe("shownList (story 5.13)", () => {
     has_more: more,
   })
 
-  const search = { query: "רונ", activity: "all" as const }
+  const search = { query: "רונ", activity: "all" as const, interest: null }
 
   it("the untouched screen (no category, under 2 characters): every customer", () => {
     expect(shownList(null, null)).toBeNull()
   })
 
   it("a category from the request, also while its answer is pending or failed", () => {
-    const request = { query: "", activity: "inactive" as const }
-    const category = { kind: "category", activity: "inactive" }
+    const request = { query: "", activity: "inactive" as const, interest: null }
+    const category = { kind: "category", activity: "inactive", interest: null }
     expect(shownList(request, null)).toEqual(category)
     expect(shownList(request, { ...request, list: list(3) })).toEqual(category)
   })
@@ -158,8 +185,59 @@ describe("shownList (story 5.13)", () => {
     const pending = { kind: "search", query: "רונ", count: null }
     expect(shownList(search, null)).toEqual(pending)
     expect(
-      shownList(search, { query: "רו", activity: "all", list: list(5) })
+      shownList(search, {
+        query: "רו",
+        activity: "all",
+        interest: null,
+        list: list(5),
+      })
     ).toEqual(pending)
+  })
+})
+
+// Story 2.16: the special-brunch filter (?interest=), with the categories.
+describe("the special-brunch filter", () => {
+  it("reads interest: a known code, else no filter (an invalid param)", () => {
+    expect(parseInterest({ interest: "grandma" })).toBe("grandma")
+    expect(parseInterest({ interest: ["couples", "grandpa"] })).toBe("couples")
+    expect(parseInterest({ interest: "aunt" })).toBeNull()
+    expect(parseInterest({})).toBeNull()
+  })
+
+  it("a chip keeps the category, a category keeps the chip", () => {
+    expect(categoryHref("inactive", "grandma")).toBe(
+      "/admin/customers?activity=inactive&interest=grandma"
+    )
+    expect(categoryHref("all", null)).toBe("/admin/customers?activity=all")
+  })
+
+  it("narrows the open category; a search is over every customer", () => {
+    expect(listRequest("", "inactive", "grandma")).toEqual({
+      query: "",
+      activity: "inactive",
+      interest: "grandma",
+    })
+    expect(listRequest("רונ", "inactive", "grandma")).toEqual({
+      query: "רונ",
+      activity: "all",
+      interest: null,
+    })
+  })
+
+  it("an answer for another filter is not shown", () => {
+    const answer = { query: "", activity: "all" as const, interest: null }
+    expect(
+      answerForFilter(
+        { query: "", activity: "all", interest: "couples" },
+        answer
+      )
+    ).toBeNull()
+  })
+
+  it("the export follows the filter of the open category", () => {
+    expect(
+      shownList({ query: "", activity: "active", interest: "couples" }, null)
+    ).toEqual({ kind: "category", activity: "active", interest: "couples" })
   })
 })
 

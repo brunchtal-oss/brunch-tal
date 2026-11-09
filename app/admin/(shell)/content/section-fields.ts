@@ -386,6 +386,24 @@ export function sectionSpec(ref: SectionRef): SectionSpec {
           }),
         ],
       }
+    // Story 2.16: text only; the options and their codes are fixed.
+    case "special_brunch":
+      return {
+        hideable: false,
+        fields: [
+          text("question", copy.specialBrunch.question, { maxLength: 200 }),
+          ...(["couples", "grandma", "grandpa"] as const).flatMap((code) => [
+            text(`${code}_title`, copy.specialBrunch[code].title, {
+              hint: copy.specialBrunch.titleHint,
+              maxLength: 200,
+            }),
+            text(`${code}_hint`, copy.specialBrunch[code].hint, {
+              hint: copy.specialBrunch.hintHint,
+              maxLength: 200,
+            }),
+          ]),
+        ],
+      }
     case "business_details":
       return { hideable: false, fields: BUSINESS_FIELDS }
     // Story 5.5: the legal pages are never hidden. A legal text is one field

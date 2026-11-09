@@ -5,7 +5,10 @@ import { notFound } from "next/navigation"
 
 import { PageHeading } from "@/components/shared/page-heading"
 import { Alert, AlertTitle } from "@/components/ui/alert"
-import { getPhotoConsentContent } from "@/lib/content/join-form"
+import {
+  getPhotoConsentContent,
+  getSpecialBrunchContent,
+} from "@/lib/content/join-form"
 import { getPublishedPageSlugs } from "@/lib/content/pages"
 import { adminCopy } from "@/lib/copy/admin"
 import { shellCopy } from "@/lib/copy/shell"
@@ -98,8 +101,9 @@ async function FillJoinContent({
     )
   }
 
-  const [photoConsent, legalSlugs] = await Promise.all([
+  const [photoConsent, specialBrunch, legalSlugs] = await Promise.all([
     getPhotoConsentContent(),
+    getSpecialBrunchContent(),
     getPublishedPageSlugs(["privacy"]),
   ])
 
@@ -119,6 +123,7 @@ async function FillJoinContent({
           productName={null}
           amountAgorot={null}
           photoConsent={photoConsent}
+          specialBrunch={specialBrunch}
           today={localToday()}
           privacyHref={legalSlugs.includes("privacy") ? "/privacy" : null}
         />

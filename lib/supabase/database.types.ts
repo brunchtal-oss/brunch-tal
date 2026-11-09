@@ -1523,6 +1523,7 @@ export type Database = {
           photo_consent_text_version: number | null
           privacy_consent_at: string | null
           privacy_policy_version: number | null
+          special_brunch_interests: string[]
         }
         Insert: {
           account_op_started_at?: string | null
@@ -1544,6 +1545,7 @@ export type Database = {
           photo_consent_text_version?: number | null
           privacy_consent_at?: string | null
           privacy_policy_version?: number | null
+          special_brunch_interests?: string[]
         }
         Update: {
           account_op_started_at?: string | null
@@ -1565,6 +1567,7 @@ export type Database = {
           photo_consent_text_version?: number | null
           privacy_consent_at?: string | null
           privacy_policy_version?: number | null
+          special_brunch_interests?: string[]
         }
         Relationships: []
       }
@@ -2138,15 +2141,26 @@ export type Database = {
         }
         Returns: Json
       }
-      admin_export_customers: {
-        Args: {
-          p_activity: string
-          p_columns: string[]
-          p_query: string
-          p_scope: string
-        }
-        Returns: Json
-      }
+      admin_export_customers:
+        | {
+            Args: {
+              p_activity: string
+              p_columns: string[]
+              p_query: string
+              p_scope: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_activity: string
+              p_columns: string[]
+              p_interest: string
+              p_query: string
+              p_scope: string
+            }
+            Returns: Json
+          }
       admin_finish_anonymize_customer: {
         Args: { p_customer_id: string; p_idempotency_key: string }
         Returns: Json
@@ -2210,10 +2224,12 @@ export type Database = {
         Args: { p_customer_id: string }
         Returns: Json
       }
-      admin_list_customers: {
-        Args: { p_activity: string; p_query: string }
-        Returns: Json
-      }
+      admin_list_customers:
+        | { Args: { p_activity: string; p_query: string }; Returns: Json }
+        | {
+            Args: { p_activity: string; p_interest: string; p_query: string }
+            Returns: Json
+          }
       admin_list_links: { Args: never; Returns: Json }
       admin_list_media: { Args: never; Returns: Json }
       admin_list_open_cards: { Args: { p_filter: string }; Returns: Json }

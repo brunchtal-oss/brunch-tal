@@ -12,6 +12,16 @@ vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({ auth: { getClaims } }),
 }))
 vi.mock("@/lib/time", () => ({ localToday: () => "2026-10-13" }))
+// Story 2.16: the option titles of the special-brunch cell.
+vi.mock("@/lib/content/join-form", async () => {
+  const { SPECIAL_BRUNCH_FALLBACK } = await import("@/lib/special-brunch")
+  return {
+    getSpecialBrunchContent: async () => ({
+      ...SPECIAL_BRUNCH_FALLBACK,
+      couples_title: "X",
+    }),
+  }
+})
 
 const BOM = "\uFEFF"
 
@@ -61,7 +71,48 @@ describe("GET /api/admin/export", () => {
         p_query: "רונ",
         p_columns: ["full_name", "phone"],
         p_activity: "all",
+        // Always sent: null = no filter (story 2.16).
+        p_interest: null,
       }
+    )
+  })
+
+  // Story 2.16 (matrix: export): the filter goes to the RPC; the cell is
+  // the published titles in code order.
+  it("sends the special-brunch filter and writes the titles", async () => {
+    callRpc.mockResolvedValue({
+      ok: true,
+      data: {
+        rows: [
+          {
+            full_name: "Dana",
+            phone_e164: null,
+            email: null,
+            special_brunch_interests: ["grandpa", "couples"],
+          },
+        ],
+      },
+    })
+    const response = await get(
+      "scope=all&activity=all&interest=couples&cols=full_name,special_brunch_interests"
+    )
+    expect(response.status).toBe(200)
+    expect(callRpc).toHaveBeenCalledWith(
+      expect.anything(),
+      "admin_export_customers",
+      {
+        p_scope: "all",
+        p_query: "",
+        p_columns: ["full_name", "special_brunch_interests"],
+        p_activity: "all",
+        p_interest: "couples",
+      }
+    )
+    const text = new TextDecoder("utf-8", { ignoreBOM: true }).decode(
+      await response.arrayBuffer()
+    )
+    expect(text).toBe(
+      `${BOM}"שם","בראנצ׳ים מיוחדים"\r\n"Dana","X, בראנץ׳ עם סבוש"\r\n`
     )
   })
 
@@ -79,6 +130,7 @@ describe("GET /api/admin/export", () => {
         p_query: "",
         p_columns: ["full_name", "phone", "email"],
         p_activity: "inactive",
+        p_interest: null,
       }
     )
     const text = new TextDecoder("utf-8", { ignoreBOM: true }).decode(
@@ -102,6 +154,8 @@ describe("GET /api/admin/export", () => {
       "scope=search&q=ר&activity=all&cols=full_name",
       "scope=search&q=רונ&cols=full_name",
       "scope=all&cols=full_name",
+      // Story 2.16: an unknown special brunch.
+      "scope=all&activity=all&interest=aunt&cols=full_name",
     ]) {
       const response = await get(query)
       expect(response.status, query).toBe(400)

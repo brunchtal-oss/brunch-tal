@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest"
 
 import { cubeTitleClass } from "@/components/shared/section-title"
 import { customerCopy } from "@/lib/copy/customer"
+import { SPECIAL_BRUNCH_FALLBACK } from "@/lib/special-brunch"
 
 import { BabiesSection } from "./babies-section"
 import { DetailsSection } from "./details-section"
@@ -57,6 +58,8 @@ describe("DetailsSection", () => {
       <DetailsSection
         fullName="Dana"
         dietaryNotes={null}
+        specialBrunch={SPECIAL_BRUNCH_FALLBACK}
+        specialBrunchInterests={[]}
         phone="054-123-4567"
         email="dana@example.test"
       />
@@ -69,6 +72,9 @@ describe("DetailsSection", () => {
     expect(html).toContain("dana@example.test")
     expect(html).toContain(copy.dietaryNotes)
     expect(html).toContain(copy.dietaryNotesEmpty)
+    // Story 2.16: nothing chosen yet.
+    expect(html).toContain(copy.specialBrunch)
+    expect(html).toContain(copy.specialBrunchEmpty)
     expect(html).not.toContain("<input")
     expect(html).not.toContain("<a ")
     // Never Tal's name in the customer's wording.
@@ -80,6 +86,8 @@ describe("DetailsSection", () => {
       <DetailsSection
         fullName="Dana"
         dietaryNotes="vegan"
+        specialBrunch={SPECIAL_BRUNCH_FALLBACK}
+        specialBrunchInterests={[]}
         phone={null}
         email={null}
       />
@@ -87,6 +95,22 @@ describe("DetailsSection", () => {
     expect(html).toContain(copy.dietaryNotes)
     expect(html).toContain("vegan")
     expect(html).not.toContain(copy.dietaryNotesEmpty)
+  })
+
+  // Story 2.16: her answers, by their titles (content), in code order.
+  it("shows the chosen special brunches by their titles", () => {
+    const html = renderToStaticMarkup(
+      <DetailsSection
+        fullName="Dana"
+        dietaryNotes={null}
+        specialBrunch={{ ...SPECIAL_BRUNCH_FALLBACK, couples_title: "X" }}
+        specialBrunchInterests={["couples", "grandpa"]}
+        phone={null}
+        email={null}
+      />
+    )
+    expect(html).toContain(`X, ${SPECIAL_BRUNCH_FALLBACK.grandpa_title}`)
+    expect(html).not.toContain(copy.specialBrunchEmpty)
   })
 })
 
@@ -98,6 +122,8 @@ describe("the profile's cubes", () => {
       <DetailsSection
         fullName="Dana"
         dietaryNotes={null}
+        specialBrunch={SPECIAL_BRUNCH_FALLBACK}
+        specialBrunchInterests={[]}
         phone={null}
         email={null}
       />

@@ -1,6 +1,10 @@
 import { shownCount, type ShownList } from "@/lib/admin/customer-export"
 import { adminCopy } from "@/lib/copy/admin"
 import { formatLocalPhone } from "@/lib/phone"
+import {
+  isSpecialBrunchCode,
+  type SpecialBrunchCode,
+} from "@/lib/special-brunch"
 import { formatShortDate } from "@/lib/time"
 
 // What /admin/customers shows (pure: the URL's q and activity in, rows in,
@@ -9,7 +13,8 @@ import { formatShortDate } from "@/lib/time"
 // check, user decision 2026-10-07): nothing until she types 2 characters,
 // and then it searches every customer. Story 5.13 (user decision 2026-10-20):
 // three category buttons each list a whole category; an inactive customer is
-// never hidden, only marked.
+// never hidden, only marked. Story 2.16: a second chip row narrows a
+// category to the customers who chose one special brunch (?interest=).
 
 const copy = adminCopy.customers
 
@@ -49,17 +54,27 @@ export function isCustomerActivity(value: unknown): value is CustomerActivity {
 
 // What the screen asks admin_list_customers for: a search (2+ characters
 // after trimming) over every customer, or, with an empty field, the open
-// category (query ""). One character, or an empty field without a category:
-// nothing.
-export type ListRequest = { query: string; activity: CustomerActivity }
+// category (query "") with its special-brunch filter (story 2.16). One
+// character, or an empty field without a category: nothing. A search, like
+// the categories, is over every customer: no filter.
+export type ListRequest = {
+  query: string
+  activity: CustomerActivity
+  interest: SpecialBrunchCode | null
+}
 
 export function listRequest(
   query: string,
-  category: CustomerActivity | null
+  category: CustomerActivity | null,
+  interest: SpecialBrunchCode | null = null
 ): ListRequest | null {
   const asked = query.trim()
-  if (asked.length >= 2) return { query: asked, activity: "all" }
-  if (asked === "" && category) return { query: "", activity: category }
+  if (asked.length >= 2) {
+    return { query: asked, activity: "all", interest: null }
+  }
+  if (asked === "" && category) {
+    return { query: "", activity: category, interest }
+  }
   return null
 }
 
@@ -71,7 +86,8 @@ export function answerForFilter<A extends ListRequest>(
 ): A | null {
   return request &&
     answer?.query === request.query &&
-    answer.activity === request.activity
+    answer.activity === request.activity &&
+    answer.interest === request.interest
     ? answer
     : null
 }
@@ -94,7 +110,11 @@ export function shownList(
 ): ShownList | null {
   if (!request) return null
   if (request.query === "") {
-    return { kind: "category", activity: request.activity }
+    return {
+      kind: "category",
+      activity: request.activity,
+      interest: request.interest,
+    }
   }
   const answered =
     shown?.query === request.query && shown.activity === request.activity
@@ -135,6 +155,14 @@ export function parseActivity(params: SearchParams): CustomerActivity | null {
   return isCustomerActivity(activity) ? activity : null
 }
 
+// The special brunch in the URL (?interest=couples|grandma|grandpa, story
+// 2.16); absent or anything else is no filter.
+export function parseInterest(params: SearchParams): SpecialBrunchCode | null {
+  const value = params.interest
+  const interest = Array.isArray(value) ? value[0] : value
+  return isSpecialBrunchCode(interest) ? interest : null
+}
+
 // The search's address (history.replaceState while she types): only q.
 export function listHref(query: string): string {
   return query.trim() === ""
@@ -142,9 +170,14 @@ export function listHref(query: string): string {
     : `/admin/customers?q=${encodeURIComponent(query)}`
 }
 
-// A category button's address.
-export function categoryHref(activity: CustomerActivity): string {
-  return `/admin/customers?activity=${activity}`
+// A category button's address, keeping the special-brunch filter (story
+// 2.16), and a special-brunch chip's (null = "הכול").
+export function categoryHref(
+  activity: CustomerActivity,
+  interest: SpecialBrunchCode | null = null
+): string {
+  const base = `/admin/customers?activity=${activity}`
+  return interest ? `${base}&interest=${interest}` : base
 }
 
 // The card of a customer (also linked from the home and the payments).

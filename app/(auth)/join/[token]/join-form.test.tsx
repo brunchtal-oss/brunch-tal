@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest"
 
 import { authCopy } from "@/lib/copy/auth"
 import { joinCopy } from "@/lib/copy/join"
+import { SPECIAL_BRUNCH_FALLBACK } from "@/lib/special-brunch"
 
 import { JoinForm } from "./join-form"
 import { validateJoin } from "./join-input"
@@ -41,6 +42,7 @@ function render(
       productName="Card"
       amountAgorot={47200}
       photoConsent={PHOTO}
+      specialBrunch={SPECIAL_BRUNCH_FALLBACK}
       today="2026-10-01"
       privacyHref={extra.privacyHref}
     />
@@ -67,6 +69,7 @@ describe("JoinForm", () => {
         "babyName",
         "birthDate",
         "dietaryNotes",
+        "specialBrunchInterests",
         "password",
         "confirm",
         "privacyConsent",
@@ -94,11 +97,31 @@ describe("JoinForm", () => {
       ["privacyConsent", "on"],
       ["photoConsent", "yes"],
       ["personalPhotoConsent", "no"],
+      ["specialBrunchInterests", "grandpa"],
+      ["specialBrunchInterests", "couples"],
     ]) {
       expect(names(html)).toContain(name)
       data.append(name, value)
     }
-    expect(validateJoin(data).ok).toBe(true)
+    const valid = validateJoin(data)
+    expect(valid.ok).toBe(true)
+    // Story 2.16: the checked codes, in code order.
+    if (valid.ok) {
+      expect(valid.input.specialBrunchInterests).toEqual(["couples", "grandpa"])
+    }
+  })
+
+  // Story 2.16: step 1, after the allergies field, optional, nothing checked.
+  it("shows the special-brunch question in step 1, after the allergies", () => {
+    const html = render("active")
+    const stepOne = html.slice(0, html.indexOf('data-step="2"'))
+    const question = stepOne.indexOf(SPECIAL_BRUNCH_FALLBACK.question)
+    expect(question).toBeGreaterThan(stepOne.indexOf('name="dietaryNotes"'))
+    expect(question).toBeLessThan(stepOne.indexOf('name="password"'))
+    for (const code of ["couples", "grandma", "grandpa"]) {
+      expect(stepOne).toContain(`value="${code}"`)
+    }
+    expect(stepOne).toContain(SPECIAL_BRUNCH_FALLBACK.grandma_title)
   })
 
   it.each([

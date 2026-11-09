@@ -5,12 +5,16 @@ import { ChevronLeftIcon } from "lucide-react"
 
 import { PageHeading } from "@/components/shared/page-heading"
 import { cubeTitleClass } from "@/components/shared/section-title"
-import { getPhotoConsentContent } from "@/lib/content/join-form"
+import {
+  getPhotoConsentContent,
+  getSpecialBrunchContent,
+} from "@/lib/content/join-form"
 import { getPublishedPageSlugs } from "@/lib/content/pages"
 import { customerCopy } from "@/lib/copy/customer"
 import { shellCopy } from "@/lib/copy/shell"
 import { publicLegalNav, visibleLegalNav } from "@/lib/nav"
 import { formatLocalPhone } from "@/lib/phone"
+import { orderedSpecialBrunchCodes } from "@/lib/special-brunch"
 import { createClient } from "@/lib/supabase/server"
 import { localToday } from "@/lib/time"
 import { cn } from "@/lib/utils"
@@ -61,11 +65,13 @@ async function Profile() {
   const email =
     typeof claims?.claims?.email === "string" ? claims.claims.email : null
 
-  const [profileResult, babiesResult, photoContent, legalSlugs] =
+  const [profileResult, babiesResult, photoContent, specialBrunch, legalSlugs] =
     await Promise.all([
       supabase
         .from("profiles")
-        .select("full_name, dietary_notes, phone_e164")
+        .select(
+          "full_name, dietary_notes, special_brunch_interests, phone_e164"
+        )
         .eq("id", userId ?? "")
         .maybeSingle(),
       supabase
@@ -74,6 +80,7 @@ async function Profile() {
         .order("birth_date")
         .order("created_at"),
       getPhotoConsentContent(),
+      getSpecialBrunchContent(),
       getPublishedPageSlugs(publicLegalNav.map((item) => item.slug)),
     ])
   if (profileResult.error || babiesResult.error || !profileResult.data) {
@@ -87,6 +94,10 @@ async function Profile() {
       <DetailsSection
         fullName={profile.full_name}
         dietaryNotes={profile.dietary_notes}
+        specialBrunch={specialBrunch}
+        specialBrunchInterests={orderedSpecialBrunchCodes(
+          profile.special_brunch_interests
+        )}
         phone={profile.phone_e164 ? formatLocalPhone(profile.phone_e164) : null}
         email={email}
       />

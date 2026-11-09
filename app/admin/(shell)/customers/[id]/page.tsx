@@ -6,6 +6,7 @@ import { ChevronLeftIcon } from "lucide-react"
 import { buttonClass } from "@/components/shared/button-class"
 import { PageHeading } from "@/components/shared/page-heading"
 import { StatusChip } from "@/components/shared/status-chip"
+import { getSpecialBrunchContent } from "@/lib/content/join-form"
 import { adminCopy } from "@/lib/copy/admin"
 import { shellCopy } from "@/lib/copy/shell"
 import { localToday } from "@/lib/time"
@@ -44,7 +45,7 @@ export const metadata: Metadata = {
 // link" (story 2.8) and "book for a session" (story 3.19), the link's
 // status and the issued link under them; (2) "פרטים" in a cube: phone and
 // email (a pencil each opens the 2.8 change), joined, last activity,
-// dietary, photo consents (read only), babies; (3) balances and validity:
+// dietary, special brunches and photo consents (read only), babies; (3) balances and validity:
 // each card plate one link to its page (story 3.13), opening in place to
 // its entries, then the open singles; (4) credits and refunds (story 3.9,
 // 3.16); (5) the history, closed, to the bookings and purchases pages;
@@ -77,10 +78,12 @@ async function CustomerCardContent({
   const loaded = await loadCardOrRemoved(id)
   if ("removed" in loaded) return <RemovedCard profile={loaded.removed} />
   const { card } = loaded
-  const [accountRow, creditRows] = await Promise.all([
+  const [accountRow, creditRows, specialBrunch] = await Promise.all([
     loadAccount(id),
     // Story 3.9: her credits and refunds (admin_list_customer_credits).
     loadCredits(id),
+    // Story 2.16: the special brunches' titles.
+    getSpecialBrunchContent(),
   ])
   const account = accountView(accountRow)
   const header = cardHeader(card.profile)
@@ -113,7 +116,7 @@ async function CustomerCardContent({
               phone={header.phone ?? ""}
               view={account}
             />
-            {detailRows(card.profile).map((row) => (
+            {detailRows(card.profile, specialBrunch).map((row) => (
               <div key={row.label} className="flex flex-col gap-1">
                 <dt className="text-[13px] text-muted-foreground">
                   {row.label}

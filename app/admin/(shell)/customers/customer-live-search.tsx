@@ -8,8 +8,14 @@ import { InlineNotice } from "@/components/shared/inline-notice"
 import { StatusChip } from "@/components/shared/status-chip"
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { exportInterestLine } from "@/lib/admin/customer-export"
+import type { SpecialBrunchContent } from "@/lib/content/schema"
 import { adminCopy } from "@/lib/copy/admin"
 import { errorMessage, type ErrorCode } from "@/lib/errors"
+import {
+  specialBrunchOptions,
+  type SpecialBrunchCode,
+} from "@/lib/special-brunch"
 import { formatLocalDate } from "@/lib/time"
 import { cn } from "@/lib/utils"
 
@@ -45,22 +51,29 @@ type Answer = ListRequest &
 // the search. A button (a link to ?activity=) lists its whole category and
 // clears the field; clearing the field returns to the open category. Only
 // the answer to the current request is shown; an inactive customer's row
-// carries "לא פעילה".
+// carries "לא פעילה". Story 2.16: a second chip row under the categories
+// narrows the open category to one special brunch (?interest=); the
+// categories keep it, and the export follows it.
 export function CustomerLiveSearch({
   initialQuery,
   category,
+  interest = null,
+  specialBrunch,
 }: {
   initialQuery: string
   category: CustomerActivity | null
+  interest?: SpecialBrunchCode | null
+  specialBrunch: SpecialBrunchContent
 }) {
   const id = useId()
   const [query, setQuery] = useState(initialQuery)
   const [answer, setAnswer] = useState<Answer | null>(null)
   const latest = useRef(0)
 
-  const request = listRequest(query, category)
+  const request = listRequest(query, category, interest)
   const askedQuery = request?.query ?? null
   const askedActivity = request?.activity ?? null
+  const askedInterest = request?.interest ?? null
 
   useEffect(() => {
     const call = ++latest.current
@@ -70,12 +83,20 @@ export function CustomerLiveSearch({
         startTransition(async () => {
           let result: Awaited<ReturnType<typeof listCustomersAction>>
           try {
-            result = await listCustomersAction(askedQuery, askedActivity)
+            result = await listCustomersAction(
+              askedQuery,
+              askedActivity,
+              askedInterest
+            )
           } catch {
             result = { ok: false, code: "SERVER_ERROR" }
           }
           if (call !== latest.current) return
-          const asked = { query: askedQuery, activity: askedActivity }
+          const asked = {
+            query: askedQuery,
+            activity: askedActivity,
+            interest: askedInterest,
+          }
           setAnswer(
             result.ok
               ? { ...asked, ok: true, list: result.data }
@@ -87,11 +108,12 @@ export function CustomerLiveSearch({
       askedQuery === "" ? 0 : DEBOUNCE_MS
     )
     return () => clearTimeout(timer)
-  }, [askedQuery, askedActivity])
+  }, [askedQuery, askedActivity, askedInterest])
 
   const shown = answerForFilter(request, answer)
   // A button is selected only while its category is what the list shows.
   const selected = request?.query === "" ? request.activity : null
+  const exported = shownList(request, shown?.ok ? shown : null)
 
   return (
     <div className="flex flex-col gap-6">
@@ -114,7 +136,7 @@ export function CustomerLiveSearch({
                 null,
                 "",
                 next.trim() === "" && category
-                  ? categoryHref(category)
+                  ? categoryHref(category, interest)
                   : listHref(next)
               )
             }}
@@ -125,8 +147,21 @@ export function CustomerLiveSearch({
             {copy.searchHint}
           </FieldDescription>
         </Field>
-        <Categories current={selected} onPick={() => setQuery("")} />
-        <CustomerExport shown={shownList(request, shown?.ok ? shown : null)} />
+        <Categories
+          current={selected}
+          interest={interest}
+          onPick={() => setQuery("")}
+        />
+        <SpecialBrunchChips
+          category={category}
+          current={selected ? interest : undefined}
+          content={specialBrunch}
+          onPick={() => setQuery("")}
+        />
+        <CustomerExport
+          shown={exported}
+          interestLine={exportInterestLine(exported, specialBrunch)}
+        />
       </div>
 
       <div aria-live="polite">
@@ -150,9 +185,11 @@ export function CustomerLiveSearch({
 // screen, page.tsx).
 function Categories({
   current,
+  interest,
   onPick,
 }: {
   current: CustomerActivity | null
+  interest: SpecialBrunchCode | null
   onPick: () => void
 }) {
   return (
@@ -161,20 +198,77 @@ function Categories({
         {CUSTOMER_ACTIVITIES.map((value) => (
           <li key={value} className="flex">
             <Link
-              href={categoryHref(value)}
+              href={categoryHref(value, interest)}
               onClick={onPick}
               aria-current={value === current ? "page" : undefined}
-              className={cn(
-                "flex min-h-11 flex-1 items-center justify-center rounded-[4px] border px-2 text-center text-[15px] leading-tight font-semibold",
-                value === current
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-muted-foreground text-foreground hover:bg-muted"
-              )}
+              className={chipClass(value === current)}
             >
               {copy.categories[value]}
             </Link>
           </li>
         ))}
+      </ul>
+    </nav>
+  )
+}
+
+// A category or special-brunch chip (the open cards' chip style).
+function chipClass(selected: boolean): string {
+  return cn(
+    "flex min-h-11 flex-1 items-center justify-center rounded-[4px] border px-2 text-center text-[15px] leading-tight font-semibold",
+    selected
+      ? "border-primary bg-primary text-primary-foreground"
+      : "border-muted-foreground text-foreground hover:bg-muted"
+  )
+}
+
+// Story 2.16: the special-brunch chips under the categories, with their row
+// label: "הכול" (no filter), then one per option (its title from the
+// content block). A chip keeps the open category (none: all customers).
+// current: the selected filter while a category is what the list shows
+// (null = "הכול"); undefined = none selected (a search, or no list).
+function SpecialBrunchChips({
+  category,
+  current,
+  content,
+  onPick,
+}: {
+  category: CustomerActivity | null
+  current: SpecialBrunchCode | null | undefined
+  content: SpecialBrunchContent
+  onPick: () => void
+}) {
+  const labelId = useId()
+  const activity = category ?? "all"
+  const chips = [
+    { key: "all", interest: null, label: copy.specialBrunch.all },
+    ...specialBrunchOptions(content).map((option) => ({
+      key: option.code,
+      interest: option.code,
+      label: option.title,
+    })),
+  ]
+  return (
+    <nav aria-labelledby={labelId} className="flex flex-col gap-2">
+      <p id={labelId} className="text-[15px] text-muted-foreground">
+        {copy.specialBrunch.label}
+      </p>
+      <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {chips.map((chip) => {
+          const selected = current !== undefined && chip.interest === current
+          return (
+            <li key={chip.key} className="flex">
+              <Link
+                href={categoryHref(activity, chip.interest)}
+                onClick={onPick}
+                aria-current={selected ? "page" : undefined}
+                className={chipClass(selected)}
+              >
+                {chip.label}
+              </Link>
+            </li>
+          )
+        })}
       </ul>
     </nav>
   )

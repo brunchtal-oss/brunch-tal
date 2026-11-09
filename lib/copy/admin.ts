@@ -9,6 +9,8 @@ const exportHeaders = {
   full_name: "שם",
   phone: "טלפון",
   email: "מייל",
+  // Story 2.16: the cell is the option titles (content), joined by ", ".
+  special_brunch_interests: "בראנצ׳ים מיוחדים",
 }
 
 // Story 3.18: a product set by name, or every fitting product.
@@ -246,6 +248,7 @@ export const adminCopy = {
       "contact/intro": "פתיח",
       "contact/business_details": "פרטי העסק",
       "join-form/photo_consent": "בקשת אישור התמונות",
+      "join-form/special_brunch": "שאלת הבראנצ׳ים המיוחדים",
       "site/footer": "קישורים",
       "privacy/body": "נוסח המדיניות",
       "terms/body": "נוסח התנאים",
@@ -458,6 +461,25 @@ export const adminCopy = {
       },
       note: "ההערה שמתחת לשתי השאלות",
       linesHint: "כל שורה תוצג בשורה משלה",
+    },
+    // Story 2.16: the question and three fixed options (a title and an
+    // optional line under it each).
+    specialBrunch: {
+      question: "השאלה",
+      couples: {
+        title: "אפשרות ראשונה: הכותרת",
+        hint: "אפשרות ראשונה: השורה שמתחת",
+      },
+      grandma: {
+        title: "אפשרות שנייה: הכותרת",
+        hint: "אפשרות שנייה: השורה שמתחת",
+      },
+      grandpa: {
+        title: "אפשרות שלישית: הכותרת",
+        hint: "אפשרות שלישית: השורה שמתחת",
+      },
+      titleHint: "מוצגת גם בכרטיס הלקוחה, בסינון רשימת הלקוחות ובייצוא",
+      hintHint: "לא חובה. בלי טקסט לא תוצג שורה",
     },
     // A list's items (DESIGN › content-section-row: reorder buttons, hide,
     // delete). The item is named by its first field, else "{type} {n}".
@@ -1785,6 +1807,12 @@ export const adminCopy = {
       inactive: "אין לקוחות לא פעילות",
     },
     inactive: "לא פעילה",
+    // Story 2.16: the second chip row under the categories (the options'
+    // words are content); "הכול" = no filter. label names the row.
+    specialBrunch: {
+      label: "בראנצ׳ים מיוחדים",
+      all: "הכול",
+    },
     // The segmented-switch on /admin/customers and its open cards (story
     // 4.3, CAP-42): two links, the current one aria-current.
     switchNav: "תצוגות הלקוחות",
@@ -1998,6 +2026,9 @@ export const adminCopy = {
       none: "לא נכתב",
       // Two lines, no date (story 2.13): adminCopy.photoConsents.
       photoConsent: "אישור תמונות",
+      // Story 2.16: the option titles (content) joined by " · ".
+      specialBrunch: "בראנצ׳ים מיוחדים",
+      specialBrunchNone: "לא סומן",
       babies: "תינוקות",
       noBabies: "לא נוספו תינוקות",
       balances: "יתרות ותוקף",
@@ -2226,6 +2257,9 @@ export const adminCopy = {
           : `בחרת לייצא את תוצאות החיפוש (${count})`,
       // The shown count when the list has more than its limit.
       moreThan: (limit: number) => `${limit}+`,
+      // Story 2.16: under the line above, when the special-brunch filter is
+      // on (label: the option's title).
+      onlyInterest: (label: string) => `רק מי שסימנה: ${label}`,
       headers: exportHeaders,
       noColumns: "יש לבחור לפחות עמודה אחת",
       done: "הקובץ ירד",

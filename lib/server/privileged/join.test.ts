@@ -54,6 +54,7 @@ const INPUT: JoinInput = {
   password: PASSWORD,
   fullName: "Dev Join",
   dietaryNotes: null,
+  specialBrunchInterests: ["couples", "grandpa"],
   privacyConsent: true,
   photoConsent: false,
   personalPhotoConsent: true,
@@ -337,6 +338,8 @@ describe("submitJoin", () => {
         phone: INPUT.phone,
         full_name: "Dev Join",
         dietary_notes: null,
+        // Story 2.16: the codes as validated (code order).
+        special_brunch_interests: ["couples", "grandpa"],
         privacy_consent: true,
         photo_consent: false,
         personal_photo_consent: true,

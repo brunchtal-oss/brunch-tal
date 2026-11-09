@@ -8,7 +8,10 @@ import { cleanToken } from "@/lib/auth/clean-token"
 import { toSessionRole, type SessionRole } from "@/lib/auth/destination"
 import type { ConflictReason } from "@/lib/auth/join-link-state"
 import { getWhatsappHref } from "@/lib/content/business-details"
-import { getPhotoConsentContent } from "@/lib/content/join-form"
+import {
+  getPhotoConsentContent,
+  getSpecialBrunchContent,
+} from "@/lib/content/join-form"
 import { getPublishedPageSlugs } from "@/lib/content/pages"
 import { joinCopy } from "@/lib/copy/join"
 import { errorMessage } from "@/lib/errors"
@@ -159,8 +162,9 @@ async function JoinFormContent({
   productName: string | null
   amountAgorot: number | null
 }) {
-  const [photoConsent, legalSlugs] = await Promise.all([
+  const [photoConsent, specialBrunch, legalSlugs] = await Promise.all([
     getPhotoConsentContent(),
+    getSpecialBrunchContent(),
     getPublishedPageSlugs(["privacy"]),
   ])
   // Both photo questions are required (CAP-40, story 2.13); without their
@@ -190,6 +194,7 @@ async function JoinFormContent({
       productName={productName}
       amountAgorot={amountAgorot}
       photoConsent={photoConsent}
+      specialBrunch={specialBrunch}
       today={today}
       privacyHref={legalSlugs.includes("privacy") ? "/privacy" : null}
     />

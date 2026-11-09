@@ -1,6 +1,8 @@
 import { renderToStaticMarkup } from "react-dom/server"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
+import { SPECIAL_BRUNCH_FALLBACK } from "@/lib/special-brunch"
+
 // The action state the form renders with (useActionState), per test.
 const actionState = vi.hoisted(() => ({ current: null as unknown }))
 vi.mock("react", async (importOriginal) => {
@@ -59,6 +61,7 @@ describe("Tal's fill (story 2.15)", () => {
         productName={null}
         amountAgorot={null}
         photoConsent={PHOTO}
+        specialBrunch={SPECIAL_BRUNCH_FALLBACK}
         today="2026-11-09"
         privacyHref="/privacy"
       />
@@ -68,6 +71,8 @@ describe("Tal's fill (story 2.15)", () => {
     expect(page).toContain('name="password"')
     expect(page).toContain("yes label")
     expect(page).toContain('href="/privacy"')
+    // Story 2.16: the same special-brunch question as the customer's form.
+    expect(page).toContain('name="specialBrunchInterests" value="couples"')
   })
 
   it("joined: the password comes from the form's state, not from the result", () => {
@@ -174,6 +179,7 @@ describe("the shared form with a result of the fill (story 2.15)", () => {
         productName={null}
         amountAgorot={null}
         photoConsent={PHOTO}
+        specialBrunch={SPECIAL_BRUNCH_FALLBACK}
         today="2026-11-09"
         privacyHref="/privacy"
       />

@@ -99,11 +99,29 @@ describe("validateJoin", () => {
         password: PASSWORD,
         fullName: "Dev Join",
         dietaryNotes: null,
+        // Story 2.16: none checked.
+        specialBrunchInterests: [],
         privacyConsent: true,
         photoConsent: false,
         personalPhotoConsent: true,
         babies: [{ name: "Baby", birthDate: "2026-09-01" }],
       },
+    })
+  })
+
+  // Story 2.16 (matrix: join, two picks / bad value): the checked codes,
+  // each once, in code order; an unknown code is an error on the field.
+  it("reads the special brunches in code order; refuses an unknown one", () => {
+    const picked = validateJoin(
+      form({ specialBrunchInterests: ["grandpa", "couples", "grandpa"] })
+    )
+    expect(picked.ok && picked.input.specialBrunchInterests).toEqual([
+      "couples",
+      "grandpa",
+    ])
+    expect(validateJoin(form({ specialBrunchInterests: "aunt" }))).toEqual({
+      ok: false,
+      errors: [{ field: "specialBrunchInterests", message: "INVALID_INPUT" }],
     })
   })
 
@@ -433,6 +451,11 @@ describe("submitJoinAction", () => {
       { field: "babyName", index: 1, message: "FIELD_REQUIRED" },
     ],
     [{ field: "full_name" }, { field: "fullName", message: "INVALID_INPUT" }],
+    // Story 2.16.
+    [
+      { field: "special_brunch_interests" },
+      { field: "specialBrunchInterests", message: "INVALID_INPUT" },
+    ],
     [
       { field: "babies" },
       { field: "babyName", index: 0, message: "INVALID_INPUT" },

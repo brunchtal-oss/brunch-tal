@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest"
 
+import { SPECIAL_BRUNCH_FALLBACK as SB } from "@/lib/special-brunch"
+
 import {
   EXPORT_COLUMN_KEYS,
   customersCsv,
   errorCodeOf,
   exportFileName,
   exportHref,
+  exportInterestLine,
   exportLine,
   exportRequest,
   parseExportParams,
@@ -28,7 +31,26 @@ describe("parseExportParams", () => {
         scope: "all",
         query: null,
         activity: "inactive",
+        interest: null,
         columns: ["full_name", "phone", "email"],
+      },
+    })
+  })
+
+  // Story 2.16: an optional special brunch, and the new column.
+  it("reads interest and the special-brunch column", () => {
+    expect(
+      parse(
+        "scope=all&activity=inactive&interest=grandma&cols=special_brunch_interests,full_name"
+      )
+    ).toEqual({
+      ok: true,
+      data: {
+        scope: "all",
+        query: null,
+        activity: "inactive",
+        interest: "grandma",
+        columns: ["full_name", "special_brunch_interests"],
       },
     })
   })
@@ -42,6 +64,7 @@ describe("parseExportParams", () => {
         scope: "search",
         query: "רונ",
         activity: "all",
+        interest: null,
         columns: ["full_name", "email"],
       },
     })
@@ -74,6 +97,8 @@ describe("parseExportParams", () => {
     "scope=all&activity=all&cols=id",
     "scope=all&activity=all&cols=pending_email",
     "scope=all&activity=all&cols=full_name,",
+    "scope=all&activity=all&interest=aunt&cols=full_name",
+    "scope=all&activity=all&interest=&cols=full_name",
   ])("INVALID_INPUT for %j", (query) => {
     expect(parse(query)).toEqual({ ok: false, code: "INVALID_INPUT" })
   })
@@ -86,8 +111,13 @@ describe("parseExportParams", () => {
 })
 
 describe("the closed column list", () => {
-  it("is exactly name, phone and email", () => {
-    expect(EXPORT_COLUMN_KEYS).toEqual(["full_name", "phone", "email"])
+  it("is exactly name, phone, email and the special brunches", () => {
+    expect(EXPORT_COLUMN_KEYS).toEqual([
+      "full_name",
+      "phone",
+      "email",
+      "special_brunch_interests",
+    ])
   })
 })
 
@@ -102,7 +132,7 @@ describe("customersCsv", () => {
   ]
 
   it("writes the Hebrew headers and the local phone", () => {
-    expect(customersCsv(rows, ["full_name", "phone", "email"])).toBe(
+    expect(customersCsv(rows, ["full_name", "phone", "email"], SB)).toBe(
       `${BOM}"שם","טלפון","מייל"\r\n` +
         `"רונית כהן","054-123-4567","ronit@example.test"\r\n` +
         `"'=1+1","",""\r\n`
@@ -110,15 +140,44 @@ describe("customersCsv", () => {
   })
 
   it("only the chosen columns", () => {
-    expect(customersCsv(rows, ["phone"])).toBe(
+    expect(customersCsv(rows, ["phone"], SB)).toBe(
       `${BOM}"טלפון"\r\n"054-123-4567"\r\n""\r\n`
     )
   })
 
   it("the header row alone with no rows", () => {
-    expect(customersCsv([], ["full_name", "email"])).toBe(
+    expect(customersCsv([], ["full_name", "email"], SB)).toBe(
       `${BOM}"שם","מייל"\r\n`
     )
+  })
+
+  // Story 2.16 (matrix: export, text edited): the titles in code order,
+  // joined by ", "; empty when none.
+  it("the special-brunch cell: the published titles in code order", () => {
+    const picked = [
+      {
+        full_name: null,
+        phone_e164: null,
+        email: null,
+        special_brunch_interests: ["grandpa", "couples"],
+      },
+      {
+        full_name: null,
+        phone_e164: null,
+        email: null,
+        special_brunch_interests: [],
+      },
+    ]
+    expect(customersCsv(picked, ["special_brunch_interests"], SB)).toBe(
+      `${BOM}"בראנצ׳ים מיוחדים"\r\n` +
+        `"${SB.couples_title}, ${SB.grandpa_title}"\r\n""\r\n`
+    )
+    expect(
+      customersCsv(picked.slice(0, 1), ["special_brunch_interests"], {
+        ...SB,
+        couples_title: "X",
+      })
+    ).toContain(`"X, ${SB.grandpa_title}"`)
   })
 })
 
@@ -128,6 +187,7 @@ describe("exportHref", () => {
       scope: "all",
       query: "ignored",
       activity: "inactive",
+      interest: null,
       columns: ["email", "full_name"],
     })
     expect(href).toBe(
@@ -139,7 +199,31 @@ describe("exportHref", () => {
         scope: "all",
         query: null,
         activity: "inactive",
+        interest: null,
         columns: ["full_name", "email"],
+      },
+    })
+  })
+
+  it("interest: sent when on, read back", () => {
+    const href = exportHref({
+      scope: "all",
+      query: null,
+      activity: "active",
+      interest: "couples",
+      columns: ["full_name"],
+    })
+    expect(href).toBe(
+      "/api/admin/export?scope=all&activity=active&interest=couples&cols=full_name"
+    )
+    expect(parseExportParams(new URL(href, "http://x").searchParams)).toEqual({
+      ok: true,
+      data: {
+        scope: "all",
+        query: null,
+        activity: "active",
+        interest: "couples",
+        columns: ["full_name"],
       },
     })
   })
@@ -149,6 +233,7 @@ describe("exportHref", () => {
       scope: "search",
       query: " רונ ",
       activity: "all",
+      interest: null,
       columns: ["full_name", "phone", "email"],
     })
     expect(new URL(href, "http://x").searchParams.get("activity")).toBe("all")
@@ -158,6 +243,7 @@ describe("exportHref", () => {
         scope: "search",
         query: "רונ",
         activity: "all",
+        interest: null,
         columns: ["full_name", "phone", "email"],
       },
     })
@@ -172,17 +258,22 @@ describe("exportRequest (story 5.13)", () => {
       scope: "all",
       query: null,
       activity: "all",
+      interest: null,
       columns: [...all],
     })
   })
 
-  it("a category: scope all with that category", () => {
+  it("a category: scope all with that category and its filter", () => {
     expect(
-      exportRequest({ kind: "category", activity: "inactive" }, ["phone"])
+      exportRequest(
+        { kind: "category", activity: "inactive", interest: "grandma" },
+        ["phone"]
+      )
     ).toEqual({
       scope: "all",
       query: null,
       activity: "inactive",
+      interest: "grandma",
       columns: ["phone"],
     })
   })
@@ -194,6 +285,7 @@ describe("exportRequest (story 5.13)", () => {
       scope: "search",
       query: "רונ",
       activity: "all",
+      interest: null,
       columns: ["phone"],
     })
   })
@@ -202,13 +294,13 @@ describe("exportRequest (story 5.13)", () => {
 describe("exportLine (story 5.13)", () => {
   it("what the file will hold", () => {
     expect(exportLine(null)).toBe("בחרת לייצא את כל הלקוחות")
-    expect(exportLine({ kind: "category", activity: "all" })).toBe(
-      "בחרת לייצא את כל הלקוחות"
-    )
-    expect(exportLine({ kind: "category", activity: "active" })).toBe(
+    const category = (activity: "all" | "active" | "inactive") =>
+      ({ kind: "category", activity, interest: null }) as const
+    expect(exportLine(category("all"))).toBe("בחרת לייצא את כל הלקוחות")
+    expect(exportLine(category("active"))).toBe(
       "בחרת לייצא את כל הלקוחות הפעילות"
     )
-    expect(exportLine({ kind: "category", activity: "inactive" })).toBe(
+    expect(exportLine(category("inactive"))).toBe(
       "בחרת לייצא את כל הלקוחות הלא פעילות"
     )
     expect(exportLine({ kind: "search", query: "רונ", count: "200+" })).toBe(
@@ -217,6 +309,28 @@ describe("exportLine (story 5.13)", () => {
     expect(exportLine({ kind: "search", query: "רונ", count: null })).toBe(
       "בחרת לייצא את תוצאות החיפוש"
     )
+  })
+})
+
+// Story 2.16: the line under it while the filter is on.
+describe("exportInterestLine", () => {
+  it("the option's title while the filter is on, else null", () => {
+    expect(
+      exportInterestLine(
+        { kind: "category", activity: "all", interest: "grandma" },
+        SB
+      )
+    ).toBe(`רק מי שסימנה: ${SB.grandma_title}`)
+    expect(
+      exportInterestLine(
+        { kind: "category", activity: "all", interest: null },
+        SB
+      )
+    ).toBeNull()
+    expect(
+      exportInterestLine({ kind: "search", query: "רונ", count: null }, SB)
+    ).toBeNull()
+    expect(exportInterestLine(null, SB)).toBeNull()
   })
 })
 

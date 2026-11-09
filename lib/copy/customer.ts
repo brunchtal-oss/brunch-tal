@@ -154,6 +154,10 @@ export const customerCopy = {
     // The dietary row while empty: it stays shown, so she knows where to
     // add them.
     dietaryNotesEmpty: "לא צוינו. אפשר להוסיף בלחיצה על עריכה",
+    // Story 2.16: the special-brunch row (the options' words are content,
+    // joined by ", "); while empty it says where to choose.
+    specialBrunch: "בראנצ׳ים מיוחדים",
+    specialBrunchEmpty: "לא סומן. אפשר לבחור בלחיצה על עריכה",
     phone: "טלפון",
     email: "מייל",
     babiesTitle: "התינוקות שלי",

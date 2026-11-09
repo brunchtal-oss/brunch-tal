@@ -1,6 +1,11 @@
 import type { JoinErrorKey } from "@/lib/copy/join"
 import { isEmailShape } from "@/lib/email"
 import type { ErrorCode, ErrorDetail } from "@/lib/errors"
+import {
+  parseSpecialBrunchInterests,
+  SPECIAL_BRUNCH_FIELD,
+  type SpecialBrunchCode,
+} from "@/lib/special-brunch"
 
 // The join form's fields and their validation before any call to the
 // database or Auth (story 2.2). Pure: no "use server" (only async functions
@@ -25,6 +30,7 @@ export type JoinField =
   | "babyName"
   | "birthDate"
   | "dietaryNotes"
+  | "specialBrunchInterests"
   | "password"
   | "confirm"
   | "privacy"
@@ -51,6 +57,8 @@ export type ValidJoinInput = {
   password: string
   fullName: string
   dietaryNotes: string | null
+  // Story 2.16: the checked codes, in code order ([] = none).
+  specialBrunchInterests: SpecialBrunchCode[]
   privacyConsent: boolean
   photoConsent: boolean
   personalPhotoConsent: boolean
@@ -78,6 +86,9 @@ export function validateJoin(
   const confirm = text(formData, "confirm")
   const photo = text(formData, "photoConsent")
   const personalPhoto = text(formData, "personalPhotoConsent")
+  const interests = parseSpecialBrunchInterests(
+    formData.getAll(SPECIAL_BRUNCH_FIELD)
+  )
   const names = formData.getAll("babyName").map((v) => String(v).trim())
   const dates = formData.getAll("birthDate").map((v) => String(v).trim())
 
@@ -93,6 +104,10 @@ export function validateJoin(
   }
   if (dietary.length > MAX_DIETARY_NOTES) {
     errors.push({ field: "dietaryNotes", message: "INVALID_INPUT" })
+  }
+
+  if (interests === null) {
+    errors.push({ field: "specialBrunchInterests", message: "INVALID_INPUT" })
   }
 
   const rows = Math.max(names.length, dates.length, 1)
@@ -135,7 +150,7 @@ export function validateJoin(
     })
   }
 
-  if (errors.length > 0) return { ok: false, errors }
+  if (errors.length > 0 || interests === null) return { ok: false, errors }
   return {
     ok: true,
     input: {
@@ -144,6 +159,7 @@ export function validateJoin(
       password,
       fullName,
       dietaryNotes: dietary || null,
+      specialBrunchInterests: interests,
       privacyConsent: true,
       photoConsent: photo === "yes",
       personalPhotoConsent: personalPhoto === "yes",
@@ -172,6 +188,8 @@ export function rpcFieldError(
       return { field: "fullName", message: code }
     case "dietary_notes":
       return { field: "dietaryNotes", message: code }
+    case "special_brunch_interests":
+      return { field: "specialBrunchInterests", message: code }
     case "photo_consent":
       return { field: "photoConsent", message: "photoConsent" }
     case "personal_photo_consent":

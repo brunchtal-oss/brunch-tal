@@ -12,6 +12,7 @@ import Link from "next/link"
 import { PasswordInput } from "@/components/auth/password-input"
 import { ContactText } from "@/components/shared/contact-text"
 import { PhotoConsentQuestions } from "@/components/shared/photo-consent-fieldset"
+import { SpecialBrunchFieldset } from "@/components/shared/special-brunch-fieldset"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { OnlineButton } from "@/components/shared/online-button"
 import { Button } from "@/components/ui/button"
@@ -29,7 +30,10 @@ import { authCopy } from "@/lib/copy/auth"
 import { birthDateRange } from "@/lib/time"
 import type { ConflictReason } from "@/lib/auth/join-link-state"
 import { joinCopy, type JoinErrorKey } from "@/lib/copy/join"
-import type { PhotoConsentContent } from "@/lib/content/schema"
+import type {
+  PhotoConsentContent,
+  SpecialBrunchContent,
+} from "@/lib/content/schema"
 import { errorMessage, type ErrorCode } from "@/lib/errors"
 import { formatAgorot } from "@/lib/money"
 
@@ -84,6 +88,8 @@ function fieldId(field: JoinField, index?: number): string {
   if (field === "photoConsent" || field === "personalPhotoConsent") {
     return `${field}-yes`
   }
+  // The fieldset's first checkbox (SpecialBrunchFieldset).
+  if (field === "specialBrunchInterests") return `${field}-couples`
   return field
 }
 
@@ -112,6 +118,7 @@ export function JoinForm({
   productName,
   amountAgorot,
   photoConsent,
+  specialBrunch,
   today,
   privacyHref = null,
 }: {
@@ -137,6 +144,8 @@ export function JoinForm({
   productName: string | null
   amountAgorot: number | null
   photoConsent: PhotoConsentContent
+  // Story 2.16: the special-brunch question's wording (or its fallback).
+  specialBrunch: SpecialBrunchContent
   today: string
   // The published privacy policy (story 5.5); null: the label is text.
   privacyHref?: string | null
@@ -397,6 +406,7 @@ export function JoinForm({
   const password = wiring("password", undefined, "password-hint")
   const confirm = wiring("confirm")
   const privacy = wiring("privacy")
+  const interests = errorFor("specialBrunchInterests")
   const photo = errorFor("photoConsent")
   const personalPhoto = errorFor("personalPhotoConsent")
 
@@ -653,6 +663,12 @@ export function JoinForm({
             </FieldError>
           )}
         </Field>
+
+        {/* Story 2.16: optional, nothing checked in advance. */}
+        <SpecialBrunchFieldset
+          content={specialBrunch}
+          error={interests ? messageOf(interests.message) : undefined}
+        />
 
         <Field data-invalid={password.error ? true : undefined}>
           <FieldLabel htmlFor="password">

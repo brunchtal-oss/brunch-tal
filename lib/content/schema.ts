@@ -76,6 +76,24 @@ export function photoConsentQuestion(
       }
 }
 
+// join-form › special_brunch (story 2.16): the special-brunch interest
+// question and its three options (codes fixed in lib/special-brunch.ts), a
+// title and an optional hint each (empty = no line). Flat fields, as the
+// editor saves them.
+const specialBrunchTitle = z.string().trim().min(1).max(200)
+
+export const specialBrunchSchema = z.object({
+  question: specialBrunchTitle,
+  couples_title: specialBrunchTitle,
+  couples_hint: optionalText(200),
+  grandma_title: specialBrunchTitle,
+  grandma_hint: optionalText(200),
+  grandpa_title: specialBrunchTitle,
+  grandpa_hint: optionalText(200),
+})
+
+export type SpecialBrunchContent = z.infer<typeof specialBrunchSchema>
+
 // An image of a block (story 5.4): the media_assets row, its alt text
 // (recommended, not required: user decision 2026-10-05; empty is alt="")
 // and the focus point that stays in view in every aspect (object-position,
@@ -397,6 +415,7 @@ export const contentSchemas = {
   promo_banner: promoBannerSchema,
   business_details: businessDetailsSchema,
   photo_consent: photoConsentSchema,
+  special_brunch: specialBrunchSchema,
   text_block: textBlockSchema,
   steps: stepsSchema,
   faq: faqSchema,
