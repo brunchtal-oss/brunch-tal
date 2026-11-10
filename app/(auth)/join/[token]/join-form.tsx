@@ -164,7 +164,9 @@ export function JoinForm({
   const nextBabyId = useRef(1)
   const summaryRef = useRef<HTMLDivElement>(null)
   const stepOneHeading = useRef<HTMLHeadingElement>(null)
-  const stepTwoHeading = useRef<HTMLHeadingElement>(null)
+  // Step 2 starts with the special-brunch question (story 2.16): its
+  // wrapper takes the focus.
+  const stepTwoHeading = useRef<HTMLDivElement>(null)
   // Removing a baby row shifts the rows after it, so the baby errors of the
   // last result no longer match their rows: hide them until the next submit.
   const [babyErrorsClearedFor, setBabyErrorsClearedFor] =
@@ -766,17 +768,19 @@ export function JoinForm({
       </div>
 
       <div hidden={step !== 2} data-step="2" className="flex flex-col gap-5">
-        <h2 ref={stepTwoHeading} tabIndex={-1} className={STEP_HEADING}>
-          {joinCopy.stepTwoTitle}
-        </h2>
+        {/* Story 2.16: optional, nothing checked in advance; first on
+            step 2, with no heading above it (its bold question is its
+            title), then "אישור תמונות" over the photo consents (phone
+            check, user decision 2026-11-10). Moving to step 2 focuses the
+            question. */}
+        <div ref={stepTwoHeading} tabIndex={-1} className="outline-none">
+          <SpecialBrunchFieldset
+            content={specialBrunch}
+            error={interests ? messageOf(interests.message) : undefined}
+          />
+        </div>
 
-        {/* Story 2.16: optional, nothing checked in advance; on step 2,
-            before the photo consents (phone check, user decision
-            2026-11-10). */}
-        <SpecialBrunchFieldset
-          content={specialBrunch}
-          error={interests ? messageOf(interests.message) : undefined}
-        />
+        <h2 className={STEP_HEADING}>{joinCopy.stepTwoTitle}</h2>
 
         <PhotoConsentQuestions
           content={photoConsent}

@@ -123,6 +123,11 @@ describe("JoinForm", () => {
     const question = stepTwo.indexOf(SPECIAL_BRUNCH_FALLBACK.question)
     expect(question).toBeGreaterThan(0)
     expect(question).toBeLessThan(stepTwo.indexOf('name="photoConsent"'))
+    // First, with "אישור תמונות" under it, over the photo consents.
+    const heading = stepTwo.indexOf(joinCopy.stepTwoTitle)
+    expect(question).toBeLessThan(heading)
+    expect(heading).toBeLessThan(stepTwo.indexOf('name="photoConsent"'))
+    expect(stepTwo.slice(0, question)).not.toContain("<h2")
     for (const code of ["couples", "grandma", "grandpa"]) {
       expect(stepTwo).toContain(`value="${code}"`)
     }
@@ -164,8 +169,10 @@ describe("JoinForm steps", () => {
     expect(two).toContain('name="personalPhotoConsent"')
     expect(two).toContain(`>${joinCopy.back}</button>`)
     expect(two).toContain('type="submit"')
-    // The step headings take focus from the step buttons.
-    expect(html.match(/<h2[^>]*tabindex="-1"/g)).toHaveLength(2)
+    // The step buttons move focus: step 1's heading, and on step 2 the
+    // special-brunch question that opens it (story 2.16).
+    expect(html.match(/<h2[^>]*tabindex="-1"/g)).toHaveLength(1)
+    expect(two).toMatch(/<div tabindex="-1"[^>]*>\s*<fieldset/)
   })
 
   it("shows both questions with their titles, and the note under them", () => {
