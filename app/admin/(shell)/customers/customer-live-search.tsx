@@ -12,19 +12,15 @@ import { exportInterestLine } from "@/lib/admin/customer-export"
 import type { SpecialBrunchContent } from "@/lib/content/schema"
 import { adminCopy } from "@/lib/copy/admin"
 import { errorMessage, type ErrorCode } from "@/lib/errors"
-import {
-  specialBrunchOptions,
-  type SpecialBrunchCode,
-} from "@/lib/special-brunch"
+import type { SpecialBrunchCode } from "@/lib/special-brunch"
 import { formatLocalDate } from "@/lib/time"
-import { cn } from "@/lib/utils"
 
 import { listCustomersAction } from "./actions"
 import { CustomerExport } from "./export-sheet"
+import { CustomerFilter } from "./filter-sheet"
 import {
   answerForFilter,
   categoryHref,
-  CUSTOMER_ACTIVITIES,
   emptyText,
   LIST_LIMIT,
   listHref,
@@ -51,18 +47,19 @@ type Answer = ListRequest &
 // the search. A button (a link to ?activity=) lists its whole category and
 // clears the field; clearing the field returns to the open category. Only
 // the answer to the current request is shown; an inactive customer's row
-// carries "לא פעילה". Story 2.16: a second chip row under the categories
-// narrows the open category to one special brunch (?interest=); the
-// categories keep it, and the export follows it.
+// carries "לא פעילה". Story 2.16 (phone-check fix, user decision
+// 2026-11-10): the category buttons and the special-brunch chips became one
+// "סינון" button (filter-sheet.tsx) next to the export; the export follows
+// the open filter.
 export function CustomerLiveSearch({
   initialQuery,
   category,
-  interest = null,
+  interests = [],
   specialBrunch,
 }: {
   initialQuery: string
   category: CustomerActivity | null
-  interest?: SpecialBrunchCode | null
+  interests?: readonly SpecialBrunchCode[]
   specialBrunch: SpecialBrunchContent
 }) {
   const id = useId()
@@ -70,24 +67,24 @@ export function CustomerLiveSearch({
   const [answer, setAnswer] = useState<Answer | null>(null)
   const latest = useRef(0)
 
-  const request = listRequest(query, category, interest)
+  const request = listRequest(query, category, interests)
   const askedQuery = request?.query ?? null
   const askedActivity = request?.activity ?? null
-  const askedInterest = request?.interest ?? null
+  // A string, so the effect compares it by value.
+  const askedInterests = request?.interests.join(",") ?? ""
 
   useEffect(() => {
     const call = ++latest.current
     if (askedQuery === null || askedActivity === null) return
+    const codes = (
+      askedInterests === "" ? [] : askedInterests.split(",")
+    ) as SpecialBrunchCode[]
     const timer = setTimeout(
       () => {
         startTransition(async () => {
           let result: Awaited<ReturnType<typeof listCustomersAction>>
           try {
-            result = await listCustomersAction(
-              askedQuery,
-              askedActivity,
-              askedInterest
-            )
+            result = await listCustomersAction(askedQuery, askedActivity, codes)
           } catch {
             result = { ok: false, code: "SERVER_ERROR" }
           }
@@ -95,7 +92,7 @@ export function CustomerLiveSearch({
           const asked = {
             query: askedQuery,
             activity: askedActivity,
-            interest: askedInterest,
+            interests: codes,
           }
           setAnswer(
             result.ok
@@ -108,11 +105,12 @@ export function CustomerLiveSearch({
       askedQuery === "" ? 0 : DEBOUNCE_MS
     )
     return () => clearTimeout(timer)
-  }, [askedQuery, askedActivity, askedInterest])
+  }, [askedQuery, askedActivity, askedInterests])
 
   const shown = answerForFilter(request, answer)
-  // A button is selected only while its category is what the list shows.
-  const selected = request?.query === "" ? request.activity : null
+  // The filter counts only while its category is what the list shows (a
+  // search is over every customer).
+  const filtered = request?.query === ""
   const exported = shownList(request, shown?.ok ? shown : null)
 
   return (
@@ -136,7 +134,7 @@ export function CustomerLiveSearch({
                 null,
                 "",
                 next.trim() === "" && category
-                  ? categoryHref(category, interest)
+                  ? categoryHref(category, interests)
                   : listHref(next)
               )
             }}
@@ -147,21 +145,18 @@ export function CustomerLiveSearch({
             {copy.searchHint}
           </FieldDescription>
         </Field>
-        <Categories
-          current={selected}
-          interest={interest}
-          onPick={() => setQuery("")}
-        />
-        <SpecialBrunchChips
-          category={category}
-          current={selected ? interest : undefined}
-          content={specialBrunch}
-          onPick={() => setQuery("")}
-        />
-        <CustomerExport
-          shown={exported}
-          interestLine={exportInterestLine(exported, specialBrunch)}
-        />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <CustomerFilter
+            category={filtered ? category : null}
+            interests={filtered ? interests : []}
+            specialBrunch={specialBrunch}
+            onApply={() => setQuery("")}
+          />
+          <CustomerExport
+            shown={exported}
+            interestLine={exportInterestLine(exported, specialBrunch)}
+          />
+        </div>
       </div>
 
       <div aria-live="polite">
@@ -176,101 +171,6 @@ export function CustomerLiveSearch({
         )}
       </div>
     </div>
-  )
-}
-
-// The three category buttons: one row of equal links in the open cards'
-// chip style (story 4.3), in reading order; the selected one in primary with
-// aria-current. A tap clears the field (a new category also remounts the
-// screen, page.tsx).
-function Categories({
-  current,
-  interest,
-  onPick,
-}: {
-  current: CustomerActivity | null
-  interest: SpecialBrunchCode | null
-  onPick: () => void
-}) {
-  return (
-    <nav aria-label={copy.categoriesNav}>
-      <ul className="grid grid-cols-3 gap-2">
-        {CUSTOMER_ACTIVITIES.map((value) => (
-          <li key={value} className="flex">
-            <Link
-              href={categoryHref(value, interest)}
-              onClick={onPick}
-              aria-current={value === current ? "page" : undefined}
-              className={chipClass(value === current)}
-            >
-              {copy.categories[value]}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </nav>
-  )
-}
-
-// A category or special-brunch chip (the open cards' chip style).
-function chipClass(selected: boolean): string {
-  return cn(
-    "flex min-h-11 flex-1 items-center justify-center rounded-[4px] border px-2 text-center text-[15px] leading-tight font-semibold",
-    selected
-      ? "border-primary bg-primary text-primary-foreground"
-      : "border-muted-foreground text-foreground hover:bg-muted"
-  )
-}
-
-// Story 2.16: the special-brunch chips under the categories, with their row
-// label: "הכול" (no filter), then one per option (its title from the
-// content block). A chip keeps the open category (none: all customers).
-// current: the selected filter while a category is what the list shows
-// (null = "הכול"); undefined = none selected (a search, or no list).
-function SpecialBrunchChips({
-  category,
-  current,
-  content,
-  onPick,
-}: {
-  category: CustomerActivity | null
-  current: SpecialBrunchCode | null | undefined
-  content: SpecialBrunchContent
-  onPick: () => void
-}) {
-  const labelId = useId()
-  const activity = category ?? "all"
-  const chips = [
-    { key: "all", interest: null, label: copy.specialBrunch.all },
-    ...specialBrunchOptions(content).map((option) => ({
-      key: option.code,
-      interest: option.code,
-      label: option.title,
-    })),
-  ]
-  return (
-    <nav aria-labelledby={labelId} className="flex flex-col gap-2">
-      <p id={labelId} className="text-[15px] text-muted-foreground">
-        {copy.specialBrunch.label}
-      </p>
-      <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {chips.map((chip) => {
-          const selected = current !== undefined && chip.interest === current
-          return (
-            <li key={chip.key} className="flex">
-              <Link
-                href={categoryHref(activity, chip.interest)}
-                onClick={onPick}
-                aria-current={selected ? "page" : undefined}
-                className={chipClass(selected)}
-              >
-                {chip.label}
-              </Link>
-            </li>
-          )
-        })}
-      </ul>
-    </nav>
   )
 }
 

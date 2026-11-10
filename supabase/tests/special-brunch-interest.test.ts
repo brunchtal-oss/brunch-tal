@@ -4,11 +4,12 @@
 // order (none = {}), refuses a bad value with INVALID_INPUT
 // special_brunch_interests; the customer changes only her own row (column
 // grant + RLS) and the check refuses unknown or repeated codes;
-// admin_list_customers and admin_export_customers filter by p_interest (AND
-// with the category), the export has the new column and the audit keeps
-// interest; admin_anonymize_customer clears it; admin_get_customer returns
-// it; the content block is seeded published. Plus: through PostgREST, the
-// calls with an explicit p_interest resolve to one function while the old
+// admin_list_customers and admin_export_customers filter by p_interests
+// (phone-check fix 2026-11-10: OR within the options, AND with the
+// category), the export has the new column and the audit keeps interests;
+// admin_anonymize_customer clears it; admin_get_customer returns it; the
+// content block is seeded published. Plus: through PostgREST, the calls
+// with an explicit p_interests resolve to one function while the old
 // overloads still exist (no PGRST203). Everything but the PostgREST check
 // runs in inRollback; the dev database may hold other rows, so every check
 // looks only at this test's ids.
@@ -35,8 +36,9 @@ import { approve, seedMoney, type MoneyFixture } from "./support/money"
 
 const BEGIN = "select public.join_begin($1, $2, $3, $4) as r"
 const COMPLETE = "select public.join_complete($1, $2::jsonb, $3) as r"
-const LIST = "select public.admin_list_customers($1, $2, $3) as r"
-const EXPORT = "select public.admin_export_customers($1, $2, $3, $4, $5) as r"
+const LIST = "select public.admin_list_customers($1, $2, $3::text[]) as r"
+const EXPORT =
+  "select public.admin_export_customers($1, $2, $3, $4, $5::text[]) as r"
 const GET = "select public.admin_get_customer($1) as r"
 const REMOVE = "select public.admin_anonymize_customer($1, $2, $3) as r"
 
@@ -303,7 +305,7 @@ describe("profiles.special_brunch_interests: self-update and check", () => {
 
 type ListRow = { id: string }
 
-describe("admin_list_customers: p_interest", () => {
+describe("admin_list_customers: p_interests", () => {
   it("AND with the category (matrix: list filter)", async () => {
     await inRollback(async (db) => {
       const f = await seedMoney(db)
@@ -322,10 +324,10 @@ describe("admin_list_customers: p_interest", () => {
       )
       expect(activity[0]).toEqual({ a: "inactive", b: "active" })
 
-      const ids = async (activityName: string, interest: string | null) =>
+      const ids = async (activityName: string, interests: string[] | null) =>
         asAdmin(db, f, async () =>
           (
-            (await db.query(LIST, ["", activityName, interest])).rows[0].r
+            (await db.query(LIST, ["", activityName, interests])).rows[0].r
               .customers as ListRow[]
           )
             .map((c) => c.id)
@@ -333,14 +335,25 @@ describe("admin_list_customers: p_interest", () => {
             .sort()
         )
 
-      expect(await ids("inactive", "grandma")).toEqual([oldGrandma])
-      expect(await ids("all", "grandma")).toEqual(
+      expect(await ids("inactive", ["grandma"])).toEqual([oldGrandma])
+      expect(await ids("all", ["grandma"])).toEqual(
         [oldGrandma, newGrandma].sort()
       )
-      expect(await ids("all", "grandpa")).toEqual([])
+      expect(await ids("all", ["grandpa"])).toEqual([])
       expect(await ids("all", null)).toEqual(
         [oldGrandma, oldCouples, newGrandma].sort()
       )
+      expect(await ids("all", [])).toEqual(
+        [oldGrandma, oldCouples, newGrandma].sort()
+      )
+      // OR within the options: at least one of them.
+      expect(await ids("all", ["couples", "grandma"])).toEqual(
+        [oldGrandma, oldCouples, newGrandma].sort()
+      )
+      expect(await ids("inactive", ["couples", "grandpa"])).toEqual([
+        oldCouples,
+      ])
+      expect(await ids("active", ["grandpa", "grandma"])).toEqual([newGrandma])
     })
   })
 
@@ -353,31 +366,50 @@ describe("admin_list_customers: p_interest", () => {
         db,
         f,
         async () =>
-          (await db.query(LIST, [testName("sbi_search"), "all", "grandpa"]))
+          (await db.query(LIST, [testName("sbi_search"), "all", ["grandpa"]]))
             .rows[0].r
       )
       expect(result.customers.map((c: ListRow) => c.id)).toEqual([match])
     })
   })
 
-  it.each([["aunt"], [""], ["COUPLES"]])(
-    "%j -> INVALID_INPUT interest",
-    async (interest) => {
-      await inRollback(async (db) => {
-        const f = await seedMoney(db)
-        await asAuthenticated(db, f.admin)
-        expect(await raised(db, LIST, ["", "all", interest])).toEqual({
-          code: "P0001",
-          message: "INVALID_INPUT",
-          detail: { field: "interest" },
-        })
+  it.each([
+    [["aunt"]],
+    [[""]],
+    [["COUPLES"]],
+    [["couples", "couples"]],
+    [["couples", null]],
+  ])("%j -> INVALID_INPUT interests", async (interest) => {
+    await inRollback(async (db) => {
+      const f = await seedMoney(db)
+      await asAuthenticated(db, f.admin)
+      expect(await raised(db, LIST, ["", "all", interest])).toEqual({
+        code: "P0001",
+        message: "INVALID_INPUT",
+        detail: { field: "interests" },
       })
-    }
-  )
+    })
+  })
+
+  it("a two-dimensional array -> INVALID_INPUT interests", async () => {
+    await inRollback(async (db) => {
+      const f = await seedMoney(db)
+      await asAuthenticated(db, f.admin)
+      expect(
+        await raised(
+          db,
+          "select public.admin_list_customers('', 'all', '{{couples},{grandma}}'::text[]) as r"
+        )
+      ).toMatchObject({
+        message: "INVALID_INPUT",
+        detail: { field: "interests" },
+      })
+    })
+  })
 })
 
-describe("admin_export_customers: p_interest and the column", () => {
-  it("only interested customers, the codes in the column, interest in the audit (matrix: export)", async () => {
+describe("admin_export_customers: p_interests and the column", () => {
+  it("only interested customers, the codes in the column, interests in the audit (matrix: export)", async () => {
     await inRollback(async (db) => {
       const f = await seedMoney(db)
       await insertCustomer(db, "exp_both", ["grandpa", "couples"])
@@ -394,7 +426,7 @@ describe("admin_export_customers: p_interest and the column", () => {
               null,
               ["full_name", "special_brunch_interests"],
               "all",
-              "couples",
+              ["couples"],
             ])
           ).rows[0].r.rows
       )
@@ -423,7 +455,7 @@ describe("admin_export_customers: p_interest and the column", () => {
             scope: "all",
             columns: ["full_name", "special_brunch_interests"],
             activity: "all",
-            interest: "couples",
+            interests: ["couples"],
             row_count: expect.any(Number),
           },
         },
@@ -460,16 +492,16 @@ describe("admin_export_customers: p_interest and the column", () => {
     })
   })
 
-  it("an unknown interest -> INVALID_INPUT interest, no log row", async () => {
+  it("an unknown interest -> INVALID_INPUT interests, no log row", async () => {
     await inRollback(async (db) => {
       const f = await seedMoney(db)
       await asAuthenticated(db, f.admin)
       expect(
-        await raised(db, EXPORT, ["all", null, ["full_name"], "all", "aunt"])
+        await raised(db, EXPORT, ["all", null, ["full_name"], "all", ["aunt"]])
       ).toEqual({
         code: "P0001",
         message: "INVALID_INPUT",
-        detail: { field: "interest" },
+        detail: { field: "interests" },
       })
       await db.query("reset role")
       const { rows } = await db.query(
@@ -551,16 +583,17 @@ describe("join-form › special_brunch", () => {
 })
 
 // ---------------------------------------------------------------------------
-// PostgREST: an explicit p_interest picks one overload
+// PostgREST: an explicit p_interests picks one overload
 // ---------------------------------------------------------------------------
 
-// Until 20261109224659_special_brunch_interest_drop_old.sql runs, both the
-// old and the new overloads exist. callRpc always sends p_interest (null =
-// no filter), so PostgREST matches only the new one: anon gets the
+// Until 20261109224659_special_brunch_interest_drop_old.sql runs, the old
+// overloads (none, and p_interest text) and the new one exist. callRpc
+// always sends p_interests (null = no filter), so PostgREST matches only
+// the new one: anon gets the
 // permission error of that one function (42501), never PGRST203 (more than
 // one candidate). After the drop the same holds.
 describe("PostgREST resolves the new list and export", () => {
-  it("with an explicit p_interest, never PGRST203", async () => {
+  it("with an explicit p_interests, never PGRST203", async () => {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL
     const publishable = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
     if (!url || !publishable) {
@@ -572,7 +605,7 @@ describe("PostgREST resolves the new list and export", () => {
     const list = await anon.rpc("admin_list_customers", {
       p_query: "",
       p_activity: "all",
-      p_interest: null as unknown as string,
+      p_interests: null as unknown as string[],
     })
     expect(list.error?.code).toBe("42501")
     const exported = await anon.rpc("admin_export_customers", {
@@ -580,7 +613,7 @@ describe("PostgREST resolves the new list and export", () => {
       p_query: "",
       p_columns: ["full_name"],
       p_activity: "all",
-      p_interest: null as unknown as string,
+      p_interests: null as unknown as string[],
     })
     expect(exported.error?.code).toBe("42501")
   })
@@ -590,10 +623,10 @@ describe("PostgREST resolves the new list and export", () => {
 // supabase-js): a fictitious Auth user made with the Admin API, given the
 // admin role, signed in with the publishable key. Committed, so removed in
 // onCleanup (its export audit rows, the role, the Auth user). While the old
-// overloads exist, an explicit p_interest (null or a code) must reach the
+// overloads exist, an explicit p_interests (null or codes) must reach the
 // new functions and succeed: no PGRST203.
 describe("PostgREST as a signed-in admin", () => {
-  it("the list and the export succeed with p_interest null and 'couples'", async () => {
+  it("the list and the export succeed with p_interests null and two codes", async () => {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL
     const secret = process.env.SUPABASE_SECRET_KEY
     const publishable = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
@@ -624,13 +657,13 @@ describe("PostgREST as a signed-in admin", () => {
     const signedIn = await client.auth.signInWithPassword({ email, password })
     expect(signedIn.error).toBeNull()
 
-    for (const interest of [null, "couples"]) {
+    for (const interest of [null, ["couples", "grandpa"]]) {
       const list = await client.rpc("admin_list_customers", {
         p_query: "",
         p_activity: "all",
-        p_interest: interest as unknown as string,
+        p_interests: interest as unknown as string[],
       })
-      expect(list.error, `list ${interest}`).toBeNull()
+      expect(list.error, `list ${String(interest)}`).toBeNull()
       expect(list.data).toMatchObject({ customers: expect.any(Array) })
 
       const exported = await client.rpc("admin_export_customers", {
@@ -638,9 +671,9 @@ describe("PostgREST as a signed-in admin", () => {
         p_query: "",
         p_columns: ["full_name", "special_brunch_interests"],
         p_activity: "all",
-        p_interest: interest as unknown as string,
+        p_interests: interest as unknown as string[],
       })
-      expect(exported.error, `export ${interest}`).toBeNull()
+      expect(exported.error, `export ${String(interest)}`).toBeNull()
       expect(exported.data).toMatchObject({ rows: expect.any(Array) })
     }
     await client.auth.signOut()

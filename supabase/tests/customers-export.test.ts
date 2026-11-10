@@ -19,8 +19,9 @@ import {
 } from "./support/db"
 import { seedMoney, type MoneyFixture } from "./support/money"
 
-// Story 2.16: the overload with p_interest (null = no filter).
-const EXPORT = "select public.admin_export_customers($1, $2, $3, $4, null) as r"
+// Story 2.16: the overload with p_interests (null = no filter).
+const EXPORT =
+  "select public.admin_export_customers($1, $2, $3, $4, null::text[]) as r"
 const ALL_COLUMNS = ["full_name", "phone", "email"]
 
 type Row = {
@@ -184,7 +185,7 @@ describe("admin_export_customers: scope and columns", () => {
         scope: "search",
         columns: ALL_COLUMNS,
         activity: "all",
-        interest: null,
+        interests: [],
         row_count: 0,
       })
     })
@@ -299,7 +300,7 @@ describe("admin_export_customers: the audit row", () => {
           scope: "search",
           columns: ["full_name", "phone"],
           activity: "all",
-          interest: null,
+          interests: [],
           row_count: 2,
         },
       })
@@ -315,7 +316,7 @@ describe("admin_export_customers: the audit row", () => {
         scope: "all",
         columns: ["email"],
         activity: "all",
-        interest: null,
+        interests: [],
         row_count: expect.any(Number),
       })
     })

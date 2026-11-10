@@ -38,12 +38,12 @@ describe("ExportForm", () => {
   it("says what the screen shows: a category or the search with its count", () => {
     expect(
       render({
-        shown: { kind: "category", activity: "inactive", interest: null },
+        shown: { kind: "category", activity: "inactive", interests: [] },
       })
     ).toContain("בחרת לייצא את כל הלקוחות הלא פעילות")
     expect(
       render({
-        shown: { kind: "category", activity: "active", interest: null },
+        shown: { kind: "category", activity: "active", interests: [] },
       })
     ).toContain("בחרת לייצא את כל הלקוחות הפעילות")
     expect(
@@ -53,8 +53,8 @@ describe("ExportForm", () => {
 
   // Story 2.16: the filter's line under "בחרת לייצא…", only when it is on.
   it("shows the special-brunch filter's line", () => {
-    const line = copy.onlyInterest("בראנץ׳ זוגות")
-    expect(line).toBe("רק מי שסימנה: בראנץ׳ זוגות")
+    const line = copy.onlyInterest(["בראנץ׳ זוגות", "בראנץ׳ עם סבוש"])
+    expect(line).toBe("רק מי שסימנה: בראנץ׳ זוגות או בראנץ׳ עם סבוש")
     expect(render({ interestLine: line })).toContain(line)
     expect(render()).not.toContain("רק מי שסימנה")
   })

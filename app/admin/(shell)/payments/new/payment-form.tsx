@@ -43,6 +43,7 @@ import {
   formatSessionDateTime,
 } from "@/lib/time"
 
+import { customerHref } from "../../customers/customer-items"
 import {
   approvePaymentAction,
   previewPaymentAction,
@@ -858,7 +859,8 @@ function AnotherPayment() {
 }
 
 // The approval's result for an existing customer: the purchase is in her
-// account already (no link). A card (no session placed) leads on to booking
+// account already (no join link); her name links to her card (story 2.16
+// phone check, user decision 2026-11-10). A card (no session placed) leads on to booking
 // her for a date (story 3.4).
 export function ApprovedPurchase({
   customerId,
@@ -886,7 +888,13 @@ export function ApprovedPurchase({
     <div className="flex flex-col gap-6">
       <div ref={noticeRef} tabIndex={-1} className="outline-none">
         <InlineNotice tone="success">
-          {copy.successExisting(customerName)}
+          {copy.successExistingLead}
+          <Link
+            href={customerHref(customerId)}
+            className="underline underline-offset-4"
+          >
+            <bdi>{customerName}</bdi>
+          </Link>
         </InlineNotice>
       </div>
       <p className="rounded-xl bg-muted px-4 py-3 text-[15px] font-semibold">

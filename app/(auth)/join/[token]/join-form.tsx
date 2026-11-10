@@ -675,12 +675,6 @@ export function JoinForm({
           )}
         </Field>
 
-        {/* Story 2.16: optional, nothing checked in advance. */}
-        <SpecialBrunchFieldset
-          content={specialBrunch}
-          error={interests ? messageOf(interests.message) : undefined}
-        />
-
         <Field data-invalid={password.error ? true : undefined}>
           <FieldLabel htmlFor="password">
             {joinCopy.password} {authCopy.required}
@@ -775,6 +769,14 @@ export function JoinForm({
         <h2 ref={stepTwoHeading} tabIndex={-1} className={STEP_HEADING}>
           {joinCopy.stepTwoTitle}
         </h2>
+
+        {/* Story 2.16: optional, nothing checked in advance; on step 2,
+            before the photo consents (phone check, user decision
+            2026-11-10). */}
+        <SpecialBrunchFieldset
+          content={specialBrunch}
+          error={interests ? messageOf(interests.message) : undefined}
+        />
 
         <PhotoConsentQuestions
           content={photoConsent}

@@ -2161,6 +2161,16 @@ export type Database = {
             }
             Returns: Json
           }
+        | {
+            Args: {
+              p_activity: string
+              p_columns: string[]
+              p_interests: string[]
+              p_query: string
+              p_scope: string
+            }
+            Returns: Json
+          }
       admin_finish_anonymize_customer: {
         Args: { p_customer_id: string; p_idempotency_key: string }
         Returns: Json
@@ -2228,6 +2238,10 @@ export type Database = {
         | { Args: { p_activity: string; p_query: string }; Returns: Json }
         | {
             Args: { p_activity: string; p_interest: string; p_query: string }
+            Returns: Json
+          }
+        | {
+            Args: { p_activity: string; p_interests: string[]; p_query: string }
             Returns: Json
           }
       admin_list_links: { Args: never; Returns: Json }

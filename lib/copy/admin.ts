@@ -112,8 +112,9 @@ export const adminCopy = {
       `${name} · רכישה ${paidOn} · אושר ${approvedOn}`,
     duplicateConfirm: "בדקתי, וזה תשלום נפרד ולא כפילות",
     submitExisting: "לאישור התשלום",
-    successExisting: (name: string) =>
-      `התשלום אושר. הרכישה נוספה לחשבון של ${name}`,
+    // The approval's line for an existing customer, before her name (a link
+    // to her card, story 2.16 phone check, user decision 2026-11-10).
+    successExistingLead: "התשלום אושר. הרכישה נוספה לחשבון של ",
     successPurchase: (product: string, units: number, expiresOn: string) =>
       `${product} · ${units} כניסות · בתוקף עד ${expiresOn}`,
     toList: "לרשימת התשלומים",
@@ -1815,11 +1816,19 @@ export const adminCopy = {
       inactive: "אין לקוחות לא פעילות",
     },
     inactive: "לא פעילה",
-    // Story 2.16: the second chip row under the categories (the options'
-    // words are content); "הכול" = no filter. label names the row.
-    specialBrunch: {
-      label: "בראנצ׳ים מיוחדים",
-      all: "הכול",
+    // Story 2.16 (phone-check fix, user decision 2026-11-10): the "סינון"
+    // button and its sheet; the activity options are categories above, the
+    // special brunches' words are content.
+    filter: {
+      button: "סינון",
+      // The button's name with its number of active filters.
+      buttonLabel: (count: number) =>
+        count === 0 ? "סינון" : `סינון, ${count} פעילים`,
+      title: "סינון לקוחות",
+      all: "כל הלקוחות",
+      activityLegend: "לפי פעילות",
+      specialBrunchLegend: "לפי בראנצ׳ים מיוחדים",
+      apply: "הצגת הלקוחות",
     },
     // The segmented-switch on /admin/customers and its open cards (story
     // 4.3, CAP-42): two links, the current one aria-current.
@@ -2038,7 +2047,8 @@ export const adminCopy = {
       // Two lines, no date (story 2.13): adminCopy.photoConsents.
       photoConsent: "אישור תמונות",
       // Story 2.16: the option titles (content) joined by " · ".
-      specialBrunch: "בראנצ׳ים מיוחדים",
+      // The row's title (user decision 2026-11-10, phone check).
+      specialBrunch: "מתעניינת בבראנצ׳ים מיוחדים",
       specialBrunchNone: "לא סומן",
       babies: "תינוקות",
       noBabies: "לא נוספו תינוקות",
@@ -2269,8 +2279,9 @@ export const adminCopy = {
       // The shown count when the list has more than its limit.
       moreThan: (limit: number) => `${limit}+`,
       // Story 2.16: under the line above, when the special-brunch filter is
-      // on (label: the option's title).
-      onlyInterest: (label: string) => `רק מי שסימנה: ${label}`,
+      // on (the options' titles; several: at least one of them).
+      onlyInterest: (labels: readonly string[]) =>
+        `רק מי שסימנה: ${labels.join(" או ")}`,
       headers: exportHeaders,
       noColumns: "יש לבחור לפחות עמודה אחת",
       done: "הקובץ ירד",
@@ -2649,6 +2660,9 @@ export const adminCopy = {
       // Story 2.16: the profile's answers and the export's filter.
       special_brunch_interests: "בראנצ׳ים מיוחדים",
       interest: "סינון לפי בראנצ׳ים מיוחדים",
+      // The filter of several at once (phone-check fix, 2026-11-10); interest
+      // stays for the dev rows written before it.
+      interests: "סינון לפי בראנצ׳ים מיוחדים",
       // Marketing reminders (story 5.11).
       marketing_reminder_schedule: "לוח תזכורות השיווק",
       last_sent_at: "נשלח לאחרונה",
@@ -2730,6 +2744,7 @@ export const adminCopy = {
       // later edit of the wording).
       special_brunch_interests: specialBrunchValues,
       interest: specialBrunchValues,
+      interests: specialBrunchValues,
     } as Record<string, Record<string, string>>,
     // A table's own wording of a code value (gender and meaning), by
     // entity_type then key; it wins over values above.

@@ -135,9 +135,9 @@ const EXPECTED_GRANTS = [
   "function public.admin_delete_work_dish(p_dish_id uuid, p_idempotency_key uuid) authenticated EXECUTE",
   "function public.admin_delete_work_task(p_task_id uuid, p_idempotency_key uuid) authenticated EXECUTE",
   "function public.admin_duplicate_event(p_event_id uuid, p_date date, p_start_time time without time zone, p_end_time time without time zone, p_idempotency_key uuid) authenticated EXECUTE",
-  // Story 2.16: p_interest (the old overload is dropped by
+  // Story 2.16: p_interests (the older overloads are dropped by
   // 20261109224659_special_brunch_interest_drop_old.sql).
-  "function public.admin_export_customers(p_scope text, p_query text, p_columns text[], p_activity text, p_interest text) authenticated EXECUTE",
+  "function public.admin_export_customers(p_scope text, p_query text, p_columns text[], p_activity text, p_interests text[]) authenticated EXECUTE",
   "function public.admin_finish_anonymize_customer(p_customer_id uuid, p_idempotency_key uuid) authenticated EXECUTE",
   "function public.admin_finish_email_change(p_customer_id uuid, p_succeeded boolean, p_idempotency_key uuid) authenticated EXECUTE",
   "function public.admin_finish_media_publish(p_media_id uuid) authenticated EXECUTE",
@@ -155,7 +155,7 @@ const EXPECTED_GRANTS = [
   "function public.admin_list_credit_candidates(p_credit_id uuid) authenticated EXECUTE",
   "function public.admin_list_customer_bookable_events(p_customer_id uuid) authenticated EXECUTE",
   "function public.admin_list_customer_credits(p_customer_id uuid) authenticated EXECUTE",
-  "function public.admin_list_customers(p_query text, p_activity text, p_interest text) authenticated EXECUTE",
+  "function public.admin_list_customers(p_query text, p_activity text, p_interests text[]) authenticated EXECUTE",
   "function public.admin_list_links() authenticated EXECUTE",
   "function public.admin_list_media() authenticated EXECUTE",
   "function public.admin_list_open_cards(p_filter text) authenticated EXECUTE",

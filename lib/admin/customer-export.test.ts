@@ -31,7 +31,7 @@ describe("parseExportParams", () => {
         scope: "all",
         query: null,
         activity: "inactive",
-        interest: null,
+        interests: [],
         columns: ["full_name", "phone", "email"],
       },
     })
@@ -49,7 +49,7 @@ describe("parseExportParams", () => {
         scope: "all",
         query: null,
         activity: "inactive",
-        interest: "grandma",
+        interests: ["grandma"],
         columns: ["full_name", "special_brunch_interests"],
       },
     })
@@ -64,7 +64,7 @@ describe("parseExportParams", () => {
         scope: "search",
         query: "רונ",
         activity: "all",
-        interest: null,
+        interests: [],
         columns: ["full_name", "email"],
       },
     })
@@ -98,6 +98,8 @@ describe("parseExportParams", () => {
     "scope=all&activity=all&cols=pending_email",
     "scope=all&activity=all&cols=full_name,",
     "scope=all&activity=all&interest=aunt&cols=full_name",
+    "scope=all&activity=all&interest=couples,couples&cols=full_name",
+    "scope=all&activity=all&interest=couples,aunt&cols=full_name",
     "scope=all&activity=all&interest=&cols=full_name",
   ])("INVALID_INPUT for %j", (query) => {
     expect(parse(query)).toEqual({ ok: false, code: "INVALID_INPUT" })
@@ -187,7 +189,7 @@ describe("exportHref", () => {
       scope: "all",
       query: "ignored",
       activity: "inactive",
-      interest: null,
+      interests: [],
       columns: ["email", "full_name"],
     })
     expect(href).toBe(
@@ -199,22 +201,22 @@ describe("exportHref", () => {
         scope: "all",
         query: null,
         activity: "inactive",
-        interest: null,
+        interests: [],
         columns: ["full_name", "email"],
       },
     })
   })
 
-  it("interest: sent when on, read back", () => {
+  it("interests: sent when on, read back", () => {
     const href = exportHref({
       scope: "all",
       query: null,
       activity: "active",
-      interest: "couples",
+      interests: ["couples", "grandma"],
       columns: ["full_name"],
     })
     expect(href).toBe(
-      "/api/admin/export?scope=all&activity=active&interest=couples&cols=full_name"
+      "/api/admin/export?scope=all&activity=active&interest=couples%2Cgrandma&cols=full_name"
     )
     expect(parseExportParams(new URL(href, "http://x").searchParams)).toEqual({
       ok: true,
@@ -222,7 +224,7 @@ describe("exportHref", () => {
         scope: "all",
         query: null,
         activity: "active",
-        interest: "couples",
+        interests: ["couples", "grandma"],
         columns: ["full_name"],
       },
     })
@@ -233,7 +235,7 @@ describe("exportHref", () => {
       scope: "search",
       query: " רונ ",
       activity: "all",
-      interest: null,
+      interests: [],
       columns: ["full_name", "phone", "email"],
     })
     expect(new URL(href, "http://x").searchParams.get("activity")).toBe("all")
@@ -243,7 +245,7 @@ describe("exportHref", () => {
         scope: "search",
         query: "רונ",
         activity: "all",
-        interest: null,
+        interests: [],
         columns: ["full_name", "phone", "email"],
       },
     })
@@ -258,7 +260,7 @@ describe("exportRequest (story 5.13)", () => {
       scope: "all",
       query: null,
       activity: "all",
-      interest: null,
+      interests: [],
       columns: [...all],
     })
   })
@@ -266,14 +268,14 @@ describe("exportRequest (story 5.13)", () => {
   it("a category: scope all with that category and its filter", () => {
     expect(
       exportRequest(
-        { kind: "category", activity: "inactive", interest: "grandma" },
+        { kind: "category", activity: "inactive", interests: ["grandma"] },
         ["phone"]
       )
     ).toEqual({
       scope: "all",
       query: null,
       activity: "inactive",
-      interest: "grandma",
+      interests: ["grandma"],
       columns: ["phone"],
     })
   })
@@ -285,7 +287,7 @@ describe("exportRequest (story 5.13)", () => {
       scope: "search",
       query: "רונ",
       activity: "all",
-      interest: null,
+      interests: [],
       columns: ["phone"],
     })
   })
@@ -295,7 +297,7 @@ describe("exportLine (story 5.13)", () => {
   it("what the file will hold", () => {
     expect(exportLine(null)).toBe("בחרת לייצא את כל הלקוחות")
     const category = (activity: "all" | "active" | "inactive") =>
-      ({ kind: "category", activity, interest: null }) as const
+      ({ kind: "category", activity, interests: [] as [] }) as const
     expect(exportLine(category("all"))).toBe("בחרת לייצא את כל הלקוחות")
     expect(exportLine(category("active"))).toBe(
       "בחרת לייצא את כל הלקוחות הפעילות"
@@ -314,16 +316,26 @@ describe("exportLine (story 5.13)", () => {
 
 // Story 2.16: the line under it while the filter is on.
 describe("exportInterestLine", () => {
-  it("the option's title while the filter is on, else null", () => {
+  it("the options' titles while the filter is on, else null", () => {
     expect(
       exportInterestLine(
-        { kind: "category", activity: "all", interest: "grandma" },
+        { kind: "category", activity: "all", interests: ["grandma"] },
         SB
       )
     ).toBe(`רק מי שסימנה: ${SB.grandma_title}`)
     expect(
       exportInterestLine(
-        { kind: "category", activity: "all", interest: null },
+        {
+          kind: "category",
+          activity: "all",
+          interests: ["couples", "grandpa"],
+        },
+        SB
+      )
+    ).toBe(`רק מי שסימנה: ${SB.couples_title} או ${SB.grandpa_title}`)
+    expect(
+      exportInterestLine(
+        { kind: "category", activity: "all", interests: [] },
         SB
       )
     ).toBeNull()

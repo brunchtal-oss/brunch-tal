@@ -2,7 +2,8 @@ import { shownCount, type ShownList } from "@/lib/admin/customer-export"
 import { adminCopy } from "@/lib/copy/admin"
 import { formatLocalPhone } from "@/lib/phone"
 import {
-  isSpecialBrunchCode,
+  parseSpecialBrunchList,
+  specialBrunchListParam,
   type SpecialBrunchCode,
 } from "@/lib/special-brunch"
 import { formatShortDate } from "@/lib/time"
@@ -13,8 +14,12 @@ import { formatShortDate } from "@/lib/time"
 // check, user decision 2026-10-07): nothing until she types 2 characters,
 // and then it searches every customer. Story 5.13 (user decision 2026-10-20):
 // three category buttons each list a whole category; an inactive customer is
-// never hidden, only marked. Story 2.16: a second chip row narrows a
-// category to the customers who chose one special brunch (?interest=).
+// never hidden, only marked. Story 2.16 (phone-check fix, user decision
+// 2026-11-10): the category buttons and the special-brunch chips became one
+// "סינון" sheet. Within the activity or the special brunches the choices are
+// OR (active + inactive = all; couples + grandma = at least one); between
+// them, AND. ?activity= keeps the category, ?interest= the codes joined by
+// ",".
 
 const copy = adminCopy.customers
 
@@ -60,22 +65,30 @@ export function isCustomerActivity(value: unknown): value is CustomerActivity {
 export type ListRequest = {
   query: string
   activity: CustomerActivity
-  interest: SpecialBrunchCode | null
+  // In code order; [] = no filter.
+  interests: SpecialBrunchCode[]
 }
 
 export function listRequest(
   query: string,
   category: CustomerActivity | null,
-  interest: SpecialBrunchCode | null = null
+  interests: readonly SpecialBrunchCode[] = []
 ): ListRequest | null {
   const asked = query.trim()
   if (asked.length >= 2) {
-    return { query: asked, activity: "all", interest: null }
+    return { query: asked, activity: "all", interests: [] }
   }
   if (asked === "" && category) {
-    return { query: "", activity: category, interest }
+    return { query: "", activity: category, interests: [...interests] }
   }
   return null
+}
+
+function sameInterests(
+  a: readonly SpecialBrunchCode[],
+  b: readonly SpecialBrunchCode[]
+): boolean {
+  return specialBrunchListParam(a) === specialBrunchListParam(b)
 }
 
 // The live answer, shown only for the request it answers: while a new query
@@ -87,7 +100,7 @@ export function answerForFilter<A extends ListRequest>(
   return request &&
     answer?.query === request.query &&
     answer.activity === request.activity &&
-    answer.interest === request.interest
+    sameInterests(answer.interests, request.interests)
     ? answer
     : null
 }
@@ -113,7 +126,7 @@ export function shownList(
     return {
       kind: "category",
       activity: request.activity,
-      interest: request.interest,
+      interests: request.interests,
     }
   }
   const answered =
@@ -155,12 +168,11 @@ export function parseActivity(params: SearchParams): CustomerActivity | null {
   return isCustomerActivity(activity) ? activity : null
 }
 
-// The special brunch in the URL (?interest=couples|grandma|grandpa, story
-// 2.16); absent or anything else is no filter.
-export function parseInterest(params: SearchParams): SpecialBrunchCode | null {
+// The special brunches in the URL (?interest=couples,grandma, story 2.16),
+// in code order; absent or malformed is no filter.
+export function parseInterests(params: SearchParams): SpecialBrunchCode[] {
   const value = params.interest
-  const interest = Array.isArray(value) ? value[0] : value
-  return isSpecialBrunchCode(interest) ? interest : null
+  return parseSpecialBrunchList(Array.isArray(value) ? value[0] : value) ?? []
 }
 
 // The search's address (history.replaceState while she types): only q.
@@ -170,14 +182,52 @@ export function listHref(query: string): string {
     : `/admin/customers?q=${encodeURIComponent(query)}`
 }
 
-// A category button's address, keeping the special-brunch filter (story
-// 2.16), and a special-brunch chip's (null = "הכול").
+// The filter's address (the sheet's "הצגת הלקוחות"): the category and the
+// special brunches ([] = none).
 export function categoryHref(
   activity: CustomerActivity,
-  interest: SpecialBrunchCode | null = null
+  interests: readonly SpecialBrunchCode[] = []
 ): string {
   const base = `/admin/customers?activity=${activity}`
-  return interest ? `${base}&interest=${interest}` : base
+  return interests.length > 0
+    ? `${base}&interest=${specialBrunchListParam(interests)}`
+    : base
+}
+
+// The sheet's choice: the checked activities and special brunches. Both
+// activities (or none) = every customer; "כל הלקוחות" is checked when
+// nothing else is.
+export type FilterChoice = {
+  activities: readonly Exclude<CustomerActivity, "all">[]
+  interests: readonly SpecialBrunchCode[]
+}
+
+export function filterChoice(
+  category: CustomerActivity | null,
+  interests: readonly SpecialBrunchCode[]
+): FilterChoice {
+  return {
+    activities:
+      category === "active" || category === "inactive" ? [category] : [],
+    interests: [...interests],
+  }
+}
+
+// The category of a choice: one activity is that one; both or none is all.
+export function choiceActivity(choice: FilterChoice): CustomerActivity {
+  return choice.activities.length === 1 ? choice.activities[0] : "all"
+}
+
+// The number on the "סינון" button: the active filters (one activity, and
+// each special brunch); 0 = every customer.
+export function filterCount(
+  category: CustomerActivity | null,
+  interests: readonly SpecialBrunchCode[]
+): number {
+  return (
+    (category === "active" || category === "inactive" ? 1 : 0) +
+    interests.length
+  )
 }
 
 // The card of a customer (also linked from the home and the payments).

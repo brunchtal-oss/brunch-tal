@@ -73,7 +73,7 @@ describe("GET /api/admin/export", () => {
         p_columns: ["full_name", "phone"],
         p_activity: "all",
         // Always sent: null = no filter (story 2.16).
-        p_interest: null,
+        p_interests: [],
       }
     )
   })
@@ -95,7 +95,7 @@ describe("GET /api/admin/export", () => {
       },
     })
     const response = await get(
-      "scope=all&activity=all&interest=couples&cols=full_name,special_brunch_interests"
+      "scope=all&activity=all&interest=grandpa,couples&cols=full_name,special_brunch_interests"
     )
     expect(response.status).toBe(200)
     expect(callRpc).toHaveBeenCalledWith(
@@ -106,7 +106,7 @@ describe("GET /api/admin/export", () => {
         p_query: "",
         p_columns: ["full_name", "special_brunch_interests"],
         p_activity: "all",
-        p_interest: "couples",
+        p_interests: ["couples", "grandpa"],
       }
     )
     const text = new TextDecoder("utf-8", { ignoreBOM: true }).decode(
@@ -131,7 +131,7 @@ describe("GET /api/admin/export", () => {
         p_query: "",
         p_columns: ["full_name", "phone", "email"],
         p_activity: "inactive",
-        p_interest: null,
+        p_interests: [],
       }
     )
     const text = new TextDecoder("utf-8", { ignoreBOM: true }).decode(

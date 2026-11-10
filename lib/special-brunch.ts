@@ -31,6 +31,26 @@ export function parseSpecialBrunchInterests(
   return SPECIAL_BRUNCH_CODES.filter((code) => values.includes(code))
 }
 
+// The customers list's and the export's ?interest= (phone-check fix, user
+// decision 2026-11-10: several at once): codes joined by ",", each once,
+// returned in code order. Absent -> [] (no filter); empty, an unknown or a
+// repeated code -> null.
+export function parseSpecialBrunchList(
+  raw: string | null | undefined
+): SpecialBrunchCode[] | null {
+  if (raw === null || raw === undefined) return []
+  const values = raw.split(",")
+  if (new Set(values).size !== values.length) return null
+  return parseSpecialBrunchInterests(values)
+}
+
+// The address form of a filter: the codes in code order, joined by ",".
+export function specialBrunchListParam(
+  codes: readonly SpecialBrunchCode[]
+): string {
+  return orderedSpecialBrunchCodes(codes).join(",")
+}
+
 // Stored codes for display: known ones only, each once, in code order.
 export function orderedSpecialBrunchCodes(
   values: readonly unknown[] | null | undefined

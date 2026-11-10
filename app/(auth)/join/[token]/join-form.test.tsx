@@ -111,17 +111,22 @@ describe("JoinForm", () => {
     }
   })
 
-  // Story 2.16: step 1, after the allergies field, optional, nothing checked.
-  it("shows the special-brunch question in step 1, after the allergies", () => {
+  // Story 2.16: step 2, before the photo consents (phone check, user
+  // decision 2026-11-10), optional, nothing checked.
+  it("shows the special-brunch question in step 2, before the photo consents", () => {
     const html = render("active")
-    const stepOne = html.slice(0, html.indexOf('data-step="2"'))
-    const question = stepOne.indexOf(SPECIAL_BRUNCH_FALLBACK.question)
-    expect(question).toBeGreaterThan(stepOne.indexOf('name="dietaryNotes"'))
-    expect(question).toBeLessThan(stepOne.indexOf('name="password"'))
+    const stepTwoAt = html.indexOf('data-step="2"')
+    const stepTwo = html.slice(stepTwoAt)
+    expect(html.slice(0, stepTwoAt)).not.toContain(
+      SPECIAL_BRUNCH_FALLBACK.question
+    )
+    const question = stepTwo.indexOf(SPECIAL_BRUNCH_FALLBACK.question)
+    expect(question).toBeGreaterThan(0)
+    expect(question).toBeLessThan(stepTwo.indexOf('name="photoConsent"'))
     for (const code of ["couples", "grandma", "grandpa"]) {
-      expect(stepOne).toContain(`value="${code}"`)
+      expect(stepTwo).toContain(`value="${code}"`)
     }
-    expect(stepOne).toContain(SPECIAL_BRUNCH_FALLBACK.grandma_title)
+    expect(stepTwo).toContain(SPECIAL_BRUNCH_FALLBACK.grandma_title)
   })
 
   it.each([

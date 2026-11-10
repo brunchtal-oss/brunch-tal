@@ -11,18 +11,16 @@ import { createClient } from "@/lib/supabase/server"
 import { localToday } from "@/lib/time"
 
 // GET /api/admin/export?scope=all|search&q=&activity=all|active|inactive&
-// interest=couples|grandma|grandpa&cols=full_name,phone,email,
+// interest=couples,grandma&cols=full_name,phone,email,
 // special_brunch_interests (story 4.4, CAP-25; activity = the category for
-// both scopes, story 5.13; interest optional, story 2.16): the customers CSV. The session client (RLS and the
+// both scopes, story 5.13; interest optional, one or more codes, story
+// 2.16): the customers CSV. The session client (RLS and the
 // RPC's own admin check); admin_export_customers returns the rows and writes
 // the audit row. No session or NOT_AUTHORIZED -> 403; malformed parameters
 // or INVALID_INPUT -> 400; anything else -> 500, each as {code} JSON. Under
 // /api, so it stays behind the preview site lock.
 
 const NO_STORE = { "Cache-Control": "private, no-store" }
-
-// The generated type has no null for p_interest; null is "no filter".
-const NO_INTEREST = null as unknown as string
 
 function error(code: string, status: number): Response {
   return Response.json({ code }, { status, headers: NO_STORE })
@@ -49,7 +47,7 @@ export async function GET(request: Request): Promise<Response> {
 
   const parsed = parseExportParams(new URL(request.url).searchParams)
   if (!parsed.ok) return error(parsed.code, 400)
-  const { scope, query, activity, interest, columns } = parsed.data
+  const { scope, query, activity, interests, columns } = parsed.data
 
   // The option titles of the special-brunch cell (story 2.16), read before
   // the RPC writes its audit row, and only when the column is chosen (the
@@ -68,9 +66,9 @@ export async function GET(request: Request): Promise<Response> {
     p_query: query ?? "",
     p_columns: columns,
     p_activity: activity,
-    // Always sent, null = no filter (story 2.16): only the overload with
-    // p_interest matches.
-    p_interest: interest ?? NO_INTEREST,
+    // Always sent, [] = no filter (story 2.16): only the overload with
+    // p_interests matches.
+    p_interests: interests,
   })
   if (!result.ok) return error(result.code, statusOf(result.code))
 

@@ -3,8 +3,9 @@ import { adminCopy } from "@/lib/copy/admin"
 import { toCsv } from "@/lib/csv"
 import { formatLocalPhone } from "@/lib/phone"
 import {
-  isSpecialBrunchCode,
+  parseSpecialBrunchList,
   specialBrunchLabels,
+  specialBrunchListParam,
   type SpecialBrunchCode,
 } from "@/lib/special-brunch"
 
@@ -69,8 +70,9 @@ export type ExportParams = {
   query: string | null
   // The category, for both scopes.
   activity: ExportActivity
-  // Story 2.16: one special brunch, or null (no filter).
-  interest: SpecialBrunchCode | null
+  // Story 2.16: the special brunches, in code order; [] = no filter. A
+  // customer matches when she chose at least one.
+  interests: SpecialBrunchCode[]
   // In file order.
   columns: ExportColumn[]
 }
@@ -79,10 +81,10 @@ const QUERY_MIN = 2
 const QUERY_MAX = 100
 
 /**
- * `?scope=all|search&q=&activity=all|active|inactive&interest=couples&cols=full_name,phone,email`.
+ * `?scope=all|search&q=&activity=all|active|inactive&interest=couples,grandma&cols=full_name,phone,email`.
  * search needs q of 2-100 characters after trimming; all ignores q. activity
- * is required for both; interest (story 2.16) is optional, else a known
- * code. cols is non-empty, without duplicates, from the
+ * is required for both; interest (story 2.16) is optional, else known
+ * codes joined by ",", each once. cols is non-empty, without duplicates, from the
  * closed list. Anything else is INVALID_INPUT (the RPC checks again).
  */
 export function parseExportParams(
@@ -102,9 +104,8 @@ export function parseExportParams(
   const activity = params.get("activity")
   if (!isExportActivity(activity)) return invalid
 
-  const rawInterest = params.get("interest")
-  if (rawInterest !== null && !isSpecialBrunchCode(rawInterest)) return invalid
-  const interest = rawInterest
+  const interests = parseSpecialBrunchList(params.get("interest"))
+  if (interests === null) return invalid
 
   const raw = (params.get("cols") ?? "").split(",").map((c) => c.trim())
   // An empty cols is [""], not a column.
@@ -113,18 +114,18 @@ export function parseExportParams(
   const chosen = new Set(raw)
   const columns = EXPORT_COLUMN_KEYS.filter((key) => chosen.has(key))
 
-  return { ok: true, data: { scope, query, activity, interest, columns } }
+  return { ok: true, data: { scope, query, activity, interests, columns } }
 }
 
 // What the screen asks for, which the sheet exports (story 5.13): a whole
 // category, or a search over every customer with its trimmed query and the
 // count as the list shows it (null while its answer is not shown). A
-// category carries its special-brunch filter (story 2.16; null = none).
+// category carries its special-brunch filter (story 2.16; [] = none).
 export type ShownList =
   | {
       kind: "category"
       activity: ExportActivity
-      interest: SpecialBrunchCode | null
+      interests: SpecialBrunchCode[]
     }
   | { kind: "search"; query: string; count: string | null }
 
@@ -146,15 +147,16 @@ export function exportLine(shown: ShownList | null): string {
 
 /**
  * Story 2.16: the line under it while the special-brunch filter is on (the
- * option's title from the content block), else null.
+ * options' titles from the content block, joined by " או "), else null.
  */
 export function exportInterestLine(
   shown: ShownList | null,
   specialBrunch: SpecialBrunchContent
 ): string | null {
-  if (shown?.kind !== "category" || !shown.interest) return null
-  const [label] = specialBrunchLabels(specialBrunch, [shown.interest])
-  return adminCopy.customers.export.onlyInterest(label)
+  if (shown?.kind !== "category" || shown.interests.length === 0) return null
+  return adminCopy.customers.export.onlyInterest(
+    specialBrunchLabels(specialBrunch, shown.interests)
+  )
 }
 
 /**
@@ -171,7 +173,7 @@ export function exportRequest(
       scope: "search",
       query: shown.query,
       activity: "all",
-      interest: null,
+      interests: [],
       columns: [...columns],
     }
   }
@@ -179,7 +181,7 @@ export function exportRequest(
     scope: "all",
     query: null,
     activity: shown ? shown.activity : "all",
-    interest: shown ? shown.interest : null,
+    interests: shown ? [...shown.interests] : [],
     columns: [...columns],
   }
 }
@@ -202,13 +204,15 @@ export function exportHref({
   scope,
   query,
   activity,
-  interest,
+  interests,
   columns,
 }: ExportParams): string {
   const params = new URLSearchParams({ scope })
   if (scope === "search") params.set("q", (query ?? "").trim())
   params.set("activity", activity)
-  if (interest) params.set("interest", interest)
+  if (interests.length > 0) {
+    params.set("interest", specialBrunchListParam(interests))
+  }
   params.set(
     "cols",
     EXPORT_COLUMN_KEYS.filter((key) => columns.includes(key)).join(",")
