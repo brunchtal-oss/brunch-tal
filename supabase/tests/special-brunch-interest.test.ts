@@ -13,7 +13,7 @@
 // runs in inRollback; the dev database may hold other rows, so every check
 // looks only at this test's ids.
 
-import { randomUUID } from "node:crypto"
+import { randomBytes, randomUUID } from "node:crypto"
 
 import { createClient } from "@supabase/supabase-js"
 import { describe, expect, it } from "vitest"
@@ -25,6 +25,7 @@ import {
   asServiceRole,
   inRollback,
   insertAuthUser,
+  onCleanup,
   queryError,
   sql,
   testName,
@@ -582,5 +583,66 @@ describe("PostgREST resolves the new list and export", () => {
       p_interest: null as unknown as string,
     })
     expect(exported.error?.code).toBe("42501")
+  })
+})
+
+// A real admin session through PostgREST (as the screens call it, through
+// supabase-js): a fictitious Auth user made with the Admin API, given the
+// admin role, signed in with the publishable key. Committed, so removed in
+// onCleanup (its export audit rows, the role, the Auth user). While the old
+// overloads exist, an explicit p_interest (null or a code) must reach the
+// new functions and succeed: no PGRST203.
+describe("PostgREST as a signed-in admin", () => {
+  it("the list and the export succeed with p_interest null and 'couples'", async () => {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const secret = process.env.SUPABASE_SECRET_KEY
+    const publishable = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+    if (!url || !secret || !publishable) {
+      throw new Error("Supabase keys are missing in .env.local")
+    }
+    const options = { auth: { persistSession: false, autoRefreshToken: false } }
+    const service = createClient(url, secret, options)
+    const email = `${testName("sbi_admin")}@example.test`.toLowerCase()
+    const password = randomBytes(18).toString("base64url")
+    const created = await service.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+    })
+    expect(created.error).toBeNull()
+    const adminId = created.data.user!.id
+    onCleanup(async () => {
+      await service.auth.admin.deleteUser(adminId)
+    })
+    await sql("insert into public.admin_roles (user_id) values ($1)", [adminId])
+    onCleanup(async () => {
+      await sql("delete from public.audit_log where actor_id = $1", [adminId])
+      await sql("delete from public.admin_roles where user_id = $1", [adminId])
+    })
+
+    const client = createClient(url, publishable, options)
+    const signedIn = await client.auth.signInWithPassword({ email, password })
+    expect(signedIn.error).toBeNull()
+
+    for (const interest of [null, "couples"]) {
+      const list = await client.rpc("admin_list_customers", {
+        p_query: "",
+        p_activity: "all",
+        p_interest: interest as unknown as string,
+      })
+      expect(list.error, `list ${interest}`).toBeNull()
+      expect(list.data).toMatchObject({ customers: expect.any(Array) })
+
+      const exported = await client.rpc("admin_export_customers", {
+        p_scope: "all",
+        p_query: "",
+        p_columns: ["full_name", "special_brunch_interests"],
+        p_activity: "all",
+        p_interest: interest as unknown as string,
+      })
+      expect(exported.error, `export ${interest}`).toBeNull()
+      expect(exported.data).toMatchObject({ rows: expect.any(Array) })
+    }
+    await client.auth.signOut()
   })
 })

@@ -2,13 +2,13 @@
 title: 'Special-brunch interest question (2.16)'
 type: 'feature'
 created: '2026-11-09'
-status: 'in-progress'
+status: 'in-review'
 baseline_commit: '4cc8318058aff5dbb000a093baa96347e7579a0f'
 route: 'full'
 route_source: 'auto'
-review: ''
-review_source: ''
-lenses_ran: []
+review: 'thorough'
+review_source: 'auto'
+lenses_ran: ['blind-hunter', 'edge-case-hunter', 'verification-gap', 'intent-alignment']
 review_loop_iteration: 0
 context:
   - '{project-root}/_bmad-output/specs/spec-brunch-at-tal/security-and-rpc-rules.md'
@@ -106,10 +106,32 @@ Line numbers from origin/main 7da840e; join files moved in 2.15 (4cc8318, merged
 - 2026-11-09 (user, via the work manager; small change to the frozen spec with her approval): `couples_hint` is "את מגיעה עם הבייבי ועם בן או בת הזוג" (was empty), not "אמא" / "אבא", since couples may be two women. Seed, fallback and the test that compares them follow. Tal can edit it later.
 - 2026-11-09 (user, via the work manager): no wait for 2.15's merge. Build after the work manager's go, once 2.15's branch is pushed; merge it into this branch. 2.15's migration is already on dev. The main migration is applied by the work manager; the drop file is run by the user later, and both overloads coexist until then. `test:db` only with the work manager's go and never in parallel with 2.15. Commit and push to this branch with his go; the PR opens only after 2.15 is merged.
 - 2026-11-10 (main session, typography only): the seed, the fallback and every new copy string use the Hebrew geresh ׳ ("בראנץ׳", "בראנצ׳ים"), as the rest of the site does, instead of the ASCII apostrophe in the frozen text. No word changes.
+- 2026-11-10 (work manager approved, build decisions): (1) "פרטים" in view mode shows a read-only row "בראנצ׳ים מיוחדים" with the chosen titles, or "לא סומן. אפשר לבחור בלחיצה על עריכה" when empty, so the customer sees her answer without opening edit. (2) On the customers list a search of 2+ characters ignores the interest filter, as it already ignores the activity category; the RPCs still AND the filter with the search, but the screen never sends both.
+
+## Review Triage Log
+
+**Pass 1 (blind, edge-case, verification-gap, intent-alignment).**
+
+| # | Finding | Verdict | Route | Evidence and action |
+|---|---|---|---|---|
+| 1 | Export route reads the wording after the RPC wrote its audit row, and always; a throw = unhandled 500 + logged export with no file (blind, edge) | medium | patch | Read before the RPC, only when the column is chosen; failure → `{code:"SERVER_ERROR"}` 500, no RPC; route tests |
+| 2 | Audit history shows raw `special_brunch_interests`, `interest` and codes (blind) | medium | patch | Field and value labels in `lib/copy/admin.ts`; `audit-data.test.ts` |
+| 3 | No test that the "פרטים" save sends the checked codes or that edit mode shows saved codes (VG) | medium | patch | Pure `detailsInput(formData)` + tests; edit-mode render test |
+| 4 | No test for the content loader fallback (VG) | medium | patch | `lib/content/join-form.test.ts`: valid, missing, invalid, read error |
+| 5 | List filter wiring in `CustomerLiveSearch` untested (VG) | medium | patch | `customer-live-search.test.tsx`: hrefs keep `interest`, `aria-current`, labels from content |
+| 6 | 2.15 `submitJoinFill` payload not tested (blind, intent) | medium | patch | `join.test.ts` case, codes in order |
+| 7 | Overload-coexistence test calls only as anon (edge) | medium | patch | Admin signed in over PostgREST calls both RPCs with null and a code, expects success |
+| 8 | Profile view joins with ", ", card with " · " (blind) | low | patch | " · " on screens |
+| 9 | Error id only on the `<fieldset>` (blind) | low | patch | Also on each checkbox's `aria-describedby`, with `aria-invalid` |
+| 10 | `lib/errors.ts` field comment misses the new fields (blind) | low | patch | Comment updated |
+
+Rejected (8): publishing the join-form page bumps `published_version`, so editing this block gives later joiners a new photo-consent text version (blind, edge) — the version identifies the page snapshot, the consent wording per version stays recoverable from the audit log, no customer- or Tal-facing harm; raised to the work manager. Loader throws on a read error and breaks the pages (blind, edge) — the same pages already read the same database and fail on it anyway. `grants.test.ts` fails until the drop runs (blind, edge, VG) — planned; rerun after the user's drop. 2-D array passes the check (blind) — only by a customer's deliberate API write to her own row, display-only effect; fix is a new constraint. Duplicated `null as unknown as string` cast (blind) — two call sites, no harm. Editor shows the block after the photo questions (blind) — cosmetic, editor only; needs a data migration. `validateJoin` dedupes instead of rejecting duplicates (edge) — checkboxes cannot send duplicates; `join_complete` rejects them (db test). Ticket "done" vs spec status (blind) — both set at closing.
 
 ## Design Notes
 
 **Array + check, not a table:** three fixed options, read as one value per customer; a column is filterable with `= any(...)`, fits the existing column-grant self-update, and needs no new RLS. A new option later = a migration that widens the check, plus a schema field and seed text.
+
+**Publishing this block bumps the join-form `published_version` (work manager 2026-11-10, kept):** the version identifies the page snapshot, which the photo consents record; every snapshot's wording is kept in the audit log, so a new version with unchanged photo wording harms nothing.
 
 **Title + hint, not one line:** the source line "בראנץ' עם סבתוש - את מגיעה עם הבייבי ועם סבתא" is split at the dash into a checkbox label and a small line under it (work manager's proposal, accepted); no word changes. Short titles fit the filter chips and export cells.
 

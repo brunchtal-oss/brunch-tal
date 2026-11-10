@@ -31,8 +31,11 @@ export const ERROR_MESSAGES = {
   DUPLICATE_CONFIRM_REQUIRED: "צריך לאשר שזה תשלום נפרד ולא כפילות",
   // Join (story 2.2). INVALID_INPUT of join_begin / join_complete carries
   // detail.field (email | phone | full_name | photo_consent |
-  // personal_photo_consent | dietary_notes | babies | baby_name | birth_date)
-  // and, for a baby, detail.index.
+  // personal_photo_consent | dietary_notes | special_brunch_interests |
+  // babies | baby_name | birth_date) and, for a baby, detail.index. Story
+  // 2.16: INVALID_INPUT of admin_list_customers / admin_export_customers
+  // carries detail.field interest (an unknown special brunch), next to
+  // activity, query, scope and columns.
   CONSENT_REQUIRED: "צריך לאשר את מדיניות הפרטיות כדי להמשיך",
   // User decision 2026-10-02 (round 2); on /join the last phrase links to
   // Tal's WhatsApp.

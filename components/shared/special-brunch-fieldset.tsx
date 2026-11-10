@@ -37,6 +37,11 @@ export function SpecialBrunchFieldset({
       {specialBrunchOptions(content).map((option) => {
         const id = `${name}-${option.code}`
         const hintId = `${id}-hint`
+        // Its hint, then the error, if any.
+        const describedBy =
+          [option.hint ? hintId : null, error ? errorId : null]
+            .filter(Boolean)
+            .join(" ") || undefined
         return (
           <div key={option.code} className="flex items-start gap-3">
             <input
@@ -45,7 +50,8 @@ export function SpecialBrunchFieldset({
               name={name}
               value={option.code}
               defaultChecked={defaultValue.includes(option.code)}
-              aria-describedby={option.hint ? hintId : undefined}
+              aria-describedby={describedBy}
+              aria-invalid={error ? true : undefined}
               className="mt-0.5 size-5 shrink-0 accent-primary"
             />
             <div className="flex flex-col gap-0.5">

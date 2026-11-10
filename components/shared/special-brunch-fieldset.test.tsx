@@ -62,7 +62,19 @@ describe("SpecialBrunchFieldset", () => {
     )
     expect(html.match(/checked=""/g)).toHaveLength(1)
     expect(input(html, "couples")).toContain('checked=""')
-    expect(html).toContain('aria-invalid="true"')
     expect(html).toContain('<p id="specialBrunchInterests-error"')
+    // Each checkbox: invalid, described by its hint and the error.
+    for (const code of ["couples", "grandma", "grandpa"]) {
+      expect(input(html, code)).toContain('aria-invalid="true"')
+      expect(input(html, code)).toContain(
+        `aria-describedby="specialBrunchInterests-${code}-hint specialBrunchInterests-error"`
+      )
+    }
+    // Without an error: the hint only, not invalid.
+    const clean = renderToStaticMarkup(<SpecialBrunchFieldset content={SB} />)
+    expect(input(clean, "couples")).not.toContain("aria-invalid")
+    expect(input(clean, "couples")).toContain(
+      'aria-describedby="specialBrunchInterests-couples-hint"'
+    )
   })
 })

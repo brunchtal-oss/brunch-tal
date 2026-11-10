@@ -41,6 +41,7 @@ export function DetailsSection({
   specialBrunchInterests,
   phone,
   email,
+  defaultEditing = false,
 }: {
   fullName: string
   dietaryNotes: string | null
@@ -48,8 +49,10 @@ export function DetailsSection({
   specialBrunchInterests: SpecialBrunchCode[]
   phone: string | null
   email: string | null
+  // Opens in the edit form (a static render in tests).
+  defaultEditing?: boolean
 }) {
-  const [editing, setEditing] = useState(false)
+  const [editing, setEditing] = useState(defaultEditing)
   const [error, setError] = useState<{
     code: ErrorCode
     detail?: ErrorDetail
@@ -81,13 +84,7 @@ export function DetailsSection({
     if (pending) return
     const data = new FormData(event.currentTarget)
     startTransition(async () => {
-      const result = await updateDetails({
-        fullName: String(data.get("fullName") ?? ""),
-        dietaryNotes: String(data.get("dietaryNotes") ?? ""),
-        specialBrunchInterests: data
-          .getAll(SPECIAL_BRUNCH_FIELD)
-          .map((value) => String(value)),
-      })
+      const result = await updateDetails(detailsInput(data))
       if (result.ok) {
         close()
         toastSaved()
@@ -203,7 +200,7 @@ export function DetailsSection({
           </Row>
           <Row label={copy.specialBrunch}>
             {interestLabels.length > 0 ? (
-              interestLabels.join(", ")
+              interestLabels.join(" · ")
             ) : (
               <span className="text-muted-foreground">
                 {copy.specialBrunchEmpty}
@@ -233,6 +230,20 @@ export function DetailsSection({
       )}
     </section>
   )
+}
+
+// What the details form sends to updateDetails: every checked special
+// brunch (none = [], which clears them).
+export function detailsInput(
+  data: FormData
+): Parameters<typeof updateDetails>[0] {
+  return {
+    fullName: String(data.get("fullName") ?? ""),
+    dietaryNotes: String(data.get("dietaryNotes") ?? ""),
+    specialBrunchInterests: data
+      .getAll(SPECIAL_BRUNCH_FIELD)
+      .map((value) => String(value)),
+  }
 }
 
 function Row({

@@ -866,6 +866,22 @@ describe("submitJoinFill (story 2.15)", () => {
     createUser.mockResolvedValue(ok)
   })
 
+  // Story 2.16: Tal's fill sends the special brunches like the customer's
+  // link (the shared p_profile builder), in code order.
+  it("sends the special brunches to join_complete in code order", async () => {
+    sessionRpc.mockResolvedValue(ready())
+    await submitJoinFill(session(), PAYMENT, INPUT, KEY, null)
+    expect(rpc).toHaveBeenCalledWith(
+      "join_complete",
+      expect.objectContaining({
+        p_token: FILL_TOKEN,
+        p_profile: expect.objectContaining({
+          special_brunch_interests: ["couples", "grandpa"],
+        }),
+      })
+    )
+  })
+
   it("begins with the admin's session, joins with the new link and never signs in", async () => {
     sessionRpc.mockResolvedValue(ready())
 

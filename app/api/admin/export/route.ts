@@ -6,6 +6,7 @@ import {
 } from "@/lib/admin/customer-export"
 import { getSpecialBrunchContent } from "@/lib/content/join-form"
 import { callRpc } from "@/lib/rpc"
+import { SPECIAL_BRUNCH_FALLBACK } from "@/lib/special-brunch"
 import { createClient } from "@/lib/supabase/server"
 import { localToday } from "@/lib/time"
 
@@ -50,6 +51,18 @@ export async function GET(request: Request): Promise<Response> {
   if (!parsed.ok) return error(parsed.code, 400)
   const { scope, query, activity, interest, columns } = parsed.data
 
+  // The option titles of the special-brunch cell (story 2.16), read before
+  // the RPC writes its audit row, and only when the column is chosen (the
+  // fallback is never used then).
+  let specialBrunch = SPECIAL_BRUNCH_FALLBACK
+  if (columns.includes("special_brunch_interests")) {
+    try {
+      specialBrunch = await getSpecialBrunchContent()
+    } catch {
+      return error("SERVER_ERROR", 500)
+    }
+  }
+
   const result = await callRpc(supabase, "admin_export_customers", {
     p_scope: scope,
     p_query: query ?? "",
@@ -63,9 +76,6 @@ export async function GET(request: Request): Promise<Response> {
 
   const rows = (result.data as { rows?: unknown } | null)?.rows
   if (!isExportRows(rows)) return error("SERVER_ERROR", 500)
-
-  // The option titles of the special-brunch cell (story 2.16).
-  const specialBrunch = await getSpecialBrunchContent()
 
   return new Response(customersCsv(rows, columns, specialBrunch), {
     status: 200,

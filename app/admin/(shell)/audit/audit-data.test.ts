@@ -149,6 +149,16 @@ describe("labels", () => {
     expect(fieldLabel("activity")).toBe("סינון לפי פעילות")
     expect(formatValue("activity", "inactive")).toBe("לא פעילות")
     expect(formatValue("activity", "all")).toBe("כל הלקוחות")
+    // Story 2.16: the filter, the column and the profile's answers.
+    expect(fieldLabel("interest")).toBe("סינון לפי בראנצ׳ים מיוחדים")
+    expect(formatValue("interest", "grandma")).toBe("בראנץ׳ עם סבתוש")
+    expect(fieldLabel("special_brunch_interests")).toBe("בראנצ׳ים מיוחדים")
+    expect(
+      formatValue("special_brunch_interests", ["couples", "grandpa"])
+    ).toBe("בראנץ׳ זוגות · בראנץ׳ עם סבוש")
+    expect(formatValue("columns", ["special_brunch_interests"])).toBe(
+      "בראנצ׳ים מיוחדים"
+    )
   })
 
   it("who: Tal, the customer or the system (user decision 2026-10-10)", () => {

@@ -13,15 +13,10 @@ vi.mock("@/lib/supabase/server", () => ({
 }))
 vi.mock("@/lib/time", () => ({ localToday: () => "2026-10-13" }))
 // Story 2.16: the option titles of the special-brunch cell.
-vi.mock("@/lib/content/join-form", async () => {
-  const { SPECIAL_BRUNCH_FALLBACK } = await import("@/lib/special-brunch")
-  return {
-    getSpecialBrunchContent: async () => ({
-      ...SPECIAL_BRUNCH_FALLBACK,
-      couples_title: "X",
-    }),
-  }
-})
+const getSpecialBrunchContent = vi.hoisted(() => vi.fn())
+vi.mock("@/lib/content/join-form", () => ({
+  getSpecialBrunchContent: () => getSpecialBrunchContent(),
+}))
 
 const BOM = "\uFEFF"
 
@@ -29,7 +24,13 @@ function get(query: string): Promise<Response> {
   return GET(new Request(`http://localhost/api/admin/export?${query}`))
 }
 
-beforeEach(() => {
+beforeEach(async () => {
+  const { SPECIAL_BRUNCH_FALLBACK } = await import("@/lib/special-brunch")
+  getSpecialBrunchContent.mockReset()
+  getSpecialBrunchContent.mockResolvedValue({
+    ...SPECIAL_BRUNCH_FALLBACK,
+    couples_title: "X",
+  })
   callRpc.mockReset()
   getClaims.mockReset()
   getClaims.mockResolvedValue({ data: { claims: { sub: "admin" } } })
@@ -137,6 +138,26 @@ describe("GET /api/admin/export", () => {
       await response.arrayBuffer()
     )
     expect(text).toBe(`${BOM}"שם","טלפון","מייל"\r\n`)
+  })
+
+  // Story 2.16: the wording is read before the RPC (which writes the audit
+  // row), and only for the special-brunch column.
+  it("a failed wording read -> 500 {code}, without the RPC (no audit row)", async () => {
+    getSpecialBrunchContent.mockRejectedValue(new Error("down"))
+    const response = await get(
+      "scope=all&activity=all&cols=full_name,special_brunch_interests"
+    )
+    expect(response.status).toBe(500)
+    expect(await response.json()).toEqual({ code: "SERVER_ERROR" })
+    expect(callRpc).not.toHaveBeenCalled()
+  })
+
+  it("does not read the wording without the special-brunch column", async () => {
+    getSpecialBrunchContent.mockRejectedValue(new Error("down"))
+    callRpc.mockResolvedValue({ ok: true, data: { rows: [] } })
+    const response = await get("scope=all&activity=all&cols=full_name")
+    expect(response.status).toBe(200)
+    expect(getSpecialBrunchContent).not.toHaveBeenCalled()
   })
 
   it("no session -> 403 without calling the RPC", async () => {

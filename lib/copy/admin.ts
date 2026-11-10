@@ -1,4 +1,5 @@
 import type { ErrorCode } from "@/lib/errors"
+import { SPECIAL_BRUNCH_FALLBACK } from "@/lib/special-brunch"
 
 // System microcopy of the admin screens. Amounts arrive formatted by
 // lib/money.ts ("472 ₪"), dates by lib/time.ts.
@@ -11,6 +12,13 @@ const exportHeaders = {
   email: "מייל",
   // Story 2.16: the cell is the option titles (content), joined by ", ".
   special_brunch_interests: "בראנצ׳ים מיוחדים",
+}
+
+// Story 2.16: a special brunch's code in the history, by its seeded title.
+const specialBrunchValues = {
+  couples: SPECIAL_BRUNCH_FALLBACK.couples_title,
+  grandma: SPECIAL_BRUNCH_FALLBACK.grandma_title,
+  grandpa: SPECIAL_BRUNCH_FALLBACK.grandpa_title,
 }
 
 // Story 3.18: a product set by name, or every fitting product.
@@ -2635,6 +2643,9 @@ export const adminCopy = {
       row_count: "מספר שורות",
       // The export's category (story 5.13).
       activity: "סינון לפי פעילות",
+      // Story 2.16: the profile's answers and the export's filter.
+      special_brunch_interests: "בראנצ׳ים מיוחדים",
+      interest: "סינון לפי בראנצ׳ים מיוחדים",
       // Marketing reminders (story 5.11).
       marketing_reminder_schedule: "לוח תזכורות השיווק",
       last_sent_at: "נשלח לאחרונה",
@@ -2712,6 +2723,10 @@ export const adminCopy = {
         inactive: "לא פעילות",
       },
       columns: exportHeaders,
+      // Story 2.16: the codes by the seeded titles (the log never follows a
+      // later edit of the wording).
+      special_brunch_interests: specialBrunchValues,
+      interest: specialBrunchValues,
     } as Record<string, Record<string, string>>,
     // A table's own wording of a code value (gender and meaning), by
     // entity_type then key; it wins over values above.
