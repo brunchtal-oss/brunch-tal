@@ -12,6 +12,7 @@ import Link from "next/link"
 import { PasswordInput } from "@/components/auth/password-input"
 import { ContactText } from "@/components/shared/contact-text"
 import { PhotoConsentQuestions } from "@/components/shared/photo-consent-fieldset"
+import { SpecialBrunchFieldset } from "@/components/shared/special-brunch-fieldset"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { OnlineButton } from "@/components/shared/online-button"
 import { Button } from "@/components/ui/button"
@@ -29,7 +30,10 @@ import { authCopy } from "@/lib/copy/auth"
 import { birthDateRange } from "@/lib/time"
 import type { ConflictReason } from "@/lib/auth/join-link-state"
 import { joinCopy, type JoinErrorKey } from "@/lib/copy/join"
-import type { PhotoConsentContent } from "@/lib/content/schema"
+import type {
+  PhotoConsentContent,
+  SpecialBrunchContent,
+} from "@/lib/content/schema"
 import { errorMessage, type ErrorCode } from "@/lib/errors"
 import { formatAgorot } from "@/lib/money"
 
@@ -85,6 +89,8 @@ function fieldId(field: JoinField, index?: number): string {
   if (field === "photoConsent" || field === "personalPhotoConsent") {
     return `${field}-yes`
   }
+  // The fieldset's first checkbox (SpecialBrunchFieldset).
+  if (field === "specialBrunchInterests") return `${field}-couples`
   return field
 }
 
@@ -113,6 +119,7 @@ export function JoinForm({
   productName,
   amountAgorot,
   photoConsent,
+  specialBrunch,
   today,
   privacyHref = null,
   lead = null,
@@ -142,6 +149,8 @@ export function JoinForm({
   productName: string | null
   amountAgorot: number | null
   photoConsent: PhotoConsentContent
+  // Story 2.16: the special-brunch question's wording (or its fallback).
+  specialBrunch: SpecialBrunchContent
   today: string
   // The published privacy policy (story 5.5); null: the label is text.
   privacyHref?: string | null
@@ -155,7 +164,9 @@ export function JoinForm({
   const nextBabyId = useRef(1)
   const summaryRef = useRef<HTMLDivElement>(null)
   const stepOneHeading = useRef<HTMLHeadingElement>(null)
-  const stepTwoHeading = useRef<HTMLHeadingElement>(null)
+  // Step 2 starts with the special-brunch question (story 2.16): its
+  // wrapper takes the focus.
+  const stepTwoHeading = useRef<HTMLDivElement>(null)
   // Removing a baby row shifts the rows after it, so the baby errors of the
   // last result no longer match their rows: hide them until the next submit.
   const [babyErrorsClearedFor, setBabyErrorsClearedFor] =
@@ -406,6 +417,7 @@ export function JoinForm({
   const password = wiring("password", undefined, "password-hint")
   const confirm = wiring("confirm")
   const privacy = wiring("privacy")
+  const interests = errorFor("specialBrunchInterests")
   const photo = errorFor("photoConsent")
   const personalPhoto = errorFor("personalPhotoConsent")
 
@@ -756,9 +768,19 @@ export function JoinForm({
       </div>
 
       <div hidden={step !== 2} data-step="2" className="flex flex-col gap-5">
-        <h2 ref={stepTwoHeading} tabIndex={-1} className={STEP_HEADING}>
-          {joinCopy.stepTwoTitle}
-        </h2>
+        {/* Story 2.16: optional, nothing checked in advance; first on
+            step 2, with no heading above it (its bold question is its
+            title), then "אישור תמונות" over the photo consents (phone
+            check, user decision 2026-11-10). Moving to step 2 focuses the
+            question. */}
+        <div ref={stepTwoHeading} tabIndex={-1} className="outline-none">
+          <SpecialBrunchFieldset
+            content={specialBrunch}
+            error={interests ? messageOf(interests.message) : undefined}
+          />
+        </div>
+
+        <h2 className={STEP_HEADING}>{joinCopy.stepTwoTitle}</h2>
 
         <PhotoConsentQuestions
           content={photoConsent}

@@ -40,7 +40,10 @@ export const EDITABLE_PAGES = {
     { slug: "contact", key: "intro", kind: "text_block" },
     { slug: "contact", key: "business_details", kind: "business_details" },
   ],
+  // Story 2.16: the special-brunch question is on the form's second step,
+  // before the photo consents.
   "join-form": [
+    { slug: "join-form", key: "special_brunch", kind: "special_brunch" },
     { slug: "join-form", key: "photo_consent", kind: "photo_consent" },
   ],
   site: [{ slug: "site", key: "footer", kind: "footer" }],

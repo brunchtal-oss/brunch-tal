@@ -8,17 +8,19 @@ import { InlineNotice } from "@/components/shared/inline-notice"
 import { StatusChip } from "@/components/shared/status-chip"
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { exportInterestLine } from "@/lib/admin/customer-export"
+import type { SpecialBrunchContent } from "@/lib/content/schema"
 import { adminCopy } from "@/lib/copy/admin"
 import { errorMessage, type ErrorCode } from "@/lib/errors"
+import type { SpecialBrunchCode } from "@/lib/special-brunch"
 import { formatLocalDate } from "@/lib/time"
-import { cn } from "@/lib/utils"
 
 import { listCustomersAction } from "./actions"
 import { CustomerExport } from "./export-sheet"
+import { CustomerFilter } from "./filter-sheet"
 import {
   answerForFilter,
   categoryHref,
-  CUSTOMER_ACTIVITIES,
   emptyText,
   LIST_LIMIT,
   listHref,
@@ -45,37 +47,53 @@ type Answer = ListRequest &
 // the search. A button (a link to ?activity=) lists its whole category and
 // clears the field; clearing the field returns to the open category. Only
 // the answer to the current request is shown; an inactive customer's row
-// carries "לא פעילה".
+// carries "לא פעילה". Story 2.16 (phone-check fix, user decision
+// 2026-11-10): the category buttons and the special-brunch chips became one
+// "סינון" button (filter-sheet.tsx) next to the export; the export follows
+// the open filter.
 export function CustomerLiveSearch({
   initialQuery,
   category,
+  interests = [],
+  specialBrunch,
 }: {
   initialQuery: string
   category: CustomerActivity | null
+  interests?: readonly SpecialBrunchCode[]
+  specialBrunch: SpecialBrunchContent
 }) {
   const id = useId()
   const [query, setQuery] = useState(initialQuery)
   const [answer, setAnswer] = useState<Answer | null>(null)
   const latest = useRef(0)
 
-  const request = listRequest(query, category)
+  const request = listRequest(query, category, interests)
   const askedQuery = request?.query ?? null
   const askedActivity = request?.activity ?? null
+  // A string, so the effect compares it by value.
+  const askedInterests = request?.interests.join(",") ?? ""
 
   useEffect(() => {
     const call = ++latest.current
     if (askedQuery === null || askedActivity === null) return
+    const codes = (
+      askedInterests === "" ? [] : askedInterests.split(",")
+    ) as SpecialBrunchCode[]
     const timer = setTimeout(
       () => {
         startTransition(async () => {
           let result: Awaited<ReturnType<typeof listCustomersAction>>
           try {
-            result = await listCustomersAction(askedQuery, askedActivity)
+            result = await listCustomersAction(askedQuery, askedActivity, codes)
           } catch {
             result = { ok: false, code: "SERVER_ERROR" }
           }
           if (call !== latest.current) return
-          const asked = { query: askedQuery, activity: askedActivity }
+          const asked = {
+            query: askedQuery,
+            activity: askedActivity,
+            interests: codes,
+          }
           setAnswer(
             result.ok
               ? { ...asked, ok: true, list: result.data }
@@ -87,11 +105,13 @@ export function CustomerLiveSearch({
       askedQuery === "" ? 0 : DEBOUNCE_MS
     )
     return () => clearTimeout(timer)
-  }, [askedQuery, askedActivity])
+  }, [askedQuery, askedActivity, askedInterests])
 
   const shown = answerForFilter(request, answer)
-  // A button is selected only while its category is what the list shows.
-  const selected = request?.query === "" ? request.activity : null
+  // The filter counts only while its category is what the list shows (a
+  // search is over every customer).
+  const filtered = request?.query === ""
+  const exported = shownList(request, shown?.ok ? shown : null)
 
   return (
     <div className="flex flex-col gap-6">
@@ -114,7 +134,7 @@ export function CustomerLiveSearch({
                 null,
                 "",
                 next.trim() === "" && category
-                  ? categoryHref(category)
+                  ? categoryHref(category, interests)
                   : listHref(next)
               )
             }}
@@ -125,8 +145,18 @@ export function CustomerLiveSearch({
             {copy.searchHint}
           </FieldDescription>
         </Field>
-        <Categories current={selected} onPick={() => setQuery("")} />
-        <CustomerExport shown={shownList(request, shown?.ok ? shown : null)} />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <CustomerFilter
+            category={filtered ? category : null}
+            interests={filtered ? interests : []}
+            specialBrunch={specialBrunch}
+            onApply={() => setQuery("")}
+          />
+          <CustomerExport
+            shown={exported}
+            interestLine={exportInterestLine(exported, specialBrunch)}
+          />
+        </div>
       </div>
 
       <div aria-live="polite">
@@ -141,42 +171,6 @@ export function CustomerLiveSearch({
         )}
       </div>
     </div>
-  )
-}
-
-// The three category buttons: one row of equal links in the open cards'
-// chip style (story 4.3), in reading order; the selected one in primary with
-// aria-current. A tap clears the field (a new category also remounts the
-// screen, page.tsx).
-function Categories({
-  current,
-  onPick,
-}: {
-  current: CustomerActivity | null
-  onPick: () => void
-}) {
-  return (
-    <nav aria-label={copy.categoriesNav}>
-      <ul className="grid grid-cols-3 gap-2">
-        {CUSTOMER_ACTIVITIES.map((value) => (
-          <li key={value} className="flex">
-            <Link
-              href={categoryHref(value)}
-              onClick={onPick}
-              aria-current={value === current ? "page" : undefined}
-              className={cn(
-                "flex min-h-11 flex-1 items-center justify-center rounded-[4px] border px-2 text-center text-[15px] leading-tight font-semibold",
-                value === current
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-muted-foreground text-foreground hover:bg-muted"
-              )}
-            >
-              {copy.categories[value]}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </nav>
   )
 }
 

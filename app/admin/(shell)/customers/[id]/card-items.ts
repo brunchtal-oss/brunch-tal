@@ -2,10 +2,12 @@ import { babyAge } from "@/components/admin/baby-age"
 import { METER_MAX } from "@/components/customer/entry-meter"
 import type { StatusTone } from "@/components/shared/status-chip"
 import { consentLines } from "@/lib/admin/photo-consents"
+import type { SpecialBrunchContent } from "@/lib/content/schema"
 import { adminCopy } from "@/lib/copy/admin"
 import { isEmailShape } from "@/lib/email"
 import { formatAgorot } from "@/lib/money"
 import { formatLocalPhone } from "@/lib/phone"
+import { specialBrunchLabels } from "@/lib/special-brunch"
 import {
   formatDayMonth,
   formatSessionDate,
@@ -36,6 +38,8 @@ export type CardProfile = {
   // Story 2.13: the personal photos (the WhatsApp group).
   personal_photo_consent: boolean
   personal_photo_consent_at: string | null
+  // Story 2.16: codes ([] = none or not answered).
+  special_brunch_interests: string[]
   last_activity_on: string | null
 }
 
@@ -128,8 +132,16 @@ export type DetailRow = {
 // The "פרטים" cube's rows after the phone and the email (fix 9: those two
 // are ContactRows, with their pencils; the babies follow). The photo
 // consents: a line each, without a date (story 2.13, user decision
-// 2026-10-07).
-export function detailRows(profile: CardProfile): DetailRow[] {
+// 2026-10-07). The special brunches (story 2.16): the options' titles from
+// the content block, joined by " · ", or "לא סומן".
+export function detailRows(
+  profile: CardProfile,
+  specialBrunch: SpecialBrunchContent
+): DetailRow[] {
+  const interests = specialBrunchLabels(
+    specialBrunch,
+    profile.special_brunch_interests
+  )
   const rows: DetailRow[] = [
     {
       label: copy.joined,
@@ -146,6 +158,11 @@ export function detailRows(profile: CardProfile): DetailRow[] {
     {
       label: copy.dietary,
       value: profile.dietary_notes?.trim() || copy.none,
+    },
+    {
+      label: copy.specialBrunch,
+      value:
+        interests.length > 0 ? interests.join(" · ") : copy.specialBrunchNone,
     },
     {
       label: copy.photoConsent,

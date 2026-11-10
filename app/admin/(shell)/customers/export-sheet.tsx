@@ -30,10 +30,18 @@ type Notice = { ok: true } | { ok: false; code: ErrorCode | string }
 
 // "ייצוא" on /admin/customers (story 4.4, CAP-25; EXPERIENCE › לקוחות ›
 // ייצוא CSV): a bottom sheet with one line saying what the file holds (what
-// the screen shows, story 5.13) and the closed column list (all checked). The file comes through fetch -> blob -> <a download>, so the
+// the screen shows, story 5.13; under it, the special-brunch filter when it
+// is on, story 2.16) and the closed column list (all checked). The file comes through fetch -> blob -> <a download>, so the
 // button locks while it is prepared and the result stays in an
 // inline-notice inside the sheet.
-export function CustomerExport({ shown }: { shown: ShownList | null }) {
+export function CustomerExport({
+  shown,
+  interestLine = null,
+}: {
+  shown: ShownList | null
+  // "רק מי שסימנה: …" (exportInterestLine), or null.
+  interestLine?: string | null
+}) {
   const [open, setOpen] = useState(false)
   const [columns, setColumns] = useState<ExportColumn[]>([
     ...EXPORT_COLUMN_KEYS,
@@ -88,6 +96,7 @@ export function CustomerExport({ shown }: { shown: ShownList | null }) {
       >
         <ExportForm
           shown={shown}
+          interestLine={interestLine}
           columns={columns}
           onColumnsChange={setColumns}
           pending={pending}
@@ -116,6 +125,7 @@ function saveBlob(blob: Blob, fileName: string) {
 // Without a column the button is aria-disabled with the reason under it.
 export function ExportForm({
   shown,
+  interestLine = null,
   columns,
   onColumnsChange,
   pending,
@@ -123,6 +133,7 @@ export function ExportForm({
   onSubmit,
 }: {
   shown: ShownList | null
+  interestLine?: string | null
   columns: readonly ExportColumn[]
   onColumnsChange: (columns: ExportColumn[]) => void
   pending: boolean
@@ -141,7 +152,10 @@ export function ExportForm({
         onSubmit()
       }}
     >
-      <p className="text-base font-semibold">{exportLine(shown)}</p>
+      <div className="flex flex-col gap-1">
+        <p className="text-base font-semibold">{exportLine(shown)}</p>
+        {interestLine && <p className="text-base">{interestLine}</p>}
+      </div>
 
       <fieldset className="flex flex-col gap-1">
         <legend className="mb-2 text-[15px] font-semibold">

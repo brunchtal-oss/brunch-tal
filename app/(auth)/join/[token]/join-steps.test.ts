@@ -30,7 +30,11 @@ const PERSONAL: JoinFieldError = {
 
 describe("join steps", () => {
   it("puts only the two consents in step 2", () => {
-    expect(STEP_TWO_FIELDS).toEqual(["photoConsent", "personalPhotoConsent"])
+    expect(STEP_TWO_FIELDS).toEqual([
+      "specialBrunchInterests",
+      "photoConsent",
+      "personalPhotoConsent",
+    ])
   })
 
   it("keeps the step 1 errors for הבא", () => {

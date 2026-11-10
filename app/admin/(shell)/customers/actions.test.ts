@@ -27,13 +27,13 @@ describe("the live search and category action (stories 4.2, 5.13)", () => {
     expect(callRpc).toHaveBeenLastCalledWith(
       { session: true },
       "admin_list_customers",
-      { p_query: "רונ", p_activity: "all" }
+      { p_query: "רונ", p_activity: "all", p_interests: [] }
     )
     await listCustomersAction("רונ", "inactive")
     expect(callRpc).toHaveBeenLastCalledWith(
       { session: true },
       "admin_list_customers",
-      { p_query: "רונ", p_activity: "inactive" }
+      { p_query: "רונ", p_activity: "inactive", p_interests: [] }
     )
   })
 
@@ -43,9 +43,35 @@ describe("the live search and category action (stories 4.2, 5.13)", () => {
       expect(callRpc).toHaveBeenLastCalledWith(
         { session: true },
         "admin_list_customers",
-        { p_query: "", p_activity: activity }
+        { p_query: "", p_activity: activity, p_interests: [] }
       )
     }
+  })
+
+  // Story 2.16: the special brunches, sent as p_interests in code order; an
+  // unknown or repeated one is refused without the RPC.
+  it("sends the special-brunch filter", async () => {
+    await listCustomersAction("", "inactive", ["grandpa", "grandma"])
+    expect(callRpc).toHaveBeenLastCalledWith(
+      { session: true },
+      "admin_list_customers",
+      {
+        p_query: "",
+        p_activity: "inactive",
+        p_interests: ["grandma", "grandpa"],
+      }
+    )
+    callRpc.mockClear()
+    for (const bad of [["aunt"], ["couples", "couples"]]) {
+      await expect(listCustomersAction("", "all", bad)).resolves.toEqual({
+        ok: false,
+        code: "INVALID_INPUT",
+      })
+    }
+    await expect(
+      listCustomersAction("", "all", "couples" as unknown as string[])
+    ).resolves.toEqual({ ok: false, code: "INVALID_INPUT" })
+    expect(callRpc).not.toHaveBeenCalled()
   })
 
   it("a 1-character query is an empty list, without the RPC", async () => {

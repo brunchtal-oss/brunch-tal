@@ -18,6 +18,7 @@ import { SiteFooter } from "@/components/public/site-footer"
 import { UpcomingSessions } from "@/components/public/upcoming-sessions"
 import { PageHeading } from "@/components/shared/page-heading"
 import { PhotoConsentQuestions } from "@/components/shared/photo-consent-fieldset"
+import { SpecialBrunchFieldset } from "@/components/shared/special-brunch-fieldset"
 import {
   businessNameOf,
   getBusinessDetails,
@@ -218,14 +219,18 @@ async function PageView({
       )
     }
     case "join-form": {
-      const consent = sectionContent(
-        previewSections(pages["join-form"]),
-        "photo_consent",
-        "photo_consent"
+      const sections = previewSections(pages["join-form"])
+      const consent = sectionContent(sections, "photo_consent", "photo_consent")
+      // Story 2.16: the special-brunch question, as step 1 shows it.
+      const specialBrunch = sectionContent(
+        sections,
+        "special_brunch",
+        "special_brunch"
       )
       return (
         <div className="mx-auto flex w-full max-w-[480px] flex-col gap-6 px-6 pt-12">
           <PageHeading>{joinCopy.title}</PageHeading>
+          {specialBrunch && <SpecialBrunchFieldset content={specialBrunch} />}
           {consent && <PhotoConsentQuestions content={consent} />}
         </div>
       )

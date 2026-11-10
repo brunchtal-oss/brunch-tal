@@ -19,13 +19,17 @@ import {
 } from "./support/db"
 import { seedMoney, type MoneyFixture } from "./support/money"
 
-const EXPORT = "select public.admin_export_customers($1, $2, $3, $4) as r"
+// Story 2.16: the overload with p_interests (null = no filter).
+const EXPORT =
+  "select public.admin_export_customers($1, $2, $3, $4, null::text[]) as r"
 const ALL_COLUMNS = ["full_name", "phone", "email"]
 
 type Row = {
   full_name: string | null
   phone_e164: string | null
   email: string | null
+  // Story 2.16: null unless the column is chosen.
+  special_brunch_interests: string[] | null
 }
 
 // A unique fictitious Israeli mobile (phone_e164 is unique).
@@ -109,11 +113,13 @@ describe("admin_export_customers: scope and columns", () => {
             full_name: testName("exp_full"),
             phone_e164: phone,
             email: user.email,
+            special_brunch_interests: null,
           },
           {
             full_name: testName("exp_no_email"),
             phone_e164: null,
             email: null,
+            special_brunch_interests: null,
           },
         ])
       )
@@ -145,13 +151,19 @@ describe("admin_export_customers: scope and columns", () => {
         full_name: testName("רונית"),
         phone_e164: phone,
         email: null,
+        special_brunch_interests: null,
       })
 
       const emailOnly = await exportRows(db, f, "search", testName("רונית"), [
         "email",
       ])
       expect(emailOnly).toEqual([
-        { full_name: null, phone_e164: null, email: user.email },
+        {
+          full_name: null,
+          phone_e164: null,
+          email: user.email,
+          special_brunch_interests: null,
+        },
       ])
     })
   })
@@ -173,6 +185,7 @@ describe("admin_export_customers: scope and columns", () => {
         scope: "search",
         columns: ALL_COLUMNS,
         activity: "all",
+        interests: [],
         row_count: 0,
       })
     })
@@ -287,6 +300,7 @@ describe("admin_export_customers: the audit row", () => {
           scope: "search",
           columns: ["full_name", "phone"],
           activity: "all",
+          interests: [],
           row_count: 2,
         },
       })
@@ -302,6 +316,7 @@ describe("admin_export_customers: the audit row", () => {
         scope: "all",
         columns: ["email"],
         activity: "all",
+        interests: [],
         row_count: expect.any(Number),
       })
     })

@@ -6,7 +6,10 @@ import Link from "next/link"
 import { buttonClass } from "@/components/shared/button-class"
 import { Alert, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
-import type { PhotoConsentContent } from "@/lib/content/schema"
+import type {
+  PhotoConsentContent,
+  SpecialBrunchContent,
+} from "@/lib/content/schema"
 import { whatsappHref } from "@/lib/content/whatsapp"
 import { adminCopy } from "@/lib/copy/admin"
 
@@ -308,6 +311,7 @@ export function FillJoinForm({
   productName,
   amountAgorot,
   photoConsent,
+  specialBrunch,
   today,
   privacyHref,
 }: {
@@ -317,6 +321,7 @@ export function FillJoinForm({
   productName: string | null
   amountAgorot: number | null
   photoConsent: PhotoConsentContent
+  specialBrunch: SpecialBrunchContent
   today: string
   privacyHref: string | null
 }) {
@@ -332,6 +337,7 @@ export function FillJoinForm({
       productName={productName}
       amountAgorot={amountAgorot}
       photoConsent={photoConsent}
+      specialBrunch={specialBrunch}
       today={today}
       privacyHref={privacyHref}
       lead={

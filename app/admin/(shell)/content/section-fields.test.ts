@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { photoConsentSchema } from "@/lib/content/schema"
+import { photoConsentSchema, specialBrunchSchema } from "@/lib/content/schema"
 import { adminCopy } from "@/lib/copy/admin"
 
 import {
@@ -60,6 +60,7 @@ describe("section fields", () => {
       "gallery",
       "footer",
       "photo_consent",
+      "special_brunch",
       "business_details",
       "cookie_notice",
     ]) {
@@ -144,6 +145,27 @@ describe("section fields", () => {
         expect(field.maxLength).toBe(200)
       }
     }
+  })
+
+  // Story 2.16: text only (the question, a title and a hint per option);
+  // the options are fixed, never hidden.
+  it("edits the special-brunch question's text, not its options", () => {
+    const spec = sectionSpec({
+      slug: "join-form",
+      key: "special_brunch",
+      kind: "special_brunch",
+    })
+    expect(spec.hideable).toBe(false)
+    expect(spec.fields.map((f) => f.name).sort()).toEqual(
+      Object.keys(specialBrunchSchema.shape).sort()
+    )
+    for (const field of spec.fields) {
+      expect(field.type).toBe("text")
+      if (field.type === "text") expect(field.maxLength).toBe(200)
+    }
+    expect(adminCopy.content.sections["join-form/special_brunch"]).toBe(
+      "שאלת הבראנצ׳ים המיוחדים"
+    )
   })
 
   it("round-trips content through the form", () => {

@@ -7,8 +7,11 @@ import type { SharedFormState } from "./join-view"
 
 export type JoinStep = 1 | 2
 
-// The fields of step 2: the two photo consents. Every other field is step 1.
+// The fields of step 2: the special-brunch question (story 2.16, phone
+// check, user decision 2026-11-10) and the two photo consents. Every other
+// field is step 1.
 export const STEP_TWO_FIELDS: readonly JoinField[] = [
+  "specialBrunchInterests",
   "photoConsent",
   "personalPhotoConsent",
 ]

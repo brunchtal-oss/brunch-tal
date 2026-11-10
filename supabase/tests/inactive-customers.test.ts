@@ -21,8 +21,10 @@ import {
 import { approve, seedMoney, type MoneyFixture } from "./support/money"
 
 const ACTIVITY = "select private.customer_activity($1) as a"
-const LIST = "select public.admin_list_customers($1, $2) as r"
-const EXPORT = "select public.admin_export_customers($1, $2, $3, $4) as r"
+// Story 2.16: the overload with p_interests (null = no filter).
+const LIST = "select public.admin_list_customers($1, $2, null::text[]) as r"
+const EXPORT =
+  "select public.admin_export_customers($1, $2, $3, $4, null::text[]) as r"
 const SNAPSHOT = `'{"cancel_window_hours": 48, "reminder_lead_hours": 24}'::jsonb`
 
 type Fixture = MoneyFixture & { concept: string }

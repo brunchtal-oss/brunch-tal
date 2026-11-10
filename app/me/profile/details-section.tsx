@@ -10,9 +10,16 @@ import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"
 import { Textarea } from "@/components/ui/textarea"
+import { SpecialBrunchFieldset } from "@/components/shared/special-brunch-fieldset"
+import type { SpecialBrunchContent } from "@/lib/content/schema"
 import { customerCopy } from "@/lib/copy/customer"
 import { joinCopy } from "@/lib/copy/join"
 import { errorMessage, type ErrorCode, type ErrorDetail } from "@/lib/errors"
+import {
+  SPECIAL_BRUNCH_FIELD,
+  specialBrunchLabels,
+  type SpecialBrunchCode,
+} from "@/lib/special-brunch"
 
 import { updateDetails } from "./actions"
 import { toastSaved } from "./profile-toaster"
@@ -25,19 +32,27 @@ const copy = customerCopy.profile
 // dietary row, which says where to add them. No
 // optimistic update: the view shows what the server returned after the
 // save (revalidatePath). A cube (DESIGN › card) with a cube title (fix 11,
-// user decision 2026-10-20).
+// user decision 2026-10-20). Story 2.16: the special-brunch question is
+// part of the details (the join form's fieldset, her answers checked).
 export function DetailsSection({
   fullName,
   dietaryNotes,
+  specialBrunch,
+  specialBrunchInterests,
   phone,
   email,
+  defaultEditing = false,
 }: {
   fullName: string
   dietaryNotes: string | null
+  specialBrunch: SpecialBrunchContent
+  specialBrunchInterests: SpecialBrunchCode[]
   phone: string | null
   email: string | null
+  // Opens in the edit form (a static render in tests).
+  defaultEditing?: boolean
 }) {
-  const [editing, setEditing] = useState(false)
+  const [editing, setEditing] = useState(defaultEditing)
   const [error, setError] = useState<{
     code: ErrorCode
     detail?: ErrorDetail
@@ -69,10 +84,7 @@ export function DetailsSection({
     if (pending) return
     const data = new FormData(event.currentTarget)
     startTransition(async () => {
-      const result = await updateDetails({
-        fullName: String(data.get("fullName") ?? ""),
-        dietaryNotes: String(data.get("dietaryNotes") ?? ""),
-      })
+      const result = await updateDetails(detailsInput(data))
       if (result.ok) {
         close()
         toastSaved()
@@ -85,6 +97,11 @@ export function DetailsSection({
   const field = error?.detail?.field ?? null
   const nameError = !!error && field === "full_name"
   const notesError = !!error && field === "dietary_notes"
+  const interestsError = !!error && field === "special_brunch_interests"
+  const interestLabels = specialBrunchLabels(
+    specialBrunch,
+    specialBrunchInterests
+  )
 
   return (
     <section
@@ -153,7 +170,12 @@ export function DetailsSection({
               </FieldError>
             )}
           </Field>
-          {error && !nameError && !notesError && (
+          <SpecialBrunchFieldset
+            content={specialBrunch}
+            defaultValue={specialBrunchInterests}
+            error={interestsError ? errorMessage("INVALID_INPUT") : undefined}
+          />
+          {error && !nameError && !notesError && !interestsError && (
             <InlineNotice tone="error">{errorMessage(error.code)}</InlineNotice>
           )}
           <FormButtons pending={pending} onCancel={close} />
@@ -173,6 +195,15 @@ export function DetailsSection({
             ) : (
               <span className="text-muted-foreground">
                 {copy.dietaryNotesEmpty}
+              </span>
+            )}
+          </Row>
+          <Row label={copy.specialBrunch}>
+            {interestLabels.length > 0 ? (
+              interestLabels.join(" · ")
+            ) : (
+              <span className="text-muted-foreground">
+                {copy.specialBrunchEmpty}
               </span>
             )}
           </Row>
@@ -199,6 +230,20 @@ export function DetailsSection({
       )}
     </section>
   )
+}
+
+// What the details form sends to updateDetails: every checked special
+// brunch (none = [], which clears them).
+export function detailsInput(
+  data: FormData
+): Parameters<typeof updateDetails>[0] {
+  return {
+    fullName: String(data.get("fullName") ?? ""),
+    dietaryNotes: String(data.get("dietaryNotes") ?? ""),
+    specialBrunchInterests: data
+      .getAll(SPECIAL_BRUNCH_FIELD)
+      .map((value) => String(value)),
+  }
 }
 
 function Row({

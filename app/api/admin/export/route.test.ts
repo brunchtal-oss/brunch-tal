@@ -12,6 +12,11 @@ vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({ auth: { getClaims } }),
 }))
 vi.mock("@/lib/time", () => ({ localToday: () => "2026-10-13" }))
+// Story 2.16: the option titles of the special-brunch cell.
+const getSpecialBrunchContent = vi.hoisted(() => vi.fn())
+vi.mock("@/lib/content/join-form", () => ({
+  getSpecialBrunchContent: () => getSpecialBrunchContent(),
+}))
 
 const BOM = "\uFEFF"
 
@@ -19,7 +24,13 @@ function get(query: string): Promise<Response> {
   return GET(new Request(`http://localhost/api/admin/export?${query}`))
 }
 
-beforeEach(() => {
+beforeEach(async () => {
+  const { SPECIAL_BRUNCH_FALLBACK } = await import("@/lib/special-brunch")
+  getSpecialBrunchContent.mockReset()
+  getSpecialBrunchContent.mockResolvedValue({
+    ...SPECIAL_BRUNCH_FALLBACK,
+    couples_title: "X",
+  })
   callRpc.mockReset()
   getClaims.mockReset()
   getClaims.mockResolvedValue({ data: { claims: { sub: "admin" } } })
@@ -61,7 +72,48 @@ describe("GET /api/admin/export", () => {
         p_query: "רונ",
         p_columns: ["full_name", "phone"],
         p_activity: "all",
+        // Always sent: null = no filter (story 2.16).
+        p_interests: [],
       }
+    )
+  })
+
+  // Story 2.16 (matrix: export): the filter goes to the RPC; the cell is
+  // the published titles in code order.
+  it("sends the special-brunch filter and writes the titles", async () => {
+    callRpc.mockResolvedValue({
+      ok: true,
+      data: {
+        rows: [
+          {
+            full_name: "Dana",
+            phone_e164: null,
+            email: null,
+            special_brunch_interests: ["grandpa", "couples"],
+          },
+        ],
+      },
+    })
+    const response = await get(
+      "scope=all&activity=all&interest=grandpa,couples&cols=full_name,special_brunch_interests"
+    )
+    expect(response.status).toBe(200)
+    expect(callRpc).toHaveBeenCalledWith(
+      expect.anything(),
+      "admin_export_customers",
+      {
+        p_scope: "all",
+        p_query: "",
+        p_columns: ["full_name", "special_brunch_interests"],
+        p_activity: "all",
+        p_interests: ["couples", "grandpa"],
+      }
+    )
+    const text = new TextDecoder("utf-8", { ignoreBOM: true }).decode(
+      await response.arrayBuffer()
+    )
+    expect(text).toBe(
+      `${BOM}"שם","בראנצ׳ים מיוחדים"\r\n"Dana","X, בראנץ׳ עם סבוש"\r\n`
     )
   })
 
@@ -79,12 +131,33 @@ describe("GET /api/admin/export", () => {
         p_query: "",
         p_columns: ["full_name", "phone", "email"],
         p_activity: "inactive",
+        p_interests: [],
       }
     )
     const text = new TextDecoder("utf-8", { ignoreBOM: true }).decode(
       await response.arrayBuffer()
     )
     expect(text).toBe(`${BOM}"שם","טלפון","מייל"\r\n`)
+  })
+
+  // Story 2.16: the wording is read before the RPC (which writes the audit
+  // row), and only for the special-brunch column.
+  it("a failed wording read -> 500 {code}, without the RPC (no audit row)", async () => {
+    getSpecialBrunchContent.mockRejectedValue(new Error("down"))
+    const response = await get(
+      "scope=all&activity=all&cols=full_name,special_brunch_interests"
+    )
+    expect(response.status).toBe(500)
+    expect(await response.json()).toEqual({ code: "SERVER_ERROR" })
+    expect(callRpc).not.toHaveBeenCalled()
+  })
+
+  it("does not read the wording without the special-brunch column", async () => {
+    getSpecialBrunchContent.mockRejectedValue(new Error("down"))
+    callRpc.mockResolvedValue({ ok: true, data: { rows: [] } })
+    const response = await get("scope=all&activity=all&cols=full_name")
+    expect(response.status).toBe(200)
+    expect(getSpecialBrunchContent).not.toHaveBeenCalled()
   })
 
   it("no session -> 403 without calling the RPC", async () => {
@@ -102,6 +175,8 @@ describe("GET /api/admin/export", () => {
       "scope=search&q=ר&activity=all&cols=full_name",
       "scope=search&q=רונ&cols=full_name",
       "scope=all&cols=full_name",
+      // Story 2.16: an unknown special brunch.
+      "scope=all&activity=all&interest=aunt&cols=full_name",
     ]) {
       const response = await get(query)
       expect(response.status, query).toBe(400)

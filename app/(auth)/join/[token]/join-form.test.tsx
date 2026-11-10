@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest"
 
 import { authCopy } from "@/lib/copy/auth"
 import { joinCopy } from "@/lib/copy/join"
+import { SPECIAL_BRUNCH_FALLBACK } from "@/lib/special-brunch"
 
 import { JoinForm } from "./join-form"
 import { validateJoin } from "./join-input"
@@ -41,6 +42,7 @@ function render(
       productName="Card"
       amountAgorot={47200}
       photoConsent={PHOTO}
+      specialBrunch={SPECIAL_BRUNCH_FALLBACK}
       today="2026-10-01"
       privacyHref={extra.privacyHref}
     />
@@ -67,6 +69,7 @@ describe("JoinForm", () => {
         "babyName",
         "birthDate",
         "dietaryNotes",
+        "specialBrunchInterests",
         "password",
         "confirm",
         "privacyConsent",
@@ -94,11 +97,41 @@ describe("JoinForm", () => {
       ["privacyConsent", "on"],
       ["photoConsent", "yes"],
       ["personalPhotoConsent", "no"],
+      ["specialBrunchInterests", "grandpa"],
+      ["specialBrunchInterests", "couples"],
     ]) {
       expect(names(html)).toContain(name)
       data.append(name, value)
     }
-    expect(validateJoin(data).ok).toBe(true)
+    const valid = validateJoin(data)
+    expect(valid.ok).toBe(true)
+    // Story 2.16: the checked codes, in code order.
+    if (valid.ok) {
+      expect(valid.input.specialBrunchInterests).toEqual(["couples", "grandpa"])
+    }
+  })
+
+  // Story 2.16: step 2, before the photo consents (phone check, user
+  // decision 2026-11-10), optional, nothing checked.
+  it("shows the special-brunch question in step 2, before the photo consents", () => {
+    const html = render("active")
+    const stepTwoAt = html.indexOf('data-step="2"')
+    const stepTwo = html.slice(stepTwoAt)
+    expect(html.slice(0, stepTwoAt)).not.toContain(
+      SPECIAL_BRUNCH_FALLBACK.question
+    )
+    const question = stepTwo.indexOf(SPECIAL_BRUNCH_FALLBACK.question)
+    expect(question).toBeGreaterThan(0)
+    expect(question).toBeLessThan(stepTwo.indexOf('name="photoConsent"'))
+    // First, with "אישור תמונות" under it, over the photo consents.
+    const heading = stepTwo.indexOf(joinCopy.stepTwoTitle)
+    expect(question).toBeLessThan(heading)
+    expect(heading).toBeLessThan(stepTwo.indexOf('name="photoConsent"'))
+    expect(stepTwo.slice(0, question)).not.toContain("<h2")
+    for (const code of ["couples", "grandma", "grandpa"]) {
+      expect(stepTwo).toContain(`value="${code}"`)
+    }
+    expect(stepTwo).toContain(SPECIAL_BRUNCH_FALLBACK.grandma_title)
   })
 
   it.each([
@@ -136,8 +169,10 @@ describe("JoinForm steps", () => {
     expect(two).toContain('name="personalPhotoConsent"')
     expect(two).toContain(`>${joinCopy.back}</button>`)
     expect(two).toContain('type="submit"')
-    // The step headings take focus from the step buttons.
-    expect(html.match(/<h2[^>]*tabindex="-1"/g)).toHaveLength(2)
+    // The step buttons move focus: step 1's heading, and on step 2 the
+    // special-brunch question that opens it (story 2.16).
+    expect(html.match(/<h2[^>]*tabindex="-1"/g)).toHaveLength(1)
+    expect(two).toMatch(/<div tabindex="-1"[^>]*>\s*<fieldset/)
   })
 
   it("shows both questions with their titles, and the note under them", () => {

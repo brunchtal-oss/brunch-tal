@@ -71,7 +71,11 @@ describe("ApprovedPurchase", () => {
         expiresOn="2026-11-19"
       />
     )
-    expect(html).toContain(copy.successExisting("Dana"))
+    // The name links to her card (story 2.16 phone check).
+    expect(html).toContain(copy.successExistingLead)
+    expect(html).toMatch(
+      /<a [^>]*href="\/admin\/customers\/c1"[^>]*><bdi>Dana<\/bdi><\/a>/
+    )
     expect(html).toContain(copy.successPurchase("Card", 4, "19.11"))
     expect(html).toContain('href="/admin/payments/new"')
     expect(html).toContain(copy.another)

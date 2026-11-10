@@ -75,13 +75,21 @@ beforeEach(() => {
 describe("updateDetails", () => {
   it("writes the trimmed name and empty dietary notes as null, on her own row", async () => {
     await expect(
-      updateDetails({ fullName: "  Dana  ", dietaryNotes: "   " })
+      updateDetails({
+        fullName: "  Dana  ",
+        dietaryNotes: "   ",
+        specialBrunchInterests: [],
+      })
     ).resolves.toEqual({ ok: true, data: undefined })
     expect(writes).toEqual([
       {
         table: "profiles",
         op: "update",
-        values: { full_name: "Dana", dietary_notes: null },
+        values: {
+          full_name: "Dana",
+          dietary_notes: null,
+          special_brunch_interests: [],
+        },
         eq: ["id", USER],
       },
     ])
@@ -89,15 +97,39 @@ describe("updateDetails", () => {
   })
 
   it("keeps written dietary notes as written (trimmed)", async () => {
-    await updateDetails({ fullName: "Dana", dietaryNotes: " vegan\nno nuts " })
+    await updateDetails({
+      fullName: "Dana",
+      dietaryNotes: " vegan\nno nuts ",
+      specialBrunchInterests: [],
+    })
     expect(writes[0].values).toEqual({
       full_name: "Dana",
       dietary_notes: "vegan\nno nuts",
+      special_brunch_interests: [],
+    })
+  })
+
+  // Story 2.16 (matrix: profile change): the checked codes, each once, in
+  // code order, with the other details in the same update.
+  it("writes the special brunches deduped, in code order", async () => {
+    await updateDetails({
+      fullName: "Dana",
+      dietaryNotes: "",
+      specialBrunchInterests: ["grandpa", "couples", "grandpa"],
+    })
+    expect(writes[0].values).toEqual({
+      full_name: "Dana",
+      dietary_notes: null,
+      special_brunch_interests: ["couples", "grandpa"],
     })
   })
 
   it.each([
-    [{ fullName: " ", dietaryNotes: "" }, "FIELD_REQUIRED", "full_name"],
+    [
+      { fullName: " ", dietaryNotes: "", specialBrunchInterests: [] },
+      "FIELD_REQUIRED",
+      "full_name",
+    ],
     [null, "FIELD_REQUIRED", "full_name"],
     [
       { fullName: "a".repeat(201), dietaryNotes: "" },
@@ -112,13 +144,28 @@ describe("updateDetails", () => {
     // Missing notes never erase the saved ones.
     [{ fullName: "Dana" }, "INVALID_INPUT", "dietary_notes"],
     [{ fullName: "Dana", dietaryNotes: 5 }, "INVALID_INPUT", "dietary_notes"],
+    // Story 2.16: an unknown code, or no array (a missing value never
+    // erases the saved answers).
+    [
+      { fullName: "Dana", dietaryNotes: "", specialBrunchInterests: ["aunt"] },
+      "INVALID_INPUT",
+      "special_brunch_interests",
+    ],
+    [
+      { fullName: "Dana", dietaryNotes: "" },
+      "INVALID_INPUT",
+      "special_brunch_interests",
+    ],
+    [
+      { fullName: "Dana", dietaryNotes: "", specialBrunchInterests: "couples" },
+      "INVALID_INPUT",
+      "special_brunch_interests",
+    ],
   ])(
     "refuses %j with %s on %s, without writing",
     async (input, code, field) => {
       await expect(
-        updateDetails(
-          input as unknown as { fullName: string; dietaryNotes: string }
-        )
+        updateDetails(input as unknown as Parameters<typeof updateDetails>[0])
       ).resolves.toEqual({ ok: false, code, detail: { field } })
       expect(writes).toEqual([])
     }
@@ -126,13 +173,20 @@ describe("updateDetails", () => {
 
   it("is NOT_AUTHORIZED when no row is hers (RLS) or no session", async () => {
     result = { data: [], error: null }
-    await expect(
-      updateDetails({ fullName: "Dana", dietaryNotes: "" })
-    ).resolves.toEqual({ ok: false, code: "NOT_AUTHORIZED" })
+    const input = {
+      fullName: "Dana",
+      dietaryNotes: "",
+      specialBrunchInterests: [],
+    }
+    await expect(updateDetails(input)).resolves.toEqual({
+      ok: false,
+      code: "NOT_AUTHORIZED",
+    })
     getClaims.mockResolvedValue({ data: null })
-    await expect(
-      updateDetails({ fullName: "Dana", dietaryNotes: "" })
-    ).resolves.toEqual({ ok: false, code: "NOT_AUTHORIZED" })
+    await expect(updateDetails(input)).resolves.toEqual({
+      ok: false,
+      code: "NOT_AUTHORIZED",
+    })
     expect(revalidatePath).not.toHaveBeenCalled()
   })
 })

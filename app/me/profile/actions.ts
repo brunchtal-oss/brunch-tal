@@ -9,12 +9,13 @@ import {
   type ErrorDetail,
 } from "@/lib/errors"
 import { callRpc } from "@/lib/rpc"
+import { parseSpecialBrunchInterests } from "@/lib/special-brunch"
 import { createClient } from "@/lib/supabase/server"
 import { isPlainDate } from "@/lib/time"
 
 // The customer's profile (story 2.10). Each action checks only the shape
 // and makes one write with the customer's own session: a column update of
-// profiles (full_name, dietary_notes) or babies (AD-1), where RLS keeps her
+// profiles (full_name, dietary_notes, special_brunch_interests) or babies (AD-1), where RLS keeps her
 // to her own rows and private.babies_guard checks the birth date, the count
 // and the last baby again; or set_photo_consent and
 // set_personal_photo_consent (story 2.13). Self-updates are exempt from
@@ -81,13 +82,20 @@ function done(): ActionResult {
 export async function updateDetails(input: {
   fullName: string
   dietaryNotes: string
+  specialBrunchInterests: string[]
 }): Promise<ActionResult> {
   const fullName = text(input?.fullName)
   // Required as a string ("" clears): a missing value never erases notes.
   const dietary = text(input?.dietaryNotes)
+  // Story 2.16: required as an array ([] clears), known codes only; stored
+  // each once in code order (the column's check refuses anything else).
+  const interests = Array.isArray(input?.specialBrunchInterests)
+    ? parseSpecialBrunchInterests(input.specialBrunchInterests)
+    : null
   if (!fullName) return invalid("full_name", "FIELD_REQUIRED")
   if (fullName.length > 200) return invalid("full_name")
   if (dietary === null || dietary.length > 2000) return invalid("dietary_notes")
+  if (interests === null) return invalid("special_brunch_interests")
 
   const supabase = await createClient()
   const { data: claims } = await supabase.auth.getClaims()
@@ -96,7 +104,11 @@ export async function updateDetails(input: {
 
   const { data, error } = await supabase
     .from("profiles")
-    .update({ full_name: fullName, dietary_notes: dietary || null })
+    .update({
+      full_name: fullName,
+      dietary_notes: dietary || null,
+      special_brunch_interests: interests,
+    })
     .eq("id", userId)
     .select("id")
   if (error) return fail(error)

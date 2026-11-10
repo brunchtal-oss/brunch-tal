@@ -21,7 +21,8 @@ import {
 } from "./support/db"
 import { approve, seedMoney, type MoneyFixture } from "./support/money"
 
-const LIST = "select public.admin_list_customers($1, $2) as r"
+// Story 2.16: the overload with p_interests (null = no filter).
+const LIST = "select public.admin_list_customers($1, $2, null::text[]) as r"
 const GET = "select public.admin_get_customer($1) as r"
 const ADD = "select public.admin_add_customer_note($1, $2, $3) as r"
 const DELETE = "select public.admin_delete_customer_note($1, $2) as r"

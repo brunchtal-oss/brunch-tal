@@ -10,6 +10,10 @@ import {
   listHref,
   listRequest,
   parseActivity,
+  choiceActivity,
+  filterChoice,
+  filterCount,
+  parseInterests,
   parseQuery,
   shownList,
   toCustomerItem,
@@ -60,10 +64,12 @@ describe("listRequest (story 5.13)", () => {
     expect(listRequest(" רונ ", null)).toEqual({
       query: "רונ",
       activity: "all",
+      interests: [],
     })
     expect(listRequest("רונ", "inactive")).toEqual({
       query: "רונ",
       activity: "all",
+      interests: [],
     })
   })
 
@@ -71,8 +77,13 @@ describe("listRequest (story 5.13)", () => {
     expect(listRequest("", "inactive")).toEqual({
       query: "",
       activity: "inactive",
+      interests: [],
     })
-    expect(listRequest("  ", "all")).toEqual({ query: "", activity: "all" })
+    expect(listRequest("  ", "all")).toEqual({
+      query: "",
+      activity: "all",
+      interests: [],
+    })
     expect(listRequest("", null)).toBeNull()
   })
 
@@ -83,35 +94,51 @@ describe("listRequest (story 5.13)", () => {
 })
 
 describe("answerForFilter (story 5.13)", () => {
-  const answer = { query: "רונ", activity: "all" as const, ok: true }
+  const answer = {
+    query: "רונ",
+    activity: "all" as const,
+    interests: [],
+    ok: true,
+  }
 
   it("the answer for the same request", () => {
-    expect(answerForFilter({ query: "רונ", activity: "all" }, answer)).toBe(
-      answer
-    )
+    expect(
+      answerForFilter({ query: "רונ", activity: "all", interests: [] }, answer)
+    ).toBe(answer)
   })
 
   it("null for another query or category, no request or no answer", () => {
     expect(
-      answerForFilter({ query: "רוני", activity: "all" }, answer)
+      answerForFilter({ query: "רוני", activity: "all", interests: [] }, answer)
     ).toBeNull()
     expect(
-      answerForFilter({ query: "רונ", activity: "inactive" }, answer)
+      answerForFilter(
+        { query: "רונ", activity: "inactive", interests: [] },
+        answer
+      )
     ).toBeNull()
-    expect(answerForFilter({ query: "", activity: "all" }, answer)).toBeNull()
+    expect(
+      answerForFilter({ query: "", activity: "all", interests: [] }, answer)
+    ).toBeNull()
     expect(answerForFilter(null, answer)).toBeNull()
-    expect(answerForFilter({ query: "רונ", activity: "all" }, null)).toBeNull()
+    expect(
+      answerForFilter({ query: "רונ", activity: "all", interests: [] }, null)
+    ).toBeNull()
   })
 })
 
 describe("emptyText (story 5.13)", () => {
   it("a search, or each category's own", () => {
-    expect(emptyText({ query: "רונ", activity: "all" })).toBe("לא נמצאו לקוחות")
-    expect(emptyText({ query: "", activity: "all" })).toBe("אין עדיין לקוחות")
-    expect(emptyText({ query: "", activity: "active" })).toBe(
+    expect(emptyText({ query: "רונ", activity: "all", interests: [] })).toBe(
+      "לא נמצאו לקוחות"
+    )
+    expect(emptyText({ query: "", activity: "all", interests: [] })).toBe(
+      "אין עדיין לקוחות"
+    )
+    expect(emptyText({ query: "", activity: "active", interests: [] })).toBe(
       "אין לקוחות פעילות"
     )
-    expect(emptyText({ query: "", activity: "inactive" })).toBe(
+    expect(emptyText({ query: "", activity: "inactive", interests: [] })).toBe(
       "אין לקוחות לא פעילות"
     )
   })
@@ -130,15 +157,15 @@ describe("shownList (story 5.13)", () => {
     has_more: more,
   })
 
-  const search = { query: "רונ", activity: "all" as const }
+  const search = { query: "רונ", activity: "all" as const, interests: [] }
 
   it("the untouched screen (no category, under 2 characters): every customer", () => {
     expect(shownList(null, null)).toBeNull()
   })
 
   it("a category from the request, also while its answer is pending or failed", () => {
-    const request = { query: "", activity: "inactive" as const }
-    const category = { kind: "category", activity: "inactive" }
+    const request = { query: "", activity: "inactive" as const, interests: [] }
+    const category = { kind: "category", activity: "inactive", interests: [] }
     expect(shownList(request, null)).toEqual(category)
     expect(shownList(request, { ...request, list: list(3) })).toEqual(category)
   })
@@ -158,8 +185,110 @@ describe("shownList (story 5.13)", () => {
     const pending = { kind: "search", query: "רונ", count: null }
     expect(shownList(search, null)).toEqual(pending)
     expect(
-      shownList(search, { query: "רו", activity: "all", list: list(5) })
+      shownList(search, {
+        query: "רו",
+        activity: "all",
+        interests: [],
+        list: list(5),
+      })
     ).toEqual(pending)
+  })
+})
+
+// Story 2.16 (phone-check fix, user decision 2026-11-10): the "סינון"
+// sheet. ?interest= holds several codes; OR within a group, AND between.
+describe("the filter", () => {
+  it("reads interest: known codes joined by ',', in code order, else no filter", () => {
+    expect(parseInterests({ interest: "grandma" })).toEqual(["grandma"])
+    expect(parseInterests({ interest: "grandpa,couples" })).toEqual([
+      "couples",
+      "grandpa",
+    ])
+    expect(parseInterests({ interest: ["couples", "grandpa"] })).toEqual([
+      "couples",
+    ])
+    expect(parseInterests({ interest: "couples,aunt" })).toEqual([])
+    expect(parseInterests({ interest: "couples,couples" })).toEqual([])
+    expect(parseInterests({})).toEqual([])
+  })
+
+  it("the address keeps the category and the codes", () => {
+    expect(categoryHref("inactive", ["grandpa", "grandma"])).toBe(
+      "/admin/customers?activity=inactive&interest=grandma,grandpa"
+    )
+    expect(categoryHref("all", [])).toBe("/admin/customers?activity=all")
+  })
+
+  it("the sheet's choice: both activities or none is every customer", () => {
+    expect(choiceActivity({ activities: [], interests: [] })).toBe("all")
+    expect(
+      choiceActivity({ activities: ["active", "inactive"], interests: [] })
+    ).toBe("all")
+    expect(choiceActivity({ activities: ["inactive"], interests: [] })).toBe(
+      "inactive"
+    )
+    expect(filterChoice("all", ["couples"])).toEqual({
+      activities: [],
+      interests: ["couples"],
+    })
+    expect(filterChoice("active", [])).toEqual({
+      activities: ["active"],
+      interests: [],
+    })
+  })
+
+  it("the button's number: one activity, and each special brunch", () => {
+    expect(filterCount(null, [])).toBe(0)
+    expect(filterCount("all", [])).toBe(0)
+    expect(filterCount("active", [])).toBe(1)
+    expect(filterCount("active", ["couples", "grandma"])).toBe(3)
+    expect(filterCount("all", ["grandpa"])).toBe(1)
+  })
+
+  it("narrows the open category; a search is over every customer", () => {
+    expect(listRequest("", "inactive", ["grandma", "couples"])).toEqual({
+      query: "",
+      activity: "inactive",
+      interests: ["grandma", "couples"],
+    })
+    expect(listRequest("רונ", "inactive", ["grandma"])).toEqual({
+      query: "רונ",
+      activity: "all",
+      interests: [],
+    })
+  })
+
+  it("an answer for another filter is not shown", () => {
+    const answer = {
+      query: "",
+      activity: "all" as const,
+      interests: ["couples" as const],
+    }
+    expect(
+      answerForFilter(
+        { query: "", activity: "all", interests: ["couples", "grandma"] },
+        answer
+      )
+    ).toBeNull()
+    expect(
+      answerForFilter(
+        { query: "", activity: "all", interests: ["couples"] },
+        answer
+      )
+    ).toBe(answer)
+  })
+
+  it("the export follows the filter of the open category", () => {
+    expect(
+      shownList(
+        { query: "", activity: "active", interests: ["couples", "grandpa"] },
+        null
+      )
+    ).toEqual({
+      kind: "category",
+      activity: "active",
+      interests: ["couples", "grandpa"],
+    })
   })
 })
 

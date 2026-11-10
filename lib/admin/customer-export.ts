@@ -1,6 +1,13 @@
+import type { SpecialBrunchContent } from "@/lib/content/schema"
 import { adminCopy } from "@/lib/copy/admin"
 import { toCsv } from "@/lib/csv"
 import { formatLocalPhone } from "@/lib/phone"
+import {
+  parseSpecialBrunchList,
+  specialBrunchLabels,
+  specialBrunchListParam,
+  type SpecialBrunchCode,
+} from "@/lib/special-brunch"
 
 // The customers CSV export (story 4.4, user decisions 2026-10-13): the closed
 // column list, the request's parameters and the file. Only these columns can
@@ -11,11 +18,14 @@ export type ExportRow = {
   full_name: string | null
   phone_e164: string | null
   email: string | null
+  // Story 2.16: the codes (absent from rows of an older answer).
+  special_brunch_interests?: string[] | null
 }
 
+// specialBrunch: the content block's wording, for the option titles.
 type Column = {
   header: string
-  value: (row: ExportRow) => string
+  value: (row: ExportRow, specialBrunch: SpecialBrunchContent) => string
 }
 
 const headers = adminCopy.customers.export.headers
@@ -28,6 +38,12 @@ export const EXPORT_COLUMNS = {
     value: (r) => (r.phone_e164 ? formatLocalPhone(r.phone_e164) : ""),
   },
   email: { header: headers.email, value: (r) => r.email ?? "" },
+  // Story 2.16: the titles in code order, joined by ", "; empty when none.
+  special_brunch_interests: {
+    header: headers.special_brunch_interests,
+    value: (r, specialBrunch) =>
+      specialBrunchLabels(specialBrunch, r.special_brunch_interests).join(", "),
+  },
 } satisfies Record<string, Column>
 
 export type ExportColumn = keyof typeof EXPORT_COLUMNS
@@ -54,6 +70,9 @@ export type ExportParams = {
   query: string | null
   // The category, for both scopes.
   activity: ExportActivity
+  // Story 2.16: the special brunches, in code order; [] = no filter. A
+  // customer matches when she chose at least one.
+  interests: SpecialBrunchCode[]
   // In file order.
   columns: ExportColumn[]
 }
@@ -62,9 +81,10 @@ const QUERY_MIN = 2
 const QUERY_MAX = 100
 
 /**
- * `?scope=all|search&q=&activity=all|active|inactive&cols=full_name,phone,email`.
+ * `?scope=all|search&q=&activity=all|active|inactive&interest=couples,grandma&cols=full_name,phone,email`.
  * search needs q of 2-100 characters after trimming; all ignores q. activity
- * is required for both. cols is non-empty, without duplicates, from the
+ * is required for both; interest (story 2.16) is optional, else known
+ * codes joined by ",", each once. cols is non-empty, without duplicates, from the
  * closed list. Anything else is INVALID_INPUT (the RPC checks again).
  */
 export function parseExportParams(
@@ -84,6 +104,9 @@ export function parseExportParams(
   const activity = params.get("activity")
   if (!isExportActivity(activity)) return invalid
 
+  const interests = parseSpecialBrunchList(params.get("interest"))
+  if (interests === null) return invalid
+
   const raw = (params.get("cols") ?? "").split(",").map((c) => c.trim())
   // An empty cols is [""], not a column.
   if (raw.some((c) => !isExportColumn(c))) return invalid
@@ -91,14 +114,19 @@ export function parseExportParams(
   const chosen = new Set(raw)
   const columns = EXPORT_COLUMN_KEYS.filter((key) => chosen.has(key))
 
-  return { ok: true, data: { scope, query, activity, columns } }
+  return { ok: true, data: { scope, query, activity, interests, columns } }
 }
 
 // What the screen asks for, which the sheet exports (story 5.13): a whole
 // category, or a search over every customer with its trimmed query and the
-// count as the list shows it (null while its answer is not shown).
+// count as the list shows it (null while its answer is not shown). A
+// category carries its special-brunch filter (story 2.16; [] = none).
 export type ShownList =
-  | { kind: "category"; activity: ExportActivity }
+  | {
+      kind: "category"
+      activity: ExportActivity
+      interests: SpecialBrunchCode[]
+    }
   | { kind: "search"; query: string; count: string | null }
 
 /** The list's count as the sheet shows it: "200+" past the limit. */
@@ -118,6 +146,20 @@ export function exportLine(shown: ShownList | null): string {
 }
 
 /**
+ * Story 2.16: the line under it while the special-brunch filter is on (the
+ * options' titles from the content block, joined by " או "), else null.
+ */
+export function exportInterestLine(
+  shown: ShownList | null,
+  specialBrunch: SpecialBrunchContent
+): string | null {
+  if (shown?.kind !== "category" || shown.interests.length === 0) return null
+  return adminCopy.customers.export.onlyInterest(
+    specialBrunchLabels(specialBrunch, shown.interests)
+  )
+}
+
+/**
  * What the sheet asks for: a category -> scope all with that category; a
  * search -> scope search with its query over every customer; nothing shown
  * -> every customer.
@@ -131,6 +173,7 @@ export function exportRequest(
       scope: "search",
       query: shown.query,
       activity: "all",
+      interests: [],
       columns: [...columns],
     }
   }
@@ -138,6 +181,7 @@ export function exportRequest(
     scope: "all",
     query: null,
     activity: shown ? shown.activity : "all",
+    interests: shown ? [...shown.interests] : [],
     columns: [...columns],
   }
 }
@@ -160,11 +204,15 @@ export function exportHref({
   scope,
   query,
   activity,
+  interests,
   columns,
 }: ExportParams): string {
   const params = new URLSearchParams({ scope })
   if (scope === "search") params.set("q", (query ?? "").trim())
   params.set("activity", activity)
+  if (interests.length > 0) {
+    params.set("interest", specialBrunchListParam(interests))
+  }
   params.set(
     "cols",
     EXPORT_COLUMN_KEYS.filter((key) => columns.includes(key)).join(",")
@@ -175,11 +223,14 @@ export function exportHref({
 /** The file: the header row of the chosen columns, then one line a row. */
 export function customersCsv(
   rows: readonly ExportRow[],
-  columns: readonly ExportColumn[]
+  columns: readonly ExportColumn[],
+  specialBrunch: SpecialBrunchContent
 ): string {
   return toCsv(
     columns.map((key) => EXPORT_COLUMNS[key].header),
-    rows.map((row) => columns.map((key) => EXPORT_COLUMNS[key].value(row)))
+    rows.map((row) =>
+      columns.map((key) => EXPORT_COLUMNS[key].value(row, specialBrunch))
+    )
   )
 }
 

@@ -125,6 +125,8 @@ export type JoinInput = {
   password: string
   fullName: string
   dietaryNotes: string | null
+  // Story 2.16: known codes in code order; join_complete checks them again.
+  specialBrunchInterests: readonly string[]
   privacyConsent: boolean
   photoConsent: boolean | null
   personalPhotoConsent: boolean | null
@@ -423,6 +425,7 @@ async function runJoin(
       phone: input.phone,
       full_name: input.fullName,
       dietary_notes: input.dietaryNotes,
+      special_brunch_interests: [...input.specialBrunchInterests],
       privacy_consent: input.privacyConsent,
       photo_consent: input.photoConsent,
       personal_photo_consent: input.personalPhotoConsent,

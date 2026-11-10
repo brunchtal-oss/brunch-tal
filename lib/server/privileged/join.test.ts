@@ -54,6 +54,7 @@ const INPUT: JoinInput = {
   password: PASSWORD,
   fullName: "Dev Join",
   dietaryNotes: null,
+  specialBrunchInterests: ["couples", "grandpa"],
   privacyConsent: true,
   photoConsent: false,
   personalPhotoConsent: true,
@@ -337,6 +338,8 @@ describe("submitJoin", () => {
         phone: INPUT.phone,
         full_name: "Dev Join",
         dietary_notes: null,
+        // Story 2.16: the codes as validated (code order).
+        special_brunch_interests: ["couples", "grandpa"],
         privacy_consent: true,
         photo_consent: false,
         personal_photo_consent: true,
@@ -861,6 +864,22 @@ describe("submitJoinFill (story 2.15)", () => {
     )
     getUserById.mockResolvedValue(notFound)
     createUser.mockResolvedValue(ok)
+  })
+
+  // Story 2.16: Tal's fill sends the special brunches like the customer's
+  // link (the shared p_profile builder), in code order.
+  it("sends the special brunches to join_complete in code order", async () => {
+    sessionRpc.mockResolvedValue(ready())
+    await submitJoinFill(session(), PAYMENT, INPUT, KEY, null)
+    expect(rpc).toHaveBeenCalledWith(
+      "join_complete",
+      expect.objectContaining({
+        p_token: FILL_TOKEN,
+        p_profile: expect.objectContaining({
+          special_brunch_interests: ["couples", "grandpa"],
+        }),
+      })
+    )
   })
 
   it("begins with the admin's session, joins with the new link and never signs in", async () => {

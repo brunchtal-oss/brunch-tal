@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import { adminCopy } from "@/lib/copy/admin"
+import { SPECIAL_BRUNCH_FALLBACK as SB } from "@/lib/special-brunch"
 
 import {
   accountView,
@@ -40,6 +41,7 @@ const profile = (overrides: Partial<CardProfile> = {}): CardProfile => ({
   photo_consent_at: "2026-10-04T22:30:00Z",
   personal_photo_consent: false,
   personal_photo_consent_at: null,
+  special_brunch_interests: ["grandpa", "couples"],
   last_activity_on: "2026-10-05",
   ...overrides,
 })
@@ -83,10 +85,15 @@ describe("the header and details", () => {
   })
 
   it("joined, last activity, diet and the photo consent as text", () => {
-    expect(detailRows(profile())).toEqual([
+    expect(detailRows(profile(), SB)).toEqual([
       { label: copy.joined, value: "05.10.26" },
       { label: copy.lastActivity, value: "05.10.26" },
       { label: copy.dietary, value: "בלי גלוטן" },
+      // Story 2.16: the titles in code order, joined by " · ".
+      {
+        label: copy.specialBrunch,
+        value: `${SB.couples_title} · ${SB.grandpa_title}`,
+      },
       // Story 2.13: two lines, no date.
       {
         label: copy.photoConsent,
@@ -107,12 +114,16 @@ describe("the header and details", () => {
           photo_consent_at: null,
           personal_photo_consent: true,
           personal_photo_consent_at: "2026-10-04T22:30:00Z",
-        })
+          special_brunch_interests: [],
+        }),
+        SB
       )
     ).toEqual([
       { label: copy.joined, value: copy.notActivatedYet },
       { label: copy.lastActivity, value: adminCopy.customers.noActivity },
       { label: copy.dietary, value: copy.none },
+      // Story 2.16 (matrix: card, none).
+      { label: copy.specialBrunch, value: copy.specialBrunchNone },
       {
         label: copy.photoConsent,
         value: [photo.atmosphere.no, photo.personal.yes],
@@ -123,11 +134,23 @@ describe("the header and details", () => {
 
 describe("the details without the email (fix 9)", () => {
   it("the email is a contact row of its own, never a detail row", () => {
-    const labels = detailRows(profile()).map((row) => row.label)
+    const labels = detailRows(profile(), SB).map((row) => row.label)
     expect(labels).not.toContain(copy.email)
     expect(
-      detailRows(profile()).some((row) => row.value === "roni@example.test")
+      detailRows(profile(), SB).some((row) => row.value === "roni@example.test")
     ).toBe(false)
+  })
+})
+
+// Story 2.16 (matrix: text edited): the card reads the published titles;
+// the stored codes are unchanged.
+describe("the special brunches on the card", () => {
+  it("shows an edited title", () => {
+    const row = detailRows(profile({ special_brunch_interests: ["couples"] }), {
+      ...SB,
+      couples_title: "X",
+    }).find((r) => r.label === copy.specialBrunch)
+    expect(row?.value).toBe("X")
   })
 })
 

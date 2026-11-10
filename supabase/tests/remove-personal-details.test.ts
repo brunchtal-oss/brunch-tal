@@ -31,9 +31,11 @@ const FINISH = "select public.admin_finish_anonymize_customer($1, $2) as r"
 const GET = "select public.admin_get_customer($1) as r"
 const HOME = "select public.admin_get_home() as r"
 const REFUNDS = "select public.admin_list_refund_requests() as r"
-const LIST = "select public.admin_list_customers($1, $2) as r"
+// Story 2.16: the overload with p_interests (null = no filter).
+const LIST = "select public.admin_list_customers($1, $2, null::text[]) as r"
 const SEARCH = "select public.admin_search_customers($1) as r"
-const EXPORT = "select public.admin_export_customers($1, $2, $3, $4) as r"
+const EXPORT =
+  "select public.admin_export_customers($1, $2, $3, $4, null::text[]) as r"
 const ISSUE_RESET = "select public.admin_issue_link('reset', $1, $2) as r"
 const ROLE = "select public.get_my_session_role() as r"
 const LIST_PAYMENTS = "select public.admin_list_payments() as r"
