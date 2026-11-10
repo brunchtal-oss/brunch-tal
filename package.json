@@ -16,6 +16,7 @@
     "typecheck": "tsc --noEmit && tsc -p tsconfig.sw.json",
     "test": "vitest run --project unit",
     "test:db": "vitest run --project db",
+    "prod:grants": "node scripts/prod-grants.mjs",
     "test:watch": "vitest --project unit",
     "dev:reset-link": "node scripts/dev-reset-link.mjs",
     "dev:seed-media": "node scripts/dev-seed-media.mjs",

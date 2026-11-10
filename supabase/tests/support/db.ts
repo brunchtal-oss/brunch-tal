@@ -6,10 +6,22 @@
 // (port 5432), never the transaction pooler (6543): tests use SET LOCAL and
 // session state. Fictitious data only; every row a test creates is prefixed
 // with `runId` and removed in `onCleanup`.
+//
+// Story 6.1: DB_TARGET=prod together with PROD_GRANTS_RUN=1 (both set only
+// by `npm run prod:grants`) points the pool at PROD_DATABASE_URL, read from
+// .env.prod.local into a separate object (never process.env), after the prod
+// guards (scripts/prod-env.mjs); every session is
+// default_transaction_read_only. Only read-only tests run there.
 
 import { randomBytes, randomUUID } from "node:crypto"
 
 import pg from "pg"
+
+import {
+  checkProdEnv,
+  PROD_ENV_FILE,
+  readEnvFile,
+} from "../../../scripts/prod-env.mjs"
 
 export type Db = pg.PoolClient
 
@@ -66,10 +78,60 @@ export function devDatabaseUrl(
   return url
 }
 
+/**
+ * True when DB_TARGET=prod and the prod:grants wrapper's marker
+ * PROD_GRANTS_RUN=1 is set. DB_TARGET=prod without the marker, or any value
+ * other than prod, dev or empty, throws.
+ */
+export function isProdTarget(
+  env: Record<string, string | undefined> = process.env
+): boolean {
+  const target = env.DB_TARGET ?? ""
+  if (target !== "" && target !== "dev" && target !== "prod") {
+    throw new Error("DB_TARGET is prod, dev or empty.")
+  }
+  if (target === "prod" && env.PROD_GRANTS_RUN !== "1") {
+    throw new Error(
+      "DB_TARGET=prod runs only through `npm run prod:grants` (read-only grants)."
+    )
+  }
+  return target === "prod"
+}
+
+/**
+ * Validates PROD_DATABASE_URL (DB_TARGET=prod) with the prod scripts'
+ * guards: all four PROD_* variables, the ref of PROD_SUPABASE_URL in the
+ * pooler user / host, and a ref other than the dev project's
+ * (NEXT_PUBLIC_SUPABASE_URL). The message never holds a value.
+ */
+export function prodDatabaseUrl(
+  prodEnv: Record<string, string | undefined> | null,
+  devEnv: Record<string, string | undefined> = process.env
+): string {
+  const checked = checkProdEnv(prodEnv, devEnv)
+  if (!checked.ok) throw new Error(checked.error)
+  return prodEnv!.PROD_DATABASE_URL!.trim()
+}
+
+/**
+ * The database the tests connect to: dev, or prod (read-only) when
+ * isProdTarget. The prod values come from readProd (.env.prod.local parsed
+ * into an object), so a PROD_* in the shell or .env.local never counts.
+ */
+export function targetDatabaseUrl(
+  env: Record<string, string | undefined> = process.env,
+  readProd: () => Record<string, string | undefined> | null = () =>
+    readEnvFile(PROD_ENV_FILE)
+): string {
+  return isProdTarget(env)
+    ? prodDatabaseUrl(readProd(), env)
+    : devDatabaseUrl(env)
+}
+
 // SSL without certificate verification: dev project, fictitious data only.
 // Any sslmode in the string is dropped, because pg lets the string override
 // the `ssl` option.
-function connectionConfig(url: string): pg.PoolConfig {
+function connectionConfig(url: string, readOnly: boolean): pg.PoolConfig {
   const parsed = new URL(url)
   for (const key of ["sslmode", "sslcert", "sslkey", "sslrootcert"]) {
     parsed.searchParams.delete(key)
@@ -88,6 +150,8 @@ function connectionConfig(url: string): pg.PoolConfig {
       await client.query(
         "set statement_timeout = '15s'; set idle_in_transaction_session_timeout = '30s'"
       )
+      // Production: no transaction of this session can write.
+      if (readOnly) await client.query("set default_transaction_read_only = on")
     },
   }
 }
@@ -97,7 +161,7 @@ let pool: pg.Pool | undefined
 /** The shared pool, created on first use (after the env check). */
 export function getPool(): pg.Pool {
   if (!pool) {
-    pool = new pg.Pool(connectionConfig(devDatabaseUrl()))
+    pool = new pg.Pool(connectionConfig(targetDatabaseUrl(), isProdTarget()))
     // An idle client dropped by the pooler emits "error" on the pool; without
     // a listener it would crash the test process.
     pool.on("error", (error) => {
