@@ -1985,7 +1985,7 @@ export const adminCopy = {
         backToPurchase: "חזרה לרכישה",
         title: "מילוי טופס ההצטרפות",
         together:
-          "ממלאים את הטופס יחד עם הלקוחה. את שאלות הצילום ואת מדיניות הפרטיות מקריאים לה מילה במילה, ומסמנים לפי התשובות שלה.",
+          "יש למלא את הטופס עם הלקוחה. הסכמתה בעל פה שקולה לאישורה בטופס.",
         onSubmit:
           "בשליחה נוצר ללקוחה חשבון, והרכישה עוברת אליו. קישור ההצטרפות שנשלח אליה מתבטל.",
         // Done.
@@ -1998,8 +1998,11 @@ export const adminCopy = {
         copy: "העתקת פרטי הכניסה",
         copied: "הפרטים הועתקו",
         copyFailed: "לא הצלחנו להעתיק. אפשר לסמן את הפרטים ולהעתיק אותם ידנית.",
+        // The link first, so WhatsApp shows its preview on top; the
+        // headings in WhatsApp's bold (*...*). Copied and sent the same.
         copiedText: (email: string, password: string, loginUrl: string) =>
-          `פרטי הכניסה לאזור האישי:\nמייל: ${email}\nסיסמה: ${password}\nלהתחברות: ${loginUrl}`,
+          `*להתחברות:* ${loginUrl}\n\n*פרטי הכניסה לאזור האישי:*\nמייל: ${email}\nסיסמה: ${password}`,
+        whatsapp: "שליחה בוואטסאפ",
         otherPassword:
           "אם היא תרצה סיסמה אחרת, אפשר לשלוח לה קישור איפוס מכרטיס הלקוחה.",
         toCustomer: "לכרטיס הלקוחה",

@@ -177,6 +177,22 @@ describe("validateJoin", () => {
     })
   })
 
+  // Story 2.15: the server's phone rules, so "הבא" stops a number the server
+  // would refuse; a foreign number the server keeps passes.
+  it.each([["123456789"], ["972541234567"], ["054123456"]])(
+    "flags %s, which the server refuses",
+    (phone) => {
+      expect(validateJoin(form({ phone }))).toEqual({
+        ok: false,
+        errors: [{ field: "phone", message: "phone" }],
+      })
+    }
+  )
+
+  it("keeps a foreign number the server accepts", () => {
+    expect(validateJoin(form({ phone: "+1 212 555 0100" })).ok).toBe(true)
+  })
+
   it.each([
     ["too long", `${"a".repeat(243)}@example.com`],
     ["crafted", `a@${".".repeat(100_000)}@`],
