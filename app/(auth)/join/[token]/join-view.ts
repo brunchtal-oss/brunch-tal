@@ -7,6 +7,29 @@ import type { JoinFormState } from "./actions"
 export type JoinView =
   "form" | "joined" | "used" | "expired" | "conflict" | "voided"
 
+// States only Tal's fill returns (story 2.15): the shared form leaves them to
+// its `outcome` render. fill_joined carries no password: the done screen
+// takes it from the form's own state.
+export type FillOnlyState =
+  | {
+      status: "fill_joined"
+      fullName: string
+      email: string
+      customerId: string | null
+    }
+  | { status: "in_progress" }
+
+// What an action of the shared join form returns: the customer's states or
+// the fill's. token: the link of the next attempt (Tal's fill; undefined
+// keeps the current one, null drops it). idempotencyKey: the key of the next
+// attempt, where a result hands a new one.
+export type SharedFormState =
+  | null
+  | ((Exclude<JoinFormState, null> | FillOnlyState) & {
+      token?: string | null
+      idempotencyKey?: string
+    })
+
 // The link states the join form shows; awaiting_login has its own screens
 // (claim-join.tsx).
 export type FormLinkState = Exclude<JoinLinkState, "awaiting_login">
@@ -18,7 +41,7 @@ export type FormLinkState = Exclude<JoinLinkState, "awaiting_login">
 // "contact for details". An existing account never reaches this view: the
 // action redirects to the page, which shows the login.
 export function joinView(
-  state: JoinFormState,
+  state: SharedFormState,
   linkState: FormLinkState
 ): JoinView {
   if (state?.status === "joined") return "joined"
@@ -55,12 +78,21 @@ export function conflictMessage(reason: ConflictReason | null): string {
 
 // The idempotency key of the next submission: identity_retry and
 // email_exists hand a new one (the previous key is stored with the previous
-// input); otherwise the current one stays.
+// input), and so may a result of Tal's fill; otherwise the current one stays.
 export function nextIdempotencyKey(
-  state: JoinFormState,
+  state: SharedFormState,
   current: string
 ): string {
-  return state?.status === "identity_retry" || state?.status === "email_exists"
+  return typeof state?.idempotencyKey === "string"
     ? state.idempotencyKey
     : current
+}
+
+// The link of the next submission: a result's token when it names one
+// (null drops it), otherwise the current one.
+export function nextToken(
+  state: SharedFormState,
+  current: string | null
+): string | null {
+  return state && state.token !== undefined ? state.token : current
 }

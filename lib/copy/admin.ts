@@ -1939,6 +1939,55 @@ export const adminCopy = {
         voidedOn: (date: string) => `הרכישה בוטלה ב-${date}`,
         reasonLine: (reason: string) => `סיבה: ${reason}`,
       },
+      // Story 2.15: Tal fills the join form for a customer who paid. No
+      // record of the fill anywhere; the details are the customer's.
+      fill: {
+        sectionTitle: "הצטרפות הלקוחה",
+        sectionIntro:
+          "אם קשה ללקוחה למלא את הטופס בקישור, אפשר למלא אותו כאן יחד איתה.",
+        open: "מילוי טופס ההצטרפות",
+        backToPurchase: "חזרה לרכישה",
+        title: "מילוי טופס ההצטרפות",
+        together:
+          "יש למלא את הטופס עם הלקוחה. הסכמתה בעל פה שקולה לאישורה בטופס.",
+        onSubmit:
+          "בשליחה נוצר ללקוחה חשבון, והרכישה עוברת אליו. קישור ההצטרפות שנשלח אליה מתבטל.",
+        // Done.
+        joinedTitle: "החשבון נוצר",
+        joinedBound: (name: string) => `הרכישה שויכה לחשבון של ${name}.`,
+        sendDetails:
+          "עכשיו צריך לשלוח ללקוחה את המייל ואת הסיסמה שבחרת, כדי שתוכל להתחבר.",
+        emailLine: "המייל להתחברות:",
+        passwordLine: "הסיסמה:",
+        copy: "העתקת פרטי הכניסה",
+        copied: "הפרטים הועתקו",
+        copyFailed: "לא הצלחנו להעתיק. אפשר לסמן את הפרטים ולהעתיק אותם ידנית.",
+        // The link first, so WhatsApp shows its preview on top; the
+        // headings in WhatsApp's bold (*...*). Copied and sent the same.
+        copiedText: (email: string, password: string, loginUrl: string) =>
+          `*להתחברות:* ${loginUrl}\n\n*פרטי הכניסה לאזור האישי:*\nמייל: ${email}\nסיסמה: ${password}`,
+        whatsapp: "שליחה בוואטסאפ",
+        otherPassword:
+          "אם היא תרצה סיסמה אחרת, אפשר לשלוח לה קישור איפוס מכרטיס הלקוחה.",
+        toCustomer: "לכרטיס הלקוחה",
+        // The details of an existing account (an email field error).
+        detailsTakenBefore:
+          "המייל או הטלפון כבר רשומים בחשבון אחר. אם זו אותה לקוחה, היא צריכה להיכנס בקישור ההצטרפות שלה, להתחבר לחשבון הקיים ולאשר את הרכישה. אם הקישור שלה פג או בוטל, אפשר להפיק לה קישור חלופי במסך ",
+        linksScreen: "קישורי הצטרפות",
+        detailsTakenAfter: ".",
+        inProgress:
+          "הטופס של הרכישה הזו כבר באמצע מילוי: בקישור של הלקוחה, או במילוי קודם שלא הסתיים. אפשר לנסות שוב בעוד 15 דקות.",
+        // Also after Tal's own success (reload, back), so neutral (work
+        // manager 2026-11-10).
+        used: "הרכישה הזו כבר משויכת לחשבון של לקוחה, ולכן אין צורך למלא את הטופס.",
+        usedNamed: (name: string) => `הרכישה הזו כבר משויכת לחשבון של ${name}.`,
+        toCustomers: "לרשימת הלקוחות",
+        voided: "הרכישה הזו בוטלה, ולכן אי אפשר לצרף אליה לקוחה.",
+        conflictBefore:
+          "לא הצלחנו לשייך את הרכישה לחשבון החדש, כי הפרטים התנגשו עם חשבון אחר. אפשר למלא את הטופס שוב. אם לא ממשיכים עכשיו, צריך להפיק ללקוחה קישור חדש במסך ",
+        conflictAfter: ".",
+        fillAgain: "למילוי מחדש",
+      },
     },
     card: {
       back: "לכל הלקוחות",

@@ -33,12 +33,13 @@ import type { PhotoConsentContent } from "@/lib/content/schema"
 import { errorMessage, type ErrorCode } from "@/lib/errors"
 import { formatAgorot } from "@/lib/money"
 
-import { submitJoinAction, type JoinFormState } from "./actions"
+import { submitJoinAction } from "./actions"
 import {
   MAX_BABIES,
   validateJoin,
   type JoinField,
   type JoinFieldError,
+  type JoinFieldMessage,
 } from "./join-input"
 import {
   afterResult,
@@ -55,14 +56,26 @@ import {
   conflictMessage,
   joinView,
   nextIdempotencyKey,
+  nextToken,
   type FormLinkState,
+  type SharedFormState,
 } from "./join-view"
 
-function messageOf(message: ErrorCode | JoinErrorKey): string {
+function messageOf(message: JoinFieldMessage): string {
   return Object.hasOwn(joinCopy.errors, message)
     ? joinCopy.errors[message as JoinErrorKey]
-    : errorMessage(message)
+    : errorMessage(message as ErrorCode)
 }
+
+// What another path (Tal's fill, story 2.15) shows for one of its results:
+// a screen instead of the form, or a notice above it.
+export type JoinFormOutcome =
+  { replace: React.ReactNode } | { notice: React.ReactNode }
+
+// What the form sent last, for an outcome screen: the password (Tal's done
+// screen shows it; it never comes back from the server) and the phone (its
+// WhatsApp button).
+export type JoinFormSent = { password: string; phone: string }
 
 // The element that receives focus for a field error.
 function fieldId(field: JoinField, index?: number): string {
@@ -77,16 +90,22 @@ function fieldId(field: JoinField, index?: number): string {
 
 // Errors the form found itself ("הבא", or a submission it did not send),
 // shown instead of the result's errors while that result is current.
-type LocalCheck = { forState: JoinFormState; errors: JoinFieldError[] }
+type LocalCheck = { forState: SharedFormState; errors: JoinFieldError[] }
 
 const BUTTON = "h-12 text-base"
 const STEP_HEADING =
   "font-heading text-xl leading-tight font-light outline-none"
 
 // Always rendered at the same place for every link state, so the result of
-// a submission (used, expired, conflict) replaces the form in place.
+// a submission (used, expired, conflict) replaces the form in place. One form
+// for both paths (story 2.15): the customer's link (submitJoinAction, the
+// default) and Tal's fill (its own action, hidden fields and outcome).
 export function JoinForm({
   token,
+  action = submitJoinAction,
+  hidden = {},
+  outcome,
+  fieldMessage,
   idempotencyKey,
   linkState,
   conflictReason = null,
@@ -96,8 +115,24 @@ export function JoinForm({
   photoConsent,
   today,
   privacyHref = null,
+  lead = null,
 }: {
-  token: string
+  // Lines shown above the fields only on step 1 of the form (Tal's fill
+  // guidance); an outcome screen replaces them with the form.
+  lead?: React.ReactNode
+  // The link of the first attempt; null: the action issues one (Tal's fill)
+  // and hands it back in its result.
+  token: string | null
+  action?: (state: SharedFormState, data: FormData) => Promise<SharedFormState>
+  // Extra hidden fields, sent with every attempt.
+  hidden?: Record<string, string>
+  // A result the action's own path shows (checked before the link views).
+  outcome?: (
+    state: SharedFormState,
+    sent: JoinFormSent
+  ) => JoinFormOutcome | null
+  // The words of a field message the action's path owns (detailsTaken).
+  fieldMessage?: (message: JoinFieldMessage) => React.ReactNode | null
   idempotencyKey: string
   linkState: FormLinkState
   // The reason of a link that opened in conflict.
@@ -111,10 +146,10 @@ export function JoinForm({
   // The published privacy policy (story 5.5); null: the label is text.
   privacyHref?: string | null
 }) {
-  const [state, formAction, pending] = useActionState<JoinFormState, FormData>(
-    submitJoinAction,
-    null
-  )
+  const [state, formAction, pending] = useActionState<
+    SharedFormState,
+    FormData
+  >(action, null)
   // One id per baby row; the first row is always there.
   const [babyRows, setBabyRows] = useState<number[]>([0])
   const nextBabyId = useRef(1)
@@ -124,12 +159,19 @@ export function JoinForm({
   // Removing a baby row shifts the rows after it, so the baby errors of the
   // last result no longer match their rows: hide them until the next submit.
   const [babyErrorsClearedFor, setBabyErrorsClearedFor] =
-    useState<JoinFormState>(null)
+    useState<SharedFormState>(null)
 
   // identity_retry hands a new key; it stays for every later attempt.
   const [currentKey, setCurrentKey] = useState(idempotencyKey)
   const nextKey = nextIdempotencyKey(state, currentKey)
   if (nextKey !== currentKey) setCurrentKey(nextKey)
+  // Tal's fill: the link its first attempt issued, for every later attempt.
+  const [currentToken, setCurrentToken] = useState(token)
+  const linkToken = nextToken(state, currentToken)
+  if (linkToken !== currentToken) setCurrentToken(linkToken)
+  // The password of the last submission, kept only for an outcome screen
+  // (in memory, never stored or sent anywhere else).
+  const [sent, setSent] = useState<JoinFormSent>({ password: "", phone: "" })
 
   // Two steps in one form (story 2.13): the inactive one is hidden, not
   // removed, so every value stays and is sent together.
@@ -139,7 +181,7 @@ export function JoinForm({
 
   // A new result of the Server Action picks the step that shows it, and
   // focus follows the usual rule (field or summary) there (afterResult).
-  const [handledState, setHandledState] = useState<JoinFormState>(state)
+  const [handledState, setHandledState] = useState<SharedFormState>(state)
   if (state !== handledState) {
     setHandledState(state)
     const next = afterResult(state, step)
@@ -194,6 +236,16 @@ export function JoinForm({
     window.addEventListener("popstate", onPopState)
     return () => window.removeEventListener("popstate", onPopState)
   }, [])
+
+  const shown = outcome?.(state, sent) ?? null
+  if (shown && "replace" in shown) {
+    return (
+      <div aria-live="polite" className="flex flex-col gap-4">
+        {shown.replace}
+      </div>
+    )
+  }
+  const notice = shown && "notice" in shown ? shown.notice : null
 
   const view = joinView(state, linkState)
 
@@ -263,6 +315,11 @@ export function JoinForm({
   const formError =
     state?.status === "error" && state.errors.length === 0 ? state.code : null
 
+  // The words of a field error: the path's own (fieldMessage), else the
+  // shared ones.
+  const wordsOf = (message: JoinFieldMessage): React.ReactNode =>
+    fieldMessage?.(message) ?? messageOf(message)
+
   const errorFor = (field: JoinField, index?: number) =>
     errors.find(
       (error) =>
@@ -331,6 +388,14 @@ export function JoinForm({
       return
     }
     setCheck(null)
+    if (outcome) {
+      const typed = data.get("password")
+      const phone = data.get("phone")
+      setSent({
+        password: typeof typed === "string" ? typed : "",
+        phone: typeof phone === "string" ? phone : "",
+      })
+    }
     startTransition(() => formAction(data))
   }
 
@@ -346,13 +411,24 @@ export function JoinForm({
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
-      <input type="hidden" name="token" value={token} />
+      {linkToken && <input type="hidden" name="token" value={linkToken} />}
       <input type="hidden" name="idempotencyKey" value={nextKey} />
+      {Object.entries(hidden).map(([name, value]) => (
+        <input key={name} type="hidden" name={name} value={value} />
+      ))}
+
+      {step === 1 && lead}
 
       {productName && amountAgorot !== null && (
         <p className="text-base font-semibold">
           {productName} · <bdi>{formatAgorot(amountAgorot)}</bdi>
         </p>
+      )}
+
+      {notice && (
+        <Alert aria-live="polite">
+          <AlertDescription>{notice}</AlertDescription>
+        </Alert>
       )}
 
       {errors.length > 1 && (
@@ -424,7 +500,7 @@ export function JoinForm({
           />
           {fullName.error && (
             <FieldError id={fullName.errorId}>
-              {messageOf(fullName.error.message)}
+              {wordsOf(fullName.error.message)}
             </FieldError>
           )}
         </Field>
@@ -446,7 +522,7 @@ export function JoinForm({
           />
           {phone.error && (
             <FieldError id={phone.errorId}>
-              {messageOf(phone.error.message)}
+              {wordsOf(phone.error.message)}
             </FieldError>
           )}
         </Field>
@@ -468,7 +544,7 @@ export function JoinForm({
           />
           {email.error ? (
             <FieldError id={email.errorId}>
-              {messageOf(email.error.message)}
+              {wordsOf(email.error.message)}
             </FieldError>
           ) : (
             <FieldDescription id="email-hint">
@@ -498,7 +574,7 @@ export function JoinForm({
                 />
                 {name.error && (
                   <FieldError id={name.errorId}>
-                    {messageOf(name.error.message)}
+                    {wordsOf(name.error.message)}
                   </FieldError>
                 )}
               </Field>
@@ -518,7 +594,7 @@ export function JoinForm({
                 />
                 {birth.error && (
                   <FieldError id={birth.errorId}>
-                    {messageOf(birth.error.message)}
+                    {wordsOf(birth.error.message)}
                   </FieldError>
                 )}
               </Field>
@@ -584,7 +660,7 @@ export function JoinForm({
           />
           {dietary.error && (
             <FieldError id={dietary.errorId}>
-              {messageOf(dietary.error.message)}
+              {wordsOf(dietary.error.message)}
             </FieldError>
           )}
         </Field>
@@ -602,7 +678,7 @@ export function JoinForm({
           />
           {password.error ? (
             <FieldError id={password.errorId}>
-              {messageOf(password.error.message)}
+              {wordsOf(password.error.message)}
             </FieldError>
           ) : (
             <FieldDescription id="password-hint">
@@ -624,7 +700,7 @@ export function JoinForm({
           />
           {confirm.error && (
             <FieldError id={confirm.errorId}>
-              {messageOf(confirm.error.message)}
+              {wordsOf(confirm.error.message)}
             </FieldError>
           )}
         </Field>
@@ -661,7 +737,7 @@ export function JoinForm({
           </div>
           {privacy.error && (
             <FieldError id={privacy.errorId}>
-              {messageOf(privacy.error.message)}
+              {wordsOf(privacy.error.message)}
             </FieldError>
           )}
         </Field>

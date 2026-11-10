@@ -1,6 +1,7 @@
 import type { JoinErrorKey } from "@/lib/copy/join"
 import { isEmailShape } from "@/lib/email"
-import type { ErrorCode } from "@/lib/errors"
+import { customerPhoneE164 } from "@/lib/phone"
+import type { ErrorCode, ErrorDetail } from "@/lib/errors"
 
 // The join form's fields and their validation before any call to the
 // database or Auth (story 2.2). Pure: no "use server" (only async functions
@@ -13,9 +14,10 @@ export const MAX_BABIES = 10
 const MAX_FULL_NAME = 200
 const MAX_DIETARY_NOTES = 2000
 const MAX_BABY_NAME = 100
-// Soft format checks only (AD-9): the server normalizes and decides. The
-// email: lib/email.ts (length first, then a linear regex).
-const PHONE = /^\+?[\d\s().-]{9,20}$/
+// The phone: the server's own rules (customerPhoneE164 mirrors
+// private.normalize_phone), so "הבא" stops a number the server would refuse
+// (story 2.15); the server still decides. The email: lib/email.ts (length
+// first, then a linear regex).
 const DATE = /^\d{4}-\d{2}-\d{2}$/
 
 export type JoinField =
@@ -31,11 +33,15 @@ export type JoinField =
   | "photoConsent"
   | "personalPhotoConsent"
 
-// message: a code from lib/errors.ts or a field message of lib/copy/join.ts.
+// A code from lib/errors.ts or a field message of lib/copy/join.ts.
+// detailsTaken: only Tal's fill (story 2.15) returns it; its words come from
+// the fill page (the form's fieldMessage).
+export type JoinFieldMessage = ErrorCode | JoinErrorKey | "detailsTaken"
+
 export type JoinFieldError = {
   field: JoinField
   index?: number
-  message: ErrorCode | JoinErrorKey
+  message: JoinFieldMessage
 }
 
 // The validated input; the same shape as JoinInput of
@@ -82,7 +88,8 @@ export function validateJoin(
     errors.push({ field: "fullName", message: "INVALID_INPUT" })
   }
   if (!phone) errors.push({ field: "phone", message: "FIELD_REQUIRED" })
-  else if (!PHONE.test(phone)) errors.push({ field: "phone", message: "phone" })
+  else if (!customerPhoneE164(phone))
+    errors.push({ field: "phone", message: "phone" })
   if (!email) errors.push({ field: "email", message: "FIELD_REQUIRED" })
   else if (!isEmailShape(email)) {
     errors.push({ field: "email", message: "email" })
@@ -145,5 +152,43 @@ export function validateJoin(
       personalPhotoConsent: personalPhoto === "yes",
       babies: names.map((name, index) => ({ name, birthDate: dates[index] })),
     },
+  }
+}
+
+// INVALID_INPUT and CONSENT_REQUIRED from the RPCs, mapped to the field the
+// SQL named (detail.field, detail.index). Shared by the customer's link and
+// Tal's fill (story 2.15).
+export function rpcFieldError(
+  code: ErrorCode,
+  detail: ErrorDetail | undefined
+): JoinFieldError | null {
+  if (code === "CONSENT_REQUIRED") return { field: "privacy", message: code }
+  if (code === "PASSWORD_TOO_SHORT") return { field: "password", message: code }
+  if (code !== "INVALID_INPUT" || !detail?.field) return null
+  const index = detail.index
+  switch (detail.field) {
+    case "email":
+      return { field: "email", message: "email" }
+    case "phone":
+      return { field: "phone", message: "phone" }
+    case "full_name":
+      return { field: "fullName", message: code }
+    case "dietary_notes":
+      return { field: "dietaryNotes", message: code }
+    case "photo_consent":
+      return { field: "photoConsent", message: "photoConsent" }
+    case "personal_photo_consent":
+      return {
+        field: "personalPhotoConsent",
+        message: "personalPhotoConsent",
+      }
+    case "baby_name":
+      return { field: "babyName", index: index ?? 0, message: "FIELD_REQUIRED" }
+    case "birth_date":
+      return { field: "birthDate", index: index ?? 0, message: "birthDate" }
+    case "babies":
+      return { field: "babyName", index: 0, message: code }
+    default:
+      return null
   }
 }

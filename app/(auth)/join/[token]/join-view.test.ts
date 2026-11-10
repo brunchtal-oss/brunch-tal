@@ -12,6 +12,7 @@ import {
   existingAccountScreen,
   joinView,
   nextIdempotencyKey,
+  nextToken,
 } from "./join-view"
 
 describe("joinView", () => {
@@ -136,5 +137,29 @@ describe("nextIdempotencyKey", () => {
     { status: "conflict", reason: "two_accounts" },
   ])("keeps the current key for %j", (state) => {
     expect(nextIdempotencyKey(state, KEY)).toBe(KEY)
+  })
+})
+
+describe("nextToken (story 2.15)", () => {
+  const T = "t".repeat(43)
+  it("keeps the current link unless a result names one", () => {
+    expect(nextToken(null, T)).toBe(T)
+    expect(nextToken({ status: "used" }, T)).toBe(T)
+    expect(nextToken({ status: "in_progress", token: "n" }, null)).toBe("n")
+    expect(nextToken({ status: "used", token: null }, T)).toBeNull()
+  })
+
+  it("a fill error with a new key hands that key", () => {
+    expect(
+      nextIdempotencyKey(
+        {
+          status: "error",
+          code: "INVALID_INPUT",
+          errors: [],
+          idempotencyKey: "k2",
+        },
+        "k1"
+      )
+    ).toBe("k2")
   })
 })

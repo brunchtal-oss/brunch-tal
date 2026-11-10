@@ -5,7 +5,7 @@ import { redirect } from "next/navigation"
 
 import { cleanToken } from "@/lib/auth/clean-token"
 import type { ConflictReason } from "@/lib/auth/join-link-state"
-import type { ErrorCode, ErrorDetail } from "@/lib/errors"
+import type { ErrorCode } from "@/lib/errors"
 import { callRpc } from "@/lib/rpc"
 import { getJoinTokenView, submitJoin } from "@/lib/server/privileged/join"
 import {
@@ -15,8 +15,8 @@ import {
 } from "@/lib/server/privileged/rate-limit"
 import { createClient } from "@/lib/supabase/server"
 
-import { validateJoin, type JoinFieldError } from "./join-input"
-import { claimLoginHref } from "./join-view"
+import { rpcFieldError, validateJoin, type JoinFieldError } from "./join-input"
+import { claimLoginHref, type SharedFormState } from "./join-view"
 
 // The idempotency key comes from the page (randomUUID on the server, AD-5).
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -39,45 +39,9 @@ export type JoinFormState =
   | { status: "voided" }
   | { status: "error"; code: ErrorCode; errors: JoinFieldError[] }
 
-// INVALID_INPUT and CONSENT_REQUIRED from the RPCs, mapped to the field the
-// SQL named (detail.field, detail.index).
-function rpcFieldError(
-  code: ErrorCode,
-  detail: ErrorDetail | undefined
-): JoinFieldError | null {
-  if (code === "CONSENT_REQUIRED") return { field: "privacy", message: code }
-  if (code === "PASSWORD_TOO_SHORT") return { field: "password", message: code }
-  if (code !== "INVALID_INPUT" || !detail?.field) return null
-  const index = detail.index
-  switch (detail.field) {
-    case "email":
-      return { field: "email", message: "email" }
-    case "phone":
-      return { field: "phone", message: "phone" }
-    case "full_name":
-      return { field: "fullName", message: code }
-    case "dietary_notes":
-      return { field: "dietaryNotes", message: code }
-    case "photo_consent":
-      return { field: "photoConsent", message: "photoConsent" }
-    case "personal_photo_consent":
-      return {
-        field: "personalPhotoConsent",
-        message: "personalPhotoConsent",
-      }
-    case "baby_name":
-      return { field: "babyName", index: index ?? 0, message: "FIELD_REQUIRED" }
-    case "birth_date":
-      return { field: "birthDate", index: index ?? 0, message: "birthDate" }
-    case "babies":
-      return { field: "babyName", index: 0, message: code }
-    default:
-      return null
-  }
-}
-
+// _previous: the shared form's state (any path's), unused.
 export async function submitJoinAction(
-  _previous: JoinFormState,
+  _previous: SharedFormState,
   formData: FormData
 ): Promise<JoinFormState> {
   const rawToken = formData.get("token")
@@ -108,10 +72,13 @@ export async function submitJoinAction(
     if (result.code === "LINK_USED") return { status: "used" }
     if (result.code === "LINK_EXPIRED") {
       // Story 2.14: Tal voided the purchase while the form was open (its
-      // link was revoked): the link reads "voided", not "expired".
+      // link was revoked): the link reads "voided", not "expired". Story
+      // 2.15: Tal filled the form for her meanwhile (the purchase is bound):
+      // "used", with the login.
       try {
         const view = await getJoinTokenView(token)
         if (view.state === "voided") return { status: "voided" }
+        if (view.state === "used") return { status: "used" }
       } catch {
         // The expired screen, as before.
       }

@@ -159,6 +159,22 @@ describe("validateJoin", () => {
     })
   })
 
+  // Story 2.15: the server's phone rules, so "הבא" stops a number the server
+  // would refuse; a foreign number the server keeps passes.
+  it.each([["123456789"], ["972541234567"], ["054123456"]])(
+    "flags %s, which the server refuses",
+    (phone) => {
+      expect(validateJoin(form({ phone }))).toEqual({
+        ok: false,
+        errors: [{ field: "phone", message: "phone" }],
+      })
+    }
+  )
+
+  it("keeps a foreign number the server accepts", () => {
+    expect(validateJoin(form({ phone: "+1 212 555 0100" })).ok).toBe(true)
+  })
+
   it.each([
     ["too long", `${"a".repeat(243)}@example.com`],
     ["crafted", `a@${".".repeat(100_000)}@`],
@@ -385,10 +401,11 @@ describe("submitJoinAction", () => {
 
   it.each([
     ["voided", { status: "voided" }],
+    ["used", { status: "used" }],
     ["expired", { status: "expired" }],
     ["active", { status: "expired" }],
   ])(
-    "LINK_EXPIRED reads the link again: %s (story 2.14)",
+    "LINK_EXPIRED reads the link again: %s (stories 2.14, 2.15)",
     async (state, expected) => {
       submitJoin.mockResolvedValue({ ok: false, code: "LINK_EXPIRED" })
       getJoinTokenView.mockResolvedValue({ state })

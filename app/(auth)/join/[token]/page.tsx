@@ -17,6 +17,7 @@ import { getJoinTokenView } from "@/lib/server/privileged/join"
 import { createClient } from "@/lib/supabase/server"
 import { localToday } from "@/lib/time"
 
+import { submitJoinAction } from "./actions"
 import { ClaimJoin, ClaimScreen, ExistingAccountLogin } from "./claim-join"
 import { JoinForm } from "./join-form"
 import { existingAccountScreen, type FormLinkState } from "./join-view"
@@ -181,6 +182,7 @@ async function JoinFormContent({
   return (
     <JoinForm
       token={token}
+      action={submitJoinAction}
       idempotencyKey={idempotencyKey}
       linkState={linkState}
       conflictReason={conflictReason}
