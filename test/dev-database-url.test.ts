@@ -3,7 +3,11 @@
 
 import { describe, expect, it } from "vitest"
 
-import { devDatabaseUrl } from "../supabase/tests/support/db"
+import {
+  devDatabaseUrl,
+  isProdTarget,
+  targetDatabaseUrl,
+} from "../supabase/tests/support/db"
 
 const API = "https://abcdefghijklmnopqrst.supabase.co"
 const POOLER =
@@ -95,5 +99,71 @@ describe("devDatabaseUrl", () => {
         NEXT_PUBLIC_SUPABASE_URL: "not a url",
       })
     ).toThrow(/NEXT_PUBLIC_SUPABASE_URL/)
+  })
+})
+
+// Story 6.1: DB_TARGET=prod with the prod:grants marker points the pool at
+// PROD_DATABASE_URL from .env.prod.local (read-only), with the prod guards.
+describe("targetDatabaseUrl", () => {
+  const PROD_REF = "prodprodprodprodprod"
+  const PROD_POOLER = `postgresql://postgres.${PROD_REF}:secretpw@aws-1-eu-central-1.pooler.supabase.com:5432/postgres`
+  const devEnv = { NEXT_PUBLIC_SUPABASE_URL: API, DEV_DATABASE_URL: POOLER }
+  const env = { ...devEnv, DB_TARGET: "prod", PROD_GRANTS_RUN: "1" }
+  const prodFile = {
+    PROD_SUPABASE_URL: `https://${PROD_REF}.supabase.co`,
+    PROD_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_x",
+    PROD_SUPABASE_SECRET_KEY: "sb_secret_x",
+    PROD_DATABASE_URL: PROD_POOLER,
+  }
+
+  it("stays on dev without DB_TARGET, and never reads the prod file", () => {
+    expect(
+      targetDatabaseUrl(devEnv, () => {
+        throw new Error("read")
+      })
+    ).toBe(POOLER)
+    expect(isProdTarget({})).toBe(false)
+  })
+
+  it("returns PROD_DATABASE_URL from the prod file under prod:grants", () => {
+    expect(isProdTarget(env)).toBe(true)
+    expect(targetDatabaseUrl(env, () => prodFile)).toBe(PROD_POOLER)
+  })
+
+  it("refuses DB_TARGET=prod without the prod:grants marker", () => {
+    expect(() => isProdTarget({ DB_TARGET: "prod" })).toThrow(/prod:grants/)
+    expect(() =>
+      targetDatabaseUrl({ ...devEnv, DB_TARGET: "prod" }, () => prodFile)
+    ).toThrow(/prod:grants/)
+  })
+
+  it("ignores PROD_* in process env: only the prod file counts", () => {
+    expect(() =>
+      targetDatabaseUrl({ ...env, ...prodFile }, () => null)
+    ).toThrow(/[.]env[.]prod[.]local/)
+  })
+
+  it("refuses prod values that point at the dev project, without echoing them", () => {
+    const toDev = {
+      ...prodFile,
+      PROD_SUPABASE_URL: API,
+      PROD_DATABASE_URL: POOLER,
+    }
+    expect(() => targetDatabaseUrl(env, () => toDev)).toThrow(/פרויקט הפיתוח/)
+    try {
+      targetDatabaseUrl(env, () => toDev)
+    } catch (error) {
+      expect((error as Error).message).not.toContain("pw@")
+    }
+  })
+
+  it("refuses a missing prod variable and an unknown target", () => {
+    expect(() =>
+      targetDatabaseUrl(env, () => ({
+        ...prodFile,
+        PROD_DATABASE_URL: undefined,
+      }))
+    ).toThrow(/PROD_DATABASE_URL/)
+    expect(() => isProdTarget({ DB_TARGET: "production" })).toThrow(/DB_TARGET/)
   })
 })

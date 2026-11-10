@@ -428,6 +428,17 @@ async function defaultAclViolations(db?: Db): Promise<string[]> {
 }
 
 describe("grants", () => {
+  // Story 6.1: `npm run prod:grants` reads production on read-only sessions.
+  it.runIf(process.env.DB_TARGET === "prod")(
+    "run on a read-only session in production",
+    async () => {
+      const rows = await sql<{ default_transaction_read_only: string }>(
+        "show default_transaction_read_only"
+      )
+      expect(rows[0].default_transaction_read_only).toBe("on")
+    }
+  )
+
   it("match the explicit list", async () => {
     expect(await actualGrants()).toEqual(EXPECTED_GRANTS)
   })
@@ -483,113 +494,118 @@ describe("grants", () => {
   })
 })
 
-describe("grants check catches a mistake", () => {
-  it("an unintended table grant", async () => {
-    await inRollback(async (db) => {
-      await db.query("grant select on public.audit_log to anon")
-      expect(await actualGrants(db)).toContain(
-        "table public.audit_log anon SELECT"
-      )
-      expect(await actualGrants(db)).not.toEqual(EXPECTED_GRANTS)
+// Dev only: these need DDL inside a rolled-back transaction, and
+// `npm run prod:grants` (DB_TARGET=prod) runs on a read-only session.
+describe.skipIf(process.env.DB_TARGET === "prod")(
+  "grants check catches a mistake",
+  () => {
+    it("an unintended table grant", async () => {
+      await inRollback(async (db) => {
+        await db.query("grant select on public.audit_log to anon")
+        expect(await actualGrants(db)).toContain(
+          "table public.audit_log anon SELECT"
+        )
+        expect(await actualGrants(db)).not.toEqual(EXPECTED_GRANTS)
+      })
     })
-  })
 
-  it("an unintended column grant", async () => {
-    await inRollback(async (db) => {
-      await db.query("grant update (full_name) on public.profiles to anon")
-      expect(await actualGrants(db)).toContain(
-        "column public.profiles.full_name anon UPDATE"
-      )
+    it("an unintended column grant", async () => {
+      await inRollback(async (db) => {
+        await db.query("grant update (full_name) on public.profiles to anon")
+        expect(await actualGrants(db)).toContain(
+          "column public.profiles.full_name anon UPDATE"
+        )
+      })
     })
-  })
 
-  it("an unintended sequence grant", async () => {
-    await inRollback(async (db) => {
-      await db.query("create sequence private.grants_check_seq")
-      await db.query(
-        "grant usage on sequence private.grants_check_seq to service_role"
-      )
-      expect(await actualGrants(db)).toContain(
-        "sequence private.grants_check_seq service_role USAGE"
-      )
+    it("an unintended sequence grant", async () => {
+      await inRollback(async (db) => {
+        await db.query("create sequence private.grants_check_seq")
+        await db.query(
+          "grant usage on sequence private.grants_check_seq to service_role"
+        )
+        expect(await actualGrants(db)).toContain(
+          "sequence private.grants_check_seq service_role USAGE"
+        )
+      })
     })
-  })
 
-  it("a function granted to anon", async () => {
-    await inRollback(async (db) => {
-      await db.query(
-        "grant execute on function public.token_view(text) to anon"
-      )
-      expect(await functionGrantViolations(db)).toEqual([
-        "public.token_view: anon,service_role",
-      ])
+    it("a function granted to anon", async () => {
+      await inRollback(async (db) => {
+        await db.query(
+          "grant execute on function public.token_view(text) to anon"
+        )
+        expect(await functionGrantViolations(db)).toEqual([
+          "public.token_view: anon,service_role",
+        ])
+      })
     })
-  })
 
-  it("a function granted to two roles", async () => {
-    await inRollback(async (db) => {
-      await db.query(
-        "grant execute on function public.get_my_session_role() to service_role"
-      )
-      expect(await functionGrantViolations(db)).toEqual([
-        "public.get_my_session_role: authenticated,service_role",
-      ])
+    it("a function granted to two roles", async () => {
+      await inRollback(async (db) => {
+        await db.query(
+          "grant execute on function public.get_my_session_role() to service_role"
+        )
+        expect(await functionGrantViolations(db)).toEqual([
+          "public.get_my_session_role: authenticated,service_role",
+        ])
+      })
     })
-  })
 
-  it("a function granted to PUBLIC", async () => {
-    await inRollback(async (db) => {
-      await db.query(
-        "create function private.grants_check_fn() returns int language sql set search_path = '' as 'select 1'"
-      )
-      await db.query(
-        "grant execute on function private.grants_check_fn() to public"
-      )
-      expect(await functionGrantViolations(db)).toEqual([
-        "private.grants_check_fn: PUBLIC",
-      ])
+    it("a function granted to PUBLIC", async () => {
+      await inRollback(async (db) => {
+        await db.query(
+          "create function private.grants_check_fn() returns int language sql set search_path = '' as 'select 1'"
+        )
+        await db.query(
+          "grant execute on function private.grants_check_fn() to public"
+        )
+        expect(await functionGrantViolations(db)).toEqual([
+          "private.grants_check_fn: PUBLIC",
+        ])
+      })
     })
-  })
 
-  it("an object with a NULL ACL, read through acldefault", async () => {
-    await inRollback(async (db) => {
-      // Restores PostgreSQL's built-in default, so the new function gets no
-      // ACL at all (proacl is NULL) and executes for PUBLIC.
-      await db.query(
-        "alter default privileges for role postgres grant execute on functions to public"
-      )
-      await db.query(
-        "create function private.grants_check_null_acl() returns int language sql set search_path = '' as 'select 1'"
-      )
-      const { rows } = await db.query(
-        "select proacl is null as is_null from pg_proc where oid = 'private.grants_check_null_acl()'::regprocedure"
-      )
-      expect(rows[0].is_null).toBe(true)
+    it("an object with a NULL ACL, read through acldefault", async () => {
+      await inRollback(async (db) => {
+        // Restores PostgreSQL's built-in default, so the new function gets no
+        // ACL at all (proacl is NULL) and executes for PUBLIC.
+        await db.query(
+          "alter default privileges for role postgres grant execute on functions to public"
+        )
+        await db.query(
+          "create function private.grants_check_null_acl() returns int language sql set search_path = '' as 'select 1'"
+        )
+        const { rows } = await db.query(
+          "select proacl is null as is_null from pg_proc where oid = 'private.grants_check_null_acl()'::regprocedure"
+        )
+        expect(rows[0].is_null).toBe(true)
 
-      expect(await actualGrants(db)).toContain(
-        "function private.grants_check_null_acl() PUBLIC EXECUTE"
-      )
-      expect(await functionGrantViolations(db)).toEqual([
-        "private.grants_check_null_acl: PUBLIC",
-      ])
+        expect(await actualGrants(db)).toContain(
+          "function private.grants_check_null_acl() PUBLIC EXECUTE"
+        )
+        expect(await functionGrantViolations(db)).toEqual([
+          "private.grants_check_null_acl: PUBLIC",
+        ])
+      })
     })
-  })
 
-  it("two functions with the same name", async () => {
-    await inRollback(async (db) => {
-      await db.query(
-        "create function public.token_view(p_token text, p_extra int) returns jsonb language sql set search_path = '' as 'select null::jsonb'"
-      )
-      expect(await duplicateFunctionNames(db)).toEqual(["public.token_view"])
+    it("two functions with the same name", async () => {
+      await inRollback(async (db) => {
+        await db.query(
+          "create function public.token_view(p_token text, p_extra int) returns jsonb language sql set search_path = '' as 'select null::jsonb'"
+        )
+        expect(await duplicateFunctionNames(db)).toEqual(["public.token_view"])
+      })
     })
-  })
 
-  it("default privileges that grant to an API role", async () => {
-    await inRollback(async (db) => {
-      await db.query(
-        "alter default privileges for role postgres in schema public grant select on tables to anon"
-      )
-      expect(await defaultAclViolations(db)).toEqual(["public r anon SELECT"])
+    it("default privileges that grant to an API role", async () => {
+      await inRollback(async (db) => {
+        await db.query(
+          "alter default privileges for role postgres in schema public grant select on tables to anon"
+        )
+        expect(await defaultAclViolations(db)).toEqual(["public r anon SELECT"])
+      })
     })
-  })
-})
+  }
+)

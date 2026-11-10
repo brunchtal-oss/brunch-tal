@@ -4,6 +4,7 @@
   target: 6.1 (הועבר מ-5.15 ב-5.20, 2026-10-22: מה שנשאר מ-5.15 עבר ל-6.1, החלטת המשתמשת 2026-10-22; הנעילה עדיין שומרת על preview)
   summary: לפני ההשקה להחליט מה עושים עם `/reset/<token>` ו-`/join/<token>` ביומני הבקשות של Vercel (להוציא את הטוקן מהנתיב, או לקבל עם תוקף קצר ויומן מוגבל).
   evidence: Vercel רושם את נתיב הבקשה ואי אפשר לכבות את זה בקוד. החלטת המשתמשת ב-1.6 (2026-09-29): מקבלים בינתיים, כי הנתונים בדויים, הטוקן חד-פעמי ל-48 שעות, ורק בעלת החשבון רואה את היומן.
+  status: נסגר ב-6.1 (החלטת המשתמשת 2026-11-10, (א)): מקבלים גם בפרודקשן. הטוקן חד-פעמי ל-48 שעות, ורק בעלת חשבון ה-Vercel רואה את היומן.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-1-6-site-lock-environments-and-preview-deploy.md`
   target: 5.8/5.9
@@ -293,6 +294,7 @@
   target: 6.1 (הועבר מ-5.15 ב-5.20, 2026-10-22: מה שנשאר מ-5.15 עבר ל-6.1, החלטת המשתמשת 2026-10-22; הנעילה עדיין שומרת על preview)
   summary: לטופס הנעילה (`POST /site-lock`) אין הגבלת ניסיונות, כמו ל-Basic Auth. אם הנעילה נשארת אחרי ההדגמה, להוסיף הגבלה או להסתמך על הסרתה ב-5.15.
   evidence: ‏`handleSiteLockPost` ב-`lib/site-lock.ts`.
+  status: נסגר ב-6.1 (החלטת המשתמשת 2026-11-10, (ב)): מקבלים. הסיסמה אקראית וארוכה (README, "נעילת האתר"), והנעילה מוסרת בפתיחה (6.9).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-9-pwa-install-and-offline.md`
   target: לא נבנה (החלטת המשתמשת 2026-10-10)
@@ -584,7 +586,7 @@
   summary: שמות חלק מקובצי המיגרציה ב-`supabase/migrations/` לא תואמים לגרסה שנרשמה ב-`supabase_migrations.schema_migrations` במסד. לא משנים שמות עכשיו (החלטת המשתמשת 2026-10-10). לפני הקמת פרויקט ה-production צריך ליישר, כדי ש-`supabase db push` או הרצה מסודרת של המיגרציות יעבדו.
   evidence: נמצא בתכנון 5.19 (spec 5.19, החלטות המשתמשת 2026-10-10).
   scope: נבדק 2026-10-22: ‏53 מתוך 116 קבצים (מ-`20260929154813_revoke_default_privileges` ועד 2026-10-07) נושאים גרסה שונה מזו שבמסד. השמות זהים אחד לאחד, אין קובץ חסר או עודף, ומשנים רק את שם הקובץ לגרסה שבמסד (`git mv`), בלי לגעת במסד. הסדר לפי הגרסאות שבמסד הוא הסדר שבו הוחלו בפועל (למשל `media_upload_and_publish` לפני `admin_session_details_and_manual_booking`). ‏`lib/content/photo-consent-seed.test.ts` ו-`lib/copy/audit-actions.test.ts` מפנים לשמות קבצים ומתעדכנים, וגם הפניות לשמות ישנים במסמכים.
-  status: היישור נסגר ב-5.20 (A, 2026-10-22): ‏53 הקבצים שונו ב-`git mv` לגרסה שבמסד, בלי שינוי תוכן, ועכשיו כל אחד מ-116 הקבצים נקרא `<version>_<name>.sql` לפי `supabase_migrations.schema_migrations`. הבדיקה נשארת ל-6.1.
+  status: היישור נסגר ב-5.20 (A, 2026-10-22): ‏53 הקבצים שונו ב-`git mv` לגרסה שבמסד, בלי שינוי תוכן, ועכשיו כל אחד מ-116 הקבצים נקרא `<version>_<name>.sql` לפי `supabase_migrations.schema_migrations`. נסגר ב-6.1 (2026-11-10): החזרה בעסקה אחת עברה על 132 הקבצים במסד הריק, `prod-migrate --apply` החיל את כולם, ו-`schema_migrations` של הפרודקשן תואם לקבצים (132/132).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-7-cancellation-credits-and-refund-requests.md`
   target: 3.8
@@ -644,6 +646,7 @@
   target: 6.1 (בדיקה ידנית בפרויקט הפרודקשן; שובץ 2026-10-22)
   summary: The auth.users trigger (`private.guard_auth_user_change`) has no automated test against real Supabase Auth; the DB tests stand Auth in with an owner UPDATE.
   evidence: 2.8 review (verification-gap). Checked by hand on dev 2026-10-14 with a throwaway user (all cases passed). Re-check by hand when a mail provider is added (secure email change will then reach the trigger) and on the production project (6.1).
+  status: נבנה ב-6.1 (2026-11-10, (ג)): `scripts/prod-auth-guard-check.mjs --apply` (משתמשת זמנית, שינוי מייל וטלפון עצמי ושינוי מייל באדמין בלי `email_change_pending` נחסמים, המייל והטלפון לא השתנו, המשתמשת נמחקת), ו-`prod-check` משווה את הגדרת `private.guard_auth_user_change` לפיתוח ובודק שה-trigger פעיל. הורץ בפרודקשן 2026-11-10 באישור המשתמשת: שינוי טלפון עצמי ושינוי מייל באדמין בלי `email_change_pending` נחסמו ב-trigger (500), המייל והטלפון לא השתנו, המשתמשת הזמנית נמחקה, וההגדרה זהה לפיתוח. שינוי מייל עצמי "לא הוכח": Auth דחה את כתובת היעד (`email_address_invalid`) לפני שהגיע למסד. הבדיקה הזו נשארת ל-id 11, עם ספק המייל.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-8-admin-assisted-reset-and-rate-limit.md`
   target: 4.6
@@ -703,6 +706,7 @@
   target: 6.1
   summary: לפני שהאתר בפרודקשן נפתח: (1) הרצה אמיתית של כל המיגרציות במסד הריק (כולל `create extension` וה-trigger על `auth.users`); (2) העמודים המשפטיים (פרטיות, תקנון, נגישות) מפורסמים, אחרת טופס ההצטרפות מבקש הסכמה למדיניות שלא פורסמה; (3) ב-Data API חשופה רק הסכמה `public` (לשקול `revoke usage on schema net from anon, authenticated`); (4) שורה ב-checklist של README להוספת טל ל-`admin_roles`; (5) להחליט אם `issue_reset_token` (כלי פיתוח) נשאר בפרודקשן.
   evidence: הדוח, תחום 1 (#1, ‏#2, ‏#10) ותחום 2 (#2, ‏#8).
+  status: נבנה ב-6.1 (2026-11-10): (1) `scripts/prod-migrate.mjs` (חזרה בעסקה אחת עם ROLLBACK, ואז `supabase db push` קובץ אחרי קובץ והשוואת `schema_migrations` לקבצים); (2) העמודים המשפטיים ו-`cookie-notice` מועתקים ב-`prod-copy-content` ו-`prod-check` בודק שפורסמו; (3) שורת Data API ב-checklist של README (רק `public`); `net` לא נחשפת ב-API כשרק `public` חשופה, ולכן אין מיגרציה; (4) README, "הוספת אדמין" (`scripts/prod-admin.mjs`); (5) `issue_reset_token` נשאר בפרודקשן (החלטת המשתמשת 2026-11-10): `prod-admin` מנפיק בו את הקישור של האדמין, וההרשאה שלו רק ל-`service_role`. נסגר ב-6.1 (2026-11-10): המיגרציות הוחלו מאפס, העמודים המשפטיים פורסמו, ב-Data API חשופה רק `public` (נבדק מבחוץ: `graphql_public` מחזיר PGRST106), ושני אדמינים נוצרו.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-16-admin-credit-adjustments.md`
   summary: `supabase/tests/notifications.test.ts` "hold the approved seed" compares the whole template table with a SEED list that stopped at 18 templates, so it fails on every `test:db` run (the table has 20 before 3.16, 23 with 3.14 and 3.16).
@@ -744,6 +748,7 @@
   target: 6.9
   summary: השהיית פרויקט Supabase חינמי אחרי 7 ימים בלי פעילות עוצרת את כל המשימות המתוזמנות (תזכורות, התראות תפוגה, הארכה אוטומטית, רענון זיכויים, פוש). לפי התיעוד pg_cron לא מובטח כמונע השהיה. להחליט לפני ההשקה (שדרוג או פתרון אחר).
   evidence: ‏spec 5.10 (Always, השהיית פרויקט Free); ‏ARCHITECTURE-SPINE › Deferred. נרשם גם ב-checklist של README.
+  status: ב-6.1 (2026-11-10): הפרודקשן נבנה בתוכנית החינמית (החלטת המשתמשת). הסימנים והתיקון (Dashboard ← Restore) ב-README, ובודקים לפני 6.4 ו-6.8. ההחלטה עצמה עברה לפריט חדש, יעד id 10 (השדרוג מסיים את ההשהיות).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-18-eligible-products.md`
   target: 5.20
@@ -813,13 +818,13 @@
   target: 6.1
   summary: לפני שהאתר בפרודקשן נפתח, מעתיקים את הבלוק `cookie-notice` (הודעת העוגיות: כותרת, פסקה וטקסט הקישור) מהפיתוח לפרודקשן ומפרסמים אותו, יחד עם העמודים המשפטיים. בלי תוכן שפורסם האתר לא מציג הודעה בכלל.
   evidence: החלטת המשתמשת 2026-10-28 (completion-plan). הנוסח הוא תוכן ולא קוד, ולכן המיגרציה יוצרת רק את השורות הריקות.
-  status: פתוח
+  status: נבנה ב-6.1 (2026-11-10): `scripts/prod-copy-content.mjs` מעתיק את `cookie-notice` עם שאר התוכן, ו-`prod-check` בודק שהוא והעמודים המשפטיים פורסמו. נסגר ב-6.1 (2026-11-10): הועתק ופורסם, ו-`prod-check` עבר.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-24-marketing-tags.md`
   target: 6.1
   summary: בפרודקשן לבדוק שהשורה של `marketing_tags` קיימת ושכל שלושת המזהים ריקים (שום כלי מדידה לא נטען). טל מדביקה מזהה במסך "שיווק" רק אחרי שעדכנה את מדיניות הפרטיות: באילו כלי מדידה ופרסום האתר משתמש ומה הם אוספים.
   evidence: החלטת המשתמשת 2026-10-28 (completion-plan). המיגרציה `20261028093236_marketing_tags.sql` יוצרת את השורה עם מזהים ריקים, והמסך מציג את התזכורת על מדיניות הפרטיות.
-  status: פתוח
+  status: נבנה ב-6.1 (2026-11-10): `marketing_tags` לא מועתקת, ו-`prod-check` בודק שורה אחת עם שלושה מזהים ריקים. נסגר ב-6.1 (2026-11-10): `prod-check` עבר (שורה אחת, שלושה מזהים ריקים). התזכורת לטל על מדיניות הפרטיות נשארת.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-25-accessibility-widget.md`
   target: 6.4
@@ -843,7 +848,7 @@
   target: 6.1
   summary: העתקת תוכן האתר לפרודקשן מעתיקה את `draft_content` ואת `published_content_full` של `content_sections` (ה-trigger ‏`content_sections_public_copy` גוזר ממנה את `published_content`), ולא רק את `published_content`, שהוא העותק הציבורי בלי מוסתרים.
   evidence: מאז fix-public-read-leaks העמודה `published_content` לא מכילה פריטים או קטעים מוסתרים. העתקה שלה בלבד מאבדת אותם, למשל את הבאנר הכבוי של `home/promo_banner`, שהטקסט שלו נמצא רק ב-`published_content_full`.
-  status: פתוח
+  status: נבנה ב-6.1 (2026-11-10): `scripts/prod-copy-plan.mjs` כותב רק `draft_content` ו-`published_content_full` (נבדק ב-`test/prod-copy-plan.test.ts`), ו-`prod-check` משווה גם את `published_content` שה-trigger גזר. נסגר ב-6.1 (2026-11-10): `content_sections` זהה לפיתוח (27 שורות).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-fix-public-read-leaks.md`
   target: עדכון AGENTS.md הבא (סשן התכנון)
@@ -871,7 +876,7 @@
 
 - source_spec: `completion-plan-2026-10-10.md` (2026-11-04, סבב 11ב)
   target: לא נקבע (קטנים, לפי הזדמנות)
-  summary: (1) סקריפטי המסד של הפיתוח מקבלים כל תעודת TLS: לרכז אותם בעזר אחד שמאמת. (2) בדיקת מקביליות שמשחזרת חסימה הדדית (deadlock) נדירה בין שתי הרשמות עם זיכויים, לפני שבוחרים תיקון. (3) אזהרה בלי חסימה כשמפרסמים תמונה בלי טקסט חלופי. (4) `sizes` של תמונת "אודות" לפי היחס שלה, רק אם היא לאורך. (5) העברת `adminCopy.products.empty` לקופי משותף, ופירוק `shared` ב-`product-fields.tsx`.
+  summary: (1) סקריפטי המסד של הפיתוח, ומאז 6.1 גם `scripts/prod-env.mjs` של סקריפטי הפרודקשן, מקבלים כל תעודת TLS: לרכז אותם בעזר אחד שמאמת (התעודה של ה-pooler חתומה ב-CA של Supabase, שמורידים מה-Dashboard). (2) בדיקת מקביליות שמשחזרת חסימה הדדית (deadlock) נדירה בין שתי הרשמות עם זיכויים, לפני שבוחרים תיקון. (3) אזהרה בלי חסימה כשמפרסמים תמונה בלי טקסט חלופי. (4) `sizes` של תמונת "אודות" לפי היחס שלה, רק אם היא לאורך. (5) העברת `adminCopy.products.empty` לקופי משותף, ופירוק `shared` ב-`product-fields.tsx`.
   evidence: נבדק לפני 6.1 (2026-11-04); אף אחד מהם לא משפיע על לקוחות היום.
   status: פתוח, חוץ מ-(3): נסגר ב-fix-seo-editor (PR ‏#151, ‏2026-11-05), אזהרה בעורך התוכן.
 
@@ -930,7 +935,44 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-fix-media-picker.md`
   summary: Each choice in the image picker makes a draft row and a draft file, so abandoned picks (like abandoned uploads) add orphan drafts; the production draft cleanup must also skip or handle rows that other rows reference through `media_assets.source_id` (FK without on delete).
   evidence: Review of fix-media-picker (blind, verification-gap). Only `scripts/dev-clean-media-drafts.mjs` cleans drafts today, in dev; production cleanup is decided in 6.1.
+  status: הוחלט ב-6.1 (החלטת המשתמשת 2026-11-10, (ח)): הניקוי בפרודקשן נדחה לאחרי ההשקה (פריט חדש למטה). ההעתקה מעבירה רק תמונות שתוכן או קונספט מזכירים, עם שרשרת `source_id`, ולכן הפרודקשן מתחיל בלי טיוטות יתומות.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-fix-seo-editor.md`
   summary: The SEO editor's `seoExtras` (published rows to outline rows, the Google preview context) has no automated test.
   evidence: Review of fix-seo-editor (verification-gap). Admin guidance only, the public site is unaffected; covering it needs a pure `outlineRows`/preview-context extraction first.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-1-production-environment.md`
+  target: 5.15 (מה שנשאר ממנו עבר ל-6.1, 2026-10-22)
+  summary: הגבלת הקצב של 2.8 פעילה בפרודקשן: 9 סיסמאות שגויות לכתובת שלא קיימת (אף פעם לא המייל של טל או של המשתמשת) ב-`/login` וב-`/admin/login`, והתשיעית מציגה את הודעת `TOO_MANY_ATTEMPTS`. ה-preview נשאר נעול.
+  evidence: spec 6.1, Acceptance Criteria. המנגנון היחיד: `hitRateLimit` מעל `rate_limit_hit`.
+  status: נסגר ב-6.1 (2026-11-10): בדפדפן אמיתי בפרודקשן, כתובת שלא קיימת, ב-`/login` וב-`/admin/login` הניסיון התשיעי הציג "יותר מדי ניסיונות. אפשר לנסות שוב בעוד 15 דקות".
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-1-production-environment.md`
+  target: אחרי ההשקה
+  summary: ניקוי טיוטות תמונה יתומות בפרודקשן (העלאות ובחירות בבורר שלא נשמרו). צריך גרסה של `scripts/dev-clean-media-drafts.mjs` שמדלגת על שורה ששורה אחרת מפנה אליה ב-`media_assets.source_id`.
+  evidence: החלטת המשתמשת 2026-11-10 ((ח)). הפרודקשן מתחיל בלי טיוטות יתומות, והן מצטברות רק מהעבודה של טל.
+  status: פתוח
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-1-production-environment.md`
+  target: id 10 (המסירה)
+  summary: להחליט אם חשבון האדמין של המשתמשת בפרודקשן (המייל שלה, לבדיקות אחרי מיזוג) נשאר או מוסר במסירה.
+  evidence: החלטת המשתמשת 2026-11-10 (spec 6.1, Decisions).
+  status: פתוח
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-1-production-environment.md`
+  target: id 10 (המסירה)
+  summary: פרויקט הפרודקשן בתוכנית החינמית מושהה אחרי כ-7 ימים בלי פעילות API (האתר הנעול כמעט בלי תנועה). השדרוג בתשלום במסירה מסיים את ההשהיות. עד אז בודקים לפני 6.4 ו-6.8, ומחזירים ב-Dashboard ← Restore.
+  evidence: spec 6.1, Design Notes. מחליף את ההחלטה הפתוחה של 5.10 (יעד 6.9).
+  status: פתוח
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-1-production-environment.md`
+  target: id 10 (המסירה)
+  summary: מה מחליפים כשהדומיין `morethanfood.co.il` מתחבר: Vault `app_url` בפרודקשן; ב-Auth של הפרודקשן Site URL ו-Redirect URLs; `NEXT_PUBLIC_SITE_URL` ב-Vercel Production; `VAPID_SUBJECT` אם הוא משתמש בדומיין; והקבוע `PROD_SITE_URL` ב-`scripts/prod-env.mjs` (הקישורים של `prod-admin` ובדיקת ה-Vault של `prod-check`). אחרי כל שינוי במשתני Vercel פורסים מחדש.
+  evidence: spec 6.1, Tasks.
+  status: פתוח
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-1-production-environment.md`
+  target: לפני הסיפור הבא עם מיגרציה (id 11)
+  summary: כלל ב-AGENTS.md להחלת מיגרציה חדשה גם על הפרודקשן: מתי (לפני המיזוג או בו, באישור המשתמשת, `node scripts/prod-migrate.mjs --apply`), Security Advisor בלוח הבקרה של הפרודקשן אחרי כל אחת, ואיך מגיעה לשם מיגרציה עם `drop` (SQL Editor של הפרודקשן ורישום ב-`schema_migrations`).
+  evidence: ביקורת 6.1 (blind-hunter). מאז 6.1 קוד שמוזג ל-main רץ מול מסד הפרודקשן, ו-AGENTS.md › "הרצה ובדיקה" מתאר רק את הפיתוח. בלי הכלל, סיפור עם מיגרציה ישבור את האתר החי אחרי המיזוג.
+  status: נסגר ב-6.1 (הכרעת מנהל העבודה 2026-11-10): הכלל נכנס ל-AGENTS.md › "הרצה ובדיקה" באותו PR.
