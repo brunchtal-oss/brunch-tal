@@ -2,7 +2,7 @@
 title: 'Special-brunch interest question (2.16)'
 type: 'feature'
 created: '2026-11-09'
-status: 'in-review'
+status: 'done'
 baseline_commit: '4cc8318058aff5dbb000a093baa96347e7579a0f'
 route: 'full'
 route_source: 'auto'
