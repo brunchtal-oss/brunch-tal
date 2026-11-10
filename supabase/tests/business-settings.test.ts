@@ -6,34 +6,46 @@ import { describe, expect, it } from "vitest"
 import { inRollback, queryError, sql } from "./support/db"
 
 describe("business_settings", () => {
-  it("has exactly one row with the seeded defaults", async () => {
-    const rows = await sql(`
-      select version, default_validity_days, registration_close_days_before,
-        registration_close_local_time::text as close_time,
-        default_capacity_regular, default_capacity_couple, cancel_window_hours,
-        credit_options_count, reminder_lead_hours, admin_expiring_days,
-        customer_expiring_days, last_places_threshold, default_prep_days,
-        marketing_reminder_schedule, inactivity_months,
-        duplicate_payment_window_days
-      from public.business_settings`)
-    expect(rows).toHaveLength(1)
-    expect(rows[0]).toMatchObject({
-      default_validity_days: 49,
-      registration_close_days_before: 1,
-      close_time: "20:00:00",
-      default_capacity_regular: 12,
-      default_capacity_couple: 14,
-      cancel_window_hours: 48,
-      credit_options_count: 2,
-      reminder_lead_hours: 24,
-      admin_expiring_days: 21,
-      customer_expiring_days: 10,
-      last_places_threshold: 4,
-      default_prep_days: [-1, 0],
-      inactivity_months: 3,
-      duplicate_payment_window_days: 7,
+  // Tal edits these values on /admin/settings (dev holds her real numbers),
+  // so the test never reads the live row's values. The seed inserts
+  // `default values`, so a fresh row inside a rollback shows the seed.
+  it("has exactly one row", async () => {
+    const rows = await sql(
+      "select count(*)::int as n from public.business_settings"
+    )
+    expect(rows[0].n).toBe(1)
+  })
+
+  it("a fresh row carries the seeded defaults", async () => {
+    await inRollback(async (db) => {
+      await db.query("delete from public.business_settings")
+      const { rows } = await db.query(`
+        insert into public.business_settings default values
+        returning default_validity_days, registration_close_days_before,
+          registration_close_local_time::text as close_time,
+          default_capacity_regular, default_capacity_couple, cancel_window_hours,
+          credit_options_count, reminder_lead_hours, admin_expiring_days,
+          customer_expiring_days, last_places_threshold, default_prep_days,
+          marketing_reminder_schedule, inactivity_months,
+          duplicate_payment_window_days`)
+      expect(rows[0]).toMatchObject({
+        default_validity_days: 49,
+        registration_close_days_before: 1,
+        close_time: "20:00:00",
+        default_capacity_regular: 12,
+        default_capacity_couple: 14,
+        cancel_window_hours: 48,
+        credit_options_count: 2,
+        reminder_lead_hours: 24,
+        admin_expiring_days: 21,
+        customer_expiring_days: 10,
+        last_places_threshold: 4,
+        default_prep_days: [-1, 0],
+        inactivity_months: 3,
+        duplicate_payment_window_days: 7,
+      })
+      expect(Array.isArray(rows[0].marketing_reminder_schedule)).toBe(true)
     })
-    expect(Array.isArray(rows[0].marketing_reminder_schedule)).toBe(true)
   })
 
   // Story 5.11: Tal edits the schedule on /admin/settings/marketing, so the
@@ -134,65 +146,25 @@ describe("business_settings", () => {
 })
 
 describe("seed", () => {
-  it("has the four products of the catalog", async () => {
+  // Tal edits prices and terms on /admin/products (dev holds her real
+  // values), so only what the system relies on is checked: each catalog
+  // type exists, with a positive whole price and its post-join copy. The
+  // row count is not checked: admin_create_product lets Tal add a second
+  // product of a type, so the system never assumes exactly four.
+  it("has the four product types of the catalog", async () => {
     const rows = await sql(`
-      select type, price_agorot, units, validity_mode, validity_days,
-        allowed_weekdays, eligible_event_kind, party_size, intro_only,
+      select type, price_agorot,
         post_join_message is not null and post_join_button_label is not null as has_copy
       from public.products
-      where name not like 'test\\_%'
-      order by price_agorot`)
-    expect(rows).toEqual([
-      {
-        type: "intro",
-        price_agorot: 11800,
-        units: 1,
-        validity_mode: "session",
-        validity_days: null,
-        allowed_weekdays: null,
-        eligible_event_kind: "regular",
-        party_size: 1,
-        intro_only: true,
-        has_copy: true,
-      },
-      {
-        type: "single",
-        price_agorot: 12800,
-        units: 1,
-        validity_mode: "session",
-        validity_days: null,
-        allowed_weekdays: null,
-        eligible_event_kind: "regular",
-        party_size: 1,
-        intro_only: false,
-        has_copy: true,
-      },
-      {
-        type: "couple",
-        price_agorot: 25000,
-        units: 1,
-        validity_mode: "session",
-        validity_days: null,
-        allowed_weekdays: null,
-        eligible_event_kind: "couple",
-        party_size: 2,
-        intro_only: false,
-        has_copy: true,
-      },
-      {
-        type: "card",
-        price_agorot: 47200,
-        units: 4,
-        validity_mode: "days",
-        validity_days: 49,
-        // Every weekday (user decision 2026-10-04, card_every_weekday).
-        allowed_weekdays: null,
-        eligible_event_kind: "regular",
-        party_size: 1,
-        intro_only: false,
-        has_copy: true,
-      },
-    ])
+      where name not like 'test\\_%'`)
+    expect(new Set(rows.map((row) => row.type))).toEqual(
+      new Set(["intro", "single", "couple", "card"])
+    )
+    for (const row of rows) {
+      expect(Number.isInteger(row.price_agorot)).toBe(true)
+      expect(row.price_agorot).toBeGreaterThan(0)
+      expect(row.has_copy).toBe(true)
+    }
   })
 
   it("has four visible payment methods in order", async () => {
