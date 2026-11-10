@@ -7,6 +7,7 @@ import { buttonClass } from "@/components/shared/button-class"
 import { Alert, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import type { PhotoConsentContent } from "@/lib/content/schema"
+import { whatsappHref } from "@/lib/content/whatsapp"
 import { adminCopy } from "@/lib/copy/admin"
 
 import {
@@ -40,6 +41,18 @@ export function loginDetailsText(
   origin: string
 ): string {
   return copy.copiedText(email, password, `${origin}/login`)
+}
+
+// The WhatsApp button: a chat with the customer's number (normalizePhone)
+// with the same text as the copy button. null: a number WhatsApp cannot
+// open (only the copy button shows).
+export function whatsappLoginHref(
+  phone: string,
+  email: string,
+  password: string,
+  origin: string
+): string | null {
+  return whatsappHref(phone, loginDetailsText(email, password, origin))
 }
 
 // The copy button's work: the text to the clipboard, and what the status
@@ -154,13 +167,18 @@ export function FillJoined({
   fullName,
   email,
   password,
+  phone,
   customerId,
 }: {
   fullName: string
   email: string
   password: string
+  phone: string
   customerId: string | null
 }) {
+  // Rendered only after a submission, in the browser.
+  const origin = typeof window === "undefined" ? "" : window.location.origin
+  const whatsapp = whatsappLoginHref(phone, email, password, origin)
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">(
     "idle"
   )
@@ -212,6 +230,21 @@ export function FillJoined({
         >
           {copy.copy}
         </Button>
+        {/* Navigation only (a new tab), so no OnlineButton. */}
+        {whatsapp && (
+          <a
+            href={whatsapp}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={buttonClass({
+              variant: "outline",
+              size: "lg",
+              className: BUTTON,
+            })}
+          >
+            {copy.whatsapp}
+          </a>
+        )}
         <p role="status" className="text-[15px]">
           {copyState === "copied"
             ? copy.copied
@@ -250,6 +283,7 @@ export function fillOutcome(
             fullName={state.fullName}
             email={state.email}
             password={sent.password}
+            phone={sent.phone}
             customerId={state.customerId}
           />
         ),

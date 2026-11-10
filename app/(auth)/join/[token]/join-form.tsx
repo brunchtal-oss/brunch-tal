@@ -72,9 +72,10 @@ function messageOf(message: JoinFieldMessage): string {
 export type JoinFormOutcome =
   { replace: React.ReactNode } | { notice: React.ReactNode }
 
-// What the form sent last, for an outcome screen: only the password (Tal's
-// done screen shows it; it never comes back from the server).
-export type JoinFormSent = { password: string }
+// What the form sent last, for an outcome screen: the password (Tal's done
+// screen shows it; it never comes back from the server) and the phone (its
+// WhatsApp button).
+export type JoinFormSent = { password: string; phone: string }
 
 // The element that receives focus for a field error.
 function fieldId(field: JoinField, index?: number): string {
@@ -116,8 +117,8 @@ export function JoinForm({
   privacyHref = null,
   lead = null,
 }: {
-  // Lines shown above the fields only while the form itself is shown (Tal's
-  // fill guidance); an outcome screen replaces them with the form.
+  // Lines shown above the fields only on step 1 of the form (Tal's fill
+  // guidance); an outcome screen replaces them with the form.
   lead?: React.ReactNode
   // The link of the first attempt; null: the action issues one (Tal's fill)
   // and hands it back in its result.
@@ -170,7 +171,7 @@ export function JoinForm({
   if (linkToken !== currentToken) setCurrentToken(linkToken)
   // The password of the last submission, kept only for an outcome screen
   // (in memory, never stored or sent anywhere else).
-  const [sent, setSent] = useState<JoinFormSent>({ password: "" })
+  const [sent, setSent] = useState<JoinFormSent>({ password: "", phone: "" })
 
   // Two steps in one form (story 2.13): the inactive one is hidden, not
   // removed, so every value stays and is sent together.
@@ -389,7 +390,11 @@ export function JoinForm({
     setCheck(null)
     if (outcome) {
       const typed = data.get("password")
-      setSent({ password: typeof typed === "string" ? typed : "" })
+      const phone = data.get("phone")
+      setSent({
+        password: typeof typed === "string" ? typed : "",
+        phone: typeof phone === "string" ? phone : "",
+      })
     }
     startTransition(() => formAction(data))
   }
@@ -412,7 +417,7 @@ export function JoinForm({
         <input key={name} type="hidden" name={name} value={value} />
       ))}
 
-      {lead}
+      {step === 1 && lead}
 
       {productName && amountAgorot !== null && (
         <p className="text-base font-semibold">

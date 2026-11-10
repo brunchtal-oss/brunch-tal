@@ -27,6 +27,31 @@ const SEPARATORS = /[\s().\u2010-\u2015\u2212-]/g
 // number are refused (the business number is a mobile).
 const ISRAELI = /^972(?:[57]\d{8}|[2-489]\d{7})$/
 
+// A customer phone, rule for rule private.normalize_phone (AD-9): the join
+// form checks it before step 2 (story 2.15), and the server still decides.
+// An Israeli number (0..., +972 or 00972, with or without the 0) gives
+// +972...; any other international number (+ or 00) with 8 to 15 digits is
+// kept as is. Bare digits without 0, + or 00 give null.
+const CUSTOMER_SEPARATORS =
+  /[\s\u00A0\u200B\u200E\u200F\u202A-\u202E\u2066-\u2069\u2010-\u2015\u2212.()-]/g
+const ISRAELI_NATIONAL = /^(?:5\d{8}|7\d{8}|[2-489]\d{7})$/
+
+export function customerPhoneE164(raw: string): string | null {
+  const cleaned = raw.replace(CUSTOMER_SEPARATORS, "")
+  const intl = /^\+\d+$/.test(cleaned)
+    ? cleaned.slice(1)
+    : /^00\d+$/.test(cleaned)
+      ? cleaned.slice(2)
+      : null
+  if (intl !== null && intl.startsWith("972")) {
+    const national = intl.slice(3).replace(/^0/, "")
+    return ISRAELI_NATIONAL.test(national) ? `+972${national}` : null
+  }
+  if (intl !== null) return /^[1-9]\d{7,14}$/.test(intl) ? `+${intl}` : null
+  const local = /^0(\d+)$/.exec(cleaned)
+  return local && ISRAELI_NATIONAL.test(local[1]) ? `+972${local[1]}` : null
+}
+
 /**
  * A content phone in international digits without "+" (972 and the number
  * without its 0), or null when it is not an Israeli number. A local number

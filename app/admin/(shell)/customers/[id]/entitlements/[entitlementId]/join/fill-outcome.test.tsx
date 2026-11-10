@@ -22,6 +22,7 @@ const {
   fillFieldMessage,
   fillOutcome,
   loginDetailsText,
+  whatsappLoginHref,
 } = await import("./fill-outcome")
 
 const ENTITLEMENT = "11111111-1111-4111-8111-111111111111"
@@ -79,23 +80,61 @@ describe("Tal's fill (story 2.15)", () => {
     }
     expect(JSON.stringify(state)).not.toContain("Typed-pass-1")
     const screen = replaced(
-      fillOutcome(state, { password: "Typed-pass-1" }, ENTITLEMENT)
+      fillOutcome(
+        state,
+        { password: "Typed-pass-1", phone: "050-1234567" },
+        ENTITLEMENT
+      )
     )
     expect(screen).toContain("החשבון נוצר")
     expect(screen).toContain("הרכישה שויכה לחשבון של Dev Fill.")
     expect(screen).toContain("dev-fill@example.com")
     expect(screen).toContain("Typed-pass-1")
     expect(screen).toContain("העתקת פרטי הכניסה")
+    expect(screen).toContain("שליחה בוואטסאפ")
+    expect(screen).toContain('href="https://wa.me/972501234567?text=')
     expect(screen).toContain(`href="/admin/customers/${CUSTOMER}"`)
     expect(screen).not.toContain("←")
   })
 
-  it("the copied text: email, password and the login address", () => {
+  it("the copied text: the login address first, then the details", () => {
     expect(
       loginDetailsText("a@example.com", "Pass-1234", "https://x.example")
     ).toBe(
-      "פרטי הכניסה לאזור האישי:\nמייל: a@example.com\nסיסמה: Pass-1234\nלהתחברות: https://x.example/login"
+      "*להתחברות:* https://x.example/login\n\n*פרטי הכניסה לאזור האישי:*\nמייל: a@example.com\nסיסמה: Pass-1234"
     )
+  })
+
+  it("WhatsApp: her number with the same text; none for a number it cannot open", () => {
+    expect(
+      whatsappLoginHref(
+        "054-123 4567",
+        "a@example.com",
+        "Pass-1234",
+        "https://x.example"
+      )
+    ).toBe(
+      `https://wa.me/972541234567?text=${encodeURIComponent(
+        loginDetailsText("a@example.com", "Pass-1234", "https://x.example")
+      )}`
+    )
+    expect(
+      whatsappLoginHref("+1 212 555 0100", "a@example.com", "P", "https://x")
+    ).toBeNull()
+    expect(
+      replaced(
+        fillOutcome(
+          {
+            status: "fill_joined",
+            fullName: "Dev Fill",
+            email: "dev-fill@example.com",
+            customerId: CUSTOMER,
+          },
+          { password: "Typed-pass-1", phone: "+1 212 555 0100" },
+          ENTITLEMENT
+        )
+      )
+    ).not.toContain("שליחה בוואטסאפ")
   })
 
   it("the copy button: copied, or the manual-copy notice when the clipboard refuses", async () => {
@@ -132,7 +171,7 @@ describe("Tal's fill (story 2.15)", () => {
   })
 
   it("used, voided and conflict replace the form; in progress is a notice", () => {
-    const sent = { password: "" }
+    const sent = { password: "", phone: "" }
     expect(
       replaced(fillOutcome({ status: "used" }, sent, ENTITLEMENT))
     ).toContain('href="/admin/customers"')
@@ -193,12 +232,12 @@ describe("the shared form with a result of the fill (story 2.15)", () => {
     expect(page).not.toContain("<form")
     expect(page).not.toContain('name="password"')
     // The guidance lines belong to the form only.
-    expect(page).not.toContain("ממלאים את הטופס יחד עם הלקוחה")
+    expect(page).not.toContain("יש למלא את הטופס עם הלקוחה")
     expect(page).not.toContain("בשליחה נוצר ללקוחה חשבון")
   })
 
   it("the guidance lines show with the form, also with an error, not on other screens", () => {
-    expect(form()).toContain("ממלאים את הטופס יחד עם הלקוחה")
+    expect(form()).toContain("יש למלא את הטופס עם הלקוחה")
     expect(form()).toContain("בשליחה נוצר ללקוחה חשבון")
     actionState.current = {
       status: "error",
@@ -206,15 +245,15 @@ describe("the shared form with a result of the fill (story 2.15)", () => {
       errors: [],
       token: null,
     }
-    expect(form()).toContain("ממלאים את הטופס יחד עם הלקוחה")
+    expect(form()).toContain("יש למלא את הטופס עם הלקוחה")
     for (const status of ["used", "voided"] as const) {
       actionState.current = { status, token: null }
       const page = form()
-      expect(page).not.toContain("ממלאים את הטופס יחד עם הלקוחה")
+      expect(page).not.toContain("יש למלא את הטופס עם הלקוחה")
       expect(page).not.toContain("בשליחה נוצר ללקוחה חשבון")
     }
     actionState.current = { status: "conflict", reason: null, token: null }
-    expect(form()).not.toContain("ממלאים את הטופס יחד עם הלקוחה")
+    expect(form()).not.toContain("יש למלא את הטופס עם הלקוחה")
   })
 
   it("in progress: a notice above the form, which stays", () => {

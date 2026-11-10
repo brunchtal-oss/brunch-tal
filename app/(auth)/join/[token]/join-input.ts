@@ -1,5 +1,6 @@
 import type { JoinErrorKey } from "@/lib/copy/join"
 import { isEmailShape } from "@/lib/email"
+import { customerPhoneE164 } from "@/lib/phone"
 import type { ErrorCode, ErrorDetail } from "@/lib/errors"
 
 // The join form's fields and their validation before any call to the
@@ -13,9 +14,10 @@ export const MAX_BABIES = 10
 const MAX_FULL_NAME = 200
 const MAX_DIETARY_NOTES = 2000
 const MAX_BABY_NAME = 100
-// Soft format checks only (AD-9): the server normalizes and decides. The
-// email: lib/email.ts (length first, then a linear regex).
-const PHONE = /^\+?[\d\s().-]{9,20}$/
+// The phone: the server's own rules (customerPhoneE164 mirrors
+// private.normalize_phone), so "הבא" stops a number the server would refuse
+// (story 2.15); the server still decides. The email: lib/email.ts (length
+// first, then a linear regex).
 const DATE = /^\d{4}-\d{2}-\d{2}$/
 
 export type JoinField =
@@ -86,7 +88,8 @@ export function validateJoin(
     errors.push({ field: "fullName", message: "INVALID_INPUT" })
   }
   if (!phone) errors.push({ field: "phone", message: "FIELD_REQUIRED" })
-  else if (!PHONE.test(phone)) errors.push({ field: "phone", message: "phone" })
+  else if (!customerPhoneE164(phone))
+    errors.push({ field: "phone", message: "phone" })
   if (!email) errors.push({ field: "email", message: "FIELD_REQUIRED" })
   else if (!isEmailShape(email)) {
     errors.push({ field: "email", message: "email" })

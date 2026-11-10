@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { formatLocalPhone, normalizePhone } from "./phone"
+import { customerPhoneE164, formatLocalPhone, normalizePhone } from "./phone"
 
 describe("formatLocalPhone", () => {
   it.each([
@@ -63,5 +63,45 @@ describe("normalizePhone", () => {
     "+972",
   ])("gives null for %j", (raw) => {
     expect(normalizePhone(raw)).toBeNull()
+  })
+})
+
+// Rule for rule private.normalize_phone (AD-9): the join form's check before
+// step 2 (story 2.15).
+describe("customerPhoneE164", () => {
+  it.each([
+    ["0541234567", "+972541234567"],
+    ["054-123-4567", "+972541234567"],
+    ["(054) 123.4567", "+972541234567"],
+    ["+972541234567", "+972541234567"],
+    ["+9720541234567", "+972541234567"],
+    ["00972541234567", "+972541234567"],
+    ["031234567", "+97231234567"],
+    ["0721234567", "+972721234567"],
+    ["+1 212 555 0100", "+12125550100"],
+    ["0044 20 7946 0958", "+442079460958"],
+  ])("%s gives %s", (raw, e164) => {
+    expect(customerPhoneE164(raw)).toBe(e164)
+  })
+
+  it.each([
+    "123456789",
+    "972541234567",
+    "054123456",
+    "05412345678",
+    "011234567",
+    "+97212345678",
+    "+0123456789",
+    "+1234567",
+    "+1234567890123456",
+    "054-abc-4567",
+  ])("%s is refused", (raw) => {
+    expect(customerPhoneE164(raw)).toBeNull()
+  })
+
+  it("strips the marks a copied number carries", () => {
+    expect(customerPhoneE164("\u200F054\u2011123\u00A04567")).toBe(
+      "+972541234567"
+    )
   })
 })
