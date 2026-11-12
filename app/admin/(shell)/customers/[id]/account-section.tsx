@@ -45,10 +45,13 @@ const INPUT = "h-12 text-start text-base"
 export function ContactRows({
   customerId,
   email,
+  emailVerified = false,
   phone,
   view,
 }: {
   customerId: string
+  // Story 6.11: from admin_get_customer (never true without the record).
+  emailVerified?: boolean
   // As saved: the email from Auth, the phone as Tal reads it (local).
   email: string
   phone: string
@@ -124,6 +127,21 @@ export function ContactRows({
           editLabel={view.canChangeEmail ? copy.account.editEmail : null}
           open={emailOpen}
           onToggle={() => (emailOpen ? closeEmail() : setEmailOpen(true))}
+          status={
+            email ? (
+              <span
+                className={
+                  emailVerified
+                    ? "text-[13px] text-success"
+                    : "text-[13px] text-warning"
+                }
+              >
+                {emailVerified
+                  ? copy.account.emailVerified
+                  : copy.account.emailNotVerified}
+              </span>
+            ) : null
+          }
           notice={
             view.stuck ? (
               <InlineNotice tone="warning">
@@ -184,6 +202,7 @@ export function ContactRow({
   open,
   onToggle,
   notice,
+  status,
   children,
 }: {
   id: string
@@ -194,6 +213,8 @@ export function ContactRow({
   open: boolean
   onToggle: () => void
   notice?: React.ReactNode
+  // Story 6.11: a line under the value (the email verified state).
+  status?: React.ReactNode
   children: React.ReactNode
 }) {
   const panelId = `${id}-edit`
@@ -218,6 +239,7 @@ export function ContactRow({
             </button>
           )}
         </span>
+        {status}
         {notice}
         <div id={panelId} hidden={!open}>
           {open && children}

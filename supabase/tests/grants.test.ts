@@ -199,16 +199,24 @@ const EXPECTED_GRANTS = [
   "function public.admin_update_work_dish(p_dish_id uuid, p_name text, p_idempotency_key uuid) authenticated EXECUTE",
   "function public.admin_update_work_task(p_task_id uuid, p_body text, p_day_offset integer, p_idempotency_key uuid) authenticated EXECUTE",
   "function public.admin_void_purchase(p_payment_id uuid, p_reason text, p_confirmed boolean, p_idempotency_key uuid) authenticated EXECUTE",
+  // Story 6.11: email verification, reset eligibility, her own email change
+  // (service_role since round 2: the server checks her password first), our
+  // verification token, and the Send Email Hook (Auth's role only).
+  "function public.begin_my_email_change(p_user_id uuid, p_email text, p_idempotency_key uuid) service_role EXECUTE",
   "function public.book_session(p_event_id uuid, p_idempotency_key uuid) authenticated EXECUTE",
   "function public.book_sessions(p_items uuid[], p_idempotency_key uuid) authenticated EXECUTE",
   "function public.cancel_booking(p_booking_id uuid, p_idempotency_key uuid, p_choice text) authenticated EXECUTE",
   "function public.choose_credit_outcome(p_credit_id uuid, p_choice text, p_idempotency_key uuid) authenticated EXECUTE",
   "function public.claim_join(p_token text, p_idempotency_key uuid) authenticated EXECUTE",
   "function public.claim_push_jobs(p_limit integer) service_role EXECUTE",
+  "function public.consume_email_verification(p_token text, p_session_user_id uuid) service_role EXECUTE",
+  "function public.finish_my_email_change(p_user_id uuid, p_succeeded boolean, p_idempotency_key uuid) service_role EXECUTE",
   "function public.finish_push_job(p_job_id uuid, p_delivered uuid[], p_gone uuid[], p_error text) service_role EXECUTE",
+  "function public.get_email_reset_eligibility(p_email text) service_role EXECUTE",
   "function public.get_event_availability(p_event_ids uuid[]) authenticated EXECUTE",
   "function public.get_my_bookings() authenticated EXECUTE",
   "function public.get_my_credits() authenticated EXECUTE",
+  "function public.get_my_email_verified() authenticated EXECUTE",
   "function public.get_my_entitlements() authenticated EXECUTE",
   "function public.get_my_session_role() authenticated EXECUTE",
   "function public.get_my_waitlist() authenticated EXECUTE",
@@ -241,8 +249,10 @@ const EXPECTED_GRANTS = [
   "function public.preview_move_booking(p_booking_id uuid) authenticated EXECUTE",
   "function public.rate_limit_hit(p_bucket text, p_keys text[]) service_role EXECUTE",
   "function public.register_push_subscription(p_endpoint text, p_keys jsonb, p_platform text) authenticated EXECUTE",
+  "function public.request_email_verification(p_user_id uuid, p_site_url text) service_role EXECUTE",
   "function public.reset_begin(p_token text, p_idempotency_key uuid) service_role EXECUTE",
   "function public.reset_complete(p_token text, p_idempotency_key uuid) service_role EXECUTE",
+  "function public.send_email_hook(event jsonb) supabase_auth_admin EXECUTE",
   "function public.set_booking_guest_details(p_booking_id uuid, p_guest_details text, p_idempotency_key uuid) authenticated EXECUTE",
   "function public.set_personal_photo_consent(p_consent boolean) authenticated EXECUTE",
   "function public.set_photo_consent(p_consent boolean) authenticated EXECUTE",
@@ -299,7 +309,9 @@ const API_ROLES = `
     select 0::oid as oid, 'PUBLIC' as role_name
     union all
     select oid, rolname from pg_roles
-    where rolname in ('anon', 'authenticated', 'service_role')
+    -- supabase_auth_admin: Auth's role, which calls the Send Email Hook
+    -- (story 6.11) and must get nothing else.
+    where rolname in ('anon', 'authenticated', 'service_role', 'supabase_auth_admin')
   ),
   ext as (select objid from pg_depend where deptype = 'e')`
 

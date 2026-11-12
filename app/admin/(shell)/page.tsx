@@ -2,6 +2,8 @@ import { Suspense } from "react"
 import type { Metadata } from "next"
 import { connection } from "next/server"
 
+import { resendVerificationAction } from "@/app/(auth)/verify-email/actions"
+import { EmailVerificationBanner } from "@/components/shared/email-verification-banner"
 import { PageHeading } from "@/components/shared/page-heading"
 import { shellCopy } from "@/lib/copy/shell"
 import { adminGreeting, metadataFullName } from "@/lib/greeting"
@@ -59,6 +61,11 @@ export default function AdminHomePage() {
           <Greeting />
         </Suspense>
       </PageHeading>
+      {/* Story 6.11: while her own email is not verified (a verified admin
+          can reset her password by email). */}
+      <Suspense fallback={null}>
+        <EmailVerificationBanner resend={resendVerificationAction} />
+      </Suspense>
       <Suspense fallback={null}>
         <ReminderStrip />
       </Suspense>

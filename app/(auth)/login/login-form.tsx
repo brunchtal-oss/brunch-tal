@@ -1,6 +1,7 @@
 "use client"
 
 import { useActionState } from "react"
+import Link from "next/link"
 
 import { PasswordInput } from "@/components/auth/password-input"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -69,14 +70,13 @@ export function LoginForm({ next }: { next: string | null }) {
         {pending ? authCopy.login.submitting : authCopy.login.submit}
       </OnlineButton>
 
-      <details className="text-sm">
-        <summary className="cursor-pointer text-primary underline-offset-4 hover:underline">
-          {authCopy.login.forgotPassword}
-        </summary>
-        <p className="mt-2 text-muted-foreground">
-          {authCopy.login.forgotPasswordHelp}
-        </p>
-      </details>
+      {/* Story 6.11: the self-service reset, in both areas (an admin too). */}
+      <Link
+        href="/forgot-password"
+        className="inline-flex min-h-11 items-center self-start text-[15px] underline underline-offset-[3px]"
+      >
+        {authCopy.login.forgotPassword}
+      </Link>
     </form>
   )
 }

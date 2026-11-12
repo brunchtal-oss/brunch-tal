@@ -5,6 +5,7 @@ import { ChevronLeftIcon } from "lucide-react"
 
 import { PageHeading } from "@/components/shared/page-heading"
 import { cubeTitleClass } from "@/components/shared/section-title"
+import { getWhatsappHref } from "@/lib/content/business-details"
 import {
   getPhotoConsentContent,
   getSpecialBrunchContent,
@@ -13,6 +14,7 @@ import { getPublishedPageSlugs } from "@/lib/content/pages"
 import { customerCopy } from "@/lib/copy/customer"
 import { shellCopy } from "@/lib/copy/shell"
 import { publicLegalNav, visibleLegalNav } from "@/lib/nav"
+import { callRpc } from "@/lib/rpc"
 import { formatLocalPhone } from "@/lib/phone"
 import { orderedSpecialBrunchCodes } from "@/lib/special-brunch"
 import { createClient } from "@/lib/supabase/server"
@@ -65,24 +67,33 @@ async function Profile() {
   const email =
     typeof claims?.claims?.email === "string" ? claims.claims.email : null
 
-  const [profileResult, babiesResult, photoContent, specialBrunch, legalSlugs] =
-    await Promise.all([
-      supabase
-        .from("profiles")
-        .select(
-          "full_name, dietary_notes, special_brunch_interests, phone_e164"
-        )
-        .eq("id", userId ?? "")
-        .maybeSingle(),
-      supabase
-        .from("babies")
-        .select("id, name, birth_date")
-        .order("birth_date")
-        .order("created_at"),
-      getPhotoConsentContent(),
-      getSpecialBrunchContent(),
-      getPublishedPageSlugs(publicLegalNav.map((item) => item.slug)),
-    ])
+  const [
+    profileResult,
+    babiesResult,
+    photoContent,
+    specialBrunch,
+    legalSlugs,
+    verifiedResult,
+    contactHref,
+  ] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("full_name, dietary_notes, special_brunch_interests, phone_e164")
+      .eq("id", userId ?? "")
+      .maybeSingle(),
+    supabase
+      .from("babies")
+      .select("id, name, birth_date")
+      .order("birth_date")
+      .order("created_at"),
+    getPhotoConsentContent(),
+    getSpecialBrunchContent(),
+    getPublishedPageSlugs(publicLegalNav.map((item) => item.slug)),
+    // Story 6.11: her own record (a failed read shows "not verified").
+    callRpc(supabase, "get_my_email_verified"),
+    // The phone's "צרי קשר" in the edit form (user decision 2026-11-12).
+    getWhatsappHref(),
+  ])
   if (profileResult.error || babiesResult.error || !profileResult.data) {
     throw new Error("profile read failed")
   }
@@ -100,6 +111,12 @@ async function Profile() {
         )}
         phone={profile.phone_e164 ? formatLocalPhone(profile.phone_e164) : null}
         email={email}
+        emailVerified={
+          verifiedResult.ok &&
+          (verifiedResult.data as { verified?: unknown } | null)?.verified ===
+            true
+        }
+        contactHref={contactHref}
       />
       <BabiesSection
         babies={(babiesResult.data ?? []).map((baby) => ({

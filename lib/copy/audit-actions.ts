@@ -326,6 +326,13 @@ export const SHOWN_AUDIT_ACTIONS: Record<string, readonly AuditRule[]> = {
       result: accountChange(results.emailChanged, results.emailTaken),
     },
   ],
+  // Story 6.11: the customer changed her own email (the same results).
+  finish_my_email_change: [
+    {
+      entity: "profiles",
+      result: accountChange(results.emailChanged, results.emailTaken),
+    },
+  ],
   admin_change_phone: [
     {
       entity: "profiles",

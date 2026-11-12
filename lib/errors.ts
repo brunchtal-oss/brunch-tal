@@ -217,6 +217,17 @@ export const ERROR_MESSAGES = {
   ACCOUNT_NOT_ACTIVE: "החשבון הזה עוד לא פעיל. צרי קשר",
   PASSWORD_TOO_SHORT: "הסיסמה צריכה להיות באורך 8 תווים לפחות",
   PASSWORDS_DONT_MATCH: "הסיסמאות לא תואמות",
+  // Story 6.11: Auth takes at most 72 bytes (a Hebrew letter is two).
+  PASSWORD_TOO_LONG: "הסיסמה ארוכה מדי. אפשר לבחור סיסמה קצרה יותר",
+  // Story 6.11: an email link (verification or reset) that Auth's
+  // verifyOtp refused: used, expired or not ours. The reset page shows its
+  // own wording with a link to request a new one.
+  LINK_INVALID:
+    "הקישור לא תקף, כבר נוצל או שפג תוקפו. אפשר לשלוח מייל אימות חדש מהאזור האישי.",
+  // Story 6.11: the customer's own email change (current password, the new
+  // address twice).
+  WRONG_PASSWORD: "הסיסמה הנוכחית לא נכונה",
+  EMAILS_DONT_MATCH: "שתי הכתובות לא זהות",
   FIELD_REQUIRED: "צריך למלא את השדה הזה",
   SERVER_ERROR: "משהו השתבש. אפשר לנסות שוב בעוד רגע",
 } as const

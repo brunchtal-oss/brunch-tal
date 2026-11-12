@@ -2,6 +2,18 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { submitJoinFillAction } from "./actions"
 
+// Story 6.11: the verification email is queued in after().
+const afterTasks: (() => unknown)[] = []
+const sendVerificationEmail = vi.fn()
+vi.mock("next/server", () => ({
+  after: (task: () => unknown) => {
+    afterTasks.push(task)
+  },
+}))
+vi.mock("@/lib/server/privileged/email-auth", () => ({
+  sendVerificationEmail: (...args: unknown[]) => sendVerificationEmail(...args),
+}))
+
 const submitJoinFill = vi.fn()
 const rpc = vi.fn()
 const signInWithPassword = vi.fn()
@@ -112,6 +124,9 @@ describe("submitJoinFillAction (story 2.15)", () => {
     const [, paymentId, input, key, token] = submitJoinFill.mock.calls[0]
     expect([paymentId, key, token]).toEqual([PAYMENT, KEY, null])
     expect(input).toMatchObject({ fullName: "Dev Fill", password: PASSWORD })
+    // Story 6.11: the verification email, after the answer.
+    for (const task of afterTasks.splice(0)) await task()
+    expect(sendVerificationEmail).toHaveBeenLastCalledWith(CUSTOMER)
   })
 
   it("passes the carried token of the previous attempt", async () => {

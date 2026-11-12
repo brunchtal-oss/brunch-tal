@@ -187,6 +187,28 @@ describe("a contact row's pencil (fix 9)", () => {
 })
 
 describe("the email and phone rows", () => {
+  // Story 6.11: the verified state under the address; never "verified"
+  // without the record (email_verified from admin_get_customer).
+  it.each([
+    [true, copy.emailVerified, copy.emailNotVerified],
+    [false, copy.emailNotVerified, copy.emailVerified],
+    [undefined, copy.emailNotVerified, copy.emailVerified],
+  ])("emailVerified %s shows its label only", (verified, shown, hidden) => {
+    const html = renderToStaticMarkup(
+      <dl>
+        <ContactRows
+          customerId={CUSTOMER}
+          email="roni@example.test"
+          emailVerified={verified}
+          phone="054-123-4567"
+          view={view()}
+        />
+      </dl>
+    )
+    expect(html).toContain(`>${shown}<`)
+    expect(html).not.toContain(`>${hidden}<`)
+  })
+
   it("closed at first: both pencils, no field", () => {
     const html = renderToStaticMarkup(
       <dl>

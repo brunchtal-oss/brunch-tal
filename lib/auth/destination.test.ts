@@ -21,6 +21,9 @@ describe("destinationFor", () => {
     ["/", "/admin"],
     ["//evil.com", "/admin"],
     ["https://evil.com/admin", "/admin"],
+    // Story 6.11: back to the verification link after logging in.
+    ["/verify-email?token=abc_-123", "/verify-email?token=abc_-123"],
+    ["/verify-emailx", "/admin"],
   ])("admin with next %j goes to %s", (next, expected) => {
     expect(destinationFor("admin", next)).toBe(expected)
   })
@@ -37,6 +40,7 @@ describe("destinationFor", () => {
     ["/administration", "/administration"],
     ["//evil.com", "/me"],
     ["/..//evil.com", "/me"],
+    ["/verify-email?token=abc_-123", "/verify-email?token=abc_-123"],
   ])("customer with next %j goes to %s", (next, expected) => {
     expect(destinationFor("customer", next)).toBe(expected)
   })

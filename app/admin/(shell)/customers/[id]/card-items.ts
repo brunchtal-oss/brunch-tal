@@ -41,6 +41,8 @@ export type CardProfile = {
   // Story 2.16: codes ([] = none or not answered).
   special_brunch_interests: string[]
   last_activity_on: string | null
+  // Story 6.11: her current email matches our verification record.
+  email_verified?: boolean
 }
 
 export type CardBaby = { name: string; birth_date: string }

@@ -99,14 +99,40 @@
 
 - [ ] הרשמה ציבורית כבויה (Authentication → Sign In / Providers → Allow new users to sign up). גם ב-`supabase/config.toml`.
 - [ ] כניסה אנונימית כבויה (Authentication → Sign In / Providers → Allow anonymous sign-ins). גם ב-`supabase/config.toml`.
-- [ ] ‏Confirm email כבוי.
-- [ ] ‏Site URL ו-Redirect URLs לכתובת של הסביבה (localhost, ‏preview, ‏production).
+- [ ] ‏Confirm email כבוי (גם אחרי 6.11: החשבונות נוצרים מאומתים ב-Auth, והאימות שלנו נשמר במסד). התראות האבטחה במייל (Security notifications) כבויות.
+- [ ] ‏Site URL ו-Redirect URLs לכתובת של הסביבה (localhost, ‏preview, ‏production). הקישורים במיילים לא נבנים מהם (ראו "מייל (Resend)").
+- [ ] מייל (6.11): ‏`resend_api_key` ו-`site_url` ב-Vault, התמונה בראש המיילים (`email_image_url`, צעד 7א; רשות), ה-Send Email Hook מופעל על `public.send_email_hook` (ונבדק ידנית), ‏SMTP של הדשבורד כבוי, ‏OTP expiry ‏3600, לפי "מייל (Resend)" למטה.
 - [ ] "Automatically expose new tables" כבוי (גם בפיתוח).
 - [ ] ‏pg_graphql לא מופעל.
 - [ ] ‏Data API (Project Settings → Data API → Exposed schemas): רק `public`. בלי `graphql_public`, ‏`private` או `net`.
 - [ ] אורך סיסמה מינימלי (Authentication → Sign In / Providers → Email → Minimum password length) זהה בכל הפרויקטים.
 - [ ] מפתח `sb_secret_` עובד (למשל `npm run dev:reset-link` מצליח).
 - [ ] שם התצוגה של המנהלת מוגדר פעם אחת כ-`full_name` במטא-דאטה של משתמש ה-Auth שלה (`raw_user_meta_data`). הברכה בבית האדמין משתמשת בו.
+
+### מייל (Resend)
+
+סיפור 6.11: כל מייל יוצא מהמסד, בפונקציה אחת (`private.send_email`: ‏pg_net אל ה-API של Resend), בשני הפרויקטים (פיתוח ופרודקשן). ‏Auth לא שולח בעצמו: ה-Send Email Hook (`public.send_email_hook`) שולח רק מייל איפוס, ורק לכתובת מאומתת של לקוחה פעילה או של אדמין, וכל סוג אחר (Magic Link, הרשמה, הזמנה, שינוי מייל) נזרק בשקט. מייל האימות משתמש בטוקן שלנו (`request_email_verification`), לא בטוקן התחברות של Auth. הנוסח בעברית נמצא במיגרציה (`private.email_html`), כך ששני הפרויקטים זהים. אין ספק מייל אחר, אין תיבת מייל לעסק ואין מיילים שיווקיים.
+
+1. **חשבון Resend** (חינמי: 100 מיילים ביום ו-3,000 בחודש, משותפים לשני הפרויקטים; מעבר לזה השליחה פשוט נעצרת).
+2. **דומיין:** ‏Domains → Add domain → ‏`morethanfood.co.il`, אזור `eu-west-1`. ‏Custom Return-Path נשאר `send`.
+3. **רשומות DNS ב-LiveDNS:** מעתיקים בדיוק את מה ש-Resend מציג (שם, סוג וערך), לא מהרשימה כאן. לדוגמה, מה ש-Resend הציג ב-2026-11-11:
+   - ‏CNAME ‏`rsend` → ‏`rsend-euw1.forge.rmta.net`
+   - ‏CNAME ‏`send` → ‏`send.forge.rmta.net`
+   - ‏TXT ‏`resend._domainkey` → ‏`p=…` (מועתק מ-Resend)
+   - ‏TXT ‏`_dmarc` → ‏`v=DMARC1; p=none;`
+
+   אין רשומת MX ואין TXT של SPF על `send`, ואין שינוי ב-SPF או ב-MX של הדומיין עצמו (כך Google Workspace עתידי לא מתנגש).
+4. **בדיקת DKIM:** ‏Verify ב-Resend, ואז `nslookup -type=TXT resend._domainkey.morethanfood.co.il`. הערך צריך להיות זהה לזה של Resend, כולל אותיות גדולות (דווח ש-LiveDNS הופך לפעמים TXT לאותיות קטנות, וזה שובר את DKIM; ב-2026-11-11 האותיות הגדולות נשמרו). אם זה נשבר: מעבר שרתי השמות של הדומיין ל-DNS החינמי של Cloudflare (האתר עוד לא על הדומיין, אז שום דבר אחר לא זז) והוספת הרשומות שם. ההחלטה של המשתמשת.
+5. **מפתח API אחד לכל פרויקט** (API Keys → Create): הרשאת Sending access בלבד, מוגבל לדומיין `morethanfood.co.il`. המפתח נכנס רק ל-Vault של אותו פרויקט. אף פעם לא ל-repo, לצ'אט, ל-Vercel או לקוד.
+6. **המפתח ב-Vault**, בכל פרויקט, על ידי המשתמשת ב-SQL Editor (שאילתה חדשה וריקה; לא מדפיסים אותו. העורך שומר שאילתות אוטומטית, ולכן אחרי ההרצה מוחקים את השאילתה מהרשימה ב-Private, לא רק סוגרים אותה): `select vault.create_secret('<המפתח>', 'resend_api_key');`. להחלפה: `select vault.update_secret((select id from vault.secrets where name = 'resend_api_key'), '<המפתח החדש>');`. בלי המפתח לא נשלח שום מייל (המסד רושם אזהרה). ‏`prod-check` בודק רק שהשם קיים, אף פעם לא את הערך.
+7. **כתובת האתר ב-Vault** (`site_url`), בכל פרויקט, ב-SQL Editor: בפרודקשן `select vault.create_secret('https://brunch-at-tals.vercel.app', 'site_url');`, בפיתוח `http://localhost:3000` (בבדיקה בטלפון: כתובת ה-LAN, ומחזירים אחרי הבדיקה; שינוי ב-`vault.update_secret`). ה-hook בונה ממנה את קישור האיפוס, ולא מה-Site URL של ה-Auth (שם Auth שולח ל-hook את כתובת ה-API שלו, ולכן לא משתמשים בה). בלי ערך לא נשלח מייל איפוס (המסד רושם אזהרה).
+7א. **התמונה בראש המיילים** (החלטת המשתמשת 2026-11-12), בכל פרויקט. קובץ JPEG קטן (בערך 1120x520, עד 200KB; חיתוך של תמונת ה-hero, נשמר מחוץ ל-repo) עולה לדלי הציבורי `media-public` בנתיב `email/header.jpg`, וכתובתו הציבורית נשמרת ב-Vault `email_image_url`. ההעלאה נעשית בסקריפט: בפיתוח `node scripts/dev-email-image.mjs --file <הקובץ>`, ובפרודקשן `node scripts/prod-email-image.mjs --file <הקובץ>` (הרצה יבשה: בודקת שהדלי קיים וציבורי ומראה מה ייעשה), ואז אותה פקודה עם `--apply`, באישור. הסקריפט לא כותב ל-Vault, כי לתפקיד של חיבור המסד אין הרשאה לזה (שגיאה 42501 בפיתוח, 2026-11-12). בסוף הוא מדפיס שורה אחת להרצה ב-SQL Editor של אותו פרויקט (`vault.create_secret` בפעם הראשונה, `vault.update_secret` אחר כך). זו כתובת ציבורית, לא סוד. בלי הערך, או עם ערך שאינו כתובת אחסון ציבורית, המייל נשלח בלי תמונה. את כתובת האתר שבתחתית המייל לא צריך להגדיר: היא נלקחת מהקישור שבמייל עצמו.
+8. **ה-hook** (Authentication → Hooks → Send Email → Postgres): סכמה `public`, פונקציה `send_email_hook`, מופעל. גם ב-`supabase/config.toml` (`[auth.hook.send_email]`, לשרת מקומי בלבד). אחרי ההפעלה ‏Auth לא שולח שום מייל בעצמו.
+9. **בדיקה ידנית אחרי הפעלת ה-hook** (מצב ה-hook לא נקרא ב-`prod-check`): בקשה ישירה ל-Auth עם המפתח הציבורי, `POST <project>/auth/v1/otp` לחשבון בדוי, לא שולחת שום מייל; ובדשבורד ה-SMTP המותאם כבוי.
+10. **SMTP ותבניות בדשבורד:** ‏SMTP מותאם (Authentication → Emails → SMTP Settings) נשאר כבוי, ואין צורך בתבניות. אם הוגדר SMTP בסבב הקודם: מכבים אותו, ומוחקים ב-Resend את המפתחות הישנים שהוזנו שם.
+11. **הגבלות:** ‏Email OTP Expiration ‏`3600` (שעה, תוקף קישור האיפוס; קישור האימות שלנו תקף שעה בקבוע במסד). מגבלת המיילים של Auth לא חלה כאן (Confirm email כבוי), ולכן ה-hook עצמו מגביל: עד 3 מיילי איפוס למשתמשת ועד 20 לפרויקט בשעה, והשאר נזרקים בשקט. גם "שכחתי סיסמה" מוגבל בקצב (`email`). כל קישור פועל פעם אחת.
+12. **כתובות הקישורים:** קישור האיפוס נבנה מ-Vault `site_url` (צעד 7). קישור האימות נבנה בשרת מ-`lib/site-url.ts` (‏`NEXT_PUBLIC_SITE_URL`, אחרת כתובת הפרודקשן של Vercel, אחרת `http://localhost:3000`). עד חיבור הדומיין (id 10) שניהם מובילים ל-vercel.app. לבדיקה בטלפון מול שרת פיתוח ברשת הביתית: Vault `site_url` של פרויקט הפיתוח וגם `NEXT_PUBLIC_SITE_URL` ב-`.env.local` של ה-worktree משתנים זמנית לכתובת ה-LAN, ומוחזרים אחרי הבדיקה. אימות המייל דורש התחברות לחשבון עצמו (החלטת המשתמשת 2026-11-11): באייפון, אפליקציה מותקנת (PWA) והדפדפן הפנימי של Gmail לא חולקים cookies עם Safari, ולכן הלקוחה מתחברת שם פעם אחת. ב-Preview של Vercel קישור האימות מוביל לכתובת הפרודקשן (שמחוברת למסד אחר), ולכן את האימות בודקים בשרת הפיתוח ולא ב-Preview.
+13. **בדיקה:** בקשת "שכחתי סיסמה" ו"שליחת מייל אימות" לחשבון בדוי עם ה-Gmail של המשתמשת (עם `+`): המייל מגיע לתיבה הראשית (לא לספאם), בעברית מימין לשמאל, מ-`בראנץ׳ אצל טל`. בקשה ישירה ל-Auth (`/otp`, ‏`/recover` לכתובת לא מאומתת) לא שולחת כלום.
 
 ### Supabase Vault
 
@@ -158,7 +184,7 @@
 | `node scripts/prod-admin.mjs --email <מייל> --name-file <קובץ>` / `--apply` | אדמין בפרודקשן וקישור חד-פעמי לבחירת סיסמה |
 | `node scripts/prod-check.mjs` | הבדיקות של הפרודקשן, לקריאה בלבד: שורה לכל בדיקה, ✓ או ✗. כולל הגדרות Auth (`/auth/v1/settings`), ‏pg_graphql, ‏RLS בכל טבלה, ‏Vault מול `PROD_CRON_SECRET` (השוואת sha256, בלי להדפיס), ו-`POST /api/jobs/push` עם `PROD_CRON_SECRET` (מריץ את ה-worker פעם אחת, כמו ה-cron) |
 | `npm run prod:grants` | בדיקת ההרשאות מול הפרודקשן, לקריאה בלבד |
-| `node scripts/prod-auth-guard-check.mjs` / `--apply` | בדיקת ה-trigger על `auth.users` מול ה-Auth האמיתי: משתמשת זמנית, שינוי מייל וטלפון עצמי ושינוי מייל באדמין נחסמים, והמשתמשת נמחקת |
+| `node scripts/prod-auth-guard-check.mjs` / `--apply` [`--domain <d>`] | בדיקת ה-trigger על `auth.users` מול ה-Auth האמיתי: משתמשת זמנית, שינוי מייל וטלפון עצמי ושינוי מייל באדמין נחסמים, והמשתמשת נמחקת. הכתובת הזמנית על `morethanfood.co.il` (או `--domain`), ולדומיין חייבת להיות רשומת MX: לפני ההרצה `nslookup -type=MX <domain>`. ההרצה היבשה מדפיסה את הדומיין. אותה בדיקה מול הפיתוח: `node scripts/dev-auth-guard-check.mjs` (6.11) |
 
 **מה ההעתקה מעתיקה:** ‏`content_pages`, ‏`content_sections` (‏`draft_content` ו-`published_content_full`; ה-trigger גוזר את `published_content`), כל תמונה שתוכן או קונספט מזכירים (גם מוסתרים, וגם שרשרת `source_id`) עם הקבצים שלה, ‏`concepts`, ‏`products`, ‏`payment_methods`, ‏`marketing_reminder_texts`, ‏`notification_templates` (כותרת, גוף, פוש) ו-`business_settings` (העמודות שנערכות). ‏`updated_by` / ‏`created_by` מתאפסים. **לא מעתיקה:** מפגשים, לקוחות, הרשמות, תשלומים, זכויות, זיכויים, רשימת המתנה, התראות, יומן, טוקנים, פתקים, דפי עבודה, מנויי פוש ומזהי השיווק (`marketing_tags` נשאר ריק). היא מסרבת לרוץ אם בפרודקשן יש לקוחה, מפגש, תשלום, זכות או הרשמה, או אם שורה שמועתקת היא נתון `test_` או מזכירה `video.example.com`. הרצה חוזרת מגיעה לאותו מצב ולא מעלה קובץ שכבר קיים.
 
@@ -170,7 +196,7 @@
 2. **`.env.prod.local`** עם ארבעת משתני החובה (למעלה). את השורה החמישית, `PROD_CRON_SECRET`, מוסיפים בצעד 6.
 3. **חזרה:** `node scripts/prod-migrate.mjs --rehearse`, צריך "OK" ו-132 קבצים (או המספר הנוכחי). אם החזרה נכשלת בגלל משהו שקיים רק בעסקה אחת גדולה (פקודה שאסורה בתוך עסקה, ערך enum שנוסף ונעשה בו שימוש באותה עסקה), לא רודפים אחריו: ה-push של צעד 4 הוא ההרצה האמיתית, קובץ אחרי קובץ. במקרה הגרוע מוחקים את הפרויקט הריק ויוצרים אותו מחדש.
 4. **מיגרציות:** `node scripts/prod-migrate.mjs` (יבש), ואז `node scripts/prod-migrate.mjs --apply`. בסוף צריך "✓ schema_migrations תואם לקבצים".
-5. **Dashboard של הפרודקשן:** כל הסעיפים של "Supabase Auth" ב-checklist למעלה: הרשמה ציבורית כבויה, כניסה אנונימית כבויה, Confirm email כבוי, ‏Site URL = `https://brunch-at-tals.vercel.app` ו-Redirect URLs = `https://brunch-at-tals.vercel.app/**`, אורך סיסמה מינימלי כמו בפיתוח; ‏Data API עם `public` בלבד; ‏pg_graphql כבוי (Database → Extensions); "Automatically expose new tables" כבוי.
+5. **Dashboard של הפרודקשן:** כל הסעיפים של "Supabase Auth" ב-checklist למעלה: הרשמה ציבורית כבויה, כניסה אנונימית כבויה, Confirm email כבוי, ‏Site URL = `https://brunch-at-tals.vercel.app` ו-Redirect URLs = `https://brunch-at-tals.vercel.app/**`, אורך סיסמה מינימלי כמו בפיתוח; המייל לפי "מייל (Resend)" (מפתח API נפרד לפרודקשן ו-`site_url` ב-Vault, ה-hook מופעל ונבדק ידנית, SMTP כבוי, OTP expiry; אחרי המיגרציות, כי הפונקציה נוצרת בהן); ‏Data API עם `public` בלבד; ‏pg_graphql כבוי (Database → Extensions); "Automatically expose new tables" כבוי.
 6. **סודות חדשים, בטרמינל של המשתמשת** (נשמרים במנהל הסיסמאות, לא בקובץ): ‏`CRON_SECRET` חדש (`node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"`) וזוג VAPID חדש (`npx web-push generate-vapid-keys`). את `CRON_SECRET` מוסיפים גם כשורה חמישית ב-`.env.prod.local`: `PROD_CRON_SECRET=<אותו ערך>`. ב-SQL Editor של הפרודקשן: `select vault.create_secret('https://brunch-at-tals.vercel.app', 'app_url');` ו-`select vault.create_secret('<CRON_SECRET>', 'cron_secret');`.
 7. **אדמינים:** ‏`prod-admin` לטל ולמשתמשת (ראו "הוספת אדמין").
 8. **התוכן:** `node scripts/prod-copy-content.mjs` (יבש: כמה שורות יתווספו, יעודכנו וימחקו בכל טבלה, וכמה קבצים יועלו), ואז `--apply`.

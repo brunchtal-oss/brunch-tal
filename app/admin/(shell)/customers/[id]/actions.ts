@@ -1,9 +1,12 @@
 "use server"
 
+import { after } from "next/server"
+
 import type { ActionResult } from "@/lib/errors"
 import { callRpc } from "@/lib/rpc"
 import { resetLinkFor } from "@/lib/server/join-link"
 import { changeEmail } from "@/lib/server/privileged/account"
+import { sendVerificationEmail } from "@/lib/server/privileged/email-auth"
 import { anonymizeCustomer } from "@/lib/server/privileged/anonymize"
 import { createClient } from "@/lib/supabase/server"
 
@@ -101,7 +104,19 @@ export async function changeEmailAction(input: {
   ) {
     return INVALID
   }
-  return changeEmail(input.customerId, input.email, input.idempotencyKey)
+  const result = await changeEmail(
+    input.customerId,
+    input.email,
+    input.idempotencyKey
+  )
+  // Story 6.11: the new address is not verified; its verification email
+  // (which also voids a link sent to the old one) goes after the answer. A
+  // failed send never fails the change: her banner offers a resend.
+  if (result.ok) {
+    const customerId = input.customerId
+    after(() => sendVerificationEmail(customerId))
+  }
+  return result
 }
 
 export async function changePhoneAction(input: {

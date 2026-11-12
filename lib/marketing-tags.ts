@@ -83,6 +83,10 @@ const PRIVATE_PREFIXES = [
   "/login",
   "/join",
   "/reset",
+  // Story 6.11: the forgot-password page and the email links.
+  "/forgot-password",
+  "/verify-email",
+  "/reset-password",
   "/offline",
   "/api",
 ] as const

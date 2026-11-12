@@ -113,6 +113,7 @@ async function CustomerCardContent({
             <ContactRows
               customerId={card.profile.id}
               email={card.profile.email ?? ""}
+              emailVerified={card.profile.email_verified === true}
               phone={header.phone ?? ""}
               view={account}
             />

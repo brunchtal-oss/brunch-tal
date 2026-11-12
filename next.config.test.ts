@@ -70,7 +70,12 @@ describe("next.config", () => {
     ])
   })
 
-  it.each(["/reset/:path*", "/join/:path*"])(
+  it.each([
+    "/reset/:path*",
+    "/join/:path*",
+    "/verify-email",
+    "/reset-password",
+  ])(
     "sends no-referrer and no-store on the token route %s (AD-16)",
     async (source) => {
       const headers = await headersFor(source)
@@ -105,23 +110,22 @@ describe("next.config", () => {
     ).toMatchObject({ "Cache-Control": "private, no-store" })
   })
 
-  it("sends no-referrer and no-store on /login only when next is a join link", async () => {
-    const rules = (await nextConfig.headers!()) as HeaderRule[]
-    const login = rules.filter((r) => r.source === "/login")
-    expect(login).toHaveLength(1)
-    const [rule] = login
-    expect(rule.headers).toEqual([
-      { key: "Referrer-Policy", value: "no-referrer" },
-      { key: "Cache-Control", value: "private, no-store" },
-    ])
-    expect(rule.has).toHaveLength(1)
-    const has = rule.has![0]
-    expect(has).toMatchObject({ type: "query", key: "next" })
-    // Next anchors the value as ^value$ against the decoded query value.
-    const matcher = new RegExp(`^${has.value}$`)
-    expect(matcher.test("/join/abc")).toBe(true)
-    expect(matcher.test("/me")).toBe(false)
-  })
+  // Story 6.11: the login pages always (their next may carry a join or a
+  // verification token).
+  it.each(["/login", "/admin/login"])(
+    "sends no-referrer and no-store on %s, whatever the query",
+    async (source) => {
+      const rules = (await nextConfig.headers!()) as HeaderRule[]
+      const login = rules.filter((r) => r.source === source)
+      expect(login).toHaveLength(1)
+      const [rule] = login
+      expect(rule.has).toBeUndefined()
+      expect(rule.headers).toEqual([
+        { key: "Referrer-Policy", value: "no-referrer" },
+        { key: "Cache-Control", value: "private, no-store" },
+      ])
+    }
+  )
 
   it("serves the service worker with no-cache as JavaScript (story 5.9)", async () => {
     const headers = await headersFor("/sw.js")
@@ -141,17 +145,29 @@ describe("next.config", () => {
       incoming && typeof incoming === "object" ? (incoming.ignore ?? []) : []
     const token = "bN4dm_qiv1VXWlUrkcMtwzzxWqcHUw190IC7CbLMvv0"
 
-    for (const path of [`/reset/${token}`, `/join/${token}`]) {
+    for (const path of [
+      `/reset/${token}`,
+      `/join/${token}`,
+      // Story 6.11: the email links.
+      `/verify-email?token=${token}`,
+      `/reset-password?token_hash=${token}`,
+    ]) {
       expect(ignore.some((pattern) => pattern.test(path))).toBe(true)
     }
-    expect(ignore.some((pattern) => pattern.test("/login"))).toBe(false)
-    expect(ignore.some((pattern) => pattern.test("/login?next=/me"))).toBe(
+    expect(ignore.some((pattern) => pattern.test("/forgot-password"))).toBe(
       false
     )
+    expect(ignore.some((pattern) => pattern.test("/loginx"))).toBe(false)
+    expect(ignore.some((pattern) => pattern.test("/me"))).toBe(false)
+    // The login pages, always (story 6.11).
     for (const path of [
+      "/login",
+      "/admin/login",
       `/login?next=/join/${token}`,
       `/login?next=%2Fjoin%2F${token}`,
       `/login?x=1&next=%2Fjoin%2F${token}`,
+      `/login?next=%2Fverify-email%3Ftoken%3D${token}`,
+      `/admin/login?next=%2Fverify-email%3Ftoken%3D${token}`,
     ]) {
       expect(ignore.some((pattern) => pattern.test(path))).toBe(true)
     }

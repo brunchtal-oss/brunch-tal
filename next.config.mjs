@@ -50,10 +50,15 @@ function supabaseImagePatterns() {
   }
 }
 
-// /login?next=/join/<token> (an existing account logs in to claim a join
-// link, story 2.3) carries the token in its query: it is neither logged nor
-// sent as a referrer. The value may arrive encoded (%2F).
-const LOGIN_WITH_JOIN_NEXT = /^\/login\?(?:.*&)?next=(?:\/|%2F)join(?:\/|%2F)/i
+// The login pages may carry a token in their next (/login?next=/join/<token>,
+// story 2.3; /login?next=/verify-email?token=..., story 6.11): they are
+// never logged, and send no referrer and nothing cached, whatever the query
+// (the simplest rule that covers every next).
+const LOGIN_PAGES = /^\/(?:admin\/)?login(?:[/?#]|$)/
+
+// Story 6.11: the email links carry their token in the query
+// (/verify-email?token=..., our own; /reset-password?token_hash=..., Auth's).
+const EMAIL_LINK_ROUTES = /^\/(?:verify-email|reset-password)(?:[/?#]|$)/
 
 // Bots that get the whole HTML at once (metadata in <head>, no streamed
 // Suspense content) instead of the streamed page (fix-seo-editor). Next's
@@ -92,7 +97,9 @@ const nextConfig = {
   // Token routes are never logged (AD-16). The dev logger also prints Server
   // Function arguments (token, form data), so that log is off.
   logging: {
-    incomingRequests: { ignore: [/\/(reset|join)\//, LOGIN_WITH_JOIN_NEXT] },
+    incomingRequests: {
+      ignore: [/\/(reset|join)\//, LOGIN_PAGES, EMAIL_LINK_ROUTES],
+    },
     serverFunctions: false,
   },
 
@@ -115,10 +122,22 @@ const nextConfig = {
         source: "/join/:path*",
         headers: [{ key: "Referrer-Policy", value: "no-referrer" }, noStore],
       },
-      // The query value is decoded before matching (anchored by Next).
+      // Story 6.11: the email links (their token is in the query).
+      {
+        source: "/verify-email",
+        headers: [{ key: "Referrer-Policy", value: "no-referrer" }, noStore],
+      },
+      {
+        source: "/reset-password",
+        headers: [{ key: "Referrer-Policy", value: "no-referrer" }, noStore],
+      },
+      // The login pages, always (their next may carry a token).
       {
         source: "/login",
-        has: [{ type: "query", key: "next", value: "/join/.*" }],
+        headers: [{ key: "Referrer-Policy", value: "no-referrer" }, noStore],
+      },
+      {
+        source: "/admin/login",
         headers: [{ key: "Referrer-Policy", value: "no-referrer" }, noStore],
       },
       { source: "/me", headers: [noStore] },
