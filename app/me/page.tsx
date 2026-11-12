@@ -1,6 +1,8 @@
 import { Suspense } from "react"
 import type { Metadata } from "next"
 
+import { resendVerificationAction } from "@/app/(auth)/verify-email/actions"
+import { EmailVerificationBanner } from "@/components/shared/email-verification-banner"
 import { PageHeading } from "@/components/shared/page-heading"
 import { shellCopy } from "@/lib/copy/shell"
 import { createClient } from "@/lib/supabase/server"
@@ -22,6 +24,11 @@ export default function MePage() {
           <Greeting />
         </Suspense>
       </PageHeading>
+      {/* Story 6.11: above the home's sections while her email is not
+          verified. */}
+      <Suspense fallback={null}>
+        <EmailVerificationBanner resend={resendVerificationAction} />
+      </Suspense>
       <Suspense
         fallback={<p className="text-muted-foreground">{shellCopy.loading}</p>}
       >

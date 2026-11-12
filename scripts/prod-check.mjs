@@ -219,9 +219,27 @@ async function checkDatabaseSettings(prod) {
   )
 }
 
+// Story 6.11: emails go out through pg_net too (private.send_email), so
+// only the worker's responses count: the request ids of the emails are in
+// private.email_requests (before the 6.11 migration it does not exist: a ✗
+// line, not a crash).
 async function checkPushWorker(prod) {
+  const { rows: table } = await prod.query(
+    "select to_regclass('private.email_requests') is not null as ok"
+  )
+  if (!table[0].ok) {
+    line(
+      false,
+      "invoke_push_worker: חסרה הטבלה private.email_requests (המיגרציות של 6.11 עוד לא הוחלו)"
+    )
+    return
+  }
   const { rows } = await prod.query(
-    "select status_code, timed_out from net._http_response order by created desc limit 10"
+    `select r.status_code, r.timed_out from net._http_response r
+     where not exists (
+       select 1 from private.email_requests e where e.request_id = r.id
+     )
+     order by r.created desc limit 10`
   )
   if (rows.length > 0) {
     const bad = rows.filter((r) => r.status_code !== 200)
@@ -243,6 +261,22 @@ async function checkPushWorker(prod) {
       ? "invoke_push_worker: אין קריאות ב-6 השעות האחרונות, ואין התראה שמחכה"
       : `invoke_push_worker: ${due[0].n} התראות מחכות ואין קריאה (בודקים Vault ו-CRON_SECRET)`
   )
+}
+
+// Story 6.11: the email setup the database can show, read-only: the names
+// of the Resend key and of the site's address in Vault (never their values)
+// and the Send Email Hook function. Whether the hook is switched on is seen
+// only in the dashboard (Authentication -> Hooks; README runbook).
+async function checkEmail(prod) {
+  const { rows } = await prod.query(
+    `select
+       exists (select 1 from vault.secrets where name = 'resend_api_key') as has_key,
+       exists (select 1 from vault.secrets where name = 'site_url') as has_site,
+       to_regprocedure('public.send_email_hook(jsonb)') is not null as has_hook`
+  )
+  line(rows[0].has_key, "Vault: resend_api_key קיים (השם בלבד)")
+  line(rows[0].has_site, "Vault: site_url קיים (השם בלבד; קישור האיפוס במייל)")
+  line(rows[0].has_hook, "פונקציית ה-hook public.send_email_hook קיימת")
 }
 
 async function checkMarketingTags(prod) {
@@ -390,6 +424,7 @@ async function main() {
     await checkAuthSettings()
     await checkDatabaseSettings(prod)
     await checkPushWorker(prod)
+    await checkEmail(prod)
     await checkMarketingTags(prod)
     await checkLegalPages(prod)
     await checkCopiedTables(prod, dev)

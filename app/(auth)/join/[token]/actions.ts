@@ -2,11 +2,13 @@
 
 import { randomUUID } from "node:crypto"
 import { redirect } from "next/navigation"
+import { after } from "next/server"
 
 import { cleanToken } from "@/lib/auth/clean-token"
 import type { ConflictReason } from "@/lib/auth/join-link-state"
 import type { ErrorCode } from "@/lib/errors"
 import { callRpc } from "@/lib/rpc"
+import { sendVerificationEmail } from "@/lib/server/privileged/email-auth"
 import { getJoinTokenView, submitJoin } from "@/lib/server/privileged/join"
 import {
   clientIp,
@@ -104,6 +106,11 @@ export async function submitJoinAction(
   // The details belong to an existing account: the page reads the link
   // again (awaiting_login) and offers the login.
   if (result.data.outcome === "existing_account") redirect(`/join/${token}`)
+
+  // Story 6.11: the verification email to the new account, after the
+  // answer; a failed send never fails the join (her banner offers a resend).
+  const joinedId = result.data.customerId
+  if (joinedId) after(() => sendVerificationEmail(joinedId))
 
   // Sign in on the server so the customer lands in /me (AD-10 step 4).
   const supabase = await createClient()

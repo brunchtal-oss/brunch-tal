@@ -1,7 +1,9 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
+import { after } from "next/server"
 
+import { isEmailShape } from "@/lib/email"
 import {
   codeFromPostgrestError,
   detailFromPostgrestError,
@@ -9,6 +11,13 @@ import {
   type ErrorDetail,
 } from "@/lib/errors"
 import { callRpc } from "@/lib/rpc"
+import { changeOwnEmail } from "@/lib/server/privileged/account"
+import { sendVerificationEmail } from "@/lib/server/privileged/email-auth"
+import {
+  clientIp,
+  hitRateLimit,
+  rateLimitCode,
+} from "@/lib/server/privileged/rate-limit"
 import { parseSpecialBrunchInterests } from "@/lib/special-brunch"
 import { createClient } from "@/lib/supabase/server"
 import { isPlainDate } from "@/lib/time"
@@ -79,11 +88,25 @@ function done(): ActionResult {
   return { ok: true, data: undefined }
 }
 
-export async function updateDetails(input: {
+type DetailsInput = {
   fullName: string
   dietaryNotes: string
   specialBrunchInterests: string[]
-}): Promise<ActionResult> {
+}
+
+type DetailsFields = {
+  full_name: string
+  dietary_notes: string | null
+  special_brunch_interests: NonNullable<
+    ReturnType<typeof parseSpecialBrunchInterests>
+  >
+}
+
+// The details' shape: the error to return, or the columns to write.
+function detailsFields(
+  input: DetailsInput
+):
+  { ok: false; error: ActionResult<never> } | { ok: true; row: DetailsFields } {
   const fullName = text(input?.fullName)
   // Required as a string ("" clears): a missing value never erases notes.
   const dietary = text(input?.dietaryNotes)
@@ -92,28 +115,55 @@ export async function updateDetails(input: {
   const interests = Array.isArray(input?.specialBrunchInterests)
     ? parseSpecialBrunchInterests(input.specialBrunchInterests)
     : null
-  if (!fullName) return invalid("full_name", "FIELD_REQUIRED")
-  if (fullName.length > 200) return invalid("full_name")
-  if (dietary === null || dietary.length > 2000) return invalid("dietary_notes")
-  if (interests === null) return invalid("special_brunch_interests")
+  if (!fullName)
+    return { ok: false, error: invalid("full_name", "FIELD_REQUIRED") }
+  if (fullName.length > 200) return { ok: false, error: invalid("full_name") }
+  if (dietary === null || dietary.length > 2000) {
+    return { ok: false, error: invalid("dietary_notes") }
+  }
+  if (interests === null) {
+    return { ok: false, error: invalid("special_brunch_interests") }
+  }
+  return {
+    ok: true,
+    row: {
+      full_name: fullName,
+      dietary_notes: dietary || null,
+      special_brunch_interests: interests,
+    },
+  }
+}
+
+// One column update of her own profile row, with her session (RLS).
+async function writeDetails(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  row: DetailsFields
+): Promise<ActionResult> {
+  const { data, error } = await supabase
+    .from("profiles")
+    .update(row)
+    .eq("id", userId)
+    .select("id")
+  if (error) return fail(error)
+  // RLS let no row through: not an active customer.
+  if (!data?.length) return { ok: false, code: "NOT_AUTHORIZED" }
+  return { ok: true, data: undefined }
+}
+
+export async function updateDetails(
+  input: DetailsInput
+): Promise<ActionResult> {
+  const fields = detailsFields(input)
+  if (!fields.ok) return fields.error
 
   const supabase = await createClient()
   const { data: claims } = await supabase.auth.getClaims()
   const userId = claims?.claims?.sub
   if (typeof userId !== "string") return { ok: false, code: "NOT_AUTHORIZED" }
 
-  const { data, error } = await supabase
-    .from("profiles")
-    .update({
-      full_name: fullName,
-      dietary_notes: dietary || null,
-      special_brunch_interests: interests,
-    })
-    .eq("id", userId)
-    .select("id")
-  if (error) return fail(error)
-  // RLS let no row through: not an active customer.
-  if (!data?.length) return { ok: false, code: "NOT_AUTHORIZED" }
+  const saved = await writeDetails(supabase, userId, fields.row)
+  if (!saved.ok) return saved
   return done()
 }
 
@@ -198,4 +248,102 @@ export async function setPersonalPhotoConsent(input: {
   )
   if (!result.ok) return result
   return done()
+}
+
+// Story 6.11 (user decisions 2026-11-11 and 2026-11-12): the details form
+// with a new email in it. The form calls this only when the address
+// changed; otherwise updateDetails. The session, the details' shape, the
+// rate limit (the email bucket, per IP and per user id), the email's shape
+// (the new address twice, her current password); then changeOwnEmail: her
+// password on a stateless client first (wrong: nothing is saved), then the
+// details, then begin_my_email_change (the duplicate check), Auth,
+// finish_my_email_change. A failure of the email part after the details
+// were saved comes back on the email field (the details stay saved; a new
+// save repeats them harmlessly). Her session is then refreshed so its
+// claims carry the new address, and the verification email goes to it
+// after the answer (a failed send never fails the change). A stuck change
+// (Auth failed after begin) stays email_change_pending, in Tal's "to
+// handle" after 15 minutes.
+export async function updateDetailsWithEmailAction(
+  input: DetailsInput & {
+    email: string
+    confirm: string
+    password: string
+    idempotencyKey: string
+  }
+): Promise<ActionResult<{ email: string }>> {
+  const supabase = await createClient()
+  const { data: claims } = await supabase.auth.getClaims()
+  const userId = claims?.claims?.sub
+  if (typeof userId !== "string" || !userId) {
+    return { ok: false, code: "NOT_AUTHORIZED" }
+  }
+
+  const fields = detailsFields(input)
+  if (!fields.ok) return fields.error
+
+  // Its own id, so the banner's resend never uses up her changes.
+  const limited = rateLimitCode(
+    await hitRateLimit("email", {
+      ip: await clientIp(),
+      id: `change:${userId}`,
+    })
+  )
+  if (limited) return { ok: false, code: limited }
+
+  const email = text(input?.email)?.toLowerCase() ?? ""
+  const confirm = text(input?.confirm)?.toLowerCase() ?? ""
+  if (!email) return invalid("email", "FIELD_REQUIRED")
+  if (!isEmailShape(email)) return invalid("email")
+  if (confirm !== email) {
+    return {
+      ok: false,
+      code: "EMAILS_DONT_MATCH",
+      detail: { field: "confirm" },
+    }
+  }
+  if (typeof input.password !== "string" || !input.password) {
+    return invalid("password", "FIELD_REQUIRED")
+  }
+  if (input.password.length > 200) return invalid("password")
+  if (!UUID.test(String(input.idempotencyKey))) return invalid("email")
+
+  // Her current address as Auth holds it (the session's claims may be
+  // older, after Tal changed it).
+  const { data: current, error: userError } = await supabase.auth.getUser()
+  const currentEmail = current.user?.email
+  if (userError || !currentEmail || current.user?.id !== userId) {
+    return { ok: false, code: "SERVER_ERROR" }
+  }
+
+  const result = await changeOwnEmail(
+    { userId, currentEmail, email, password: input.password },
+    input.idempotencyKey,
+    () => writeDetails(supabase, userId, fields.row)
+  )
+  if (!result.ok) {
+    const { stage, ...failure } = result
+    if (stage === "details") return failure
+    // The details are saved; the view shows them on the next load.
+    revalidatePath("/me/profile")
+    if (
+      failure.code === "WRONG_PASSWORD" ||
+      failure.code === "TOO_MANY_ATTEMPTS" ||
+      failure.detail?.field
+    ) {
+      return failure
+    }
+    return { ...failure, detail: { field: "email" } }
+  }
+
+  // The new address into her session's claims (the login, the profile).
+  const { error } = await supabase.auth.refreshSession()
+  if (error) {
+    console.error("profile.refresh_failed", {
+      authCode: error.code ?? "unknown",
+    })
+  }
+  after(() => sendVerificationEmail(userId))
+  revalidatePath("/me/profile")
+  return { ok: true, data: { email } }
 }

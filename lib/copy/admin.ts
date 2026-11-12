@@ -2241,6 +2241,9 @@ export const adminCopy = {
       account: {
         // The pencils after the email and the phone in "פרטים" (fix 9).
         editEmail: "עריכת המייל",
+        // Story 6.11: the email row state (true only with the record).
+        emailVerified: "המייל אומת",
+        emailNotVerified: "המייל עוד לא אומת",
         editPhone: "עריכת הטלפון",
         changeEmail: "שינוי מייל",
         emailChanged: "המייל עודכן. מעכשיו נכנסים איתו",
@@ -2497,6 +2500,8 @@ export const adminCopy = {
       admin_update_notification_template: "עריכת תבנית התראה",
       admin_issue_link: "הפקת קישור",
       admin_finish_email_change: "שינוי מייל",
+      // Story 6.11.
+      finish_my_email_change: "שינוי מייל על ידי הלקוחה",
       admin_change_phone: "שינוי מספר טלפון",
       // Story 4.6.
       admin_anonymize_customer: "הסרת פרטים אישיים",

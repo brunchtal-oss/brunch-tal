@@ -15,6 +15,18 @@ import {
   removeDetailsAction,
 } from "./actions"
 
+// Story 6.11: the verification email is queued in after().
+const afterTasks: (() => unknown)[] = []
+const sendVerificationEmail = vi.fn()
+vi.mock("next/server", () => ({
+  after: (task: () => unknown) => {
+    afterTasks.push(task)
+  },
+}))
+vi.mock("@/lib/server/privileged/email-auth", () => ({
+  sendVerificationEmail: (...args: unknown[]) => sendVerificationEmail(...args),
+}))
+
 const callRpc = vi.fn()
 const changeEmail = vi.fn()
 const resetLinkFor = vi.fn(
@@ -119,6 +131,9 @@ describe("the account section's actions (story 2.8)", () => {
       })
     ).resolves.toEqual({ ok: true, data: undefined })
     expect(changeEmail).toHaveBeenLastCalledWith(ID, "new@example.test", KEY)
+    // Story 6.11: the new address gets its verification email after the answer.
+    for (const task of afterTasks.splice(0)) await task()
+    expect(sendVerificationEmail).toHaveBeenLastCalledWith(ID)
 
     changeEmail.mockClear()
     for (const input of [

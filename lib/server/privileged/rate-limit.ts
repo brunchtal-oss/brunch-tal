@@ -14,11 +14,15 @@ import { createServiceClient } from "@/lib/server/privileged/service-client"
 //          one IP never lock the account for everyone (the admin too).
 //          Guessing one account from many IPs is left to the CAPTCHA of
 //          story 6.9.
-//   token: 20 per IP, 10 per token (join submit, claim, reset submit)
+//   token: 20 per IP, 10 per token (join submit, claim, reset submit; story
+//          6.11: the email links, id = the link's token or token_hash)
+//   email: 5 per IP, 3 per id (story 6.11: forgot password, id = the
+//          normalized email; resend, id = "resend:<user id>"; self email
+//          change, id = "change:<user id>")
 // The keys reach the database only to be hashed there; they are never
 // logged here (AD-22).
 
-export type RateLimitBucket = "login" | "token"
+export type RateLimitBucket = "login" | "token" | "email"
 
 export type RateLimitKeys = {
   // The client IP (clientIp()).

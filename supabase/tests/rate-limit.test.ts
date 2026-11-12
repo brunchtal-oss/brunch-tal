@@ -1,6 +1,7 @@
 // Story 2.8: public.rate_limit_hit, the one limiter of the login and the
 // token actions. Fixed 15-minute window, every attempt counts; login: 20 per
-// IP and 8 per account, token: 20 per IP and 10 per token. Keys are stored
+// IP and 8 per account, token: 20 per IP and 10 per token; email (story
+// 6.11): 5 per IP and 3 per id. Keys are stored
 // only as sha256. Everything runs in inRollback with keys of this run.
 
 import { describe, expect, it } from "vitest"
@@ -71,6 +72,34 @@ describe("rate_limit_hit", () => {
       expect(results[10]).toBe(false)
       // The same keys in the login bucket start from zero.
       expect(await hit(db, "login", keys)).toBe(true)
+    })
+  })
+
+  // Story 6.11: sending an email (forgot password, resend, self email
+  // change): 5 per IP and 3 per id.
+  it("email: the 4th send for one id is refused, from any IP", async () => {
+    await inRollback(async (db) => {
+      await asServiceRole(db)
+      const target = id("email_target")
+      const results: boolean[] = []
+      for (let i = 0; i < 4; i++) {
+        results.push(await hit(db, "email", [ip(`email_ip_${i}`), target]))
+      }
+      expect(results).toEqual([true, true, true, false])
+    })
+  })
+
+  it("email: the 6th send from one IP is refused, for any id", async () => {
+    await inRollback(async (db) => {
+      await asServiceRole(db)
+      const address = ip("email_ip")
+      const results: boolean[] = []
+      for (let i = 0; i < 6; i++) {
+        results.push(await hit(db, "email", [address, id(`email_id_${i}`)]))
+      }
+      expect(results).toEqual([true, true, true, true, true, false])
+      // The same keys in the token bucket start from zero.
+      expect(await hit(db, "token", [address, id("email_id_0")])).toBe(true)
     })
   })
 

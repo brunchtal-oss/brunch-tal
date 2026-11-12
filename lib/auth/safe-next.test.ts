@@ -8,6 +8,8 @@ describe("safeNext", () => {
     ["/me/bookings?tab=credits", "/me/bookings?tab=credits"],
     ["/join/abc#top", "/join/abc#top"],
     ["/a/../me", "/me"],
+    // Story 6.11: the verification link's way back after the login.
+    ["/verify-email?token=abc_-123", "/verify-email?token=abc_-123"],
   ])("accepts internal path %s", (input, expected) => {
     expect(safeNext(input)).toBe(expected)
   })

@@ -1,10 +1,12 @@
 "use server"
 
 import { randomUUID } from "node:crypto"
+import { after } from "next/server"
 
 import { cleanToken } from "@/lib/auth/clean-token"
 import { toSessionRole } from "@/lib/auth/destination"
 import { callRpc } from "@/lib/rpc"
+import { sendVerificationEmail } from "@/lib/server/privileged/email-auth"
 import { submitJoinFill } from "@/lib/server/privileged/join"
 import { createClient } from "@/lib/supabase/server"
 
@@ -98,7 +100,11 @@ export async function submitJoinFillAction(
 
   const data = result.data
   switch (data.outcome) {
-    case "joined":
+    case "joined": {
+      // Story 6.11: the verification email to the new account, after the
+      // answer; a failed send never fails the join.
+      const joinedId = data.customerId
+      if (joinedId) after(() => sendVerificationEmail(joinedId))
       return {
         status: "fill_joined",
         fullName: validated.input.fullName,
@@ -106,6 +112,7 @@ export async function submitJoinFillAction(
         customerId: data.customerId,
         token: null,
       }
+    }
     case "conflict":
       return { status: "conflict", reason: data.reason, token: null }
     // The details belong to another account: an error on the email field,

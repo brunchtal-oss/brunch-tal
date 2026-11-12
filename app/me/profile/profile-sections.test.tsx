@@ -6,15 +6,21 @@ import { customerCopy } from "@/lib/copy/customer"
 import { SPECIAL_BRUNCH_FALLBACK } from "@/lib/special-brunch"
 
 import { BabiesSection } from "./babies-section"
-import { DetailsSection, detailsInput } from "./details-section"
+import { DetailsSection, detailsInput, emailDiffers } from "./details-section"
 import { setPersonalPhotoConsent, setPhotoConsent } from "./actions"
 import { CONSENT_SAVERS, PhotoConsentSection } from "./photo-consent-form"
 
+// Story 6.11: the email row's resend notice refreshes the page.
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }))
+vi.mock("@/app/(auth)/verify-email/actions", () => ({
+  resendVerificationAction: vi.fn(),
+}))
 vi.mock("./actions", () => ({
   addBaby: vi.fn(),
   deleteBaby: vi.fn(),
   updateBaby: vi.fn(),
   updateDetails: vi.fn(),
+  updateDetailsWithEmailAction: vi.fn(),
   setPhotoConsent: vi.fn(),
   setPersonalPhotoConsent: vi.fn(),
 }))
@@ -132,6 +138,56 @@ describe("DetailsSection", () => {
     expect(box("grandma")).toContain('checked=""')
     expect(box("couples")).not.toContain("checked")
     expect(box("grandpa")).not.toContain("checked")
+  })
+
+  // Story 6.11 (user decision 2026-11-12): the email and the phone in the
+  // edit form; the separate "שינוי מייל" is gone.
+  it("the edit form: her email as a field, the phone read only with the WhatsApp note", () => {
+    const html = renderToStaticMarkup(
+      <DetailsSection
+        fullName="Dana"
+        dietaryNotes={null}
+        specialBrunch={SPECIAL_BRUNCH_FALLBACK}
+        specialBrunchInterests={[]}
+        phone="054-123-4567"
+        email="dana@example.test"
+        contactHref="https://wa.me/972500000000"
+        defaultEditing
+      />
+    )
+    const emailInput = /<input[^>]*id="email"[^>]*>/.exec(html)?.[0]
+    expect(emailInput).toContain('value="dana@example.test"')
+    // The phone is text, never a field.
+    expect(html).toContain("054-123-4567")
+    expect(html).not.toMatch(/<input[^>]*value="054-123-4567"/)
+    expect(html).toContain(`לשינוי הטלפון <a href="https://wa.me/972500000000"`)
+    expect(html).toContain(`>${copy.contactPhrase}</a>`)
+    // The new address again and the password open only once it differs.
+    expect(html).not.toContain('id="confirmEmail"')
+    expect(html).not.toContain('id="currentPassword"')
+    expect(html).not.toContain("שינוי מייל")
+    expect(html).not.toMatch(/ טל|לטל|עם טל/)
+  })
+
+  it("no business details: the phone's note stays plain text", () => {
+    const html = renderToStaticMarkup(
+      <DetailsSection
+        fullName="Dana"
+        dietaryNotes={null}
+        specialBrunch={SPECIAL_BRUNCH_FALLBACK}
+        specialBrunchInterests={[]}
+        phone="054-123-4567"
+        email="dana@example.test"
+        defaultEditing
+      />
+    )
+    expect(html).toContain(copy.phoneChangeNote)
+    expect(html).not.toContain("wa.me")
+  })
+
+  it("emailDiffers ignores case and spaces, as the server does", () => {
+    expect(emailDiffers(" Dana@Example.test ", "dana@example.test")).toBe(false)
+    expect(emailDiffers("dana2@example.test", "dana@example.test")).toBe(true)
   })
 
   it("the save sends every checked code, or [] for none", () => {

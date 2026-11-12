@@ -3,6 +3,18 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { claimJoinAction, submitJoinAction } from "./actions"
 import { validateJoin } from "./join-input"
 
+// Story 6.11: the verification email is queued in after().
+const afterTasks: (() => unknown)[] = []
+const sendVerificationEmail = vi.fn()
+vi.mock("next/server", () => ({
+  after: (task: () => unknown) => {
+    afterTasks.push(task)
+  },
+}))
+vi.mock("@/lib/server/privileged/email-auth", () => ({
+  sendVerificationEmail: (...args: unknown[]) => sendVerificationEmail(...args),
+}))
+
 const submitJoin = vi.fn()
 const getJoinTokenView = vi.fn()
 const signInWithPassword = vi.fn()
@@ -333,6 +345,27 @@ describe("submitJoinAction", () => {
       email: "dev-join@example.com",
       password: PASSWORD,
     })
+  })
+
+  it("queues the verification email to the new account after a join (story 6.11)", async () => {
+    afterTasks.length = 0
+    sendVerificationEmail.mockClear()
+    const CUSTOMER_ID = "55555555-5555-4555-8555-555555555555"
+    submitJoin.mockResolvedValue({
+      ok: true,
+      data: {
+        outcome: "joined",
+        email: "dev-join@example.com",
+        customerId: CUSTOMER_ID,
+      },
+    })
+    signInWithPassword.mockResolvedValue({
+      error: { code: "invalid_credentials" },
+    })
+    await submitJoinAction(null, form())
+    expect(sendVerificationEmail).not.toHaveBeenCalled()
+    for (const task of afterTasks) await task()
+    expect(sendVerificationEmail).toHaveBeenCalledWith(CUSTOMER_ID)
   })
 
   it("shows the login screen when the sign-in after joining fails", async () => {

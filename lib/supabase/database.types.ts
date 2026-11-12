@@ -2141,36 +2141,16 @@ export type Database = {
         }
         Returns: Json
       }
-      admin_export_customers:
-        | {
-            Args: {
-              p_activity: string
-              p_columns: string[]
-              p_query: string
-              p_scope: string
-            }
-            Returns: Json
-          }
-        | {
-            Args: {
-              p_activity: string
-              p_columns: string[]
-              p_interest: string
-              p_query: string
-              p_scope: string
-            }
-            Returns: Json
-          }
-        | {
-            Args: {
-              p_activity: string
-              p_columns: string[]
-              p_interests: string[]
-              p_query: string
-              p_scope: string
-            }
-            Returns: Json
-          }
+      admin_export_customers: {
+        Args: {
+          p_activity: string
+          p_columns: string[]
+          p_interests: string[]
+          p_query: string
+          p_scope: string
+        }
+        Returns: Json
+      }
       admin_finish_anonymize_customer: {
         Args: { p_customer_id: string; p_idempotency_key: string }
         Returns: Json
@@ -2234,16 +2214,10 @@ export type Database = {
         Args: { p_customer_id: string }
         Returns: Json
       }
-      admin_list_customers:
-        | { Args: { p_activity: string; p_query: string }; Returns: Json }
-        | {
-            Args: { p_activity: string; p_interest: string; p_query: string }
-            Returns: Json
-          }
-        | {
-            Args: { p_activity: string; p_interests: string[]; p_query: string }
-            Returns: Json
-          }
+      admin_list_customers: {
+        Args: { p_activity: string; p_interests: string[]; p_query: string }
+        Returns: Json
+      }
       admin_list_links: { Args: never; Returns: Json }
       admin_list_media: { Args: never; Returns: Json }
       admin_list_open_cards: { Args: { p_filter: string }; Returns: Json }
@@ -2472,6 +2446,10 @@ export type Database = {
         }
         Returns: Json
       }
+      begin_my_email_change: {
+        Args: { p_email: string; p_idempotency_key: string; p_user_id: string }
+        Returns: Json
+      }
       book_session: {
         Args: { p_event_id: string; p_idempotency_key: string }
         Returns: Json
@@ -2501,6 +2479,18 @@ export type Database = {
         Returns: Json
       }
       claim_push_jobs: { Args: { p_limit: number }; Returns: Json }
+      consume_email_verification: {
+        Args: { p_session_user_id: string; p_token: string }
+        Returns: Json
+      }
+      finish_my_email_change: {
+        Args: {
+          p_idempotency_key: string
+          p_succeeded: boolean
+          p_user_id: string
+        }
+        Returns: Json
+      }
       finish_push_job: {
         Args: {
           p_delivered: string[]
@@ -2510,9 +2500,11 @@ export type Database = {
         }
         Returns: Json
       }
+      get_email_reset_eligibility: { Args: { p_email: string }; Returns: Json }
       get_event_availability: { Args: { p_event_ids: string[] }; Returns: Json }
       get_my_bookings: { Args: never; Returns: Json }
       get_my_credits: { Args: never; Returns: Json }
+      get_my_email_verified: { Args: never; Returns: Json }
       get_my_entitlements: { Args: never; Returns: Json }
       get_my_session_role: { Args: never; Returns: string }
       get_my_waitlist: { Args: never; Returns: Json }
@@ -2628,6 +2620,10 @@ export type Database = {
         Args: { p_endpoint: string; p_keys: Json; p_platform: string }
         Returns: Json
       }
+      request_email_verification: {
+        Args: { p_site_url: string; p_user_id: string }
+        Returns: Json
+      }
       reset_begin: {
         Args: { p_idempotency_key: string; p_token: string }
         Returns: Json
@@ -2636,6 +2632,7 @@ export type Database = {
         Args: { p_idempotency_key: string; p_token: string }
         Returns: Json
       }
+      send_email_hook: { Args: { event: Json }; Returns: Json }
       set_booking_guest_details: {
         Args: {
           p_booking_id: string

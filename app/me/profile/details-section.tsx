@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState, useTransition } from "react"
 
+import { PasswordInput } from "@/components/auth/password-input"
+import { ContactText } from "@/components/shared/contact-text"
 import { InlineNotice } from "@/components/shared/inline-notice"
 import { OnlineButton } from "@/components/shared/online-button"
 import { cubeTitleClass } from "@/components/shared/section-title"
@@ -14,21 +16,27 @@ import { SpecialBrunchFieldset } from "@/components/shared/special-brunch-fields
 import type { SpecialBrunchContent } from "@/lib/content/schema"
 import { customerCopy } from "@/lib/copy/customer"
 import { joinCopy } from "@/lib/copy/join"
+import { MAX_EMAIL_LENGTH } from "@/lib/email"
 import { errorMessage, type ErrorCode, type ErrorDetail } from "@/lib/errors"
+import { newIdempotencyKey } from "@/lib/idempotency"
 import {
   SPECIAL_BRUNCH_FIELD,
   specialBrunchLabels,
   type SpecialBrunchCode,
 } from "@/lib/special-brunch"
 
-import { updateDetails } from "./actions"
+import { updateDetails, updateDetailsWithEmailAction } from "./actions"
+import { EmailRow } from "./email-row"
 import { toastSaved } from "./profile-toaster"
 
 const copy = customerCopy.profile
+const INPUT = "h-12 text-start text-base"
 
 // The customer's details (story 2.10): name and dietary notes, editable
-// together; phone and email read-only, with no contact line (user
-// decision 2026-10-06). An empty field shows nothing, but the
+// together. Story 6.11 (user decision 2026-11-12): the edit form also
+// holds her email (a change needs the new address twice and her current
+// password) and shows the phone read only, with the way to ask for a
+// change; the view shows both under a line. An empty field shows nothing, but the
 // dietary row, which says where to add them. No
 // optimistic update: the view shows what the server returned after the
 // save (revalidatePath). A cube (DESIGN › card) with a cube title (fix 11,
@@ -41,6 +49,8 @@ export function DetailsSection({
   specialBrunchInterests,
   phone,
   email,
+  emailVerified = false,
+  contactHref = null,
   defaultEditing = false,
 }: {
   fullName: string
@@ -49,6 +59,10 @@ export function DetailsSection({
   specialBrunchInterests: SpecialBrunchCode[]
   phone: string | null
   email: string | null
+  // Story 6.11: get_my_email_verified (never true without the record).
+  emailVerified?: boolean
+  // The business WhatsApp, for the phone's note (null: plain text).
+  contactHref?: string | null
   // Opens in the edit form (a static render in tests).
   defaultEditing?: boolean
 }) {
@@ -58,6 +72,10 @@ export function DetailsSection({
     detail?: ErrorDetail
   } | null>(null)
   const [pending, startTransition] = useTransition()
+  // Story 6.11: the email part of the form.
+  const [emailChanged, setEmailChanged] = useState(false)
+  const [changedTo, setChangedTo] = useState<string | null>(null)
+  const [key, setKey] = useState(() => newIdempotencyKey())
   const editRef = useRef<HTMLButtonElement>(null)
   const nameRef = useRef<HTMLInputElement>(null)
   // Set when the form closes, so focus goes back to "עריכה" (not on load).
@@ -76,6 +94,7 @@ export function DetailsSection({
   const close = () => {
     returnFocus.current = true
     setError(null)
+    setEmailChanged(false)
     setEditing(false)
   }
 
@@ -83,11 +102,32 @@ export function DetailsSection({
     event.preventDefault()
     if (pending) return
     const data = new FormData(event.currentTarget)
+    const newEmail = String(data.get("email") ?? "")
+    // The email part only when the address really changed.
+    const withEmail = email !== null && emailDiffers(newEmail, email)
     startTransition(async () => {
-      const result = await updateDetails(detailsInput(data))
+      if (!withEmail) {
+        const result = await updateDetails(detailsInput(data))
+        if (result.ok) {
+          close()
+          toastSaved()
+        } else {
+          setError({ code: result.code, detail: result.detail })
+        }
+        return
+      }
+      const result = await updateDetailsWithEmailAction({
+        ...detailsInput(data),
+        email: newEmail,
+        confirm: String(data.get("confirmEmail") ?? ""),
+        password: String(data.get("currentPassword") ?? ""),
+        idempotencyKey: key,
+      })
+      // A new key after every answer (one key per call).
+      setKey(newIdempotencyKey())
       if (result.ok) {
+        setChangedTo(result.data.email)
         close()
-        toastSaved()
       } else {
         setError({ code: result.code, detail: result.detail })
       }
@@ -98,6 +138,13 @@ export function DetailsSection({
   const nameError = !!error && field === "full_name"
   const notesError = !!error && field === "dietary_notes"
   const interestsError = !!error && field === "special_brunch_interests"
+  // An error that one of the fields shows (the contact part's included).
+  const fieldError =
+    !!error &&
+    (!!field ||
+      error.code === "EMAIL_TAKEN" ||
+      error.code === "EMAIL_UNCHANGED" ||
+      error.code === "WRONG_PASSWORD")
   const interestLabels = specialBrunchLabels(
     specialBrunch,
     specialBrunchInterests
@@ -120,6 +167,8 @@ export function DetailsSection({
             className="min-h-11 underline underline-offset-4"
             onClick={() => {
               setError(null)
+              setChangedTo(null)
+              setKey(newIdempotencyKey())
               setEditing(true)
             }}
           >
@@ -175,7 +224,19 @@ export function DetailsSection({
             defaultValue={specialBrunchInterests}
             error={interestsError ? errorMessage("INVALID_INPUT") : undefined}
           />
-          {error && !nameError && !notesError && !interestsError && (
+          {(phone || email !== null) && (
+            <ContactFields
+              phone={phone}
+              email={email}
+              contactHref={contactHref}
+              emailChanged={emailChanged}
+              onEmailInput={(value) =>
+                setEmailChanged(emailDiffers(value, email))
+              }
+              error={error}
+            />
+          )}
+          {error && !fieldError && (
             <InlineNotice tone="error">{errorMessage(error.code)}</InlineNotice>
           )}
           <FormButtons pending={pending} onCancel={close} />
@@ -210,7 +271,7 @@ export function DetailsSection({
         </dl>
       )}
 
-      {(phone || email) && (
+      {!editing && (phone || email) && (
         <div className="flex flex-col gap-3 border-t border-border pt-4">
           <dl className="flex flex-col gap-3">
             {phone && (
@@ -218,18 +279,157 @@ export function DetailsSection({
                 <bdi dir="ltr">{phone}</bdi>
               </Row>
             )}
+            {/* Story 6.11: the verified state; the change is in the form. */}
             {email && (
-              <Row label={copy.email}>
-                <bdi dir="ltr" className="break-all">
-                  {email}
-                </bdi>
-              </Row>
+              <EmailRow
+                email={email}
+                verified={emailVerified}
+                changedTo={changedTo}
+              />
             )}
           </dl>
         </div>
       )}
     </section>
   )
+}
+
+// Story 6.11 (user decision 2026-11-12): the contact part of the edit form.
+// The phone is read only (the source document, line 169: a phone change
+// goes through Tal), with the way to ask. The email is a field with her
+// address; once it differs, the new address again and her current
+// password open under it (both required for a change).
+function ContactFields({
+  phone,
+  email,
+  contactHref,
+  emailChanged,
+  onEmailInput,
+  error,
+}: {
+  phone: string | null
+  email: string | null
+  contactHref: string | null
+  emailChanged: boolean
+  onEmailInput: (value: string) => void
+  error: { code: ErrorCode; detail?: ErrorDetail } | null
+}) {
+  const field = error?.detail?.field ?? null
+  const emailError =
+    !!error &&
+    (field === "email" ||
+      error.code === "EMAIL_TAKEN" ||
+      error.code === "EMAIL_UNCHANGED")
+  const confirmError = !!error && field === "confirm"
+  const passwordError =
+    !!error && (field === "password" || error.code === "WRONG_PASSWORD")
+
+  return (
+    <div className="flex flex-col gap-6 border-t border-border pt-5">
+      {phone && (
+        <div className="flex flex-col gap-1">
+          <span className="text-[15px] text-muted-foreground">
+            {copy.phone}
+          </span>
+          <bdi dir="ltr" className="text-base">
+            {phone}
+          </bdi>
+          <span className="text-[15px] text-muted-foreground">
+            <ContactText
+              text={copy.phoneChangeNote}
+              href={contactHref}
+              phrase={copy.contactPhrase}
+            />
+          </span>
+        </div>
+      )}
+      {email !== null && (
+        <>
+          <Field data-invalid={emailError || undefined}>
+            <FieldLabel htmlFor="email">{copy.email}</FieldLabel>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              dir="ltr"
+              defaultValue={email}
+              maxLength={MAX_EMAIL_LENGTH}
+              required
+              aria-required
+              aria-invalid={emailError || undefined}
+              aria-describedby={emailError ? "email-error" : undefined}
+              onChange={(event) => onEmailInput(event.currentTarget.value)}
+              className={INPUT}
+            />
+            {emailError && (
+              <FieldError id="email-error">
+                {errorMessage(error!.code)}
+              </FieldError>
+            )}
+          </Field>
+          {emailChanged && (
+            <>
+              <Field data-invalid={confirmError || undefined}>
+                <FieldLabel htmlFor="confirmEmail">
+                  {copy.confirmEmail}
+                </FieldLabel>
+                <Input
+                  id="confirmEmail"
+                  name="confirmEmail"
+                  type="email"
+                  inputMode="email"
+                  autoComplete="off"
+                  dir="ltr"
+                  maxLength={MAX_EMAIL_LENGTH}
+                  required
+                  aria-required
+                  aria-invalid={confirmError || undefined}
+                  aria-describedby={
+                    confirmError ? "confirmEmail-error" : undefined
+                  }
+                  className={INPUT}
+                />
+                {confirmError && (
+                  <FieldError id="confirmEmail-error">
+                    {errorMessage(error!.code)}
+                  </FieldError>
+                )}
+              </Field>
+              <Field data-invalid={passwordError || undefined}>
+                <FieldLabel htmlFor="currentPassword">
+                  {copy.currentPassword}
+                </FieldLabel>
+                <PasswordInput
+                  id="currentPassword"
+                  name="currentPassword"
+                  autoComplete="current-password"
+                  required
+                  aria-required
+                  aria-invalid={passwordError || undefined}
+                  aria-describedby={
+                    passwordError ? "currentPassword-error" : undefined
+                  }
+                />
+                {passwordError && (
+                  <FieldError id="currentPassword-error">
+                    {errorMessage(error!.code)}
+                  </FieldError>
+                )}
+              </Field>
+            </>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
+// Whether the field holds another address than hers (case and spaces
+// aside, as the server compares).
+export function emailDiffers(value: string, email: string | null): boolean {
+  return value.trim().toLowerCase() !== (email ?? "").trim().toLowerCase()
 }
 
 // What the details form sends to updateDetails: every checked special

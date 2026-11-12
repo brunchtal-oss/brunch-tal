@@ -192,6 +192,35 @@ export const customerCopy = {
     // /me/notifications (story 5.21).
     notificationsRow: "התראות",
     installGuide: "התקנת האפליקציה",
+    // Story 6.11: the email row's state, and her own email change in the
+    // details' edit form (the new address again and her current password,
+    // shown once the address differs; user decision 2026-11-12).
+    emailVerified: "המייל אומת",
+    emailNotVerified: "המייל עוד לא אומת",
+    confirmEmail: "המייל החדש שוב",
+    currentPassword: "הסיסמה הנוכחית",
+    // Under the read-only phone in the edit form: a phone change goes
+    // through the business (source document line 169); "צרי קשר" links to
+    // its WhatsApp.
+    phoneChangeNote: "לשינוי הטלפון צרי קשר",
+    contactPhrase: "צרי קשר",
+    // "המייל עודכן. מעכשיו מתחברים עם {email}. שלחנו אליו מייל אימות."
+    emailChangedBefore: "המייל עודכן. מעכשיו מתחברים עם ",
+    emailChangedAfter: ". שלחנו אליו מייל אימות.",
+  },
+  // Story 6.11: the banner while the account's email is not verified (the
+  // customer home, and the admin home too).
+  emailVerification: {
+    notice:
+      "כתובת המייל שלך עוד לא אומתה. אחרי האימות אפשר יהיה לאפס סיסמה לבד.",
+    send: "שליחת מייל אימות",
+    sending: "שולחת…",
+    // "שלחנו מייל אימות אל {email}. הקישור…": the address between the two
+    // parts, in its own <bdi>.
+    sentBefore: "שלחנו מייל אימות אל ",
+    sentAfter: ". הקישור בתוקף שעה. לא הגיע? כדאי לבדוק גם בתיקיית הספאם.",
+    // The button pressed after the address was verified elsewhere.
+    alreadyVerified: "כתובת המייל כבר אומתה.",
   },
   // Cancellation credits and refund requests (story 3.7, wording from the
   // spec). Home: one line to /me/bookings while she has a credit to book

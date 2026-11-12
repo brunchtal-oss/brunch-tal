@@ -15,6 +15,12 @@ function inAdmin(pathname: string): boolean {
   return pathname === "/admin" || pathname.startsWith("/admin/")
 }
 
+// Story 6.11: the verification link needs the account's own login, an
+// admin's too, so both roles come back to it after logging in.
+function isVerifyLink(pathname: string): boolean {
+  return pathname === "/verify-email"
+}
+
 function isAdminArea(pathname: string): boolean {
   return (
     inAdmin(pathname) &&
@@ -34,7 +40,10 @@ export function destinationFor(
   const safe = safeNext(next)
 
   if (role === "admin") {
-    return safe && isAdminArea(pathnameOf(safe)) ? safe : "/admin"
+    return safe &&
+      (isAdminArea(pathnameOf(safe)) || isVerifyLink(pathnameOf(safe)))
+      ? safe
+      : "/admin"
   }
   if (role === "customer") {
     return safe && !inAdmin(pathnameOf(safe)) ? safe : "/me"

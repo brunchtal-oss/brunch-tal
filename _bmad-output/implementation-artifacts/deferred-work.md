@@ -646,7 +646,7 @@
   target: 6.1 (בדיקה ידנית בפרויקט הפרודקשן; שובץ 2026-10-22)
   summary: The auth.users trigger (`private.guard_auth_user_change`) has no automated test against real Supabase Auth; the DB tests stand Auth in with an owner UPDATE.
   evidence: 2.8 review (verification-gap). Checked by hand on dev 2026-10-14 with a throwaway user (all cases passed). Re-check by hand when a mail provider is added (secure email change will then reach the trigger) and on the production project (6.1).
-  status: נבנה ב-6.1 (2026-11-10, (ג)): `scripts/prod-auth-guard-check.mjs --apply` (משתמשת זמנית, שינוי מייל וטלפון עצמי ושינוי מייל באדמין בלי `email_change_pending` נחסמים, המייל והטלפון לא השתנו, המשתמשת נמחקת), ו-`prod-check` משווה את הגדרת `private.guard_auth_user_change` לפיתוח ובודק שה-trigger פעיל. הורץ בפרודקשן 2026-11-10 באישור המשתמשת: שינוי טלפון עצמי ושינוי מייל באדמין בלי `email_change_pending` נחסמו ב-trigger (500), המייל והטלפון לא השתנו, המשתמשת הזמנית נמחקה, וההגדרה זהה לפיתוח. שינוי מייל עצמי "לא הוכח": Auth דחה את כתובת היעד (`email_address_invalid`) לפני שהגיע למסד. הבדיקה הזו נשארת ל-id 11, עם ספק המייל.
+  status: נבנה ב-6.1 (2026-11-10, (ג)): `scripts/prod-auth-guard-check.mjs --apply` (משתמשת זמנית, שינוי מייל וטלפון עצמי ושינוי מייל באדמין בלי `email_change_pending` נחסמים, המייל והטלפון לא השתנו, המשתמשת נמחקת), ו-`prod-check` משווה את הגדרת `private.guard_auth_user_change` לפיתוח ובודק שה-trigger פעיל. הורץ בפרודקשן 2026-11-10 באישור המשתמשת: שינוי טלפון עצמי ושינוי מייל באדמין בלי `email_change_pending` נחסמו ב-trigger (500), המייל והטלפון לא השתנו, המשתמשת הזמנית נמחקה, וההגדרה זהה לפיתוח. שינוי מייל עצמי "לא הוכח": Auth דחה את כתובת היעד (`email_address_invalid`) לפני שהגיע למסד. הבדיקה הזו נשארת ל-id 11, עם ספק המייל. ב-6.11 (2026-11-11): הבדיקה עברה לרץ משותף `scripts/auth-guard-runner.mjs`, עם `scripts/dev-auth-guard-check.mjs` לפיתוח, והכתובת הזמנית על דומיין עם MX (ברירת מחדל `morethanfood.co.il`, או `--domain`), כך ש-Auth מקבל אותה והשינוי העצמי מגיע ל-trigger. נסגר אחרי שתי ההרצות (פיתוח ופרודקשן, `--apply` באישור המשתמשת) עם ✓ בשינוי מייל עצמי (הסשן הראשי).
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-8-admin-assisted-reset-and-rate-limit.md`
   target: 4.6
@@ -967,7 +967,7 @@
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-6-1-production-environment.md`
   target: id 10 (המסירה)
-  summary: מה מחליפים כשהדומיין `morethanfood.co.il` מתחבר: Vault `app_url` בפרודקשן; ב-Auth של הפרודקשן Site URL ו-Redirect URLs; `NEXT_PUBLIC_SITE_URL` ב-Vercel Production; `VAPID_SUBJECT` אם הוא משתמש בדומיין; והקבוע `PROD_SITE_URL` ב-`scripts/prod-env.mjs` (הקישורים של `prod-admin` ובדיקת ה-Vault של `prod-check`). אחרי כל שינוי במשתני Vercel פורסים מחדש.
+  summary: מה מחליפים כשהדומיין `morethanfood.co.il` מתחבר: Vault `app_url` בפרודקשן; ב-Auth של הפרודקשן Site URL ו-Redirect URLs; `NEXT_PUBLIC_SITE_URL` ב-Vercel Production; `VAPID_SUBJECT` אם הוא משתמש בדומיין; והקבוע `PROD_SITE_URL` ב-`scripts/prod-env.mjs` (הקישורים של `prod-admin` ובדיקת ה-Vault של `prod-check`). אחרי כל שינוי במשתני Vercel פורסים מחדש. 6.11: קישור האיפוס במייל נבנה מ-Vault `site_url` של הפרודקשן, וקישור האימות מ-`NEXT_PUBLIC_SITE_URL` (`lib/site-url.ts`); בהחלפת הדומיין מעדכנים את שניהם (`vault.update_secret`), לא רק את Site URL של ה-Auth.
   evidence: spec 6.1, Tasks.
   status: פתוח
 
@@ -976,3 +976,51 @@
   summary: כלל ב-AGENTS.md להחלת מיגרציה חדשה גם על הפרודקשן: מתי (לפני המיזוג או בו, באישור המשתמשת, `node scripts/prod-migrate.mjs --apply`), Security Advisor בלוח הבקרה של הפרודקשן אחרי כל אחת, ואיך מגיעה לשם מיגרציה עם `drop` (SQL Editor של הפרודקשן ורישום ב-`schema_migrations`).
   evidence: ביקורת 6.1 (blind-hunter). מאז 6.1 קוד שמוזג ל-main רץ מול מסד הפרודקשן, ו-AGENTS.md › "הרצה ובדיקה" מתאר רק את הפיתוח. בלי הכלל, סיפור עם מיגרציה ישבור את האתר החי אחרי המיזוג.
   status: נסגר ב-6.1 (הכרעת מנהל העבודה 2026-11-10): הכלל נכנס ל-AGENTS.md › "הרצה ובדיקה" באותו PR.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-11-email-verification-and-reset.md`
+  target: id 10 (המסירה) או אחרי ההשקה
+  summary: כשלקוחה משנה בעצמה את המייל שלה, לא נשלחת הודעה לכתובת הישנה. מי שמחזיקה בסשן ובסיסמה של חשבון יכולה להעביר אותו לכתובת שלה בלי שהבעלים תדע.
+  evidence: ביקורת 6.11 (B5), נדחה באישור המשתמשת 2026-11-11 (דרך מנהל העבודה). הסיסמה הנוכחית נדרשת, והשינוי נרשם ביומן.
+  status: פתוח
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-11-email-verification-and-reset.md`
+  target: id 10 (המסירה) או אחרי ההשקה
+  summary: קישור איפוס ידני שטל הפיקה (`/reset/[token]`, 2.8) ועוד לא נוצל נשאר בתוקף גם אחרי שהלקוחה איפסה סיסמה לבד במייל. מי שמחזיקה בו יכולה עדיין לקבוע סיסמה עד שיפוג (48 שעות).
+  evidence: ביקורת 6.11 (B10), נדחה באישור המשתמשת 2026-11-11. אפשרות: האיפוס במייל מבטל קישורי `reset` חיים של אותה משתמשת.
+  status: פתוח
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-11-email-verification-and-reset.md`
+  target: 6.8
+  summary: כשל שליחה של מייל (Resend מחזיר שגיאה, המכסה החינמית נגמרה, אין מפתח ב-Vault) לא נראה בשום מקום: לא ב"לטיפול" ולא בהודעה למשתמשת. התשובות של Resend נשמרות ב-`net._http_response` רק 6 שעות, ומזהי הבקשות ב-`private.email_requests`.
+  evidence: ביקורת 6.11 (B11), נדחה באישור המשתמשת 2026-11-11. ב-6.8 לבדוק בפרודקשן ולהחליט אם להוסיף פריט ל"לטיפול" או שורה ב-`prod-check`.
+  status: פתוח
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-11-email-verification-and-reset.md`
+  target: 6.9 (CAPTCHA)
+  summary: בקשה ישירה ל-Auth (`/otp`) עם המפתח הציבורי מחליפה את טוקן האיפוס של המשתמשת (אחד לכל משתמשת), כך שקישור איפוס שנשלח לה ועוד לא נוצל מפסיק לעבוד, בלי שום מייל (ה-hook זורק את ה-Magic Link).
+  evidence: ביקורת 6.11 (אחרי סבב 2), הכרעת מנהל העבודה 2026-11-11. ה-CAPTCHA של 6.9 על נקודות הקצה של Auth סוגר את זה.
+  status: פתוח
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-11-email-verification-and-reset.md`
+  target: 6.9 (CAPTCHA)
+  summary: התשובות של Auth עצמו ל-`/recover` ול-`/otp` (429 לעומת 200, לפי מגבלת 60 השניות לאותה משתמשת) מגלות אם חשבון קיים, אף שדף "שכחתי סיסמה" שלנו עונה אותו דבר בכל מקרה.
+  evidence: ביקורת 6.11 (אחרי סבב 2), הכרעת מנהל העבודה 2026-11-11.
+  status: פתוח
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-11-email-verification-and-reset.md`
+  target: 6.9 (CAPTCHA)
+  summary: מצב ה-Send Email Hook (מופעל או לא) לא נבדק במכונה: `prod-check` רואה רק שהפונקציה קיימת. בדיקה אוטומטית צריכה טוקן של Management API. עד אז בדיקה ידנית (README, "מייל (Resend)" צעד 9).
+  evidence: ביקורת 6.11 (אחרי סבב 2), הכרעת מנהל העבודה 2026-11-11.
+  status: פתוח
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-11-email-verification-and-reset.md`
+  target: 6.9 (CAPTCHA)
+  summary: התקרה של ה-Send Email Hook, עד 20 מיילי איפוס לפרויקט בשעה, מאפשרת למי שמחזיק 7 כתובות מאומתות או יותר לחסום לשעה את האיפוס העצמי של כולן, בבקשות ישירות ל-`/recover`. הגיבוי בינתיים: האיפוס הידני דרך טל (2.8).
+  evidence: הערת מנהל העבודה אחרי סבב 3 של 6.11, 2026-11-11.
+  status: פתוח
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-11-email-verification-and-reset.md`
+  target: PR קטן מיד אחרי 6.11 (החלטת מנהל העבודה 2026-11-11; לא בסיפור הזה)
+  summary: שתי בדיקות מסד נכשלות גם על main (367dabd): ‏`push.test.ts` "every job is taken once" ו-`acceptance-notifications.test.ts` "a real private.invoke_push_worker() inside a rollback…" (‏`expected null not to be null`). הסיבה הסבירה: ‏Vault ‏`app_url` ו-`cron_secret` רוקנו בפרויקט הפיתוח ב-6.1, ולכן `invoke_push_worker` לא שולח בקשה. צריך לעדכן את הבדיקות (למשל לזרוע `app_url` בתוך העסקה המתגלגלת), או לרשום שהן מדולגות בפיתוח.
+  evidence: הורצו ב-6.11 על ה-worktree וגם על התיקייה הראשית ב-main, 2026-11-11. אותה נפילה, ובלי קשר לשינויי המייל.
+  status: פתוח
