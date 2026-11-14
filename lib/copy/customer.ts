@@ -215,10 +215,10 @@ export const customerCopy = {
       "כתובת המייל שלך עוד לא אומתה. אחרי האימות אפשר יהיה לאפס סיסמה לבד.",
     send: "שליחת מייל אימות",
     sending: "שולחת…",
-    // "שלחנו מייל אימות אל {email}. הקישור…": the address between the two
+    // "שלחנו מייל אימות אל {email}. לא הגיע?…": the address between the two
     // parts, in its own <bdi>.
     sentBefore: "שלחנו מייל אימות אל ",
-    sentAfter: ". הקישור בתוקף שעה. לא הגיע? כדאי לבדוק גם בתיקיית הספאם.",
+    sentAfter: ". לא הגיע? כדאי לבדוק גם בתיקיית הספאם.",
     // The button pressed after the address was verified elsewhere.
     alreadyVerified: "כתובת המייל כבר אומתה.",
   },

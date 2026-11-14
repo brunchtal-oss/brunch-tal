@@ -1023,4 +1023,10 @@
   target: PR קטן מיד אחרי 6.11 (החלטת מנהל העבודה 2026-11-11; לא בסיפור הזה)
   summary: שתי בדיקות מסד נכשלות גם על main (367dabd): ‏`push.test.ts` "every job is taken once" ו-`acceptance-notifications.test.ts` "a real private.invoke_push_worker() inside a rollback…" (‏`expected null not to be null`). הסיבה הסבירה: ‏Vault ‏`app_url` ו-`cron_secret` רוקנו בפרויקט הפיתוח ב-6.1, ולכן `invoke_push_worker` לא שולח בקשה. צריך לעדכן את הבדיקות (למשל לזרוע `app_url` בתוך העסקה המתגלגלת), או לרשום שהן מדולגות בפיתוח.
   evidence: הורצו ב-6.11 על ה-worktree וגם על התיקייה הראשית ב-main, 2026-11-11. אותה נפילה, ובלי קשר לשינויי המייל.
+  status: נסגר ב-fix-after-6-11 (2026-11-15). ‏`acceptance-notifications`: הבדיקה זורעת `app_url` ו-`cron_secret` בדויים בתוך העסקה המתגלגלת. ‏`push.test.ts`: הסיבה הייתה אחרת. מאז ש-Vault רוקן, ה-worker לא רץ בפיתוח ומשימות `queued` אמיתיות מצטברות, ו-`claim_push_jobs(1)` לקח משימה טרייה כזו במקום משימה של הבדיקה. הבדיקה נכשלה רק כשהייתה משימה כזו מ-24 השעות האחרונות, למישהי עם מכשיר רשום. עכשיו החיבור הראשון קורא ל-`isolate` לפני ה-claim. ה-Vault של הפיתוח נשאר ריק.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-fix-after-6-11.md`
+  target: תיקונים
+  summary: תשובת 403 משירות הפוש לא מסמנת את המנוי כ-gone (רק 404/410, ‏`lib/server/privileged/push-worker.ts:113-125`). לכן מנוי שנרשם עם מפתח VAPID ישן נכשל בכל שליחה, ומייצר כל שבוע "התראות פוש לא נשלחו" בבית האדמין. לא לסמן 403 כ-gone בלי בדיקה: אם המפתחות בצד שלנו לא תואמים, זה ימחק את כל המנויים.
+  evidence: ‏`prod-check` בפרודקשן, 2026-11-15: שתי תזכורות שיווק (11.11 ו-12.11) נכשלו 5 פעמים כל אחת עם `HTTP_403`. הכרעת מנהל העבודה, בלי תיקון ב-fix-after-6-11.
   status: פתוח
