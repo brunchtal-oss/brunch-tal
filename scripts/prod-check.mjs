@@ -1,5 +1,5 @@
 // Story 6.1: the read-only checks of the production project, one line each
-// (✓ / ✗); exit 1 when any line is ✗.
+// (✓ / ✗; a few add indented detail lines below); exit 1 when any line is ✗.
 //
 //   node scripts/prod-check.mjs
 //
@@ -7,7 +7,12 @@
 // default_transaction_read_only. Vault values are never read out: only
 // whether they are filled, whether app_url is the production URL and the
 // sha256 of cron_secret (compared with PROD_CRON_SECRET) leave the
-// database. The one request with an effect: POST /api/jobs/push with
+// database. Besides those (fix-after-6-11): pg_net's error message of a
+// worker call without a status (cut to 120 characters, a Bearer token and
+// PROD_CRON_SECRET masked), and for failed push jobs their time, type,
+// attempts and last_error code, the count of sent jobs, and each failed
+// recipient's subscriptions (created_at, platform) under a running number;
+// never an id, name, email or endpoint. The one request with an effect: POST /api/jobs/push with
 // PROD_CRON_SECRET, which runs the push worker once, exactly as pg_cron
 // does. "Copied tables equal dev" holds right after the
 // copy; once Tal edits content or settings in production, those lines are
@@ -219,6 +224,20 @@ async function checkDatabaseSettings(prod) {
   )
 }
 
+// A response without a status: pg_net's error message (no headers are kept
+// in it), cut to 120 characters; a Bearer token or PROD_CRON_SECRET is
+// masked anyway.
+function responseLabel(r) {
+  if (r.timed_out) return "timeout"
+  if (r.status_code != null) return String(r.status_code)
+  let msg = String(r.error_msg ?? "no status").replace(
+    /Bearer\s+\S+/gi,
+    "Bearer ***"
+  )
+  if (prodConfig.cronSecret) msg = msg.split(prodConfig.cronSecret).join("***")
+  return `error: ${msg.replace(/\s+/g, " ").trim().slice(0, 120)}`
+}
+
 // Story 6.11: emails go out through pg_net too (private.send_email), so
 // only the worker's responses count: the request ids of the emails are in
 // private.email_requests (before the 6.11 migration it does not exist: a ✗
@@ -235,7 +254,7 @@ async function checkPushWorker(prod) {
     return
   }
   const { rows } = await prod.query(
-    `select r.status_code, r.timed_out from net._http_response r
+    `select r.status_code, r.timed_out, r.error_msg from net._http_response r
      where not exists (
        select 1 from private.email_requests e where e.request_id = r.id
      )
@@ -245,7 +264,7 @@ async function checkPushWorker(prod) {
     const bad = rows.filter((r) => r.status_code !== 200)
     line(
       bad.length === 0,
-      `תגובות אחרונות של invoke_push_worker: ${rows.length - bad.length}/${rows.length} עם 200${bad.length ? ` (אחרות: ${bad.map((r) => (r.timed_out ? "timeout" : r.status_code)).join(", ")})` : ""}`
+      `תגובות אחרונות של invoke_push_worker: ${rows.length - bad.length}/${rows.length} עם 200${bad.length ? ` (אחרות: ${bad.map(responseLabel).join(", ")})` : ""}`
     )
     return
   }
@@ -261,6 +280,60 @@ async function checkPushWorker(prod) {
       ? "invoke_push_worker: אין קריאות ב-6 השעות האחרונות, ואין התראה שמחכה"
       : `invoke_push_worker: ${due[0].n} התראות מחכות ואין קריאה (בודקים Vault ו-CRON_SECRET)`
   )
+}
+
+// fix-after-6-11: the failed push jobs of the last 7 days (the same rule as
+// push_failed in admin_get_attention_items), each with its time, type,
+// attempts and last_error (error codes only, e.g. HTTP_403), next to the
+// jobs sent in the same 7 days, and the subscriptions of the failed jobs'
+// recipients (created_at, platform), each recipient shown only as a number
+// ("נמענת 1") that ties her jobs to her subscriptions. One old broken
+// subscription and a VAPID key pair that fails every push look different
+// here. Never the recipient's id, a subscription id or an endpoint.
+const AT = (col) =>
+  `to_char(${col} at time zone 'Asia/Jerusalem', 'YYYY-MM-DD HH24:MI')`
+
+async function checkFailedPushes(prod) {
+  const { rows: sent } = await prod.query(
+    `select count(*)::int as n from public.notification_jobs
+     where status = 'sent' and finished_at >= now() - interval '7 days'`
+  )
+  // One query, so the numbering is the same for jobs and subscriptions.
+  const { rows } = await prod.query(
+    `with failed as (
+       select j.finished_at, n.type, j.attempt_count, j.last_error,
+         n.recipient_id,
+         dense_rank() over (order by n.recipient_id)::int as k
+       from public.notification_jobs j
+       join public.notifications n on n.id = j.notification_id
+       where j.status = 'failed' and j.finished_at >= now() - interval '7 days'
+     )
+     select 'job' as kind, f.k, ${AT("f.finished_at")} as at, f.type,
+       f.attempt_count, f.last_error, null::text as platform, f.finished_at as t
+     from failed f
+     union all
+     select 'sub', r.k, ${AT("s.created_at")}, null, null, null, s.platform,
+       s.created_at
+     from (select distinct recipient_id, k from failed) r
+     join public.push_subscriptions s on s.user_id = r.recipient_id
+     order by 2, 1, 8 desc`
+  )
+  const jobs = rows.filter((r) => r.kind === "job")
+  line(
+    jobs.length === 0,
+    `התראות פוש שנכשלו ב-7 הימים האחרונים: ${jobs.length} (נשלחו: ${sent[0].n})`
+  )
+  for (const k of [...new Set(rows.map((r) => r.k))]) {
+    const subs = rows.filter((r) => r.k === k && r.kind === "sub")
+    console.log(`    נמענת ${k} (מנויים: ${subs.length})`)
+    for (const r of rows.filter((x) => x.k === k && x.kind === "job")) {
+      console.log(
+        `      ${r.at} · ${r.type} · ${r.attempt_count} ניסיונות · ${r.last_error ?? "-"}`
+      )
+    }
+    for (const s of subs)
+      console.log(`      מנוי נרשם ${s.at} · ${s.platform ?? "-"}`)
+  }
 }
 
 // Story 6.11: the email setup the database can show, read-only: the names
@@ -424,6 +497,7 @@ async function main() {
     await checkAuthSettings()
     await checkDatabaseSettings(prod)
     await checkPushWorker(prod)
+    await checkFailedPushes(prod)
     await checkEmail(prod)
     await checkMarketingTags(prod)
     await checkLegalPages(prod)

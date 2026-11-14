@@ -531,7 +531,8 @@ describe("the Send Email Hook", () => {
         `https://site.example.test/reset-password?token_hash=${"a".repeat(56)}`
       )
       expect(emails[0].body.html).not.toContain("evil.example.test")
-      expect(emails[0].body.html).not.toContain("supabase.co")
+      // The header image may be served from Supabase Storage; no link may.
+      expect(emails[0].body.html).not.toMatch(/href="[^"]*supabase\.co/)
       expect(emails[0].body.subject).toBe("קישור לאיפוס סיסמה")
     })
   })

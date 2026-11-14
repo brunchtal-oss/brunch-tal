@@ -483,7 +483,14 @@ describe("the queue check itself", { timeout: 60_000 }, () => {
     const mark = await inRollback(async (db) => {
       const mark = await queueMark(db)
       expect(await ownQueuedRequests(db, mark)).toBe(0)
-      // The dev Vault has app_url and cron_secret, so it queues a request.
+      // Since 6.1 the dev Vault is empty on purpose (the dev cron calls
+      // nothing); fake values, rolled back with the rest, make it queue one.
+      await db.query(
+        "delete from vault.secrets where name in ('app_url', 'cron_secret')"
+      )
+      await db.query(
+        "select vault.create_secret('https://app.example.test/', 'app_url'), vault.create_secret('test-secret', 'cron_secret')"
+      )
       const { rows } = await db.query(
         "select private.invoke_push_worker() as id"
       )

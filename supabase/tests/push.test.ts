@@ -589,6 +589,12 @@ describe("two workers at once", { timeout: 30_000 }, () => {
     try {
       await one.query("begin")
       await two.query("begin")
+      // Since 6.1 the dev worker never runs (the dev Vault is empty), so real
+      // queued jobs pile up in dev; claim(1) would take a fresh one of those
+      // instead of ours. `one` pushes every other job a day ahead (and holds
+      // their row locks); `two` claims with `for update skip locked`, so it
+      // skips those rows instead of waiting for them.
+      await isolate(one, jobs)
       await asServiceRole(one)
       await asServiceRole(two)
       const first: Claimed[] = (await one.query(CLAIM, [1])).rows[0].r
