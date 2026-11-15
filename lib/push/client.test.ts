@@ -1,7 +1,10 @@
-import { describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 import {
+  ensureSubscription,
+  forgetReplaced,
   isIos,
+  sameKey,
   platformOf,
   pushStateOf,
   shouldOffer,
@@ -148,5 +151,156 @@ describe("shouldOfferOnWaitlist (story 5.6)", () => {
         },
       })
     ).toBe(false)
+  })
+})
+
+// fix-push-key-change: a subscription made with another VAPID key (prod
+// switched pairs in 6.1) answered 403 forever; it is made again.
+const KEY = "BNcRdreALRFXTkOOUHK1EtK2wtaz5Ry4YfYCA_0QTpQ"
+const OLD_KEY = "BOldOldOldOldOldOldOldOldOldOldOldOldOldOld"
+
+function bufferOf(base64: string): ArrayBuffer {
+  return urlBase64ToUint8Array(base64).buffer
+}
+
+function fakeSub(endpoint: string, key: ArrayBuffer | null) {
+  return {
+    endpoint,
+    options: { applicationServerKey: key },
+    unsubscribe: vi.fn(async () => true),
+    toJSON: () => ({ endpoint, keys: { p256dh: "p", auth: "a" } }),
+  }
+}
+
+function device(existing: ReturnType<typeof fakeSub> | null) {
+  const fresh = fakeSub("https://fcm.googleapis.com/fcm/send/new", null)
+  const pushManager = {
+    getSubscription: vi.fn(async () => existing),
+    subscribe: vi.fn(async () => fresh),
+  }
+  const reg = { pushManager }
+  vi.stubGlobal("navigator", {
+    userAgent: ANDROID,
+    maxTouchPoints: 5,
+    serviceWorker: {
+      getRegistration: async () => reg,
+      ready: Promise.resolve(reg),
+    },
+  })
+  const stored = new Map<string, string>()
+  vi.stubGlobal("window", {
+    dispatchEvent: vi.fn(),
+    localStorage: {
+      getItem: (k: string) => stored.get(k) ?? null,
+      setItem: (k: string, v: string) => void stored.set(k, v),
+      removeItem: (k: string) => void stored.delete(k),
+    },
+  })
+  vi.stubEnv("NEXT_PUBLIC_VAPID_PUBLIC_KEY", KEY)
+  return Object.assign(pushManager, { stored })
+}
+
+describe("sameKey", () => {
+  const current = urlBase64ToUint8Array(KEY)
+  it("true for the same bytes, false for others, null when not exposed", () => {
+    expect(sameKey(bufferOf(KEY), current)).toBe(true)
+    expect(sameKey(bufferOf(OLD_KEY), current)).toBe(false)
+    expect(sameKey(new ArrayBuffer(3), current)).toBe(false)
+    expect(sameKey(null, current)).toBeNull()
+  })
+})
+
+describe("ensureSubscription", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.unstubAllEnvs()
+  })
+
+  it("same key: keeps the subscription", async () => {
+    const old = fakeSub(
+      "https://fcm.googleapis.com/fcm/send/old",
+      bufferOf(KEY)
+    )
+    const pm = device(old)
+    const out = await ensureSubscription()
+    expect(old.unsubscribe).not.toHaveBeenCalled()
+    expect(pm.subscribe).not.toHaveBeenCalled()
+    expect(out).toEqual({
+      registration: {
+        endpoint: old.endpoint,
+        keys: { p256dh: "p", auth: "a" },
+        platform: "android",
+      },
+      replaced: null,
+    })
+  })
+
+  it("another key: unsubscribes, subscribes with the current key, returns the old endpoint", async () => {
+    const old = fakeSub(
+      "https://fcm.googleapis.com/fcm/send/old",
+      bufferOf(OLD_KEY)
+    )
+    const pm = device(old)
+    const out = await ensureSubscription()
+    expect(old.unsubscribe).toHaveBeenCalledTimes(1)
+    expect(pm.subscribe).toHaveBeenCalledTimes(1)
+    const [{ applicationServerKey }] = pm.subscribe.mock
+      .calls[0] as unknown as [{ applicationServerKey: Uint8Array }]
+    expect([...applicationServerKey]).toEqual([...urlBase64ToUint8Array(KEY)])
+    expect(out?.registration.endpoint).toBe(
+      "https://fcm.googleapis.com/fcm/send/new"
+    )
+    expect(out?.replaced).toBe(old.endpoint)
+  })
+
+  it("another key, the browser gives the same endpoint back: nothing to remove", async () => {
+    const old = fakeSub(
+      "https://fcm.googleapis.com/fcm/send/new",
+      bufferOf(OLD_KEY)
+    )
+    device(old)
+    const out = await ensureSubscription()
+    expect(old.unsubscribe).toHaveBeenCalledTimes(1)
+    expect(out?.replaced).toBeNull()
+  })
+
+  it("key not exposed (null): keeps the subscription", async () => {
+    const old = fakeSub("https://fcm.googleapis.com/fcm/send/old", null)
+    const pm = device(old)
+    const out = await ensureSubscription()
+    expect(old.unsubscribe).not.toHaveBeenCalled()
+    expect(pm.subscribe).not.toHaveBeenCalled()
+    expect(out?.registration.endpoint).toBe(old.endpoint)
+    expect(out?.replaced).toBeNull()
+  })
+
+  it("no subscription: subscribes, nothing replaced", async () => {
+    const pm = device(null)
+    const out = await ensureSubscription()
+    expect(pm.subscribe).toHaveBeenCalledTimes(1)
+    expect(out?.replaced).toBeNull()
+  })
+
+  it("subscribe fails after unsubscribe: the old endpoint is kept and returned by the next call until forgotten", async () => {
+    const old = fakeSub(
+      "https://fcm.googleapis.com/fcm/send/old",
+      bufferOf(OLD_KEY)
+    )
+    const pm = device(old)
+    pm.subscribe.mockRejectedValueOnce(new Error("AbortError"))
+    await expect(ensureSubscription()).rejects.toThrow()
+    expect(pm.stored.get("push-replaced")).toBe(old.endpoint)
+
+    // Next sync: the browser has no subscription now.
+    pm.getSubscription.mockResolvedValue(null)
+    const out = await ensureSubscription()
+    expect(out?.registration.endpoint).toBe(
+      "https://fcm.googleapis.com/fcm/send/new"
+    )
+    expect(out?.replaced).toBe(old.endpoint)
+    // Still kept until the caller removed it from the server.
+    expect((await ensureSubscription())?.replaced).toBe(old.endpoint)
+    forgetReplaced()
+    expect((await ensureSubscription())?.replaced).toBeNull()
   })
 })

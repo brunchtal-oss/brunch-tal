@@ -13,7 +13,12 @@ import { getBusinessName } from "@/lib/content/business-details"
 import { shellCopy } from "@/lib/copy/shell"
 import { customerNav } from "@/lib/nav"
 
-import { getUnreadCount, markRead, registerPush } from "./notifications/actions"
+import {
+  getUnreadCount,
+  markRead,
+  registerPush,
+  unregisterPush,
+} from "./notifications/actions"
 
 // Allowed only here and in /admin/(shell) (AD-16): the route reads the
 // session on every request, so it blocks instead of instant navigation.
@@ -56,7 +61,7 @@ export default async function MeLayout({
           }
         >
           <RoleGate role="customer">
-            <PushSync register={registerPush} />
+            <PushSync register={registerPush} unregister={unregisterPush} />
             <PushReadMark markRead={markRead} />
             {children}
           </RoleGate>

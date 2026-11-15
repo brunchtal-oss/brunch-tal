@@ -208,26 +208,98 @@ async function registration(): Promise<ServiceWorkerRegistration | null> {
   return navigator.serviceWorker.ready
 }
 
-/** This device's subscription, created when there is none. Null without a
- * service worker or key. Only after the permission was granted. */
-export async function ensureSubscription(): Promise<PushRegistration | null> {
+/**
+ * Whether a subscription's key is the current one: null when the browser
+ * does not expose it (options.applicationServerKey is null).
+ */
+export function sameKey(
+  existing: ArrayBuffer | null | undefined,
+  current: Uint8Array
+): boolean | null {
+  if (!existing) return null
+  const bytes = new Uint8Array(existing)
+  return (
+    bytes.length === current.length && bytes.every((b, i) => b === current[i])
+  )
+}
+
+export type EnsuredSubscription = {
+  registration: PushRegistration
+  replaced: string | null
+}
+
+/**
+ * The old endpoint of a subscription made again, kept on this device until
+ * the server forgot it too: a failed subscribe or register must not lose it
+ * (the next sync returns it again). Storage that throws: memory only.
+ */
+const REPLACED_KEY = "push-replaced"
+
+function readReplaced(): string | null {
+  try {
+    return window.localStorage.getItem(REPLACED_KEY)
+  } catch {
+    return null
+  }
+}
+
+function writeReplaced(endpoint: string | null): void {
+  try {
+    if (endpoint) window.localStorage.setItem(REPLACED_KEY, endpoint)
+    else window.localStorage.removeItem(REPLACED_KEY)
+  } catch {
+    // Not kept: if this sync fails, the old row stays on the server.
+  }
+}
+
+/** After the server removed the `replaced` endpoint. */
+export function forgetReplaced(): void {
+  writeReplaced(null)
+}
+
+/**
+ * This device's subscription, created when there is none, and made again
+ * when it was made with another VAPID key (production switched pairs in
+ * 6.1: the old one answered 403 forever). `replaced` is the old endpoint
+ * (this time or kept from a sync that failed) that the caller removes from
+ * the server after registering the new one, then calls forgetReplaced();
+ * null when nothing was replaced or the endpoint stayed the same. Null
+ * without a service worker or key. Only after the permission was granted.
+ */
+export async function ensureSubscription(): Promise<EnsuredSubscription | null> {
   const key = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
   const reg = await registration()
   if (!reg || !key) return null
-  const sub =
-    (await reg.pushManager.getSubscription()) ??
-    (await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(key),
-    }))
+  const applicationServerKey = urlBase64ToUint8Array(key)
+  let sub = await reg.pushManager.getSubscription()
+  let old: string | null = null
+  if (
+    sub &&
+    sameKey(sub.options.applicationServerKey, applicationServerKey) === false
+  ) {
+    old = sub.endpoint
+    writeReplaced(old)
+    await sub.unsubscribe()
+    sub = null
+  }
+  sub ??= await reg.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey,
+  })
   // The sign-out field reads the endpoint again.
   window.dispatchEvent(new Event(PUSH_CHANGE_EVENT))
   const json = sub.toJSON()
   if (!json.endpoint || !json.keys?.p256dh || !json.keys?.auth) return null
+  const pending = readReplaced() ?? old
+  // The browser gave the same endpoint back: nothing to remove.
+  if (pending === json.endpoint) writeReplaced(null)
   return {
-    endpoint: json.endpoint,
-    keys: { p256dh: json.keys.p256dh, auth: json.keys.auth },
-    platform: platformOf(navigator.userAgent, navigator.maxTouchPoints),
+    registration: {
+      endpoint: json.endpoint,
+      keys: { p256dh: json.keys.p256dh, auth: json.keys.auth },
+      platform: platformOf(navigator.userAgent, navigator.maxTouchPoints),
+    },
+    replaced: pending && pending !== json.endpoint ? pending : null,
   }
 }
 

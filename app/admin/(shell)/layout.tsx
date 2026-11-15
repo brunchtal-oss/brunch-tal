@@ -14,7 +14,12 @@ import { getBusinessName } from "@/lib/content/business-details"
 import { shellCopy } from "@/lib/copy/shell"
 import { adminNav } from "@/lib/nav"
 
-import { getUnreadCount, markRead, registerPush } from "./notifications/actions"
+import {
+  getUnreadCount,
+  markRead,
+  registerPush,
+  unregisterPush,
+} from "./notifications/actions"
 
 // Allowed only here and in /me (AD-16).
 export const instant = false
@@ -60,7 +65,7 @@ export default async function AdminShellLayout({
               }
             >
               <RoleGate role="admin">
-                <PushSync register={registerPush} />
+                <PushSync register={registerPush} unregister={unregisterPush} />
                 <PushReadMark markRead={markRead} />
                 {children}
               </RoleGate>

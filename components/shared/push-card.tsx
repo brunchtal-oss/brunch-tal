@@ -10,6 +10,7 @@ import {
   currentPushState,
   endSubscription,
   ensureSubscription,
+  forgetReplaced,
   PUSH_CHANGE_EVENT,
   subscribePushState,
   writeChoice,
@@ -87,8 +88,20 @@ export function PushCard({
     refocus()
     try {
       const subscription = await ensureSubscription()
-      const result = subscription ? await register(subscription) : null
+      const result = subscription
+        ? await register(subscription.registration)
+        : null
       if (!result?.ok) setFailed(true)
+      // A subscription made with another VAPID key was made again: its old
+      // endpoint goes too, after the new one is registered; forgotten on
+      // this device only once removed (else the sync tries again). A failure
+      // here is not shown.
+      else if (subscription?.replaced) {
+        const removed = await unregister(subscription.replaced).catch(
+          () => null
+        )
+        if (removed?.ok) forgetReplaced()
+      }
     } catch {
       setFailed(true)
     }
