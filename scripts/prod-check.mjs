@@ -45,7 +45,9 @@ const CRON_JOBS = [
   "expiry_alerts",
   "invoke_push_worker",
   "marketing_reminders",
+  "reconcile_payments",
   "refresh_credit_options",
+  "release_holds",
   "reminders",
 ]
 const LEGAL_PAGES = ["privacy", "terms", "accessibility", "cookie-notice"]
@@ -104,7 +106,7 @@ async function checkCron(prod) {
   const missing = CRON_JOBS.filter((j) => !active.includes(j))
   line(
     missing.length === 0 && rows.length === CRON_JOBS.length,
-    `8 משימות pg_cron פעילות (${active.length}${missing.length ? `; חסרות: ${missing.join(", ")}` : ""})`
+    `${CRON_JOBS.length} משימות pg_cron פעילות (${active.length}${missing.length ? `; חסרות: ${missing.join(", ")}` : ""})`
   )
 }
 
