@@ -6,20 +6,26 @@ import { ChevronRightIcon } from "lucide-react"
 
 import { EntryMeter, METER_MAX } from "@/components/customer/entry-meter"
 import { PageHeading } from "@/components/shared/page-heading"
+import { PurchaseSheet } from "@/components/shared/purchase-sheet"
 import { StatusChip } from "@/components/shared/status-chip"
+import { getWhatsappHref } from "@/lib/content/business-details"
 import { customerCopy } from "@/lib/copy/customer"
 import { shellCopy } from "@/lib/copy/shell"
+import { canBuy, NO_PURCHASE } from "@/lib/payments/purchase-options"
 import { createClient } from "@/lib/supabase/server"
 import { formatDayMonth, formatLocalDate } from "@/lib/time"
 
 import { loadMyEntitlements, pinnedConceptNames } from "../../load-entitlements"
 import {
+  canBuyAnotherCard,
+  cardPurchaseButtonClass,
   creditChip,
   creditChipTone,
   entitlementName,
   entryTotal,
   pastStatus,
 } from "../../purchase-items"
+import { loadCardPurchaseOptions, startCardPurchaseAction } from "../actions"
 import { buildHistory } from "./history"
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -107,6 +113,11 @@ async function EntitlementContent({
   const total = entryTotal(entitlement)
   // Story 3.7: a pinned purchase that became a credit or a refund request.
   const chip = creditChip(entitlement)
+  // Online payments (PR B): a used-up or expired card offers another one.
+  const options = canBuyAnotherCard(entitlement)
+    ? await loadCardPurchaseOptions()
+    : NO_PURCHASE
+  const contactHref = canBuy(options) ? await getWhatsappHref() : null
 
   return (
     <div className="flex flex-col gap-8 pb-8">
@@ -160,6 +171,18 @@ async function EntitlementContent({
               <bdi>{customerCopy.usedOf(entitlement.used, total)}</bdi>
               <bdi>{customerCopy.bookedOf(entitlement.reserved, total)}</bdi>
             </p>
+          </div>
+        )}
+        {canBuy(options) && (
+          <div className="mt-2">
+            <PurchaseSheet
+              products={options.products}
+              eventId={null}
+              start={startCardPurchaseAction}
+              contactHref={contactHref}
+              trigger={customerCopy.purchase.buyCard}
+              triggerClassName={cardPurchaseButtonClass}
+            />
           </div>
         )}
       </div>

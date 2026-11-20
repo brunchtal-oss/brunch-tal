@@ -24,6 +24,7 @@ import {
   type SettingsRow,
 } from "./settings-draft"
 import {
+  BooleanField as BooleanInput,
   NumberField as NumberInput,
   PrepDaysField,
   TimeField,
@@ -60,6 +61,10 @@ export function scopeOf(field: EditorField): React.ReactNode {
   }
   if (field === "reminder") return copy.scope.bookings
   if (field === "creditOptions") return copy.scope.credits
+  if (field === "paymentWindow" || field === "holdGrace") {
+    return copy.scope.checkouts
+  }
+  if (field === "publicPurchase") return copy.scope.publicPurchase
   return copy.scope.new
 }
 
@@ -209,6 +214,22 @@ export function SettingsEditor({ row }: { row: SettingsRow }) {
         {numberRow("lastPlaces")}
         {numberRow("inactivity")}
         {numberRow("duplicateWindow")}
+      </Group>
+
+      {/* Online payments (PR B): the pay window, the extra minutes a seat
+          stays held, and buying on the public site. */}
+      <Group id="settings-online" title={copy.groups.onlinePayments}>
+        {numberRow("paymentWindow")}
+        {numberRow("holdGrace")}
+        {settingRow(
+          "publicPurchase",
+          <BooleanInput
+            id="setting-publicPurchase"
+            label={copy.fields.publicPurchase}
+            value={draft.publicPurchase}
+            onChange={(publicPurchase) => update({ publicPurchase })}
+          />
+        )}
       </Group>
 
       <Group id="settings-work" title={copy.groups.workSheet}>

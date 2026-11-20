@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { updateSettingsAction } from "./actions"
-import { NUMBER_FIELDS } from "./settings-draft"
+import { BOOLEAN_FIELDS, NUMBER_FIELDS } from "./settings-draft"
 import { updateTemplateAction } from "./templates/actions"
 
 const callRpc = vi.fn()
@@ -87,6 +87,32 @@ describe("updateSettingsAction", () => {
       ).resolves.toEqual({ ok: true, data: undefined })
       expect(callRpc, column).toHaveBeenCalledTimes(1)
     }
+  })
+
+  it("online payments (PR B): the two times and the switch pass, the switch as a boolean", async () => {
+    callRpc.mockResolvedValue({ ok: true, data: { version: 4 } })
+    const columns = Object.values(BOOLEAN_FIELDS).map((field) => field.column)
+    expect(columns).toEqual(["public_online_purchase"])
+    for (const column of columns) {
+      callRpc.mockClear()
+      await expect(
+        updateSettingsAction({
+          changes: { [column]: true },
+          expectedVersion: 3,
+          idempotencyKey: KEY,
+        }),
+        column
+      ).resolves.toEqual({ ok: true, data: undefined })
+      expect(callRpc.mock.calls[0][2].p_changes, column).toEqual({
+        [column]: true,
+      })
+    }
+    expect(Object.values(NUMBER_FIELDS).map((f) => f.column)).toEqual(
+      expect.arrayContaining([
+        "online_payment_window_minutes",
+        "online_hold_grace_minutes",
+      ])
+    )
   })
 
   it("passes STALE_VERSION through", async () => {

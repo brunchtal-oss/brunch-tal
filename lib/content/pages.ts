@@ -183,7 +183,11 @@ export async function getPublishedPageSlugs(
 }
 
 // The pages whose one section is a legal_text (key "body").
-const LEGAL_TEXT_SLUGS: readonly string[] = ["privacy", "terms"]
+const LEGAL_TEXT_SLUGS: readonly string[] = [
+  "privacy",
+  "terms",
+  "purchase-terms",
+]
 
 // When a public page was last published (content_pages.published_at; it
 // moves only on a publish that changed something), cached and tagged

@@ -234,7 +234,13 @@ describe("the seo_content migration (fix-seo-editor)", () => {
   const file = readdirSync(dir).find((name) =>
     name.endsWith("_seo_content.sql")
   )
-  const sql = readFileSync(join(dir, file!), "utf8")
+  // The purchase terms' record came with online payments, PR B.
+  const screens = readdirSync(dir).find((name) =>
+    name.endsWith("_online_payments_screens.sql")
+  )
+  const sql =
+    readFileSync(join(dir, file!), "utf8") +
+    readFileSync(join(dir, screens!), "utf8")
 
   it("seeds every page with today's H1 and the wordmark for home", () => {
     for (const key of SEO_PAGE_KEYS) {

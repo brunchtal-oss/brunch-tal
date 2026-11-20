@@ -14,6 +14,8 @@ import {
   sourceFirst,
   TABLES,
   withoutExcluded,
+  withoutPurchaseTerms,
+  INCLUDE_PURCHASE_TERMS_FLAG,
 } from "../scripts/prod-copy-plan.mjs"
 
 // Story 6.1: the pure plan of the dev -> production content copy.
@@ -280,5 +282,48 @@ describe("withoutExcluded (user decision 2026-11-10: five concepts only)", () =>
       expect(REFERENCED_MEDIA_SQL).not.toContain(id)
     }
     expect(REFERENCED_MEDIA_SQL).toContain("c.default_image_id = m.id")
+  })
+})
+
+// Online payments, PR B: the purchase terms are Tal's wording; dev may hold
+// a test text for the sandbox run.
+describe("withoutPurchaseTerms", () => {
+  const pages = [{ slug: "terms" }, { slug: "purchase-terms" }]
+  const sections = [
+    { page_slug: "purchase-terms", key: "body" },
+    { page_slug: "seo", key: "purchase_terms" },
+    { page_slug: "seo", key: "terms" },
+    { page_slug: "terms", key: "body" },
+  ]
+
+  it("skips the page, its section and its SEO record by default", () => {
+    expect(withoutPurchaseTerms(spec("content_pages"), pages)).toEqual([
+      { slug: "terms" },
+    ])
+    expect(withoutPurchaseTerms(spec("content_sections"), sections)).toEqual([
+      { page_slug: "seo", key: "terms" },
+      { page_slug: "terms", key: "body" },
+    ])
+  })
+
+  it("keeps them with the flag; other tables are untouched", () => {
+    expect(INCLUDE_PURCHASE_TERMS_FLAG).toBe("--include-purchase-terms")
+    expect(
+      withoutPurchaseTerms(spec("content_sections"), sections, true)
+    ).toEqual(sections)
+    const products = [{ id: "p", name: "purchase-terms" }]
+    expect(withoutPurchaseTerms(spec("products"), products)).toEqual(products)
+  })
+
+  it("skipped on both sides, production keeps its rows (no delete)", () => {
+    const t = spec("content_pages")
+    const plan = planTable(
+      t,
+      withoutPurchaseTerms(t, [{ slug: "purchase-terms", published_at: "x" }]),
+      withoutPurchaseTerms(t, [{ slug: "purchase-terms", published_at: null }])
+    )
+    expect(plan.delete).toEqual([])
+    expect(plan.insert).toEqual([])
+    expect(plan.update).toEqual([])
   })
 })

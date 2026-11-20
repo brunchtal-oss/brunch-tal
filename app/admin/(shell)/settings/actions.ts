@@ -31,6 +31,10 @@ const SETTING_KEYS = new Set([
   "duplicate_payment_window_days",
   "default_session_start_time",
   "default_session_end_time",
+  // Online payments (PR B).
+  "online_payment_window_minutes",
+  "online_hold_grace_minutes",
+  "public_online_purchase",
 ])
 
 function validChanges(changes: unknown): changes is Record<string, unknown> {
@@ -41,7 +45,7 @@ function validChanges(changes: unknown): changes is Record<string, unknown> {
 }
 
 export async function updateSettingsAction(input: {
-  changes: Record<string, number | string | number[]>
+  changes: Record<string, number | string | number[] | boolean>
   expectedVersion: number
   idempotencyKey: string
 }): Promise<ActionResult> {

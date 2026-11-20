@@ -3,12 +3,15 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
 import { ConceptHeader } from "@/components/shared/concept-header"
+import { PaymentNotice } from "@/components/shared/payment-notice"
 import { ResultNoticeHost } from "@/components/shared/result-notice"
 import { StatusChip } from "@/components/shared/status-chip"
 import { getWhatsappHref } from "@/lib/content/business-details"
 import { customerCopy } from "@/lib/copy/customer"
 import { shellCopy } from "@/lib/copy/shell"
 import { formatAgorot } from "@/lib/money"
+import { readPaymentOutcome } from "@/lib/payments/payment-outcome"
+import { canBuy, NO_PURCHASE } from "@/lib/payments/purchase-options"
 import { formatDayMonth } from "@/lib/time"
 import { cn } from "@/lib/utils"
 import { callRpc } from "@/lib/rpc"
@@ -20,6 +23,7 @@ import {
   toCustomerSession,
 } from "../load-sessions"
 import { sessionStatus } from "../session-status"
+import { loadSessionPurchaseOptions } from "./actions"
 import { BookingPanel } from "./booking-panel"
 import {
   companionNoteBooking,
@@ -71,7 +75,8 @@ export async function SessionContent({
   const { id } = await params
   // Story 3.10: arriving here after moving her booking to this session.
   // Story 5.6: from=waitlist, arriving from a waitlist_spot notification.
-  const { moved, from } = await searchParams
+  const query = await searchParams
+  const { moved, from } = query
   if (!UUID.test(id)) notFound()
   const supabase = await createClient()
   // RLS: a draft is never returned to a customer.
@@ -89,14 +94,23 @@ export async function SessionContent({
   // Story 5.21 (fix 7): on a couple session her bookings are read with the
   // rest (the companion note); a regular session makes no call.
   // Story 5.6: her active waitlist entry here (RLS: her own rows only).
-  const [previewResult, availability, contactHref, coupleBookings, waiting] =
-    await Promise.all([
-      callRpc(supabase, "preview_book_session", { p_event_id: id }),
-      availabilityOf(supabase, [id]),
-      getWhatsappHref(),
-      coupleSessionBookings(supabase, session.kind),
-      isWaiting(supabase, id),
-    ])
+  const [
+    previewResult,
+    availability,
+    contactHref,
+    coupleBookings,
+    waiting,
+    outcome,
+  ] = await Promise.all([
+    callRpc(supabase, "preview_book_session", { p_event_id: id }),
+    availabilityOf(supabase, [id]),
+    getWhatsappHref(),
+    coupleSessionBookings(supabase, session.kind),
+    isWaiting(supabase, id),
+    // Online payments (PR B): the outcome of her return, only after a
+    // real one.
+    readPaymentOutcome(query),
+  ])
   const preview: BookingPreview = previewResult.ok
     ? parsePreview(previewResult.data)
     : { kind: "blocked", code: previewResult.code }
@@ -107,6 +121,12 @@ export async function SessionContent({
   const cancelWindowHours = bookingId
     ? await cancelWindowOf(supabase, bookingId)
     : null
+  // Online payments (PR B): no fitting entry, so the session's products
+  // she may buy (none while online buying is off).
+  const purchase =
+    preview.kind === "blocked" && preview.code === "NO_MATCHING_ENTITLEMENT"
+      ? await loadSessionPurchaseOptions(id)
+      : NO_PURCHASE
   // The companion note of her couple booking here (no preview change).
   const coupleBooking = companionNoteBooking(coupleBookings, bookingId)
   const status = sessionStatus({
@@ -125,6 +145,11 @@ export async function SessionContent({
 
   return (
     <>
+      <PaymentNotice
+        outcome={outcome}
+        surface="session"
+        contactHref={contactHref}
+      />
       <ConceptHeader
         conceptName={session.concept_name}
         photo={session.photo}
@@ -158,6 +183,7 @@ export async function SessionContent({
             preview={preview}
             cancelWindowHours={cancelWindowHours}
             contactHref={contactHref}
+            purchaseProducts={canBuy(purchase) ? purchase.products : []}
           />
         )}
         <div className={cn(!full && "mt-6", "empty:hidden")}>

@@ -1,16 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import {
+  checkoutBannerId,
   checkoutCookieOptions,
-  checkoutEntryFor,
   closedPathFor,
+  paymentRedirectResponse,
   confirmCheckout,
   failFromPayment,
-  parseCheckoutCookie,
+  purchaseOptions,
   returnFromPayment,
   returnPathFor,
-  serializeCheckoutCookie,
   startCheckout,
+  startPurchase,
   type CheckoutDeps,
 } from "./checkout"
 import { GrowUnavailableError, type GrowClient } from "./grow"
@@ -556,95 +557,88 @@ describe("returnPathFor", () => {
     event_id: EVENT,
     customer_known: false,
   }
+  const path = (row: Parameters<typeof returnPathFor>[0], pending = false) =>
+    returnPathFor(row, pending, CHECKOUT)
 
-  it("paid, new customer: the join link", () => {
-    expect(
-      returnPathFor({ ...base, state: "paid", join_token: "tok" }, false)
-    ).toBe("/join/tok")
+  it("paid, new customer: the join link (final)", () => {
+    expect(path({ ...base, state: "paid", join_token: "tok" })).toEqual({
+      path: "/join/tok",
+      final: true,
+    })
   })
 
-  it("paid, known customer: bookings (pinned) or purchases", () => {
+  it("paid, known customer: the success notice in bookings (pinned) or purchases", () => {
     expect(
-      returnPathFor({ ...base, state: "paid", customer_known: true }, false)
-    ).toBe("/me/bookings")
+      path({ ...base, state: "paid", customer_known: true, booked: true })
+    ).toEqual({ path: "/me/bookings?payment=paid", final: true })
     expect(
-      returnPathFor(
-        {
-          ...base,
-          state: "paid",
-          customer_known: true,
-          product_kind: "days",
-          event_id: null,
-        },
-        false
-      )
-    ).toBe("/me/purchases")
+      path({
+        ...base,
+        state: "paid",
+        customer_known: true,
+        product_kind: "days",
+        event_id: null,
+      })
+    ).toEqual({ path: "/me/purchases?payment=paid", final: true })
+  })
+
+  it("paid and parked (no booking), known customer: no_place", () => {
+    expect(
+      path({ ...base, state: "paid", customer_known: true, booked: false })
+    ).toEqual({ path: "/me/bookings?payment=no_place", final: true })
   })
 
   it("paid, no link possible: the issue notice", () => {
-    expect(
-      returnPathFor({ ...base, state: "paid", join_blocked: true }, false)
-    ).toBe(`/sessions/${EVENT}?payment=issue`)
+    expect(path({ ...base, state: "paid", join_blocked: true })).toEqual({
+      path: `/sessions/${EVENT}?payment=issue`,
+      final: true,
+    })
   })
 
-  it("not at morning yet: pending", () => {
-    expect(returnPathFor({ ...base, state: "open" }, true)).toBe("/pay/pending")
-    expect(returnPathFor({ ...base, state: "expired" }, true)).toBe(
-      "/pay/pending"
-    )
+  it("not at morning yet: pending with ?c=, not final", () => {
+    expect(path({ ...base, state: "open" }, true)).toEqual({
+      path: `/pay/pending?c=${CHECKOUT}`,
+      final: false,
+    })
+    expect(path({ ...base, state: "expired" }, true).final).toBe(false)
   })
 
-  it("issue, failed, expired: the session page, my purchases, or home for a guest", () => {
-    expect(returnPathFor({ ...base, state: "issue" }, false)).toBe(
-      `/sessions/${EVENT}?payment=issue`
+  it("issue: the session page, my purchases, or home for a guest; without money received the neutral review", () => {
+    expect(path({ ...base, state: "issue" })).toEqual({
+      path: `/sessions/${EVENT}?payment=issue`,
+      final: true,
+    })
+    expect(
+      path({ ...base, state: "issue", event_id: null, customer_known: true })
+        .path
+    ).toBe("/me/purchases?payment=issue")
+    expect(path({ ...base, state: "issue", has_payment: false })).toEqual({
+      path: `/sessions/${EVENT}?payment=review`,
+      final: true,
+    })
+    expect(path({ ...base, state: "issue", event_id: null }).path).toBe(
+      "/?payment=issue"
     )
-    expect(
-      returnPathFor(
-        { ...base, state: "failed", event_id: null, customer_known: true },
-        false
-      )
-    ).toBe("/me/purchases?payment=failed")
-    expect(
-      returnPathFor({ ...base, state: "failed", event_id: null }, false)
-    ).toBe("/?payment=failed")
     expect(closedPathFor("expired", EVENT, false)).toBe(
       `/sessions/${EVENT}?payment=expired`
     )
   })
+
+  it("the success URL never says failed: unpaid states are pending, then not_found after the end", () => {
+    for (const state of ["open", "failed", "expired"] as const) {
+      expect(path({ ...base, state }), state).toEqual({
+        path: `/pay/pending?c=${CHECKOUT}`,
+        final: false,
+      })
+      expect(path({ ...base, state, pending_over: true }), state).toEqual({
+        path: `/sessions/${EVENT}?payment=not_found`,
+        final: true,
+      })
+    }
+  })
 })
 
-describe("the checkout cookie", () => {
-  it("entries newest first, at most 5, invalid ones skipped", () => {
-    const entries = Array.from({ length: 6 }, (_, i) => ({
-      id: `${i}1111111-1111-4111-8111-111111111111`,
-      secret: BROWSER,
-    }))
-    const value = serializeCheckoutCookie(entries)
-    expect(value.split(",")).toHaveLength(5)
-    expect(parseCheckoutCookie(`x.y,${value}`)).toEqual(entries.slice(0, 5))
-  })
-
-  it.each([
-    null,
-    "",
-    CHECKOUT,
-    `${CHECKOUT}.`,
-    `x.${BROWSER}`,
-    `${CHECKOUT}.a b`,
-  ])("no entry in %j", (value) => {
-    expect(parseCheckoutCookie(value)).toEqual([])
-  })
-
-  it("the entry of c only", () => {
-    const cookie = `${OTHER}.${BROWSER_2},${CHECKOUT}.${BROWSER}`
-    expect(checkoutEntryFor(cookie, CHECKOUT)).toEqual({
-      id: CHECKOUT,
-      secret: BROWSER,
-    })
-    expect(checkoutEntryFor(cookie, null)).toBeNull()
-    expect(checkoutEntryFor(cookie, EVENT)).toBeNull()
-  })
-
+describe("the checkout cookie's options", () => {
   it("secure only on https", () => {
     expect(checkoutCookieOptions(ENV).secure).toBe(true)
     expect(
@@ -699,16 +693,145 @@ describe("returnFromPayment", () => {
     ).toEqual({ path: "/join/tok", cookie: null })
   })
 
-  it("morning down on a paid checkout: still her join link (or her area)", async () => {
+  it("morning down on a paid checkout: still her area (booked), the entry leaves", async () => {
     routeRpc(undefined, {
       forConfirm: ok({ ...FOR_CONFIRM, state: "paid" }),
-      back: ok({ ...RETURN_ROW, customer_known: true }),
+      back: ok({ ...RETURN_ROW, customer_known: true, booked: true }),
     })
     findCheckoutDocument.mockRejectedValue(
       new GrowUnavailableError("documents_search", null)
     )
     expect(await returnFromPayment(cookie, CHECKOUT, deps)).toEqual({
-      path: "/me/bookings",
+      path: "/me/bookings?payment=paid",
+      cookie: `${OTHER}.${BROWSER_2}`,
+      outcome: { payment: "paid", kind: "session" },
+    })
+  })
+
+  it("paid, known customer: a missing booked reads as booked; false is no_place", async () => {
+    routeRpc(undefined, {
+      back: ok({ ...RETURN_ROW, customer_known: true }),
+    })
+    findCheckoutDocument.mockResolvedValue(ONE_DOC)
+    expect((await returnFromPayment(cookie, CHECKOUT, deps)).path).toBe(
+      "/me/bookings?payment=paid"
+    )
+    routeRpc(undefined, {
+      back: ok({ ...RETURN_ROW, customer_known: true, booked: false }),
+    })
+    expect(await returnFromPayment(cookie, CHECKOUT, deps)).toEqual({
+      path: "/me/bookings?payment=no_place",
+      cookie: `${OTHER}.${BROWSER_2}`,
+      outcome: { payment: "no_place", kind: "session" },
+    })
+  })
+
+  it("paid card, known customer: the purchases notice with a card outcome", async () => {
+    routeRpc(undefined, {
+      back: ok({
+        ...RETURN_ROW,
+        product_kind: "days",
+        event_id: null,
+        customer_known: true,
+      }),
+    })
+    findCheckoutDocument.mockResolvedValue(ONE_DOC)
+    expect(await returnFromPayment(cookie, CHECKOUT, deps)).toMatchObject({
+      path: "/me/purchases?payment=paid",
+      outcome: { payment: "paid", kind: "card" },
+    })
+  })
+
+  it.each(["failed", "expired"])(
+    "success URL, %s, no document yet: pending, the entry kept (never 'לא חויבת')",
+    async (state) => {
+      routeRpc(undefined, {
+        forConfirm: ok({ ...FOR_CONFIRM, state }),
+        back: ok({ ...RETURN_ROW, state }),
+      })
+      findCheckoutDocument.mockResolvedValue({ kind: "none" })
+      expect(await returnFromPayment(cookie, CHECKOUT, deps)).toEqual({
+        path: `/pay/pending?c=${CHECKOUT}`,
+      })
+    }
+  )
+
+  it.each(["open", "failed", "expired"])(
+    "success URL, %s, 30 minutes past the pay window and grace: not_found, the entry removed",
+    async (state) => {
+      routeRpc(undefined, {
+        forConfirm: ok({ ...FOR_CONFIRM, state }),
+        back: ok({ ...RETURN_ROW, state, pending_over: true }),
+      })
+      findCheckoutDocument.mockResolvedValue({ kind: "none" })
+      expect(await returnFromPayment(cookie, CHECKOUT, deps)).toEqual({
+        path: `/sessions/${EVENT}?payment=not_found`,
+        cookie: `${OTHER}.${BROWSER_2}`,
+        outcome: { payment: "not_found", kind: "session" },
+      })
+    }
+  )
+
+  it("issue: final; with money received the issue notice, without it the neutral review", async () => {
+    routeRpc(undefined, {
+      forConfirm: ok({ ...FOR_CONFIRM, state: "issue" }),
+      back: ok({ ...RETURN_ROW, state: "issue", has_payment: true }),
+    })
+    findCheckoutDocument.mockResolvedValue({ kind: "none" })
+    expect(await returnFromPayment(cookie, CHECKOUT, deps)).toEqual({
+      path: `/sessions/${EVENT}?payment=issue`,
+      cookie: `${OTHER}.${BROWSER_2}`,
+      outcome: { payment: "issue", kind: "session" },
+    })
+    routeRpc(undefined, {
+      forConfirm: ok({ ...FOR_CONFIRM, state: "issue" }),
+      back: ok({ ...RETURN_ROW, state: "issue", has_payment: false }),
+    })
+    expect(await returnFromPayment(cookie, CHECKOUT, deps)).toMatchObject({
+      path: `/sessions/${EVENT}?payment=review`,
+      outcome: { payment: "review", kind: "session" },
+    })
+  })
+
+  it("a known customer past the end: her area's session page", async () => {
+    routeRpc(undefined, {
+      forConfirm: ok({ ...FOR_CONFIRM, state: "failed" }),
+      back: ok({
+        ...RETURN_ROW,
+        state: "failed",
+        customer_known: true,
+        pending_over: true,
+      }),
+    })
+    findCheckoutDocument.mockResolvedValue({ kind: "none" })
+    expect((await returnFromPayment(cookie, CHECKOUT, deps)).path).toBe(
+      `/me/sessions/${EVENT}?payment=not_found`
+    )
+  })
+
+  it("a known customer's card issue: my purchases, never the home page", async () => {
+    routeRpc(undefined, {
+      forConfirm: ok({ ...FOR_CONFIRM, state: "issue" }),
+      back: ok({
+        ...RETURN_ROW,
+        state: "issue",
+        product_kind: "days",
+        event_id: null,
+        customer_known: true,
+      }),
+    })
+    findCheckoutDocument.mockResolvedValue({ kind: "none" })
+    expect(await returnFromPayment(cookie, CHECKOUT, deps)).toMatchObject({
+      path: "/me/purchases?payment=issue",
+      outcome: { payment: "issue", kind: "card" },
+    })
+  })
+
+  it("a checkout that no longer exists: not found, its entry leaves", async () => {
+    serviceRpc.mockResolvedValue(p0001("CHECKOUT_NOT_FOUND"))
+    expect(await returnFromPayment(cookie, CHECKOUT, deps)).toEqual({
+      path: "/sessions",
+      cookie: `${OTHER}.${BROWSER_2}`,
     })
   })
 
@@ -720,7 +843,7 @@ describe("returnFromPayment", () => {
       new GrowUnavailableError("documents_search", null)
     )
     expect(await returnFromPayment(cookie, CHECKOUT, deps)).toEqual({
-      path: "/pay/pending",
+      path: `/pay/pending?c=${CHECKOUT}`,
     })
   })
 })
@@ -728,12 +851,19 @@ describe("returnFromPayment", () => {
 describe("failFromPayment", () => {
   const cookie = `${OTHER}.${BROWSER_2},${CHECKOUT}.${BROWSER}`
 
-  it("cancels only the entry of c", async () => {
+  it("cancels only the entry of c; the failed outcome for the notice", async () => {
     serviceRpc.mockResolvedValue(
-      ok({ state: "failed", event_id: EVENT, customer_known: false })
+      ok({
+        state: "failed",
+        product_kind: "session",
+        event_id: EVENT,
+        customer_known: false,
+      })
     )
     expect(await failFromPayment(cookie, CHECKOUT)).toEqual({
       path: `/sessions/${EVENT}?payment=failed`,
+      cookie: `${OTHER}.${BROWSER_2}`,
+      outcome: { payment: "failed", kind: "session" },
     })
     expect(serviceRpc).toHaveBeenCalledWith("cancel_checkout", {
       p_checkout_id: CHECKOUT,
@@ -761,10 +891,309 @@ describe("failFromPayment", () => {
 
   it("a guest's non-pinned failure: the home page, never /me", async () => {
     serviceRpc.mockResolvedValue(
-      ok({ state: "failed", event_id: null, customer_known: false })
+      ok({
+        state: "failed",
+        product_kind: "days",
+        event_id: null,
+        customer_known: false,
+      })
     )
     expect(await failFromPayment(cookie, CHECKOUT)).toEqual({
       path: "/?payment=failed",
+      cookie: `${OTHER}.${BROWSER_2}`,
+      outcome: { payment: "failed", kind: "card" },
     })
+  })
+
+  it("the failure URL still says failed; an issue there gets the neutral review", async () => {
+    serviceRpc.mockResolvedValue(
+      ok({
+        state: "issue",
+        product_kind: "session",
+        event_id: EVENT,
+        customer_known: false,
+      })
+    )
+    expect(await failFromPayment(cookie, CHECKOUT)).toMatchObject({
+      path: `/sessions/${EVENT}?payment=review`,
+      outcome: { payment: "review", kind: "session" },
+    })
+  })
+
+  it("a database error: pending for that checkout, the entry stays", async () => {
+    serviceRpc.mockResolvedValue({
+      data: null,
+      error: { code: "57P01", message: "terminated" },
+    })
+    expect(await failFromPayment(cookie, CHECKOUT)).toEqual({
+      path: `/pay/pending?c=${CHECKOUT}`,
+    })
+  })
+
+  it("the only entry fails: the cookie is deleted", async () => {
+    serviceRpc.mockResolvedValue(
+      ok({ state: "failed", event_id: EVENT, customer_known: false })
+    )
+    expect(await failFromPayment(`${CHECKOUT}.${BROWSER}`, CHECKOUT)).toEqual({
+      path: `/sessions/${EVENT}?payment=failed`,
+      cookie: null,
+      outcome: { payment: "failed", kind: "card" },
+    })
+  })
+})
+
+const OPTIONS = {
+  enabled: true,
+  public_purchase: false,
+  products: [
+    {
+      id: PRODUCT,
+      name: "כרטיסייה",
+      type: "card",
+      price_agorot: 47200,
+      units: 4,
+      validity_mode: "days",
+      validity_days: 49,
+    },
+  ],
+}
+
+describe("purchaseOptions (PR B)", () => {
+  it("the kill switch off: nothing, and no call", async () => {
+    expect(
+      await purchaseOptions("customer", EVENT, {
+        ...deps,
+        env: { ...ENV, ONLINE_PAYMENTS_ENABLED: "false" },
+      })
+    ).toEqual({ enabled: false, products: [] })
+    expect(serviceRpc).not.toHaveBeenCalled()
+  })
+
+  it("a customer: the uid of her verified claims, through the service role", async () => {
+    serviceRpc.mockResolvedValue(ok(OPTIONS))
+    const options = await purchaseOptions("customer", EVENT, deps)
+    expect(options.enabled).toBe(true)
+    expect(options.products.map((p) => p.id)).toEqual([PRODUCT])
+    expect(serviceRpc).toHaveBeenCalledWith("get_purchase_options", {
+      p_event_id: EVENT,
+      p_auth_uid: UID,
+    })
+  })
+
+  it("a guest: no uid, the claims are not read", async () => {
+    serviceRpc.mockResolvedValue(ok(OPTIONS))
+    await purchaseOptions("guest", EVENT, deps)
+    expect(serviceRpc).toHaveBeenCalledWith("get_purchase_options", {
+      p_event_id: EVENT,
+      p_auth_uid: null,
+    })
+    expect(getClaims).not.toHaveBeenCalled()
+  })
+
+  it("a customer without claims, a bad event id or a read error: nothing", async () => {
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {})
+    getClaims.mockResolvedValue({ data: null })
+    expect((await purchaseOptions("customer", EVENT, deps)).enabled).toBe(false)
+    getClaims.mockResolvedValue({ data: { claims: { sub: UID } } })
+    expect((await purchaseOptions("customer", "x", deps)).enabled).toBe(false)
+    expect(serviceRpc).not.toHaveBeenCalled()
+    serviceRpc.mockResolvedValue(p0001("SERVER_ERROR"))
+    expect(await purchaseOptions("customer", null, deps)).toEqual({
+      enabled: false,
+      products: [],
+    })
+    expect(errors).toHaveBeenCalledWith("checkout.options_failed", {
+      code: "SERVER_ERROR",
+    })
+    errors.mockRestore()
+  })
+})
+
+describe("startPurchase (PR B)", () => {
+  const input = {
+    as: "customer" as const,
+    productId: PRODUCT,
+    eventId: null,
+    termsAccepted: true,
+    idempotencyKey: KEY,
+  }
+
+  it("an offered product: the checkout starts", async () => {
+    serviceRpc.mockImplementation(async (name: string) =>
+      name === "get_purchase_options" ? ok(OPTIONS) : ok(BEGUN)
+    )
+    createPaymentForm.mockResolvedValue("https://pay.test/form")
+    expect(await startPurchase(input, deps)).toEqual({
+      ok: true,
+      data: { kind: "redirect", url: "https://pay.test/form" },
+    })
+    expect(names()[0]).toBe("get_purchase_options")
+    expect(names()).toContain("begin_checkout")
+  })
+
+  it("terms not published (enabled false): ONLINE_PAYMENTS_OFF, no checkout", async () => {
+    serviceRpc.mockResolvedValue(ok({ ...OPTIONS, enabled: false }))
+    expect(await startPurchase(input, deps)).toEqual({
+      ok: false,
+      code: "ONLINE_PAYMENTS_OFF",
+    })
+    expect(names()).toEqual(["get_purchase_options"])
+  })
+
+  it("a product the sheet would not offer (e.g. a hidden intro): PRODUCT_NOT_PURCHASABLE", async () => {
+    serviceRpc.mockResolvedValue(ok({ ...OPTIONS, products: [] }))
+    expect(await startPurchase(input, deps)).toEqual({
+      ok: false,
+      code: "PRODUCT_NOT_PURCHASABLE",
+    })
+    expect(names()).toEqual(["get_purchase_options"])
+  })
+
+  it("terms not ticked: TERMS_REQUIRED before any call", async () => {
+    expect(
+      await startPurchase({ ...input, termsAccepted: false }, deps)
+    ).toEqual({ ok: false, code: "TERMS_REQUIRED" })
+    expect(serviceRpc).not.toHaveBeenCalled()
+  })
+
+  it("the kill switch off: ONLINE_PAYMENTS_OFF before any call", async () => {
+    expect(
+      await startPurchase(input, {
+        ...deps,
+        env: { ...ENV, ONLINE_PAYMENTS_ENABLED: "false" },
+      })
+    ).toEqual({ ok: false, code: "ONLINE_PAYMENTS_OFF" })
+    expect(serviceRpc).not.toHaveBeenCalled()
+  })
+})
+
+describe("startPurchase: review pass 1", () => {
+  const input = {
+    as: "customer" as const,
+    productId: PRODUCT,
+    eventId: EVENT,
+    termsAccepted: true,
+    idempotencyKey: KEY,
+  }
+
+  it("a card sent with a session starts without it", async () => {
+    serviceRpc.mockImplementation(async (name: string) =>
+      name === "get_purchase_options" ? ok(OPTIONS) : ok(BEGUN)
+    )
+    createPaymentForm.mockResolvedValue("https://pay.test/form")
+    await startPurchase(input, deps)
+    expect(serviceRpc).toHaveBeenCalledWith(
+      "begin_checkout",
+      expect.objectContaining({ p_event_id: null })
+    )
+  })
+
+  it("the guest path refuses a signed-in caller: NOT_AUTHORIZED, no call", async () => {
+    expect(await startPurchase({ ...input, as: "guest" }, deps)).toEqual({
+      ok: false,
+      code: "NOT_AUTHORIZED",
+    })
+    expect(serviceRpc).not.toHaveBeenCalled()
+  })
+
+  it("a real guest goes on", async () => {
+    getClaims.mockResolvedValue({ data: null })
+    serviceRpc.mockResolvedValue(ok({ ...OPTIONS, products: [] }))
+    expect(await startPurchase({ ...input, as: "guest" }, deps)).toEqual({
+      ok: false,
+      code: "PRODUCT_NOT_PURCHASABLE",
+    })
+  })
+})
+
+describe("closedPathFor (review pass 1)", () => {
+  it("a known customer stays in her area; a guest on the public site", () => {
+    expect(closedPathFor("failed", EVENT, true)).toBe(
+      `/me/sessions/${EVENT}?payment=failed`
+    )
+    expect(closedPathFor("issue", null, true)).toBe(
+      "/me/purchases?payment=issue"
+    )
+    expect(closedPathFor("failed", EVENT, false)).toBe(
+      `/sessions/${EVENT}?payment=failed`
+    )
+    expect(closedPathFor("failed", null, false)).toBe("/?payment=failed")
+  })
+})
+
+describe("paymentRedirectResponse: the outcome cookie", () => {
+  it("a ?payment= redirect sets the one-minute httpOnly outcome", () => {
+    const response = paymentRedirectResponse(
+      {
+        path: `/sessions/${EVENT}?payment=failed`,
+        cookie: null,
+        outcome: { payment: "failed", kind: "session" },
+      },
+      "https://site.test/pay/failed",
+      ENV
+    )
+    const header = response.headers.getSetCookie().join("\n")
+    expect(header).toContain("bt_payment_outcome=failed.session")
+    expect(header).toMatch(/bt_payment_outcome=[^\n]*Max-Age=60/)
+    expect(header).toMatch(/bt_payment_outcome=[^\n]*HttpOnly/)
+    expect(header).toMatch(/bt_payment_outcome=[^\n]*Path=\//)
+  })
+
+  it("no outcome: no outcome cookie (pending, a join link)", () => {
+    const response = paymentRedirectResponse(
+      { path: `/pay/pending?c=${CHECKOUT}` },
+      "https://site.test/pay/return",
+      ENV
+    )
+    expect(response.headers.getSetCookie().join("\n")).not.toContain(
+      "bt_payment_outcome"
+    )
+  })
+})
+
+describe("checkoutBannerId (review pass 1)", () => {
+  it("the newest entry the database says is paid and unjoined within 24 hours", async () => {
+    cookieGet.mockReturnValue({
+      value: `${OTHER}.${BROWSER_2},${CHECKOUT}.${BROWSER}`,
+    })
+    serviceRpc.mockImplementation(
+      async (_name: string, args: { p_checkout_id: string }) =>
+        ok({ show: args.p_checkout_id === CHECKOUT })
+    )
+    expect(await checkoutBannerId(deps)).toBe(CHECKOUT)
+    expect(serviceRpc).toHaveBeenCalledWith("checkout_banner_state", {
+      p_checkout_id: OTHER,
+      p_browser_secret: BROWSER_2,
+    })
+  })
+
+  it("no qualifying entry (open, failed, expired, joined, old): null", async () => {
+    cookieGet.mockReturnValue({ value: `${CHECKOUT}.${BROWSER}` })
+    serviceRpc.mockResolvedValue(ok({ show: false }))
+    expect(await checkoutBannerId(deps)).toBeNull()
+  })
+
+  it("no cookie, or the kill switch off: null and no call", async () => {
+    cookieGet.mockReturnValue(undefined)
+    expect(await checkoutBannerId(deps)).toBeNull()
+    cookieGet.mockReturnValue({ value: `${CHECKOUT}.${BROWSER}` })
+    expect(
+      await checkoutBannerId({
+        ...deps,
+        env: { ...ENV, ONLINE_PAYMENTS_ENABLED: "false" },
+      })
+    ).toBeNull()
+    expect(serviceRpc).not.toHaveBeenCalled()
+  })
+
+  it("a read error: null, logged with its code", async () => {
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {})
+    cookieGet.mockReturnValue({ value: `${CHECKOUT}.${BROWSER}` })
+    serviceRpc.mockResolvedValue(p0001("SERVER_ERROR"))
+    expect(await checkoutBannerId(deps)).toBeNull()
+    expect(errors).toHaveBeenCalledWith("checkout.banner_failed", {
+      code: "SERVER_ERROR",
+    })
+    errors.mockRestore()
   })
 })

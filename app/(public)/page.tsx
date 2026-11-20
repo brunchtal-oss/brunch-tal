@@ -3,6 +3,11 @@ import type { Metadata } from "next"
 
 import { JsonLd } from "@/components/public/json-ld"
 import { HomeView } from "@/components/public/page-views"
+import {
+  PaymentNotice,
+  paymentNoticeOf,
+} from "@/components/shared/payment-notice"
+import { readPaymentOutcome } from "@/lib/payments/payment-outcome"
 import { UpcomingSessions } from "@/components/public/upcoming-sessions"
 import {
   businessNameOf,
@@ -37,7 +42,14 @@ export async function generateMetadata(): Promise<Metadata> {
 // sessions are dynamic (AD-2), inside <Suspense>, so the rest stays cached.
 // The business and the website as structured data (JSON-LD), from the same
 // published content (fix-search-ready).
-export default async function HomePage() {
+// Online payments (PR B): a guest's card purchase that failed or expired
+// comes back here with ?payment=; its notice is read in its own <Suspense>,
+// so the rest stays cached.
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}) {
   const [home, about, gallery, details, site, seo, pageSeo] = await Promise.all(
     [
       getPublishedPage("home"),
@@ -62,6 +74,12 @@ export default async function HomePage() {
           footer: sectionContent(site.sections, "footer", "footer"),
         })}
       />
+      <Suspense fallback={null}>
+        <HomePaymentNotice
+          searchParams={searchParams}
+          contactHref={guestWhatsappHref(details)}
+        />
+      </Suspense>
       <HomeView
         home={home.sections}
         about={about.sections}
@@ -77,5 +95,25 @@ export default async function HomePage() {
         }
       />
     </>
+  )
+}
+
+async function HomePaymentNotice({
+  searchParams,
+  contactHref,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+  contactHref: string | null
+}) {
+  const outcome = await readPaymentOutcome(await searchParams)
+  if (!paymentNoticeOf(outcome, "home")) return null
+  return (
+    <div className="mx-auto w-full max-w-[720px] px-6 pt-4">
+      <PaymentNotice
+        outcome={outcome}
+        surface="home"
+        contactHref={contactHref}
+      />
+    </div>
   )
 }

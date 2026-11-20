@@ -36,6 +36,8 @@ import {
   rowHash,
   TABLES,
   withoutExcluded,
+  withoutPurchaseTerms,
+  INCLUDE_PURCHASE_TERMS_FLAG,
 } from "./prod-copy-plan.mjs"
 
 const CRON_JOBS = [
@@ -394,9 +396,20 @@ async function checkCopiedTables(prod, dev) {
     const params = spec.table === "media_assets" ? [mediaIds] : []
     const [devRows, prodRows] = await Promise.all([
       readRows(dev, spec.table, where, params).then((rows) =>
-        withoutExcluded(spec, rows)
+        withoutPurchaseTerms(
+          spec,
+          withoutExcluded(spec, rows),
+          process.argv.includes(INCLUDE_PURCHASE_TERMS_FLAG)
+        )
       ),
-      readRows(prod, spec.table, where, params),
+      // The purchase terms are skipped on both sides, as in the copy.
+      readRows(prod, spec.table, where, params).then((rows) =>
+        withoutPurchaseTerms(
+          spec,
+          rows,
+          process.argv.includes(INCLUDE_PURCHASE_TERMS_FLAG)
+        )
+      ),
     ])
     const cols = compareColumns(spec)
     const hashes = (rows) =>

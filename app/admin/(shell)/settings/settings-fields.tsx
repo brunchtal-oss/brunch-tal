@@ -2,6 +2,7 @@
 
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { Checkbox } from "@/components/ui/checkbox"
 import { adminCopy } from "@/lib/copy/admin"
 import { cn } from "@/lib/utils"
 
@@ -137,5 +138,33 @@ export function PrepDaysField({
       </div>
       <ProblemLine id={errorId} text={empty ? copy.prepDaysEmpty : null} />
     </fieldset>
+  )
+}
+
+// An on/off setting (PR B: public_online_purchase): the 24px checkbox of
+// DESIGN (as IntroOnlyField) with its label beside it, 44px high.
+export function BooleanField({
+  id,
+  label,
+  value,
+  onChange,
+}: {
+  id: string
+  label: string
+  value: boolean
+  onChange: (value: boolean) => void
+}) {
+  return (
+    <div className="flex min-h-11 items-center gap-3">
+      <Checkbox
+        id={id}
+        checked={value}
+        onCheckedChange={(next) => onChange(next === true)}
+        className="size-6 rounded-[4px] border-[1.5px] border-muted-foreground"
+      />
+      <label htmlFor={id} className="text-base">
+        {label}
+      </label>
+    </div>
   )
 }

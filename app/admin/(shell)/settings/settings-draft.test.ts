@@ -29,6 +29,9 @@ const ROW: SettingsRow = {
   duplicate_payment_window_days: 7,
   default_session_start_time: "10:30",
   default_session_end_time: "14:30",
+  online_payment_window_minutes: 10,
+  online_hold_grace_minutes: 5,
+  public_online_purchase: false,
 }
 
 describe("SETTINGS_COLUMNS (story 5.20)", () => {
@@ -113,6 +116,56 @@ describe("settingChange", () => {
   ] as const)("offers no save for %s %o", (field, patch) => {
     const draft = { ...draftFromRow(ROW), ...patch } as SettingsDraft
     expect(settingChange(field, ROW, draft)).toBeNull()
+  })
+})
+
+describe("online payments (PR B)", () => {
+  it("reads the two times in minutes and the switch in words", () => {
+    expect(savedText("paymentWindow", ROW)).toBe("10 דקות")
+    expect(savedText("holdGrace", ROW)).toBe("5 דקות")
+    expect(savedText("publicPurchase", ROW)).toBe("כבויה")
+    expect(
+      savedText("publicPurchase", { ...ROW, public_online_purchase: true })
+    ).toBe("פעילה")
+  })
+
+  it("sends the pay window and the grace as numbers", () => {
+    const draft = { ...draftFromRow(ROW), paymentWindow: "15", holdGrace: "0" }
+    expect(settingChange("paymentWindow", ROW, draft)).toEqual({
+      changes: { online_payment_window_minutes: 15 },
+      from: "10 דקות",
+      to: "15 דקות",
+    })
+    expect(settingChange("holdGrace", ROW, draft)).toEqual({
+      changes: { online_hold_grace_minutes: 0 },
+      from: "5 דקות",
+      to: "0 דקות",
+    })
+  })
+
+  it("out of range: a field error and no save", () => {
+    for (const [field, value, min, max] of [
+      ["paymentWindow", "0", 1, 60],
+      ["paymentWindow", "61", 1, 60],
+      ["holdGrace", "31", 0, 30],
+    ] as const) {
+      const draft = { ...draftFromRow(ROW), [field]: value } as SettingsDraft
+      expect(settingChange(field, ROW, draft)).toBeNull()
+      expect(draftProblem(field, draft)).toEqual({ kind: "range", min, max })
+    }
+  })
+
+  it("the switch: a boolean change, none while unchanged", () => {
+    const draft = draftFromRow(ROW)
+    expect(draft.publicPurchase).toBe(false)
+    expect(settingChange("publicPurchase", ROW, draft)).toBeNull()
+    expect(
+      settingChange("publicPurchase", ROW, { ...draft, publicPurchase: true })
+    ).toEqual({
+      changes: { public_online_purchase: true },
+      from: "כבויה",
+      to: "פעילה",
+    })
   })
 })
 

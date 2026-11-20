@@ -250,6 +250,20 @@ async function PageView({
           whatsappHref={plainWhatsappHref(details?.whatsapp_phone)}
         />
       )
+    // Online payments (PR B): the purchase terms, the same legal view.
+    case "purchase-terms":
+      return (
+        <LegalTextView
+          title={pageH1(seo, "purchase_terms", "")}
+          content={sectionContent(
+            previewSections(pages["purchase-terms"]),
+            "body",
+            "legal_text"
+          )}
+          publishedAt={pages["purchase-terms"].published_at}
+          whatsappHref={plainWhatsappHref(details?.whatsapp_phone)}
+        />
+      )
     case "accessibility":
       return (
         <AccessibilityView

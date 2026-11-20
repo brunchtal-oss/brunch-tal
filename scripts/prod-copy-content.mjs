@@ -17,7 +17,9 @@
 // created_by become null. Never: events, customers, bookings, payments,
 // entitlements, credits, waitlist, notifications, jobs, audit, tokens,
 // notes, work sheets, push subscriptions, idempotency, rate limits,
-// marketing_tags values.
+// marketing_tags values. The purchase terms (page purchase-terms, its
+// section and seo/purchase_terms) are skipped on both sides unless
+// --include-purchase-terms is passed (online payments, PR B).
 //
 // Refuses to run when production holds any profile, event, payment,
 // entitlement or booking, or when a copied row is test_ data or mentions
@@ -44,9 +46,12 @@ import {
   sourceFirst,
   TABLES,
   withoutExcluded,
+  withoutPurchaseTerms,
+  INCLUDE_PURCHASE_TERMS_FLAG,
 } from "./prod-copy-plan.mjs"
 
 const apply = process.argv.includes("--apply")
+const includePurchaseTerms = process.argv.includes(INCLUDE_PURCHASE_TERMS_FLAG)
 
 const prodConfig = loadProdConfig()
 const devConfig = loadDevConfig(prodConfig.dev)
@@ -152,7 +157,11 @@ async function main() {
           ? await readRows(dev, t.table, "where t.id = any($1::uuid[])", [
               mediaIds,
             ])
-          : withoutExcluded(t, await readRows(dev, t.table))
+          : withoutPurchaseTerms(
+              t,
+              withoutExcluded(t, await readRows(dev, t.table)),
+              includePurchaseTerms
+            )
     }
     const refused = TABLES.flatMap((t) => refusedRows(t, devRows[t.table]))
     if (refused.length > 0) {
@@ -215,7 +224,11 @@ async function main() {
           ? await readRows(prod, t.table, "where t.id = any($1::uuid[])", [
               mediaIds,
             ])
-          : await readRows(prod, t.table)
+          : withoutPurchaseTerms(
+              t,
+              await readRows(prod, t.table),
+              includePurchaseTerms
+            )
       plans[t.table] = planTable(t, devRows[t.table], prodRows)
     }
 

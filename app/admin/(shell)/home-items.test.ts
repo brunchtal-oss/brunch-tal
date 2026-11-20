@@ -21,6 +21,9 @@ const SINCE = "2026-10-12T07:00:00Z"
 const EVENT = "11111111-1111-4111-8111-111111111111"
 const PAY = "22222222-2222-4222-8222-222222222222"
 const PAY_UNBOUND = "33333333-3333-4333-8333-333333333333"
+const ISSUE = "44444444-4444-4444-8444-444444444444"
+const CHECKOUT = "55555555-5555-4555-8555-555555555555"
+const CUSTOMER = "66666666-6666-4666-8666-666666666666"
 
 const ROWS: Record<AttentionKind, AttentionRow> = {
   link_conflict: {
@@ -162,6 +165,34 @@ const ROWS: Record<AttentionKind, AttentionRow> = {
     since: SINCE,
     count: 4,
   },
+  // Online payments (PR B).
+  online_purchase_incomplete: {
+    kind: "online_purchase_incomplete",
+    id: PAY_UNBOUND,
+    customer_label: null,
+    since: SINCE,
+    payment_id: PAY_UNBOUND,
+  },
+  online_payment_issue: {
+    kind: "online_payment_issue",
+    id: ISSUE,
+    customer_label: "Dana",
+    since: SINCE,
+    customer_id: CUSTOMER,
+    reason: "late_document",
+    reference: "BT-ABCDEF1234",
+    provider_transaction_id: "doc-77",
+    earlier_issue: { reason: "closed_by_admin", resolved: true },
+  },
+  online_payment_unconfirmed: {
+    kind: "online_payment_unconfirmed",
+    id: CHECKOUT,
+    customer_label: null,
+    since: SINCE,
+    customer_id: null,
+    event_id: EVENT,
+    reference: "BT-ABCDEF1234",
+  },
 }
 
 describe("toAttentionItem", () => {
@@ -297,6 +328,30 @@ describe("toAttentionItem", () => {
         detail:
           "ייתכן שהגדרות הפוש של האתר שגויות. ההתראות עצמן נשמרו במרכז ההתראות",
         chip: "ממתין",
+        tone: "warning",
+      },
+      online_purchase_incomplete: {
+        href: `/admin/links?payment=${PAY_UNBOUND}`,
+        title: "לקוחה חדשה שילמה באתר ועוד לא הצטרפה",
+        detail:
+          "עברו יותר מ-24 שעות מהתשלום. אפשר להפיק לה קישור הצטרפות חדש ולשלוח אותו",
+        chip: "לא הצטרפה",
+        tone: "warning",
+      },
+      online_payment_issue: {
+        href: `/admin/customers/${CUSTOMER}`,
+        title: "תשלום מאוחר על רכישה שכבר טופלה (Dana)",
+        detail:
+          "Grow דיווחו על תשלום לרכישה שכבר טופלה. צריך לבדוק ב-Grow אם זה תשלום כפול ולהחזיר אותו אם כן. אסמכתה BT-ABCDEF1234. מסמך ב-Grow: doc-77. בעיה קודמת ברכישה: נסגרה ידנית, טופלה.",
+        chip: "לבדיקה",
+        tone: "warning",
+      },
+      online_payment_unconfirmed: {
+        href: `/admin/sessions/${EVENT}`,
+        title: "התשלום של לקוחה חדשה לא אומת",
+        detail:
+          "Grow דיווחו על תשלום שלא אומת. אם התשלום מופיע ב-Grow, הוא ייכנס לבד תוך כמה דקות. לפני אישור ידני צריך לסגור את הפריט. אסמכתה BT-ABCDEF1234.",
+        chip: "לא אומת",
         tone: "warning",
       },
     }
@@ -579,5 +634,79 @@ describe("push_failed", () => {
     expect(toAttentionItem({ ...ROWS.push_failed, count: 1 }).title).toBe(
       "התראת פוש אחת לא נשלחה השבוע"
     )
+  })
+})
+
+describe("online payment items (PR B)", () => {
+  const reasons = copy.items.online_payment_issue.reasons
+
+  it("every issue reason has a title, a Grow sentence and the reference; the action is 'סימון כטופל'", () => {
+    for (const reason of Object.keys(reasons) as (keyof typeof reasons)[]) {
+      const item = toAttentionItem({
+        ...ROWS.online_payment_issue,
+        reason,
+        provider_transaction_id: null,
+        earlier_issue: null,
+      })
+      expect(item.title, reason).toBe(reasons[reason].title("Dana"))
+      expect(item.detail, reason).toBe(
+        `${reasons[reason].detail}. אסמכתה BT-ABCDEF1234.`
+      )
+      expect(item.action, reason).toEqual({
+        kind: "resolve_issue",
+        issueId: ISSUE,
+        name: "Dana",
+      })
+    }
+  })
+
+  it("second_payment: the Grow document and the earlier issue, open", () => {
+    const item = toAttentionItem({
+      ...ROWS.online_payment_issue,
+      reason: "second_payment",
+      earlier_issue: { reason: "amount_mismatch", resolved: false },
+    })
+    expect(item.detail).toContain("מסמך ב-Grow: doc-77")
+    expect(item.detail).toContain("בעיה קודמת ברכישה: סכום שונה")
+    expect(item.detail).not.toContain("טופלה")
+  })
+
+  it("an unknown reason reads as a payment to check", () => {
+    const item = toAttentionItem({
+      ...ROWS.online_payment_issue,
+      reason: "something_new",
+      provider_transaction_id: null,
+      earlier_issue: null,
+    })
+    expect(item.title).toBe("תשלום מקוון לבדיקה (Dana)")
+    expect(item.detail).toBe(
+      "צריך לבדוק את התשלום ב-Grow. אסמכתה BT-ABCDEF1234."
+    )
+  })
+
+  it("unconfirmed: 'סגירה' on the checkout; without a customer or session, the payments", () => {
+    const item = toAttentionItem(ROWS.online_payment_unconfirmed)
+    expect(item.action).toEqual({
+      kind: "close_checkout",
+      checkoutId: CHECKOUT,
+      name: "לקוחה חדשה",
+    })
+    expect(
+      toAttentionItem({
+        ...ROWS.online_payment_unconfirmed,
+        event_id: undefined,
+      }).href
+    ).toBe("/admin/payments")
+  })
+
+  it("no 'טל' in the online payment copy", () => {
+    const all = JSON.stringify(
+      toAttentionItems([
+        ROWS.online_purchase_incomplete,
+        ROWS.online_payment_issue,
+        ROWS.online_payment_unconfirmed,
+      ])
+    )
+    expect(all).not.toMatch(/(^|[\s>"(])טל($|[\s.,)<])/)
   })
 })

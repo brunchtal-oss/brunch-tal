@@ -59,11 +59,16 @@ export const EDITABLE_PAGES = {
     { slug: "seo", key: "contact", kind: "page_seo" },
     { slug: "seo", key: "privacy", kind: "page_seo" },
     { slug: "seo", key: "terms", kind: "page_seo" },
+    { slug: "seo", key: "purchase_terms", kind: "page_seo" },
     { slug: "seo", key: "accessibility", kind: "page_seo" },
   ],
   // Story 5.5: the legal pages, one block each.
   privacy: [{ slug: "privacy", key: "body", kind: "legal_text" }],
   terms: [{ slug: "terms", key: "body", kind: "legal_text" }],
+  // Online payments (PR B): the purchase terms (Tal's wording, 6.4).
+  "purchase-terms": [
+    { slug: "purchase-terms", key: "body", kind: "legal_text" },
+  ],
   accessibility: [
     {
       slug: "accessibility",
@@ -96,6 +101,7 @@ export const EDITABLE_SLUGS = [
   "site",
   "privacy",
   "terms",
+  "purchase-terms",
   "accessibility",
   "cookie-notice",
   "seo",

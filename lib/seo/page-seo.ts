@@ -29,6 +29,7 @@ export const SEO_PAGE_KEYS = [
   "contact",
   "privacy",
   "terms",
+  "purchase_terms",
   "accessibility",
 ] as const
 
@@ -50,6 +51,7 @@ export const SEO_PAGE_PATHS: Record<SeoPageKey, string> = {
   contact: "/contact",
   privacy: "/privacy",
   terms: "/terms",
+  purchase_terms: "/purchase-terms",
   accessibility: "/accessibility",
 }
 
@@ -62,6 +64,7 @@ export const DEFAULT_H1: Record<Exclude<SeoPageKey, "home">, string> = {
   contact: shellCopy.nav.contact,
   privacy: shellCopy.public.footer.privacy,
   terms: shellCopy.public.footer.terms,
+  purchase_terms: shellCopy.public.footer.purchaseTerms,
   accessibility: shellCopy.public.footer.accessibility,
 }
 

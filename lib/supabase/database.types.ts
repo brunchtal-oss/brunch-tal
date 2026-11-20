@@ -2657,6 +2657,10 @@ export type Database = {
         Args: { p_browser_secret: string; p_checkout_id: string }
         Returns: Json
       }
+      checkout_banner_state: {
+        Args: { p_browser_secret: string; p_checkout_id: string }
+        Returns: Json
+      }
       checkout_for_confirm: {
         Args: { p_checkout_id: string; p_secret: string; p_secret_kind: string }
         Returns: Json
@@ -2708,6 +2712,10 @@ export type Database = {
       get_my_entitlements: { Args: never; Returns: Json }
       get_my_session_role: { Args: never; Returns: string }
       get_my_waitlist: { Args: never; Returns: Json }
+      get_purchase_options: {
+        Args: { p_auth_uid: string; p_event_id: string }
+        Returns: Json
+      }
       get_taken_waitlist_spots: { Args: { p_ids: string[] }; Returns: string[] }
       issue_reset_token: { Args: { p_user_id: string }; Returns: Json }
       join_begin: {

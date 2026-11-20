@@ -92,7 +92,7 @@ export const publicNav: readonly { href: string; label: string }[] = [
 ]
 
 export type LegalNavItem = {
-  slug: "terms" | "privacy" | "accessibility"
+  slug: "terms" | "purchase-terms" | "privacy" | "accessibility"
   href: string
   label: string
 }
@@ -101,6 +101,12 @@ export type LegalNavItem = {
 // by its content page slug.
 export const publicLegalNav: readonly LegalNavItem[] = [
   { slug: "terms", href: "/terms", label: shellCopy.public.footer.terms },
+  // Online payments (PR B): once published, like terms.
+  {
+    slug: "purchase-terms",
+    href: "/purchase-terms",
+    label: shellCopy.public.footer.purchaseTerms,
+  },
   { slug: "privacy", href: "/privacy", label: shellCopy.public.footer.privacy },
   {
     slug: "accessibility",

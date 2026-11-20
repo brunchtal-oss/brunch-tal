@@ -78,6 +78,8 @@ describe("content items", () => {
       "seo",
       "privacy",
       "terms",
+      // Online payments (PR B): the purchase terms.
+      "purchase-terms",
       "accessibility",
       "cookie-notice",
     ])
@@ -92,6 +94,7 @@ describe("content items", () => {
       "contact",
       "privacy",
       "terms",
+      "purchase_terms",
       "accessibility",
     ])
     expect(slugsOf("seo")).toEqual(["seo"])

@@ -368,4 +368,57 @@ export const customerCopy = {
       `יצאת מרשימת ההמתנה למפגש ב־${date}. לא נשלח לך עדכון על המפגש הזה`,
     sectionTitle: "רשימת ההמתנה",
   },
+  // Online payments, PR B (spec-online-payments-grow-b.md): the purchase
+  // sheet, the pending page, the return notices and the "continue joining"
+  // banner. Also on the public session page (a guest). No "טל".
+  purchase: {
+    // The buy entry: the blocked notice's action on her session page and
+    // the button on the public session page.
+    buy: "לרכישה",
+    // "my purchases" and a used-up or expired card's page.
+    buyCard: "רכישת כרטיסייה",
+    sheetTitle: "רכישה ותשלום",
+    productsLegend: "מה לרכוש",
+    // Under a product's name.
+    pinnedDetail: "מקום במפגש הזה",
+    cardDetail: (units: number, days: number | null) => {
+      const entries = units === 1 ? "כניסה אחת" : `${units} כניסות`
+      return days === null ? entries : `${entries}, בתוקף ${days} ימים`
+    },
+    // Only for a pinned product.
+    holdLine: "המקום נשמר לך עד סיום התשלום.",
+    // The pay button's reason while no product is chosen.
+    chooseProduct: "צריך לבחור מה לרכוש",
+    termsBefore: "קראתי ואני מסכימה ל",
+    termsLink: "תקנון הרכישה",
+    pay: "למעבר לתשלום",
+    // The pending page (/pay/pending): no timer.
+    pending: "התשלום שלך בבדיקה. זה לוקח בדרך כלל דקה.",
+    checkAgain: "לבדוק שוב",
+    // The persistent notice by ?payment=<value>; an unknown value shows
+    // nothing.
+    notices: {
+      failed: "התשלום לא הושלם ולא חויבת. אפשר לנסות שוב.",
+      expired: "עבר הזמן לתשלום והמקום שוחרר. אפשר להתחיל מחדש.",
+      issue: "התשלום התקבל. נחזור אלייך בקרוב כדי להשלים את ההרשמה.",
+      // A card: no seat and no registration (review pass 1).
+      expiredCard: "עבר הזמן לתשלום. אפשר להתחיל מחדש.",
+      issueCard: "התשלום התקבל. נחזור אלייך בקרוב כדי להשלים את הרכישה.",
+      // Review pass 2: the success URL with still no payment found 30
+      // minutes after the pay window (never "לא חויבת"); an issue without
+      // money received (e.g. closed by hand).
+      not_found: "לא מצאנו תשלום על הרכישה הזו. אם חויבת, צרי קשר ונבדוק.",
+      review: "נחזור אלייך בקרוב לגבי הרכישה.",
+      no_place:
+        "התשלום התקבל, אבל המקום במפגש כבר נתפס. נחזור אלייך כדי לבחור מפגש אחר או החזר.",
+      // A known customer's paid return: her bookings (pinned) or her
+      // purchases (card).
+      paidBooking: "התשלום התקבל ונרשמת למפגש.",
+      paidCard: "התשלום התקבל והכרטיסייה נוספה לחשבון שלך.",
+    },
+    contact: "צרי קשר",
+    // The "continue joining" banner (public site and /me).
+    banner: "יש לך רכישה שעוד לא הושלמה.",
+    bannerLink: "להמשך",
+  },
 } as const

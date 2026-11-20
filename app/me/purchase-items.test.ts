@@ -4,6 +4,7 @@ import { customerCopy } from "@/lib/copy/customer"
 
 import {
   byPaidOnDesc,
+  canBuyAnotherCard,
   creditChip,
   creditChipTone,
   entitlementName,
@@ -226,5 +227,28 @@ describe("byPaidOnDesc", () => {
       "c",
       "a",
     ])
+  })
+})
+
+describe("canBuyAnotherCard (online payments, PR B)", () => {
+  it("a used-up or expired card offers another one", () => {
+    expect(canBuyAnotherCard(entitlement({ is_used_up: true }))).toBe(true)
+    expect(canBuyAnotherCard(entitlement({ is_expired: true }))).toBe(true)
+  })
+
+  it("an open card, a cancelled card or a pinned purchase does not", () => {
+    expect(canBuyAnotherCard(entitlement())).toBe(false)
+    expect(
+      canBuyAnotherCard(entitlement({ is_expired: true, status: "voided" }))
+    ).toBe(false)
+    expect(
+      canBuyAnotherCard(
+        entitlement({
+          kind: "single",
+          is_used_up: true,
+          pinned_event_id: "11111111-1111-4111-8111-111111111111",
+        })
+      )
+    ).toBe(false)
   })
 })

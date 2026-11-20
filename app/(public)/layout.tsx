@@ -1,5 +1,7 @@
 import { Suspense } from "react"
 
+import { CheckoutBanner } from "@/components/shared/checkout-banner"
+import { OfflineBanner } from "@/components/shared/offline-banner"
 import { CookieNotice } from "@/components/public/cookie-notice"
 import { MarketingTags } from "@/components/public/marketing-tags"
 import { SiteFooter } from "@/components/public/site-footer"
@@ -20,6 +22,8 @@ import { getMarketingTags } from "@/lib/content/marketing-tags"
 import { footerLinks } from "@/lib/content/visible"
 import { cookieNoticeView } from "@/lib/cookie-notice"
 import { publicLegalNav, visibleLegalNav } from "@/lib/nav"
+
+import { loadCheckoutBanner } from "./pay/actions"
 
 // Public shell (AD-2, story 5.2): the sticky top-bar with the menu-sheet,
 // <main>, the whatsapp-bar (<aside>, fixed to the bottom; in the flow below
@@ -69,6 +73,16 @@ export default async function PublicLayout({
         <ViewerTopBar name={name} />
       </Suspense>
       <main id="main" tabIndex={-1} className="flex flex-1 flex-col">
+        {/* Offline (review pass 1): the hint every write button points to
+            (offline-hint), as in /me and /admin. */}
+        <OfflineBanner />
+        {/* Online payments (PR B): "continue joining" while the browser
+            keeps an unfinished checkout; the cookie only, never cached. */}
+        <div className="mx-auto w-full max-w-[720px] px-6 empty:hidden">
+          <Suspense fallback={null}>
+            <CheckoutBanner load={loadCheckoutBanner} className="mt-4" />
+          </Suspense>
+        </div>
         {children}
       </main>
       <Suspense fallback={null}>

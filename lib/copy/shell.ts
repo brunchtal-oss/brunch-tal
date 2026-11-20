@@ -113,6 +113,9 @@ export const shellCopy = {
     // The public footer's legal links (its contact lines use contact.*).
     footer: {
       terms: "תנאי שימוש",
+      // Online payments (PR B): the purchase terms (content page
+      // purchase-terms).
+      purchaseTerms: "תקנון הרכישה",
       privacy: "מדיניות פרטיות",
       accessibility: "הצהרת נגישות",
     },

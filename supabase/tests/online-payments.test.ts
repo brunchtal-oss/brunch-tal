@@ -1,4 +1,5 @@
-// Online payments with Grow, PR A (spec-online-payments-grow-a.md and the
+// Online payments with Grow, PR A and PR B (spec-online-payments-grow-a.md,
+// spec-online-payments-grow-b.md and the
 // umbrella spec-online-payments-grow.md): begin_checkout,
 // begin_guest_checkout, checkout_for_confirm, mark_checkout_notified,
 // record_online_payment, cancel_checkout, checkout_return,
@@ -603,6 +604,10 @@ describe("confirm and record", { timeout: 60_000 }, () => {
         product_kind: "session",
         event_id: eventId,
         customer_known: false,
+        // PR B: the pinned purchase got its booking.
+        booked: true,
+        has_payment: true,
+        pending_over: false,
         joined: false,
         join_token: expect.stringMatching(/^[A-Za-z0-9_-]{43}$/),
       })
@@ -689,6 +694,9 @@ describe("confirm and record", { timeout: 60_000 }, () => {
         product_kind: "days",
         event_id: null,
         customer_known: true,
+        booked: false,
+        has_payment: true,
+        pending_over: false,
       })
     })
   })
@@ -1683,6 +1691,9 @@ describe(
           product_kind: "days",
           event_id: null,
           customer_known: false,
+          booked: false,
+          has_payment: true,
+          pending_over: false,
           joined: false,
           join_blocked: true,
         })
@@ -2175,5 +2186,588 @@ describe("concurrency", { timeout: 60_000 }, () => {
       a.release()
       b.release()
     }
+  })
+})
+
+// ---------------------------------------------------------------------------
+// PR B (spec-online-payments-grow-b.md): the purchase sheet's products, the
+// parked return and the purchase-terms page.
+// ---------------------------------------------------------------------------
+
+const OPTIONS = "select public.get_purchase_options($1, $2) as r"
+
+type Options = {
+  enabled: boolean
+  public_purchase: boolean
+  products: Array<Record<string, unknown> & { id: string }>
+}
+
+// As the owner, inside the rollback: the purchase-terms page published
+// with a body (or not published at all).
+async function setTerms(db: Db, published: boolean): Promise<void> {
+  await db.query(
+    `update public.content_sections
+     set published_content_full = case when $1 then jsonb_build_object('body', $2::text) end,
+         published_at = case when $1 then now() end
+     where page_slug = 'purchase-terms' and key = 'body'`,
+    [published, testName("purchase_terms")]
+  )
+  await db.query(
+    `update public.content_pages
+     set published_at = case when $1 then now() end,
+         -- content_pages_published_check: both set or both null.
+         published_content = case when $1 then coalesce(published_content, '{}'::jsonb) end
+     where slug = 'purchase-terms'`,
+    [published]
+  )
+}
+
+async function options(
+  db: Db,
+  eventId: string | null,
+  uid: string | null
+): Promise<Options> {
+  return (await one(db, "service", OPTIONS, [eventId, uid])) as Options
+}
+
+const ids = (o: Options) => o.products.map((p) => p.id)
+
+// As the owner: an approved payment of `customer` on checkout c (paid).
+async function paidCheckout(db: Db, c: Begun): Promise<string> {
+  const result = await record(db, c)
+  expect(result.state).toBe("paid")
+  return result.payment_id as string
+}
+
+const BANNER = "select public.checkout_banner_state($1, $2) as r"
+
+describe("get_purchase_options (PR B)", { timeout: 60_000 }, () => {
+  it("with a session: its pinned and card products; without one: cards only", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      await setTerms(db, true)
+      const eventId = await insertEvent(db, f, { capacity: 2 })
+
+      const atSession = await options(db, eventId, f.customerA)
+      expect(atSession.enabled).toBe(true)
+      expect(ids(atSession)).toEqual(expect.arrayContaining([f.single, f.card]))
+      expect(atSession.products.find((p) => p.id === f.single)).toMatchObject({
+        validity_mode: "session",
+        price_agorot: 12800,
+        units: 1,
+      })
+
+      const cards = await options(db, null, f.customerA)
+      expect(ids(cards)).toContain(f.card)
+      expect(ids(cards)).not.toContain(f.single)
+      expect(cards.products.every((p) => p.validity_mode === "days")).toBe(true)
+    })
+  })
+
+  it("terms not published: enabled false (no buy entry anywhere)", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      await setTerms(db, false)
+      const eventId = await insertEvent(db, f, { capacity: 2 })
+      expect((await options(db, eventId, f.customerA)).enabled).toBe(false)
+      expect((await options(db, null, f.customerA)).enabled).toBe(false)
+      expect((await options(db, eventId, null)).enabled).toBe(false)
+    })
+  })
+
+  it("a guest: only while public_online_purchase is on; a customer either way", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      await setTerms(db, true)
+      const eventId = await insertEvent(db, f, { capacity: 2 })
+      expect(await options(db, eventId, null)).toMatchObject({
+        enabled: true,
+        public_purchase: true,
+      })
+      await db.query(
+        "update public.business_settings set public_online_purchase = false"
+      )
+      expect(await options(db, eventId, null)).toMatchObject({
+        enabled: false,
+        public_purchase: false,
+      })
+      expect((await options(db, eventId, f.customerA)).enabled).toBe(true)
+    })
+  })
+
+  it("a uid that is not an active customer (an admin, not activated, unknown): nothing", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      await setTerms(db, true)
+      const pending = randomUUID()
+      await db.query(
+        "insert into public.profiles (id, full_name) values ($1, $2)",
+        [pending, testName("not_activated")]
+      )
+      for (const uid of [f.admin, pending, randomUUID()]) {
+        expect(await options(db, null, uid)).toEqual({
+          enabled: false,
+          public_purchase: true,
+          products: [],
+        })
+      }
+    })
+  })
+
+  it("an intro is hidden from a known customer who cannot take it, shown to others", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      await setTerms(db, true)
+      const intro = await insertProduct(db, {
+        label: "online_options_intro",
+        type: "intro",
+        price: 9900,
+        units: 1,
+      })
+      // customerA already holds an intro (recorded by Tal).
+      await asRole(db, f.admin, () =>
+        approve(db, {
+          customerId: f.customerA,
+          productId: intro,
+          amount: 9900,
+          paidOn: f.today,
+          methodId: f.method,
+          key: randomUUID(),
+        })
+      )
+      expect(ids(await options(db, null, f.customerA))).not.toContain(intro)
+      expect(ids(await options(db, null, f.customerB))).toContain(intro)
+      expect(ids(await options(db, null, null))).toContain(intro)
+    })
+  })
+
+  it("what the session does not accept is hidden: its product set, a closed registration for pinned, an inactive or free product", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      await setTerms(db, true)
+      const inactive = await insertProduct(db, {
+        label: "online_options_inactive",
+        active: false,
+      })
+      const free = await insertProduct(db, {
+        label: "online_options_free",
+        price: 0,
+      })
+      const open = await insertEvent(db, f, { capacity: 2 })
+      const atOpen = ids(await options(db, open, f.customerA))
+      expect(atOpen).not.toContain(inactive)
+      expect(atOpen).not.toContain(free)
+
+      // The session names only the card: the single is not offered there.
+      await db.query(
+        "insert into public.event_products (event_id, product_id) values ($1, $2)",
+        [open, f.card]
+      )
+      const named = ids(await options(db, open, f.customerA))
+      expect(named).toContain(f.card)
+      expect(named).not.toContain(f.single)
+
+      // Registration closed (review pass 1): no buy entry at all.
+      const closed = await insertEvent(db, f, { capacity: 2, closed: true })
+      expect(await options(db, closed, f.customerA)).toMatchObject({
+        enabled: true,
+        products: [],
+      })
+
+      // A session that does not exist: nothing.
+      expect((await options(db, randomUUID(), f.customerA)).products).toEqual(
+        []
+      )
+    })
+  })
+
+  it("service role only: authenticated is denied", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      expect(
+        await fails(db, f.customerA, OPTIONS, [null, f.customerA])
+      ).toMatch(/permission denied/)
+    })
+  })
+})
+
+describe("checkout_return: booked (PR B)", { timeout: 60_000 }, () => {
+  it("a known customer's pinned purchase parked without a place: booked false (the no_place notice)", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const eventId = await insertEvent(db, f, { capacity: 1 })
+      const c = await begin(db, f.customerA, f.single, eventId)
+      await db.query(
+        "update public.checkouts set pay_until = now() - interval '6 minutes', hold_until = now() - interval '1 minute' where id = $1",
+        [c.checkout_id]
+      )
+      await db.query(RELEASE)
+      await db.query(
+        `insert into public.bookings (customer_id, event_id, party_size, booked_by, policy_snapshot)
+         values ($1, $2, 1, 'customer', '{"cancel_window_hours": 48, "reminder_lead_hours": 24}'::jsonb)`,
+        [f.customerB, eventId]
+      )
+      expect((await record(db, c)).state).toBe("paid")
+      expect(
+        await one(db, "service", RETURN, [c.checkout_id, c.browser_secret])
+      ).toEqual({
+        state: "paid",
+        product_kind: "session",
+        event_id: eventId,
+        customer_known: true,
+        booked: false,
+        has_payment: true,
+        pending_over: false,
+      })
+    })
+  })
+
+  it("with its seat: booked true; still open: booked false", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const eventId = await insertEvent(db, f, { capacity: 2 })
+      const c = await begin(db, f.customerA, f.single, eventId)
+      expect(
+        await one(db, "service", RETURN, [c.checkout_id, c.browser_secret])
+      ).toMatchObject({ state: "open", booked: false })
+      expect((await record(db, c)).state).toBe("paid")
+      expect(
+        await one(db, "service", RETURN, [c.checkout_id, c.browser_secret])
+      ).toMatchObject({ state: "paid", customer_known: true, booked: true })
+    })
+  })
+})
+
+describe("the purchase-terms page (PR B)", { timeout: 60_000 }, () => {
+  it("seeded with its legal_text section and its SEO record", async () => {
+    await inRollback(async (db) => {
+      const { rows: pages } = await db.query(
+        "select slug from public.content_pages where slug = 'purchase-terms'"
+      )
+      expect(pages).toHaveLength(1)
+      const { rows } = await db.query(
+        `select page_slug, key, kind from public.content_sections
+         where (page_slug = 'purchase-terms' and key = 'body')
+            or (page_slug = 'seo' and key = 'purchase_terms')
+         order by page_slug`
+      )
+      expect(rows).toEqual([
+        { page_slug: "purchase-terms", key: "body", kind: "legal_text" },
+        { page_slug: "seo", key: "purchase_terms", kind: "page_seo" },
+      ])
+    })
+  })
+})
+
+describe("PR B review pass 1: options", { timeout: 60_000 }, () => {
+  it("the session's kind and weekday: a couple product or another weekday is hidden", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      await setTerms(db, true)
+      const eventId = await insertEvent(db, f, { capacity: 2 })
+      const couple = await insertProduct(db, {
+        label: "online_options_couple",
+        type: "single",
+        price: 25600,
+        units: 1,
+        validityMode: "session",
+      })
+      await db.query(
+        "update public.products set eligible_event_kind = 'couple', party_size = 2 where id = $1",
+        [couple]
+      )
+      const otherDay = await insertProduct(db, {
+        label: "online_options_other_day",
+        price: 30000,
+      })
+      await db.query(
+        `update public.products
+         set allowed_weekdays = array[((extract(dow from (e.starts_at at time zone 'Asia/Jerusalem'))::int + 1) % 7)::smallint]
+         from public.events e
+         where e.id = $2 and public.products.id = $1`,
+        [otherDay, eventId]
+      )
+      const listed = ids(await options(db, eventId, f.customerA))
+      expect(listed).toContain(f.single)
+      expect(listed).not.toContain(couple)
+      expect(listed).not.toContain(otherDay)
+    })
+  })
+
+  it("a full session hides its pinned product (the card stays); her own booking hides it from her only", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      await setTerms(db, true)
+      const full = await insertEvent(db, f, { capacity: 1 })
+      await db.query(
+        `insert into public.bookings (customer_id, event_id, party_size, booked_by, policy_snapshot)
+         values ($1, $2, 1, 'customer', '{"cancel_window_hours": 48, "reminder_lead_hours": 24}'::jsonb)`,
+        [f.customerB, full]
+      )
+      const atFull = ids(await options(db, full, f.customerA))
+      expect(atFull).not.toContain(f.single)
+      expect(atFull).toContain(f.card)
+      expect(ids(await options(db, full, null))).not.toContain(f.single)
+
+      const open = await insertEvent(db, f, { capacity: 3 })
+      await db.query(
+        `insert into public.bookings (customer_id, event_id, party_size, booked_by, policy_snapshot)
+         values ($1, $2, 1, 'customer', '{"cancel_window_hours": 48, "reminder_lead_hours": 24}'::jsonb)`,
+        [f.customerA, open]
+      )
+      expect(ids(await options(db, open, f.customerA))).not.toContain(f.single)
+      expect(ids(await options(db, open, f.customerB))).toContain(f.single)
+    })
+  })
+
+  it("not enabled: an empty product list (terms unpublished, a guest while off)", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const eventId = await insertEvent(db, f, { capacity: 2 })
+      await setTerms(db, false)
+      expect(await options(db, eventId, f.customerA)).toMatchObject({
+        enabled: false,
+        products: [],
+      })
+      await setTerms(db, true)
+      await db.query(
+        "update public.business_settings set public_online_purchase = false"
+      )
+      expect(await options(db, eventId, null)).toMatchObject({
+        enabled: false,
+        products: [],
+      })
+    })
+  })
+
+  it("terms published with an empty body: not enabled", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      await setTerms(db, true)
+      await db.query(
+        `update public.content_sections
+         set published_content_full = jsonb_build_object('body', '   ')
+         where page_slug = 'purchase-terms' and key = 'body'`
+      )
+      expect(await options(db, null, f.customerA)).toMatchObject({
+        enabled: false,
+        products: [],
+      })
+    })
+  })
+})
+
+describe("PR B review pass 1: return and banner", { timeout: 60_000 }, () => {
+  it("booked ignores a cancelled booking", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const eventId = await insertEvent(db, f, { capacity: 2 })
+      const c = await begin(db, f.customerA, f.single, eventId)
+      const paymentId = await paidCheckout(db, c)
+      await db.query(
+        // bookings_cancelled_at_check: a cancelled booking has cancelled_at.
+        "update public.bookings set status = 'cancelled', cancelled_at = now() where payment_id = $1",
+        [paymentId]
+      )
+      expect(
+        await one(db, "service", RETURN, [c.checkout_id, c.browser_secret])
+      ).toMatchObject({ state: "paid", booked: false })
+    })
+  })
+
+  it("a parked purchase of a known customer enqueues no push (on screen only)", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const eventId = await insertEvent(db, f, { capacity: 1 })
+      const c = await begin(db, f.customerA, f.single, eventId)
+      await db.query(
+        "update public.checkouts set pay_until = now() - interval '6 minutes', hold_until = now() - interval '1 minute' where id = $1",
+        [c.checkout_id]
+      )
+      await db.query(RELEASE)
+      await db.query(
+        `insert into public.bookings (customer_id, event_id, party_size, booked_by, policy_snapshot)
+         values ($1, $2, 1, 'customer', '{"cancel_window_hours": 48, "reminder_lead_hours": 24}'::jsonb)`,
+        [f.customerB, eventId]
+      )
+      await paidCheckout(db, c)
+      const { rows } = await db.query(
+        `select count(*)::int as n
+         from public.notification_jobs j
+         join public.notifications n on n.id = j.notification_id
+         where n.recipient_id = $1`,
+        [f.customerA]
+      )
+      expect(rows[0].n).toBe(0)
+    })
+  })
+
+  it("the banner: only a paid, unjoined checkout created within 24 hours", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const eventId = await insertEvent(db, f, { capacity: 3 })
+      const banner = async (c: Begun, secret = c.browser_secret) =>
+        (await one(db, "service", BANNER, [c.checkout_id, secret])).show
+
+      // Open: no banner.
+      const open = await beginGuest(db, f.single, eventId)
+      expect(await banner(open)).toBe(false)
+
+      // Paid, not joined: the banner; a wrong secret: none.
+      const paid = await beginGuest(db, f.card, null)
+      await paidCheckout(db, paid)
+      expect(await banner(paid)).toBe(true)
+      expect(await banner(paid, "x".repeat(43))).toBe(false)
+
+      // Older than 24 hours: none.
+      await db.query(
+        "update public.checkouts set created_at = now() - interval '25 hours' where id = $1",
+        [paid.checkout_id]
+      )
+      expect(await banner(paid)).toBe(false)
+
+      // Paid by a known customer (bound): none.
+      const known = await begin(db, f.customerA, f.card, null)
+      await paidCheckout(db, known)
+      expect(await banner(known)).toBe(false)
+
+      // Failed: none.
+      const failed = await beginGuest(db, f.single, eventId)
+      await one(db, "service", CANCEL, [
+        failed.checkout_id,
+        failed.browser_secret,
+      ])
+      expect(await banner(failed)).toBe(false)
+    })
+  })
+
+  it("checkout_banner_state is service role only", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      expect(
+        await fails(db, f.customerA, BANNER, [randomUUID(), "x".repeat(43)])
+      ).toMatch(/permission denied/)
+    })
+  })
+})
+
+describe("PR B review pass 1: settings audit", { timeout: 60_000 }, () => {
+  it("each of the three settings is logged with old and new", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const version = async () =>
+        (await db.query("select version from public.business_settings")).rows[0]
+          .version
+      for (const [column, value, old] of [
+        ["online_payment_window_minutes", 20, 10],
+        ["online_hold_grace_minutes", 0, 5],
+        ["public_online_purchase", false, true],
+      ] as const) {
+        await one(db, f.admin, SETTINGS, [
+          JSON.stringify({ [column]: value }),
+          await version(),
+          randomUUID(),
+        ])
+        const { rows } = await db.query(
+          // This transaction's row that changed this column.
+          `select before, after from public.audit_log
+           where action = 'admin_update_business_settings'
+             and created_at = now()
+             and (before -> $1) is distinct from (after -> $1)`,
+          [column]
+        )
+        expect(rows, column).toHaveLength(1)
+        expect(rows[0].before[column], column).toBe(old)
+        expect(rows[0].after[column], column).toBe(value)
+      }
+    })
+  })
+})
+
+describe("PR B review pass 2", { timeout: 60_000 }, () => {
+  it("her own open hold on the last seat: the pinned product is still listed for her re-buy", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      await setTerms(db, true)
+      const eventId = await insertEvent(db, f, { capacity: 1 })
+      await begin(db, f.customerA, f.single, eventId)
+      expect(await occupied(db, eventId)).toBe(1)
+      expect(ids(await options(db, eventId, f.customerA))).toContain(f.single)
+      // Anyone else: full.
+      expect(ids(await options(db, eventId, f.customerB))).not.toContain(
+        f.single
+      )
+      expect(ids(await options(db, eventId, null))).not.toContain(f.single)
+    })
+  })
+
+  it("checkout_return: has_payment false for an issue closed by Tal, true for a paid one", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const closed = await begin(db, f.customerA, f.card, null)
+      await db.query(
+        "update public.checkouts set first_notified_at = now() - interval '1 hour' where id = $1",
+        [closed.checkout_id]
+      )
+      await one(db, f.admin, CLOSE, [closed.checkout_id, randomUUID()])
+      expect(
+        await one(db, "service", RETURN, [
+          closed.checkout_id,
+          closed.browser_secret,
+        ])
+      ).toMatchObject({ state: "issue", has_payment: false })
+
+      const paid = await begin(db, f.customerB, f.card, null)
+      await paidCheckout(db, paid)
+      expect(
+        await one(db, "service", RETURN, [
+          paid.checkout_id,
+          paid.browser_secret,
+        ])
+      ).toMatchObject({ state: "paid", has_payment: true })
+    })
+  })
+
+  it("checkout_return: pending_over only 30 minutes after the pay window and the hold grace", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const eventId = await insertEvent(db, f, { capacity: 2 })
+      const c = await beginGuest(db, f.single, eventId)
+      const back = () =>
+        one(db, "service", RETURN, [c.checkout_id, c.browser_secret])
+      expect(await back()).toMatchObject({ pending_over: false })
+      await db.query(
+        "update public.checkouts set pay_until = now() - interval '40 minutes', hold_until = now() - interval '29 minutes' where id = $1",
+        [c.checkout_id]
+      )
+      expect(await back()).toMatchObject({ pending_over: false })
+      await db.query(
+        "update public.checkouts set hold_until = now() - interval '31 minutes' where id = $1",
+        [c.checkout_id]
+      )
+      expect(await back()).toMatchObject({ pending_over: true })
+    })
+  })
+
+  it("the banner is hidden once the join link was issued more than 10 minutes ago", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const c = await beginGuest(db, f.card, null)
+      await paidCheckout(db, c)
+      const banner = async () =>
+        (await one(db, "service", BANNER, [c.checkout_id, c.browser_secret]))
+          .show
+      expect(await banner()).toBe(true)
+      await db.query(
+        "update public.checkouts set join_issued_at = now() - interval '5 minutes' where id = $1",
+        [c.checkout_id]
+      )
+      expect(await banner()).toBe(true)
+      await db.query(
+        "update public.checkouts set join_issued_at = now() - interval '11 minutes' where id = $1",
+        [c.checkout_id]
+      )
+      expect(await banner()).toBe(false)
+    })
   })
 })

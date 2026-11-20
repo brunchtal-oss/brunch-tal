@@ -81,3 +81,50 @@ export async function settleParkedAction(input: {
   if (!result.ok) return result
   return { ok: true, data: undefined }
 }
+
+// Online payments (PR B): "סימון כטופל" on an online payment issue Tal
+// checked in Grow. One key per button (AD-5).
+export async function resolveOnlinePaymentIssueAction(input: {
+  issueId: string
+  idempotencyKey: string
+}): Promise<ActionResult> {
+  if (
+    typeof input?.issueId !== "string" ||
+    !UUID.test(input.issueId) ||
+    typeof input.idempotencyKey !== "string" ||
+    !UUID.test(input.idempotencyKey)
+  ) {
+    return { ok: false, code: "INVALID_INPUT" }
+  }
+  const result = await callRpc(
+    await createClient(),
+    "admin_resolve_online_payment_issue",
+    { p_issue_id: input.issueId, p_idempotency_key: input.idempotencyKey }
+  )
+  if (!result.ok) return result
+  return { ok: true, data: undefined }
+}
+
+// "סגירה" on a checkout Grow notified but nothing confirmed: it moves to an
+// issue, so a later document never grants twice (before Tal approves by
+// hand).
+export async function closeUnconfirmedCheckoutAction(input: {
+  checkoutId: string
+  idempotencyKey: string
+}): Promise<ActionResult> {
+  if (
+    typeof input?.checkoutId !== "string" ||
+    !UUID.test(input.checkoutId) ||
+    typeof input.idempotencyKey !== "string" ||
+    !UUID.test(input.idempotencyKey)
+  ) {
+    return { ok: false, code: "INVALID_INPUT" }
+  }
+  const result = await callRpc(
+    await createClient(),
+    "admin_close_unconfirmed_checkout",
+    { p_checkout_id: input.checkoutId, p_idempotency_key: input.idempotencyKey }
+  )
+  if (!result.ok) return result
+  return { ok: true, data: undefined }
+}

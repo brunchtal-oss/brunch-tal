@@ -9,6 +9,7 @@ import { buttonClass } from "@/components/shared/button-class"
 import { InlineNotice } from "@/components/shared/inline-notice"
 import { PushOffer } from "@/components/shared/push-offer"
 import { OnlineButton } from "@/components/shared/online-button"
+import { PurchaseSheet } from "@/components/shared/purchase-sheet"
 import { Button } from "@/components/ui/button"
 import {
   Sheet,
@@ -20,6 +21,7 @@ import { Spinner } from "@/components/ui/spinner"
 import { customerCopy as copy } from "@/lib/copy/customer"
 import { errorMessage, type ErrorCode } from "@/lib/errors"
 import { newIdempotencyKey } from "@/lib/idempotency"
+import type { PurchaseProduct } from "@/lib/payments/purchase-options"
 import { claimPushOffer } from "@/lib/push/client"
 import {
   formatDayMonth,
@@ -36,6 +38,7 @@ import {
 import { MoveBooking } from "../../bookings/move-booking"
 import { registerPush, unregisterPush } from "../../notifications/actions"
 import { bookSessionAction } from "../actions"
+import { startSessionPurchaseAction } from "./actions"
 import { blockedAction, type BookingPreview } from "./booking-preview"
 
 const LINK = "font-semibold underline underline-offset-[3px]"
@@ -57,6 +60,7 @@ export function BookingPanel({
   preview,
   cancelWindowHours = null,
   contactHref,
+  purchaseProducts = [],
 }: {
   eventId: string
   title: string
@@ -65,6 +69,9 @@ export function BookingPanel({
   // The booking's cancel window in hours, for the notice past it.
   cancelWindowHours?: number | null
   contactHref: string | null
+  // Online payments (PR B): the products of this session she may buy, only
+  // when online buying is on and she has no fitting entry.
+  purchaseProducts?: readonly PurchaseProduct[]
 }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -178,21 +185,33 @@ export function BookingPanel({
   }
 
   if (preview.kind === "blocked") {
-    const action =
-      blockedAction(preview.code) === "contact" && contactHref ? (
-        <a
-          href={contactHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={cn(LINK, "py-3")}
-        >
-          {copy.contactPhrase}
-        </a>
-      ) : (
-        <Link href="/me/sessions" className={cn(LINK, "py-3")}>
-          {copy.allSessions}
-        </Link>
-      )
+    // No fitting entry and online buying is on: "לרכישה" opens the
+    // purchase sheet with this session's products (else today's contact).
+    const buy =
+      preview.code === "NO_MATCHING_ENTITLEMENT" && purchaseProducts.length > 0
+    const action = buy ? (
+      <PurchaseSheet
+        products={purchaseProducts}
+        eventId={eventId}
+        start={startSessionPurchaseAction}
+        contactHref={contactHref}
+        trigger={copy.purchase.buy}
+        triggerClassName={cn(LINK, "py-3")}
+      />
+    ) : blockedAction(preview.code) === "contact" && contactHref ? (
+      <a
+        href={contactHref}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={cn(LINK, "py-3")}
+      >
+        {copy.contactPhrase}
+      </a>
+    ) : (
+      <Link href="/me/sessions" className={cn(LINK, "py-3")}>
+        {copy.allSessions}
+      </Link>
+    )
     return (
       <InlineNotice tone="warning" actions={action}>
         {errorMessage(preview.code)}

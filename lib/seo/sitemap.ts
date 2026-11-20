@@ -28,6 +28,7 @@ const CONTENT_SLUG: Readonly<Record<string, string>> = {
   "/contact": "contact",
   "/privacy": "privacy",
   "/terms": "terms",
+  "/purchase-terms": "purchase-terms",
   "/accessibility": "accessibility",
 }
 

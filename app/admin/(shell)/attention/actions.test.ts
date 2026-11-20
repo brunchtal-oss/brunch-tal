@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import {
+  closeUnconfirmedCheckoutAction,
   markCorrectionHandledAction,
   previewSettleParkedAction,
+  resolveOnlinePaymentIssueAction,
   settleParkedAction,
 } from "./actions"
 
@@ -86,6 +88,41 @@ describe("the 'to handle' buttons (story 3.13)", () => {
     ]) {
       await expect(settleParkedAction(input)).resolves.toEqual(INVALID)
     }
+    expect(callRpc).not.toHaveBeenCalled()
+  })
+})
+
+describe("online payment items (PR B)", () => {
+  it("סימון כטופל sends the issue and the key", async () => {
+    await expect(
+      resolveOnlinePaymentIssueAction({ issueId: ID, idempotencyKey: KEY })
+    ).resolves.toEqual({ ok: true, data: undefined })
+    expect(callRpc).toHaveBeenLastCalledWith(
+      { session: true },
+      "admin_resolve_online_payment_issue",
+      { p_issue_id: ID, p_idempotency_key: KEY }
+    )
+  })
+
+  it("סגירה sends the checkout and the key; a code comes back as is", async () => {
+    callRpc.mockResolvedValue({ ok: false, code: "CHECKOUT_NOT_CLOSABLE" })
+    await expect(
+      closeUnconfirmedCheckoutAction({ checkoutId: ID, idempotencyKey: KEY })
+    ).resolves.toEqual({ ok: false, code: "CHECKOUT_NOT_CLOSABLE" })
+    expect(callRpc).toHaveBeenLastCalledWith(
+      { session: true },
+      "admin_close_unconfirmed_checkout",
+      { p_checkout_id: ID, p_idempotency_key: KEY }
+    )
+  })
+
+  it("a bad shape is INVALID_INPUT without a call", async () => {
+    await expect(
+      resolveOnlinePaymentIssueAction({ issueId: "x", idempotencyKey: KEY })
+    ).resolves.toEqual(INVALID)
+    await expect(
+      closeUnconfirmedCheckoutAction({ checkoutId: ID, idempotencyKey: "x" })
+    ).resolves.toEqual(INVALID)
     expect(callRpc).not.toHaveBeenCalled()
   })
 })

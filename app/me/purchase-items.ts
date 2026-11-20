@@ -7,6 +7,7 @@
 // decision 2026-10-05). Home has no message blocks and no receipts (user
 // decision 2026-10-06).
 
+import { buttonClass } from "@/components/shared/button-class"
 import { customerCopy } from "@/lib/copy/customer"
 
 export type EntitlementKind = "card" | "single" | "intro" | "couple"
@@ -198,3 +199,29 @@ export function byPaidOnDesc(
   if (a.paidOn !== b.paidOn) return a.paidOn < b.paidOn ? 1 : -1
   return a.id < b.id ? 1 : a.id > b.id ? -1 : 0
 }
+
+/**
+ * Online payments (PR B): a card's page offers "רכישת כרטיסייה" once the
+ * card is used up or expired (still active: not voided or cancelled). Never
+ * on a pinned purchase.
+ */
+export function canBuyAnotherCard(
+  e: Pick<
+    MyEntitlement,
+    "kind" | "pinnedEventId" | "status" | "isExpired" | "isUsedUp"
+  >
+): boolean {
+  return (
+    e.kind === "card" &&
+    e.pinnedEventId === null &&
+    e.status === "active" &&
+    (e.isExpired || e.isUsedUp)
+  )
+}
+
+// "רכישת כרטיסייה": a button-secondary (it only opens the sheet).
+export const cardPurchaseButtonClass = buttonClass({
+  variant: "outline",
+  size: "lg",
+  className: "h-12 rounded-[4px] border-foreground px-6 text-base",
+})

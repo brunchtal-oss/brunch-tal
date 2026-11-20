@@ -237,6 +237,8 @@ export const adminCopy = {
       // Story 5.5: the legal pages.
       privacy: "מדיניות פרטיות",
       terms: "תנאי שימוש",
+      // Online payments (PR B).
+      "purchase-terms": "תקנון הרכישה",
       accessibility: "הצהרת נגישות",
       // Story 5.23.
       "cookie-notice": "הודעת עוגיות",
@@ -261,6 +263,7 @@ export const adminCopy = {
       "site/footer": "קישורים",
       "privacy/body": "נוסח המדיניות",
       "terms/body": "נוסח התנאים",
+      "purchase-terms/body": "נוסח התקנון",
       "accessibility/statement": "נוסח ההצהרה",
       "cookie-notice/notice": "נוסח ההודעה",
       // fix-seo-editor: the site's share image and one record per page.
@@ -272,6 +275,7 @@ export const adminCopy = {
       "seo/contact": "יצירת קשר",
       "seo/privacy": "מדיניות פרטיות",
       "seo/terms": "תנאי שימוש",
+      "seo/purchase_terms": "תקנון הרכישה",
       "seo/accessibility": "הצהרת נגישות",
     } as Record<string, string>,
     // The SEO page (fix-seo-editor): per page, its H1, Google title,
@@ -1362,6 +1366,101 @@ export const adminCopy = {
           reconcile_payments: "התאמת תשלומים מול Grow",
         } as Record<string, string>,
       },
+      // Online payments (PR B). An online purchase paid more than 24 hours
+      // ago and not joined yet: to its links.
+      online_purchase_incomplete: {
+        title: (name: string) => `${name} שילמה באתר ועוד לא הצטרפה`,
+        detail:
+          "עברו יותר מ-24 שעות מהתשלום. אפשר להפיק לה קישור הצטרפות חדש ולשלוח אותו",
+        chip: "לא הצטרפה",
+      },
+      // An online payment Tal checks in Grow, by reason, until "סימון
+      // כטופל". Each detail says what to check in Grow; the reference, the
+      // Grow document and the checkout's earlier issue follow.
+      online_payment_issue: {
+        chip: "לבדיקה",
+        reasons: {
+          not_verified: {
+            title: (name: string) => `התשלום של ${name} לא אומת`,
+            short: "תשלום שלא אומת",
+            detail:
+              "נמצא ב-Grow יותר ממסמך אחד שמתאים לרכישה. צריך לבדוק ב-Grow איזה תשלום שייך לה ולאשר אותו ידנית",
+          },
+          amount_mismatch: {
+            title: (name: string) => `${name} שילמה סכום אחר`,
+            short: "סכום שונה",
+            detail:
+              "הסכום ששולם ב-Grow שונה ממחיר המוצר. צריך לבדוק ב-Grow את הסכום ולהחליט על אישור ידני או החזר",
+          },
+          second_payment: {
+            title: (name: string) => `תשלום נוסף על רכישה ששולמה (${name})`,
+            short: "תשלום נוסף",
+            detail:
+              "Grow דיווחו על תשלום שני לאותה רכישה. צריך לבדוק ב-Grow אם היא חויבה פעמיים ולהחזיר את התשלום הנוסף",
+          },
+          intro_not_eligible: {
+            title: (name: string) => `${name} שילמה על היכרות ואינה זכאית`,
+            short: "היכרות ללא זכאות",
+            detail:
+              "התשלום התקבל, אבל הלקוחה כבר השתתפה או נרשמה. צריך לבדוק ב-Grow את התשלום ולהחליט על החזר או מוצר אחר",
+          },
+          approve_failed: {
+            title: (name: string) => `התשלום של ${name} לא נרשם`,
+            short: "רישום שנכשל",
+            detail:
+              "התשלום התקבל ב-Grow, אבל הרישום שלו כאן נכשל. צריך לבדוק ב-Grow את התשלום ולאשר אותו ידנית",
+          },
+          closed_by_admin: {
+            title: (name: string) => `רכישה מקוונת שנסגרה (${name})`,
+            short: "נסגרה ידנית",
+            detail: "הרכישה נסגרה ידנית. אין צורך בפעולה נוספת",
+          },
+          product_changed: {
+            title: (name: string) => `המוצר השתנה בזמן התשלום (${name})`,
+            short: "המוצר השתנה",
+            detail:
+              "המוצר נערך אחרי שהלקוחה התחילה לשלם. צריך לבדוק ב-Grow מה שולם ולאשר ידנית את המוצר הנכון",
+          },
+          customer_unavailable: {
+            title: () => "תשלום על חשבון שהפרטים בו הוסרו",
+            short: "פרטים שהוסרו",
+            detail:
+              "פרטי הלקוחה הוסרו לפני שהתשלום אומת. צריך לבדוק ב-Grow את התשלום ולהחזיר אותו",
+          },
+          late_document: {
+            title: (name: string) =>
+              `תשלום מאוחר על רכישה שכבר טופלה (${name})`,
+            short: "תשלום מאוחר",
+            detail:
+              "Grow דיווחו על תשלום לרכישה שכבר טופלה. צריך לבדוק ב-Grow אם זה תשלום כפול ולהחזיר אותו אם כן",
+          },
+        },
+        // An unknown reason.
+        unknown: {
+          title: (name: string) => `תשלום מקוון לבדיקה (${name})`,
+          detail: "צריך לבדוק את התשלום ב-Grow",
+        },
+        reference: (reference: string) => `אסמכתה ${reference}`,
+        document: (id: string) => `מסמך ב-Grow: ${id}`,
+        earlier: (reason: string, resolved: boolean) =>
+          resolved
+            ? `בעיה קודמת ברכישה: ${reason}, טופלה`
+            : `בעיה קודמת ברכישה: ${reason}`,
+        resolve: "סימון כטופל",
+        resolveFor: (name: string) => `סימון כטופל: ${name}`,
+        resolveDone: "סומן כטופל",
+      },
+      // Grow notified 30 minutes ago and nothing was confirmed: Tal checks
+      // it in Grow, and closes it before approving by hand.
+      online_payment_unconfirmed: {
+        title: (name: string) => `התשלום של ${name} לא אומת`,
+        detail:
+          "Grow דיווחו על תשלום שלא אומת. אם התשלום מופיע ב-Grow, הוא ייכנס לבד תוך כמה דקות. לפני אישור ידני צריך לסגור את הפריט.",
+        chip: "לא אומת",
+        close: "סגירה",
+        closeFor: (name: string) => `סגירה: ${name}`,
+        closeDone: "הרכישה נסגרה",
+      },
       // The push settings are missing in Vault (story 5.10).
       vault_missing: {
         title: () => "שליחת הפוש לא מוגדרת",
@@ -1547,6 +1646,8 @@ export const adminCopy = {
       workSheet: "דף עבודה",
       templates: "תבניות התראות",
       marketing: "תזכורות שיווק",
+      // Online payments (PR B).
+      onlinePayments: "תשלום באתר",
     },
     // The link groups: business details, templates, marketing reminders.
     businessLink: "לעריכת פרטי העסק",
@@ -1575,6 +1676,10 @@ export const adminCopy = {
       inactivity: "לקוחה לא פעילה אחרי (חודשים)",
       duplicateWindow: "זיהוי תשלום כפול (ימים לפני ואחרי)",
       prepDays: "ימי הכנה בדף העבודה",
+      // Online payments (PR B).
+      paymentWindow: "חלון תשלום (דקות)",
+      holdGrace: "תוספת שמירת מקום (דקות)",
+      publicPurchase: "רכישה באתר הציבורי",
     },
     // The short names in "{field}: {old} ← {new}".
     labels: {
@@ -1593,6 +1698,9 @@ export const adminCopy = {
       inactivity: "לקוחה לא פעילה",
       duplicateWindow: "זיהוי תשלום כפול",
       prepDays: "ימי הכנה",
+      paymentWindow: "חלון תשלום",
+      holdGrace: "תוספת שמירת מקום",
+      publicPurchase: "רכישה באתר הציבורי",
     },
     // Readable values ("יום לפני ב-20:00", "48 שעות").
     show: {
@@ -1609,6 +1717,9 @@ export const adminCopy = {
         n === 1 ? "שעה לפני המפגש" : `${n} שעות לפני המפגש`,
       days: (n: number) => (n === 1 ? "יום אחד" : `${n} ימים`),
       months: (n: number) => (n === 1 ? "חודש אחד" : `${n} חודשים`),
+      minutes: (n: number) => (n === 1 ? "דקה אחת" : `${n} דקות`),
+      // An on/off setting (public_online_purchase).
+      onOff: (on: boolean) => (on ? "פעילה" : "כבויה"),
       adults: (n: number) => `${n} מבוגרים`,
       options: (n: number) => (n === 1 ? "חלופה אחת" : `${n} חלופות`),
       places: (n: number) => `${n} מקומות פנויים או פחות`,
@@ -1628,6 +1739,10 @@ export const adminCopy = {
       new: "חל רק על מה שייווצר מעכשיו",
       bookings: "חל רק על הרשמות חדשות",
       credits: "חל רק על זיכויים חדשים",
+      // Online payments (PR B).
+      checkouts: "חל רק על רכישות שיתחילו מעכשיו",
+      publicPurchase:
+        "חל מיד על עמודי המפגשים באתר הציבורי. באזור האישי אפשר לרכוש תמיד",
     },
     // Next to the cancel window (source §7: a visible policy change).
     cancelPolicy:
@@ -2655,6 +2770,10 @@ export const adminCopy = {
       default_prep_days: "ימי הכנה כברירת מחדל",
       default_session_start_time: "שעת התחלה",
       default_session_end_time: "שעת סיום",
+      // Online payments (PR B).
+      online_payment_window_minutes: "חלון תשלום (דקות)",
+      online_hold_grace_minutes: "תוספת שמירת מקום (דקות)",
+      public_online_purchase: "רכישה באתר הציבורי",
       default_kind: "סוג ברירת מחדל",
       theme_key: "ערכת צבעים",
       generic_paper_key: "רקע",

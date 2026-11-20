@@ -216,7 +216,7 @@ export const ERROR_MESSAGES = {
   // is off (business_settings.public_online_purchase); the product is not
   // active or has no price. REGISTRATION_CLOSED, EVENT_FULL, EVENT_NOT_FIT,
   // CUSTOMER_ALREADY_BOOKED and INTRO_NOT_ELIGIBLE keep their wording.
-  TERMS_REQUIRED: "צריך לאשר את תנאי הרכישה כדי להמשיך",
+  TERMS_REQUIRED: "צריך לאשר את תקנון הרכישה כדי להמשיך",
   PUBLIC_PURCHASE_OFF: "רכישה באתר פתוחה כרגע רק מהאזור האישי. צרי קשר לרכישה",
   PRODUCT_NOT_PURCHASABLE: "אי אפשר לרכוש את המוצר הזה באתר. צרי קשר לרכישה",
   // The checkout of the return or the notification does not exist, or its

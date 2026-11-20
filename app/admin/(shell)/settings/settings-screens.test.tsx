@@ -48,6 +48,9 @@ const ROW: SettingsRow = {
   duplicate_payment_window_days: 7,
   default_session_start_time: "10:30",
   default_session_end_time: "14:30",
+  online_payment_window_minutes: 10,
+  online_hold_grace_minutes: 5,
+  public_online_purchase: false,
 }
 
 describe("SettingsEditor", () => {
@@ -60,6 +63,7 @@ describe("SettingsEditor", () => {
       copy.groups.newProduct,
       copy.groups.creditReminder,
       copy.groups.alerts,
+      copy.groups.onlinePayments,
       copy.groups.workSheet,
       copy.groups.templates,
       copy.groups.marketing,

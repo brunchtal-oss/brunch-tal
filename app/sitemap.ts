@@ -11,7 +11,7 @@ import { siteUrl } from "@/lib/site-url"
 // the cached anon readers.
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [publishedLegalSlugs, sessions, dates] = await Promise.all([
-    getPublishedPageSlugs(["privacy", "terms"]),
+    getPublishedPageSlugs(["privacy", "terms", "purchase-terms"]),
     upcomingSessions(),
     Promise.all(
       SITEMAP_CONTENT_SLUGS.map(

@@ -5,10 +5,13 @@ import { customerCopy } from "@/lib/copy/customer"
 import { ERROR_MESSAGES } from "@/lib/errors"
 
 import { BookingPanel } from "./booking-panel"
+import type { PurchaseProduct } from "@/lib/payments/purchase-options"
+
 import type { BookingPreview } from "./booking-preview"
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }))
 vi.mock("../actions", () => ({ bookSessionAction: vi.fn() }))
+vi.mock("./actions", () => ({ startSessionPurchaseAction: vi.fn() }))
 vi.mock("../../notifications/actions", () => ({
   registerPush: vi.fn(),
   unregisterPush: vi.fn(),
@@ -23,7 +26,8 @@ const CONTACT = "https://wa.me/972500000000"
 
 function render(
   preview: BookingPreview,
-  cancelWindowHours: number | null = 48
+  cancelWindowHours: number | null = 48,
+  purchaseProducts: PurchaseProduct[] = []
 ) {
   return renderToStaticMarkup(
     <BookingPanel
@@ -33,6 +37,7 @@ function render(
       preview={preview}
       cancelWindowHours={cancelWindowHours}
       contactHref={CONTACT}
+      purchaseProducts={purchaseProducts}
     />
   )
 }
@@ -125,5 +130,41 @@ describe("BookingPanel (story 3.6)", () => {
     expect(html).toContain(customerCopy.book)
     expect(html).not.toContain(customerCopy.cancel.button)
     expect(html).not.toContain(customerCopy.registered)
+  })
+})
+
+describe("BookingPanel: buying online (PR B)", () => {
+  const SINGLE: PurchaseProduct = {
+    id: "44444444-4444-4444-8444-444444444444",
+    name: "בודד",
+    type: "single",
+    priceAgorot: 18000,
+    units: 1,
+    validityMode: "session",
+    validityDays: null,
+  }
+
+  it("no matching entry with products: 'לרכישה' replaces the contact", () => {
+    const html = render(
+      { kind: "blocked", code: "NO_MATCHING_ENTITLEMENT" },
+      48,
+      [SINGLE]
+    )
+    expect(html).toContain(ERROR_MESSAGES.NO_MATCHING_ENTITLEMENT)
+    expect(html).toContain(customerCopy.purchase.buy)
+    expect(html).not.toContain(CONTACT)
+  })
+
+  it("no product fits (or buying is off): today's contact", () => {
+    const html = render({ kind: "blocked", code: "NO_MATCHING_ENTITLEMENT" })
+    expect(html).toContain(CONTACT)
+    expect(html).not.toContain(customerCopy.purchase.buy)
+  })
+
+  it("another block: never the purchase, even with products", () => {
+    const html = render({ kind: "blocked", code: "REGISTRATION_CLOSED" }, 48, [
+      SINGLE,
+    ])
+    expect(html).not.toContain(customerCopy.purchase.buy)
   })
 })

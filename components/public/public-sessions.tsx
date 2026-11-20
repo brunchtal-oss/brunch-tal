@@ -149,16 +149,19 @@ export function PublicSessionView({
  * active profile, or a failed lookup): "להרשמה התחברי או צרי קשר"
  * (user's decision 2026-10-05), "התחברי" the login page that returns to the
  * session in her area and "צרי קשר" opening WhatsApp (plain text without a
- * usable number).
+ * usable number). Online payments (PR B): for a guest, while buying on the
+ * public site is on, the purchase sheet's button comes first (purchase).
  */
 export function PublicSessionAction({
   sessionId,
   customer,
   whatsappHref,
+  purchase = null,
 }: {
   sessionId: string
   customer: boolean
   whatsappHref: string | null
+  purchase?: React.ReactNode
 }) {
   const mine = `/me/sessions/${sessionId}`
   if (customer) {
@@ -174,7 +177,7 @@ export function PublicSessionAction({
       </Link>
     )
   }
-  return (
+  const guest = (
     <p className="rounded-lg bg-muted px-4 py-3.5 text-center text-[17px] leading-[1.65] text-pretty">
       {copy.sessions.guestBefore}
       <Link href={`/login?next=${mine}`} className={LINK}>
@@ -195,5 +198,12 @@ export function PublicSessionAction({
         copy.sessions.guestContact
       )}
     </p>
+  )
+  if (!purchase) return guest
+  return (
+    <div className="flex flex-col gap-4">
+      {purchase}
+      {guest}
+    </div>
   )
 }

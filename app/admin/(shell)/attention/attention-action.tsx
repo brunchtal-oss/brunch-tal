@@ -10,15 +10,17 @@ import { useAnnounce } from "@/components/shared/result-notice"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { adminCopy } from "@/lib/copy/admin"
-import { errorMessage, type ErrorCode } from "@/lib/errors"
+import { errorMessage, type ActionResult, type ErrorCode } from "@/lib/errors"
 import { newIdempotencyKey } from "@/lib/idempotency"
 import { formatAgorot } from "@/lib/money"
 import { formatSessionDate } from "@/lib/time"
 
 import type { AttentionAction } from "../home-items"
 import {
+  closeUnconfirmedCheckoutAction,
   markCorrectionHandledAction,
   previewSettleParkedAction,
+  resolveOnlinePaymentIssueAction,
   settleParkedAction,
 } from "./actions"
 import type { SettlePlan } from "./attention-plans"
@@ -29,10 +31,102 @@ const BUTTON = "h-11 border-foreground bg-transparent px-4 text-base"
 // The button under a "לטיפול" row (story 3.13). It sits above the row's
 // link (relative z-10), so pressing it never opens the row.
 export function AttentionActionButton({ action }: { action: AttentionAction }) {
-  return action.kind === "handled" ? (
-    <HandledButton bookingId={action.bookingId} name={action.name} />
-  ) : (
-    <SettleButton entitlementId={action.entitlementId} name={action.name} />
+  switch (action.kind) {
+    case "handled":
+      return <HandledButton bookingId={action.bookingId} name={action.name} />
+    case "settle":
+      return (
+        <SettleButton entitlementId={action.entitlementId} name={action.name} />
+      )
+    case "resolve_issue":
+      return (
+        <OnlinePaymentButton
+          label={items.online_payment_issue.resolve}
+          ariaLabel={items.online_payment_issue.resolveFor(action.name)}
+          done={items.online_payment_issue.resolveDone}
+          run={(idempotencyKey) =>
+            resolveOnlinePaymentIssueAction({
+              issueId: action.issueId,
+              idempotencyKey,
+            })
+          }
+        />
+      )
+    case "close_checkout":
+      return (
+        <OnlinePaymentButton
+          label={items.online_payment_unconfirmed.close}
+          ariaLabel={items.online_payment_unconfirmed.closeFor(action.name)}
+          done={items.online_payment_unconfirmed.closeDone}
+          run={(idempotencyKey) =>
+            closeUnconfirmedCheckoutAction({
+              checkoutId: action.checkoutId,
+              idempotencyKey,
+            })
+          }
+        />
+      )
+  }
+}
+
+// Online payments (PR B): "סימון כטופל" on an issue and "סגירה" on an
+// unconfirmed checkout, like "טופל": one tap, the item leaves the list. One
+// idempotency key per button; a failure makes the next tap a new request.
+function OnlinePaymentButton({
+  label,
+  ariaLabel,
+  done,
+  run,
+}: {
+  label: string
+  ariaLabel: string
+  done: string
+  run: (idempotencyKey: string) => Promise<ActionResult>
+}) {
+  const router = useRouter()
+  const announce = useAnnounce()
+  const [key, setKey] = useState(newIdempotencyKey)
+  const [pending, setPending] = useState(false)
+  const [error, setError] = useState<ErrorCode | null>(null)
+
+  async function press() {
+    if (pending) return
+    setPending(true)
+    setError(null)
+    let code: ErrorCode
+    try {
+      const result = await run(key)
+      if (result.ok) {
+        announce?.(done)
+        router.refresh()
+        return
+      }
+      code = result.code
+    } catch {
+      code = "SERVER_ERROR"
+    } finally {
+      setPending(false)
+    }
+    setError(code)
+    setKey(newIdempotencyKey())
+  }
+
+  return (
+    <div className="relative z-10 flex flex-col items-start gap-2 pt-1">
+      <OnlineButton
+        type="button"
+        variant="outline"
+        size="lg"
+        aria-label={ariaLabel}
+        aria-busy={pending || undefined}
+        onClick={press}
+        className={BUTTON}
+      >
+        {pending && <Spinner aria-hidden />}
+        {label}
+      </OnlineButton>
+      {error && <InlineNotice tone="error">{errorMessage(error)}</InlineNotice>}
+    </div>
   )
 }
 

@@ -4,14 +4,23 @@ import type { Metadata } from "next"
 import { ExpiredCardNote } from "@/components/customer/expired-card-note"
 import { PurchaseRow } from "@/components/customer/purchase-row"
 import { PageHeading } from "@/components/shared/page-heading"
+import {
+  PaymentNotice,
+  paymentNoticeOf,
+} from "@/components/shared/payment-notice"
+import { readPaymentOutcome } from "@/lib/payments/payment-outcome"
+import { PurchaseSheet } from "@/components/shared/purchase-sheet"
 import { getWhatsappHref } from "@/lib/content/business-details"
 import { customerCopy } from "@/lib/copy/customer"
 import { shellCopy } from "@/lib/copy/shell"
+import { canBuy } from "@/lib/payments/purchase-options"
 import { createClient } from "@/lib/supabase/server"
 
 import { loadMyEntitlements, pinnedConceptNames } from "../load-entitlements"
+import { loadCardPurchaseOptions, startCardPurchaseAction } from "./actions"
 import {
   byPaidOnDesc,
+  cardPurchaseButtonClass,
   creditChip,
   creditChipTone,
   entitlementName,
@@ -26,10 +35,19 @@ export const metadata: Metadata = {
 // purchase of hers, newest first, one row each (PurchaseRow), linking to its
 // detail. A tab of its own in the bottom bar. All values from
 // get_my_entitlements. Rendered inside the layout's customer gate.
-export default function PurchasesPage() {
+// Online payments (PR B): the outcome notice of a card payment
+// (?payment=), and "רכישת כרטיסייה" at the top while online buying is on.
+export default function PurchasesPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}) {
   return (
     <>
       <PageHeading>{shellCopy.nav.purchases}</PageHeading>
+      <Suspense fallback={null}>
+        <BuyCard searchParams={searchParams} />
+      </Suspense>
       <Suspense
         fallback={<p className="text-muted-foreground">{shellCopy.loading}</p>}
       >
@@ -76,5 +94,42 @@ async function Purchases() {
         </li>
       ))}
     </ul>
+  )
+}
+
+// The payment notice and the card purchase. Nothing while online buying is
+// off (and no notice without ?payment=).
+export async function BuyCard({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}) {
+  const [query, options] = await Promise.all([
+    searchParams,
+    loadCardPurchaseOptions(),
+  ])
+  const outcome = await readPaymentOutcome(query)
+  const notice = paymentNoticeOf(outcome, "purchases")
+  if (!notice && !canBuy(options)) return null
+  const contactHref = await getWhatsappHref()
+  return (
+    <div className="flex flex-col items-start gap-4">
+      <PaymentNotice
+        outcome={outcome}
+        surface="purchases"
+        contactHref={contactHref}
+        className="w-full"
+      />
+      {canBuy(options) && (
+        <PurchaseSheet
+          products={options.products}
+          eventId={null}
+          start={startCardPurchaseAction}
+          contactHref={contactHref}
+          trigger={customerCopy.purchase.buyCard}
+          triggerClassName={cardPurchaseButtonClass}
+        />
+      )}
+    </div>
   )
 }

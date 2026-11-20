@@ -5,11 +5,31 @@ import { NextResponse } from "next/server"
 
 import type { ErrorCode } from "@/lib/errors"
 import {
+  CHECKOUT_COOKIE,
+  checkoutEntryFor,
+  isCheckoutId,
+  isCheckoutSecret,
+  outcomeOfPath,
+  parseCheckoutCookie,
+  PAYMENT_OUTCOME_COOKIE,
+  PAYMENT_OUTCOME_MAX_AGE,
+  serializeCheckoutCookie,
+  serializePaymentOutcome,
+  withoutCheckoutEntry,
+  type PaymentKind,
+  type PaymentOutcome,
+} from "@/lib/payments/checkout-cookie"
+import {
   growConfig,
   onlinePaymentsEnabled,
   type GrowConfig,
   type OnlinePaymentsEnv,
 } from "@/lib/payments/online-config"
+import {
+  NO_PURCHASE,
+  parsePurchaseOptions,
+  type PurchaseOptions,
+} from "@/lib/payments/purchase-options"
 import { callRpc } from "@/lib/rpc"
 import {
   createGrowClient,
@@ -48,58 +68,21 @@ import { createClient } from "@/lib/supabase/server"
 // read for business data: the payment is the morning document found by
 // the checkout's reference. Nothing secret or personal is logged.
 
-export const CHECKOUT_COOKIE = "bt_checkout"
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 7
-const MAX_COOKIE_ENTRIES = 5
-
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-const SECRET = /^[A-Za-z0-9_-]{16,200}$/
 
 export type SecretKind = "notify" | "browser" | "system"
 
-export type CheckoutEntry = { id: string; secret: string }
-
-export function isCheckoutId(value: unknown): value is string {
-  return typeof value === "string" && UUID.test(value)
-}
-
-export function isCheckoutSecret(value: unknown): value is string {
-  return typeof value === "string" && SECRET.test(value)
-}
-
-/** The valid entries of the `bt_checkout` cookie, newest first (at most 5). */
-export function parseCheckoutCookie(
-  value: string | null | undefined
-): CheckoutEntry[] {
-  if (!value) return []
-  const entries: CheckoutEntry[] = []
-  for (const part of value.split(",")) {
-    const dot = part.indexOf(".")
-    if (dot < 0) continue
-    const id = part.slice(0, dot)
-    const secret = part.slice(dot + 1)
-    if (isCheckoutId(id) && isCheckoutSecret(secret)) {
-      entries.push({ id, secret })
-    }
-  }
-  return entries.slice(0, MAX_COOKIE_ENTRIES)
-}
-
-export function serializeCheckoutCookie(entries: CheckoutEntry[]): string {
-  return entries
-    .slice(0, MAX_COOKIE_ENTRIES)
-    .map((e) => `${e.id}.${e.secret}`)
-    .join(",")
-}
-
-/** The entry of checkout `c`, else null (no c, or no match). */
-export function checkoutEntryFor(
-  cookie: string | null | undefined,
-  c: string | null | undefined
-): CheckoutEntry | null {
-  if (!isCheckoutId(c)) return null
-  return parseCheckoutCookie(cookie).find((e) => e.id === c) ?? null
-}
+// The pure cookie helpers live in lib/payments/checkout-cookie.ts (the
+// banner reads them too); re-exported for the routes and the tests.
+export {
+  CHECKOUT_COOKIE,
+  checkoutEntryFor,
+  isCheckoutId,
+  isCheckoutSecret,
+  parseCheckoutCookie,
+  serializeCheckoutCookie,
+  type CheckoutEntry,
+} from "@/lib/payments/checkout-cookie"
 
 /** The cookie's options: `secure` only when the site is https. */
 export function checkoutCookieOptions(env: OnlinePaymentsEnv = process.env) {
@@ -292,6 +275,103 @@ export async function startCheckout(
   return { ok: true, data: { kind: "redirect", url } }
 }
 
+// PR B: the purchase sheet's products (get_purchase_options). Nothing
+// while the kill switch is off (no RPC call); a customer's uid comes from
+// her verified session claims only, never from the input. A read error is
+// logged with its code and offers nothing.
+export async function purchaseOptions(
+  as: "customer" | "guest",
+  eventId: string | null,
+  deps: CheckoutDeps = {}
+): Promise<PurchaseOptions> {
+  const env = deps.env ?? process.env
+  if (!onlinePaymentsEnabled(env) || !explicitSiteUrl(env)) return NO_PURCHASE
+  if (eventId !== null && !isCheckoutId(eventId)) return NO_PURCHASE
+  const uid = as === "customer" ? await sessionUid() : null
+  if (as === "customer" && !uid) return NO_PURCHASE
+  const read = await callRpc(createServiceClient(), "get_purchase_options", {
+    p_event_id: eventId as string,
+    p_auth_uid: uid as string,
+  })
+  if (!read.ok) {
+    console.error("checkout.options_failed", { code: read.code })
+    return NO_PURCHASE
+  }
+  return parsePurchaseOptions(read.data)
+}
+
+/**
+ * The sheet's pay button: the product must be one the sheet may offer
+ * (enabled, published purchase terms, intro rules; get_purchase_options
+ * for the same event, or the cards without one), then startCheckout.
+ */
+export async function startPurchase(
+  input: Omit<StartCheckoutInput, "payer">,
+  deps: CheckoutDeps = {}
+): Promise<StartCheckoutResult> {
+  const env = deps.env ?? process.env
+  if (!onlinePaymentsEnabled(env))
+    return { ok: false, code: "ONLINE_PAYMENTS_OFF" }
+  if (
+    !isCheckoutId(input.productId) ||
+    (input.eventId !== null && !isCheckoutId(input.eventId)) ||
+    !isCheckoutId(input.idempotencyKey) ||
+    typeof input.termsAccepted !== "boolean"
+  ) {
+    return { ok: false, code: "INVALID_INPUT" }
+  }
+  if (!input.termsAccepted) return { ok: false, code: "TERMS_REQUIRED" }
+  // The guest path is for guests only: a signed-in caller buys from her
+  // area (review pass 1).
+  if (input.as === "guest" && (await sessionUid())) {
+    return { ok: false, code: "NOT_AUTHORIZED" }
+  }
+  const options = await purchaseOptions(input.as, input.eventId, deps)
+  if (!options.enabled) {
+    return { ok: false, code: "ONLINE_PAYMENTS_OFF" }
+  }
+  const product = options.products.find((p) => p.id === input.productId)
+  if (!product) {
+    return { ok: false, code: "PRODUCT_NOT_PURCHASABLE" }
+  }
+  // A card is bought without a session, whatever the page sent.
+  return startCheckout(
+    {
+      ...input,
+      eventId: product.validityMode === "days" ? null : input.eventId,
+    },
+    deps
+  )
+}
+
+// The "continue joining" banner (review pass 1): the newest cookie entry
+// whose checkout is paid, its payment not bound to a customer yet, created
+// within 24 hours (checkout_banner_state, read only), else null. Nothing
+// while the kill switch is off (no call).
+export async function checkoutBannerId(
+  deps: CheckoutDeps = {}
+): Promise<string | null> {
+  if (!onlinePaymentsEnabled(deps.env ?? process.env)) return null
+  const store = await cookies()
+  const entries = parseCheckoutCookie(store.get(CHECKOUT_COOKIE)?.value)
+  if (entries.length === 0) return null
+  const service = createServiceClient()
+  for (const entry of entries) {
+    const state = await callRpc(service, "checkout_banner_state", {
+      p_checkout_id: entry.id,
+      p_browser_secret: entry.secret,
+    })
+    if (!state.ok) {
+      console.error("checkout.banner_failed", { code: state.code })
+      return null
+    }
+    if ((state.data as { show?: unknown } | null)?.show === true) {
+      return entry.id
+    }
+  }
+  return null
+}
+
 // Releases the hold of a checkout that will not be paid; a failure is
 // logged with the code only.
 async function cancelCheckout(
@@ -431,44 +511,105 @@ export async function confirmCheckout(
   return { ok: true, state: state ?? row.state, pending: false }
 }
 
-type ReturnRow = {
+export type ReturnRow = {
   state: CheckoutState
   product_kind: "days" | "session" | null
   event_id: string | null
   customer_known: boolean
+  // PR B: the paid purchase got its booking (false when parked).
+  booked?: boolean
+  // Review pass 2: money was received (a payment, or a morning document on
+  // an issue); and the return stopped waiting for a document (30 minutes
+  // after the pay window and the hold grace).
+  has_payment?: boolean
+  pending_over?: boolean
   join_token?: string
   joined?: boolean
   join_blocked?: boolean
 }
 
-// Where a closed checkout sends the browser, with ?payment=<state>: its
-// session page; without a session, "my purchases" for a known customer or
-// the home page for a guest.
+// Where a closed checkout sends the browser, with ?payment=<state>: a
+// known customer to her area (the session's page there, else "my
+// purchases"); a guest to the public session page, else the home page.
 export function closedPathFor(
   state: string,
   eventId: string | null,
   customerKnown: boolean
 ): string {
   const payment = encodeURIComponent(state)
-  if (eventId) return `/sessions/${eventId}?payment=${payment}`
-  return customerKnown
-    ? `/me/purchases?payment=${payment}`
+  if (customerKnown) {
+    return eventId
+      ? `/me/sessions/${eventId}?payment=${payment}`
+      : `/me/purchases?payment=${payment}`
+  }
+  return eventId
+    ? `/sessions/${eventId}?payment=${payment}`
     : `/?payment=${payment}`
 }
 
-/** The redirect of the browser return, from checkout_return's answer. */
-export function returnPathFor(row: ReturnRow, pending: boolean): string {
+/** /pay/pending for checkout `id` ("לבדוק שוב" returns with the same c). */
+export function pendingPathFor(id: string): string {
+  return `${PENDING_PATH}?c=${encodeURIComponent(id)}`
+}
+
+/**
+ * The redirect of the browser return (Grow's success URL), from
+ * checkout_return's answer, and whether it is a final outcome (the cookie
+ * entry is then removed). Review pass 2: an unpaid checkout (open, failed
+ * or expired) is pending here, never "failed": the document may lag behind
+ * a real charge. Pending ends 30 minutes after the pay window and the hold
+ * grace (pending_over) with the neutral not_found notice. An issue without
+ * money received gets the neutral review notice.
+ */
+export function returnPathFor(
+  row: ReturnRow,
+  pending: boolean,
+  checkoutId: string
+): { path: string; final: boolean } {
   if (row.state === "paid") {
-    if (row.join_token) return `/join/${row.join_token}`
+    if (row.join_token) return { path: `/join/${row.join_token}`, final: true }
     if (row.customer_known || row.joined) {
-      return row.product_kind === "session" ? "/me/bookings" : "/me/purchases"
+      // A known customer: her area with the success notice; a pinned
+      // purchase parked without a place gets the no_place notice.
+      if (row.product_kind === "session") {
+        // A missing `booked` reads as booked (only false is a parked one).
+        return {
+          path:
+            row.booked !== false
+              ? "/me/bookings?payment=paid"
+              : "/me/bookings?payment=no_place",
+          final: true,
+        }
+      }
+      return { path: "/me/purchases?payment=paid", final: true }
     }
     // Paid, but no link can be issued (a join in progress, a conflict for
     // Tal, a voided purchase).
-    return closedPathFor("issue", row.event_id, false)
+    return {
+      path: closedPathFor("issue", row.event_id, row.customer_known),
+      final: true,
+    }
   }
-  if (row.state === "open" || pending) return PENDING_PATH
-  return closedPathFor(row.state, row.event_id, row.customer_known)
+  if (
+    row.state === "open" ||
+    row.state === "failed" ||
+    row.state === "expired" ||
+    pending
+  ) {
+    if (row.pending_over === true) {
+      return {
+        path: closedPathFor("not_found", row.event_id, row.customer_known),
+        final: true,
+      }
+    }
+    return { path: pendingPathFor(checkoutId), final: false }
+  }
+  const state =
+    row.state === "issue" && row.has_payment === false ? "review" : row.state
+  return {
+    path: closedPathFor(state, row.event_id, row.customer_known),
+    final: true,
+  }
 }
 
 const PENDING_PATH = "/pay/pending"
@@ -476,14 +617,34 @@ const NOT_FOUND_PATH = "/sessions"
 
 // The browser's next step and the cookie: undefined keeps it, a string
 // replaces it, null deletes it.
-export type PaymentRedirect = { path: string; cookie?: string | null }
+// outcome: the one-minute outcome cookie (the notice's proof of a real
+// return), set for a ?payment= redirect.
+export type PaymentRedirect = {
+  path: string
+  cookie?: string | null
+  outcome?: PaymentOutcome
+}
 
-function withoutEntry(
+function kindOf(productKind: string | null | undefined): PaymentKind {
+  return productKind === "session" ? "session" : "card"
+}
+
+// The redirect with its outcome cookie when the path carries ?payment=.
+function withOutcome(
+  redirect: PaymentRedirect,
+  productKind: string | null | undefined
+): PaymentRedirect {
+  const outcome = outcomeOfPath(redirect.path, kindOf(productKind))
+  return outcome ? { ...redirect, outcome } : redirect
+}
+
+// The redirect with checkout `id` removed from the cookie.
+function removing(
+  path: string,
   cookie: string | null | undefined,
   id: string
-): string | null {
-  const left = parseCheckoutCookie(cookie).filter((e) => e.id !== id)
-  return left.length > 0 ? serializeCheckoutCookie(left) : null
+): PaymentRedirect {
+  return { path, cookie: withoutCheckoutEntry(cookie, id) }
 }
 
 /** GET /pay/return?c=<checkout>: confirm, then where she goes. */
@@ -503,8 +664,10 @@ export async function returnFromPayment(
     "browser",
     deps
   )
+  // The checkout is gone (or its secret does not match): its entry is
+  // useless, so it leaves the cookie.
   if (!confirmed.ok && confirmed.code === "CHECKOUT_NOT_FOUND") {
-    return { path: NOT_FOUND_PATH }
+    return removing(NOT_FOUND_PATH, cookie, entry.id)
   }
 
   const back = await callRpc(createServiceClient(), "checkout_return", {
@@ -512,18 +675,23 @@ export async function returnFromPayment(
     p_browser_secret: entry.secret,
   })
   if (!back.ok) {
-    return {
-      path: back.code === "CHECKOUT_NOT_FOUND" ? NOT_FOUND_PATH : PENDING_PATH,
-    }
+    return back.code === "CHECKOUT_NOT_FOUND"
+      ? removing(NOT_FOUND_PATH, cookie, entry.id)
+      : { path: pendingPathFor(entry.id) }
   }
   const row = back.data as unknown as ReturnRow
-  if (!confirmed.ok && row.state !== "paid") return { path: PENDING_PATH }
+  if (!confirmed.ok && row.state !== "paid") {
+    return { path: pendingPathFor(entry.id) }
+  }
 
-  const path = returnPathFor(row, confirmed.ok && confirmed.pending)
-  // A join link is issued once per entry: the next return cannot take it.
-  return row.join_token
-    ? { path, cookie: withoutEntry(cookie, entry.id) }
-    : { path }
+  // Review pass 2 (reverses pass 1): with no document yet, a failed or
+  // expired checkout is pending too, the entry kept, until pending_over.
+  const next = returnPathFor(row, confirmed.ok && confirmed.pending, entry.id)
+  // A final outcome ends the entry: a join link is issued once per entry,
+  // and the "continue joining" banner stops.
+  return next.final
+    ? withOutcome(removing(next.path, cookie, entry.id), row.product_kind)
+    : { path: next.path }
 }
 
 /** GET /pay/failed?c=<checkout>: only that checkout fails, then the notice. */
@@ -539,23 +707,36 @@ export async function failFromPayment(
     p_browser_secret: entry.secret,
   })
   if (!cancelled.ok) {
-    return {
-      path:
-        cancelled.code === "CHECKOUT_NOT_FOUND" ? NOT_FOUND_PATH : PENDING_PATH,
-    }
+    return cancelled.code === "CHECKOUT_NOT_FOUND"
+      ? removing(NOT_FOUND_PATH, cookie, entry.id)
+      : { path: pendingPathFor(entry.id) }
   }
   const row = cancelled.data as unknown as {
     state: CheckoutState
+    product_kind?: string | null
     event_id: string | null
     customer_known?: boolean
   }
-  // Paid already (a late failure page): the return decides.
+  // Paid already (a late failure page): the return decides (the entry
+  // stays for it).
   if (row.state === "paid") {
     return { path: `/pay/return?c=${encodeURIComponent(entry.id)}` }
   }
-  return {
-    path: closedPathFor(row.state, row.event_id, row.customer_known === true),
-  }
+  // Failed, expired or an issue: final, the entry leaves the cookie. Only
+  // Grow's failure URL says "failed" ("לא חויבת"); an issue here gets the
+  // neutral review notice (whether money came is not known here).
+  return withOutcome(
+    removing(
+      closedPathFor(
+        row.state === "issue" ? "review" : row.state,
+        row.event_id,
+        row.customer_known === true
+      ),
+      cookie,
+      entry.id
+    ),
+    row.product_kind
+  )
 }
 
 /** The 303 of /pay/return and /pay/failed, with the cookie change. No
@@ -582,6 +763,13 @@ export function paymentRedirectResponse(
       ...checkoutCookieOptions(env),
       maxAge: 0,
     })
+  }
+  if (redirect.outcome) {
+    response.cookies.set(
+      PAYMENT_OUTCOME_COOKIE,
+      serializePaymentOutcome(redirect.outcome),
+      { ...checkoutCookieOptions(env), maxAge: PAYMENT_OUTCOME_MAX_AGE }
+    )
   }
   return response
 }

@@ -206,6 +206,12 @@ export function pageOutline(
       const legal = shown(input, pageId, "body", "legal_text")
       return legal?.body ? legalHeadings(legal.body, pageId, "body") : []
     }
+    case "purchase_terms": {
+      const legal = shown(input, "purchase-terms", "body", "legal_text")
+      return legal?.body
+        ? legalHeadings(legal.body, "purchase-terms", "body")
+        : []
+    }
     case "accessibility": {
       const statement = shown(
         input,
@@ -231,5 +237,6 @@ export const OUTLINE_SLUGS: Record<SeoPageKey, readonly string[]> = {
   contact: ["contact"],
   privacy: ["privacy"],
   terms: ["terms"],
+  purchase_terms: ["purchase-terms"],
   accessibility: ["accessibility"],
 }

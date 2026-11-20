@@ -46,9 +46,29 @@ vi.mock("../actions", () => ({
   joinWaitlistAction: vi.fn(),
   leaveWaitlistAction: vi.fn(),
 }))
-// The booking panel has its own tests; here only whether it is shown.
+const loadOptions = vi.fn()
+vi.mock("./actions", () => ({
+  loadSessionPurchaseOptions: (...args: unknown[]) => loadOptions(...args),
+  startSessionPurchaseAction: vi.fn(),
+}))
+// The outcome cookie of a real payment return (review pass 1).
+let outcomeCookie: string | undefined
+vi.mock("next/headers", () => ({
+  cookies: async () => ({
+    get: (name: string) =>
+      name === "bt_payment_outcome" && outcomeCookie
+        ? { value: outcomeCookie }
+        : undefined,
+  }),
+}))
+// The booking panel has its own tests; here only whether it is shown, and
+// how many products it may offer.
 vi.mock("./booking-panel", () => ({
-  BookingPanel: () => <p>BOOKING_PANEL</p>,
+  BookingPanel: ({
+    purchaseProducts = [],
+  }: {
+    purchaseProducts?: readonly unknown[]
+  }) => <p>BOOKING_PANEL:{purchaseProducts.length}</p>,
 }))
 
 const { SessionContent } = await import("./page")
@@ -86,6 +106,9 @@ async function render(search: Record<string, string> = {}) {
 }
 
 beforeEach(() => {
+  loadOptions.mockReset()
+  loadOptions.mockResolvedValue({ enabled: false, products: [] })
+  outcomeCookie = undefined
   callRpc.mockReset()
   waitlistRow = null
   waitlistFilters.length = 0
@@ -212,4 +235,48 @@ describe("the customer's session page and the session kind", () => {
       }
     }
   )
+})
+
+describe("online payments on her session page (PR B)", () => {
+  const PRODUCT = {
+    id: "22222222-2222-4222-8222-222222222222",
+    name: "בודד",
+    type: "single",
+    priceAgorot: 18000,
+    units: 1,
+    validityMode: "session",
+    validityDays: null,
+  }
+
+  it("no fitting entry and buying enabled: the panel gets the products", async () => {
+    previewRefuses("NO_MATCHING_ENTITLEMENT")
+    loadOptions.mockResolvedValue({ enabled: true, products: [PRODUCT] })
+    expect(await render()).toContain("BOOKING_PANEL:1")
+    expect(loadOptions).toHaveBeenCalledWith(ID)
+  })
+
+  it("buying not enabled: no product reaches the panel, even when listed", async () => {
+    previewRefuses("NO_MATCHING_ENTITLEMENT")
+    loadOptions.mockResolvedValue({ enabled: false, products: [PRODUCT] })
+    expect(await render()).toContain("BOOKING_PANEL:0")
+  })
+
+  it("another block: the options are not even read", async () => {
+    previewRefuses("REGISTRATION_CLOSED")
+    await render()
+    expect(loadOptions).not.toHaveBeenCalled()
+  })
+
+  it("a return notice only with the matching outcome cookie", async () => {
+    previewRefuses("REGISTRATION_CLOSED")
+    const failed = customerCopy.purchase.notices.failed
+    expect(await render({ payment: "failed" })).not.toContain(failed)
+    outcomeCookie = "paid.session"
+    expect(await render({ payment: "failed" })).not.toContain(failed)
+    outcomeCookie = "failed.session"
+    const html = await render({ payment: "failed" })
+    expect(html).toContain(failed)
+    // At the top, above the concept header.
+    expect(html.indexOf(failed)).toBeLessThan(html.indexOf("<h1"))
+  })
 })

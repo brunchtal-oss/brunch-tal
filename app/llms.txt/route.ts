@@ -36,7 +36,7 @@ export async function GET(): Promise<Response> {
     getSiteSeo(),
     getPageSeo(),
     upcomingSessions(),
-    getPublishedPageSlugs(["privacy", "terms"]),
+    getPublishedPageSlugs(["privacy", "terms", "purchase-terms"]),
   ])
   const page = (key: SeoPageKey): LlmsPage => ({
     title: pageH1(seo, key, site.name),
@@ -53,6 +53,8 @@ export async function GET(): Promise<Response> {
     sessions,
     policies: [
       ...(["privacy", "terms"] as const).filter((key) => legal.includes(key)),
+      // Online payments (PR B): its SEO key differs from its page slug.
+      ...(legal.includes("purchase-terms") ? ["purchase_terms" as const] : []),
       "accessibility" as const,
     ].map(page),
   })

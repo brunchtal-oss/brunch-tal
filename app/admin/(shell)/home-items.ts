@@ -49,14 +49,23 @@ export type AttentionRow = {
   // job_failed (story 5.10): the jobname and why it is listed.
   job?: string
   reason?: string
+  // Online payments (PR B): the checkout's reference, the Grow (morning)
+  // document of an issue, and the checkout's earlier issue.
+  reference?: string | null
+  provider_transaction_id?: string | null
+  earlier_issue?: { reason?: string; resolved?: boolean } | null
 }
 
 // A button under the row (story 3.13): "טופל" on a booking a correction
 // left unfit; the offer of a refund or a credit on a purchase paid without
 // a place in a cancelled session.
+// Online payments (PR B): "סימון כטופל" on an issue, "סגירה" on an
+// unconfirmed checkout.
 export type AttentionAction =
   | { kind: "handled"; bookingId: string; name: string }
   | { kind: "settle"; entitlementId: string; name: string }
+  | { kind: "resolve_issue"; issueId: string; name: string }
+  | { kind: "close_checkout"; checkoutId: string; name: string }
 
 export type AttentionItem = TaskRowProps & {
   key: string
@@ -146,6 +155,44 @@ function jobNameOf(row: AttentionRow): string {
   return Object.hasOwn(copy.items.job_failed.jobs, job)
     ? copy.items.job_failed.jobs[job]
     : job
+}
+
+type IssueReason = keyof typeof copy.items.online_payment_issue.reasons
+
+function issueReasonOf(reason: string | null | undefined): IssueReason | null {
+  return Object.hasOwn(copy.items.online_payment_issue.reasons, reason ?? "")
+    ? (reason as IssueReason)
+    : null
+}
+
+// An online payment item opens the customer's card, else its session, else
+// the payments.
+function onlineHref(row: AttentionRow): string {
+  if (row.customer_id) return customerHref(row.customer_id)
+  return row.event_id ? sessionHref(row) : "/admin/payments"
+}
+
+// The sentences of an issue: what to check in Grow, then the reference;
+// the Grow document and the earlier issue when there are.
+function issueDetail(row: AttentionRow, reason: IssueReason | null): string {
+  const c = copy.items.online_payment_issue
+  const lines: string[] = [reason ? c.reasons[reason].detail : c.unknown.detail]
+  if (row.reference) lines.push(c.reference(row.reference))
+  if (row.provider_transaction_id) {
+    lines.push(c.document(row.provider_transaction_id))
+  }
+  // late_document and second_payment above all: what Tal already settled.
+  const earlier = row.earlier_issue?.reason
+  if (earlier) {
+    const known = issueReasonOf(earlier)
+    lines.push(
+      c.earlier(
+        known ? c.reasons[known].short : earlier,
+        row.earlier_issue?.resolved === true
+      )
+    )
+  }
+  return `${lines.join(". ")}.`
 }
 
 function sessionHref(row: AttentionRow): string {
@@ -351,6 +398,45 @@ export function toAttentionItem(row: AttentionRow): AttentionItem {
         title: c.title(),
         detail: c.detail,
         chip: { tone: "error", label: c.chip },
+      }
+    }
+    case "online_purchase_incomplete": {
+      const c = copy.items.online_purchase_incomplete
+      return {
+        ...base,
+        href: linksHref(row.payment_id ?? row.id),
+        title: c.title(name),
+        detail: c.detail,
+        chip: { tone: "warning", label: c.chip },
+      }
+    }
+    case "online_payment_issue": {
+      const c = copy.items.online_payment_issue
+      const reason = issueReasonOf(row.reason)
+      return {
+        ...base,
+        href: onlineHref(row),
+        title: reason ? c.reasons[reason].title(name) : c.unknown.title(name),
+        detail: issueDetail(row, reason),
+        chip: { tone: "warning", label: c.chip },
+        // The item's id is the issue.
+        action: { kind: "resolve_issue", issueId: row.id, name },
+      }
+    }
+    case "online_payment_unconfirmed": {
+      const c = copy.items.online_payment_unconfirmed
+      // The sentence ends with its period (the exact wording).
+      const reference = row.reference
+        ? ` ${copy.items.online_payment_issue.reference(row.reference)}.`
+        : ""
+      return {
+        ...base,
+        href: onlineHref(row),
+        title: c.title(name),
+        detail: `${c.detail}${reference}`,
+        chip: { tone: "warning", label: c.chip },
+        // The item's id is the checkout.
+        action: { kind: "close_checkout", checkoutId: row.id, name },
       }
     }
     case "push_stuck": {

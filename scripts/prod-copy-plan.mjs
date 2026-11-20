@@ -361,6 +361,32 @@ export function withoutExcluded(spec, rows) {
   return rows.filter((row) => !EXCLUDED_CONCEPT_IDS.includes(row.id))
 }
 
+/**
+ * Online payments, PR B: the purchase terms (content page purchase-terms,
+ * its section and its SEO record) are Tal's wording (6.4). Dev may hold a
+ * test text published only for the sandbox run, so the copy and the check
+ * skip them on both sides (production keeps its own rows) unless
+ * --include-purchase-terms is passed.
+ */
+export const PURCHASE_TERMS_SLUG = "purchase-terms"
+export const INCLUDE_PURCHASE_TERMS_FLAG = "--include-purchase-terms"
+
+export function isPurchaseTermsRow(spec, row) {
+  if (spec.table === "content_pages") return row.slug === PURCHASE_TERMS_SLUG
+  if (spec.table === "content_sections") {
+    return (
+      row.page_slug === PURCHASE_TERMS_SLUG ||
+      (row.page_slug === "seo" && row.key === "purchase_terms")
+    )
+  }
+  return false
+}
+
+/** Rows without the purchase terms, unless they are included. */
+export function withoutPurchaseTerms(spec, rows, include = false) {
+  return include ? rows : rows.filter((row) => !isPurchaseTermsRow(spec, row))
+}
+
 /** The production tables whose rows block the copy. */
 export const BLOCKING_TABLES = [
   "profiles",

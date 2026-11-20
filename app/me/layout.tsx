@@ -2,6 +2,7 @@ import { Suspense } from "react"
 import type { Metadata } from "next"
 
 import { AppTopBar } from "@/components/shared/app-top-bar"
+import { CheckoutBanner } from "@/components/shared/checkout-banner"
 import { BottomTabBar } from "@/components/shared/bottom-tab-bar"
 import { OfflineBanner } from "@/components/shared/offline-banner"
 import { PushReadMark } from "@/components/shared/push-read-mark"
@@ -12,6 +13,7 @@ import { SkipLink } from "@/components/shared/skip-link"
 import { getBusinessName } from "@/lib/content/business-details"
 import { shellCopy } from "@/lib/copy/shell"
 import { customerNav } from "@/lib/nav"
+import { loadCheckoutBanner } from "@/app/(public)/pay/actions"
 
 import {
   getUnreadCount,
@@ -63,6 +65,11 @@ export default async function MeLayout({
           <RoleGate role="customer">
             <PushSync register={registerPush} unregister={unregisterPush} />
             <PushReadMark markRead={markRead} />
+            {/* Online payments (PR B): "continue joining" while the
+                browser keeps an unfinished checkout. */}
+            <Suspense fallback={null}>
+              <CheckoutBanner load={loadCheckoutBanner} />
+            </Suspense>
             {children}
           </RoleGate>
         </Suspense>

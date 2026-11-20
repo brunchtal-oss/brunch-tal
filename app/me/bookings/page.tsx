@@ -2,6 +2,12 @@ import { Suspense } from "react"
 import type { Metadata } from "next"
 
 import { PageHeading } from "@/components/shared/page-heading"
+import {
+  PaymentNotice,
+  paymentNoticeOf,
+} from "@/components/shared/payment-notice"
+import { readPaymentOutcome } from "@/lib/payments/payment-outcome"
+import { getWhatsappHref } from "@/lib/content/business-details"
 import { customerCopy } from "@/lib/copy/customer"
 import { shellCopy } from "@/lib/copy/shell"
 
@@ -21,15 +27,43 @@ export const metadata: Metadata = {
 // session-card (the cancel is only on the session page, user decision
 // 2026-10-06); then the past ones (cancelled / took place). Empty: a link to the schedule. Every value comes
 // from get_my_bookings. Rendered inside the layout's customer gate.
-export default function BookingsPage() {
+// Online payments (PR B): the outcome of a pinned online purchase
+// (?payment=paid, or no_place when it was parked without a place) above
+// the list, persistent.
+export default function BookingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}) {
   return (
     <>
       <PageHeading>{customerCopy.bookingsTitle}</PageHeading>
+      <Suspense fallback={null}>
+        <BookingsPaymentNotice searchParams={searchParams} />
+      </Suspense>
       <Suspense
         fallback={<p className="text-muted-foreground">{shellCopy.loading}</p>}
       >
         <Bookings />
       </Suspense>
     </>
+  )
+}
+
+async function BookingsPaymentNotice({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}) {
+  const outcome = await readPaymentOutcome(await searchParams)
+  const notice = paymentNoticeOf(outcome, "bookings")
+  if (!notice) return null
+  const contactHref = notice.contact ? await getWhatsappHref() : null
+  return (
+    <PaymentNotice
+      outcome={outcome}
+      surface="bookings"
+      contactHref={contactHref}
+    />
   )
 }

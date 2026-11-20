@@ -45,6 +45,7 @@ describe("isIndexable (fix-search-ready)", () => {
       "/login",
       "/reset/:path*",
       "/join/:path*",
+      "/pay/:path*",
       "/forgot-password",
       "/verify-email",
       "/reset-password",

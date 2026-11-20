@@ -29,11 +29,16 @@ export type SettingsRow = {
   duplicate_payment_window_days: number
   default_session_start_time: string
   default_session_end_time: string
+  // Online payments (PR B): the pay window and the extra minutes a seat
+  // stays held after it; whether a guest may buy on the public site.
+  online_payment_window_minutes: number
+  online_hold_grace_minutes: number
+  public_online_purchase: boolean
 }
 
 // The columns the settings page reads: every key of SettingsRow (tested).
 export const SETTINGS_COLUMNS =
-  "version, default_validity_days, registration_close_days_before, registration_close_local_time, default_capacity_regular, default_capacity_couple, cancel_window_hours, credit_options_count, reminder_lead_hours, admin_expiring_days, customer_expiring_days, credit_expiring_days, last_places_threshold, default_prep_days, inactivity_months, duplicate_payment_window_days, default_session_start_time, default_session_end_time"
+  "version, default_validity_days, registration_close_days_before, registration_close_local_time, default_capacity_regular, default_capacity_couple, cancel_window_hours, credit_options_count, reminder_lead_hours, admin_expiring_days, customer_expiring_days, credit_expiring_days, last_places_threshold, default_prep_days, inactivity_months, duplicate_payment_window_days, default_session_start_time, default_session_end_time, online_payment_window_minutes, online_hold_grace_minutes, public_online_purchase"
 
 // The settings that are one whole number each.
 export const NUMBER_FIELDS = {
@@ -53,13 +58,27 @@ export const NUMBER_FIELDS = {
     min: 0,
     max: 60,
   },
+  paymentWindow: {
+    column: "online_payment_window_minutes",
+    min: 1,
+    max: 60,
+  },
+  holdGrace: { column: "online_hold_grace_minutes", min: 0, max: 30 },
 } as const satisfies Record<
   string,
   { column: keyof SettingsRow; min: number; max: number }
 >
 
 export type NumberField = keyof typeof NUMBER_FIELDS
-export type EditorField = NumberField | "close" | "sessionHours" | "prepDays"
+// The on/off settings (PR B adds the boolean type).
+export const BOOLEAN_FIELDS = {
+  publicPurchase: { column: "public_online_purchase" },
+} as const satisfies Record<string, { column: keyof SettingsRow }>
+
+export type BooleanField = keyof typeof BOOLEAN_FIELDS
+
+export type EditorField =
+  NumberField | BooleanField | "close" | "sessionHours" | "prepDays"
 
 export const CLOSE_DAYS = { min: 0, max: 7 }
 // -6 .. 0: six days before the session to the session's day.
@@ -71,7 +90,7 @@ export type SettingsDraft = Record<NumberField, string> & {
   sessionStart: string
   sessionEnd: string
   prepDays: number[]
-}
+} & Record<BooleanField, boolean>
 
 export function draftFromRow(row: SettingsRow): SettingsDraft {
   const numbers = Object.fromEntries(
@@ -87,6 +106,7 @@ export function draftFromRow(row: SettingsRow): SettingsDraft {
     sessionStart: row.default_session_start_time,
     sessionEnd: row.default_session_end_time,
     prepDays: [...row.default_prep_days].sort((a, b) => a - b),
+    publicPurchase: row.public_online_purchase === true,
   }
 }
 
@@ -176,6 +196,8 @@ const NUMBER_SHOW: Record<NumberField, (n: number) => string> = {
   lastPlaces: show.places,
   inactivity: show.months,
   duplicateWindow: show.days,
+  paymentWindow: show.minutes,
+  holdGrace: show.minutes,
 }
 
 export function showPrepDays(offsets: readonly number[]): string {
@@ -189,6 +211,10 @@ export function savedText(field: EditorField, row: SettingsRow): string {
   if (field in NUMBER_FIELDS) {
     const f = field as NumberField
     return NUMBER_SHOW[f](row[NUMBER_FIELDS[f].column] as number)
+  }
+  if (field in BOOLEAN_FIELDS) {
+    const f = field as BooleanField
+    return show.onOff(row[BOOLEAN_FIELDS[f].column] === true)
   }
   switch (field) {
     case "close":
@@ -207,7 +233,7 @@ export function savedText(field: EditorField, row: SettingsRow): string {
 }
 
 export type SettingChange = {
-  changes: Record<string, number | string | number[]>
+  changes: Record<string, number | string | number[] | boolean>
   from: string
   to: string
 }
@@ -230,6 +256,13 @@ export function settingChange(
       from,
       to: NUMBER_SHOW[f](value),
     }
+  }
+  if (field in BOOLEAN_FIELDS) {
+    const f = field as BooleanField
+    const column = BOOLEAN_FIELDS[f].column
+    const value = draft[f]
+    if (value === (row[column] === true)) return null
+    return { changes: { [column]: value }, from, to: show.onOff(value) }
   }
   if (field === "close") {
     if (draftProblem("closeDays", draft) || draftProblem("closeTime", draft)) {
