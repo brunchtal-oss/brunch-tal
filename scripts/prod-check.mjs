@@ -477,6 +477,40 @@ async function checkAuthGuard(prod, dev) {
   line(p.rows[0].h === d.rows[0].h, "private.guard_auth_user_change זהה לפיתוח")
 }
 
+// Story 6.3: the backup's role reads everything and can do nothing else.
+// Login (set by hand in the SQL Editor) may be on or off. The same checks
+// as the backup_reader test in supabase/tests/grants.test.ts.
+async function checkBackupRole(prod) {
+  const { rows } = await prod.query(
+    `select r.rolcanlogin, r.rolbypassrls,
+       r.rolinherit and not (r.rolsuper or r.rolcreaterole or r.rolcreatedb or r.rolreplication) as plain,
+       coalesce((select array_agg(g.rolname::text order by g.rolname)
+         from pg_auth_members m join pg_roles g on g.oid = m.roleid
+         where m.member = r.oid), '{}') as member_of,
+       (select count(*)::int from (
+          select (aclexplode(relacl)).grantee g from pg_class where relacl is not null
+          union all select (aclexplode(attacl)).grantee from pg_attribute where attacl is not null
+          union all select (aclexplode(proacl)).grantee from pg_proc where proacl is not null
+          union all select (aclexplode(nspacl)).grantee from pg_namespace where nspacl is not null
+        ) a where a.g = r.oid) as grants
+     from pg_roles r where r.rolname = 'backup_reader'`
+  )
+  const r = rows[0]
+  const ok =
+    Boolean(r) &&
+    r.rolbypassrls &&
+    r.plain &&
+    r.grants === 0 &&
+    r.member_of.length === 1 &&
+    r.member_of[0] === "pg_read_all_data"
+  line(
+    ok,
+    r
+      ? `התפקיד backup_reader (${r.rolcanlogin ? "login" : "NOLOGIN"}): bypassrls, חבר רק ב-pg_read_all_data, בלי הרשאות נוספות${ok ? "" : ` (חבר ב: ${r.member_of.join(", ") || "-"}; הרשאות: ${r.grants})`}`
+      : "התפקיד backup_reader קיים (המיגרציה של 6.3)"
+  )
+}
+
 async function main() {
   const prod = await connect(prodConfig.databaseUrl, { readOnly: true })
   const dev = await connect(devConfig.databaseUrl, {
@@ -505,6 +539,7 @@ async function main() {
     await checkNoTestData(prod)
     await checkAdmins(prod)
     await checkAuthGuard(prod, dev)
+    await checkBackupRole(prod)
   } finally {
     await prod.end().catch(() => {})
     await dev.end().catch(() => {})
