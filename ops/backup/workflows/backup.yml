@@ -1,0 +1,50 @@
+# Story 6.3: the daily encrypted backup. A template from the public site
+# repo (ops/backup/workflows/); it runs only in the business's private
+# backup repo, as .github/workflows/backup.yml (ops/backup/README.md).
+#
+# GitHub emails a failed scheduled run to the user who last changed the
+# cron line below (not to the repo owner).
+name: backup
+
+on:
+  schedule:
+    # 01:17 UTC = 03:17 / 04:17 in Israel.
+    - cron: "17 1 * * *"
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "prod (production) or dev (the rehearsal on the dev project)"
+        type: choice
+        options: [prod, dev]
+        default: prod
+
+permissions:
+  contents: write
+
+# Its own group: no two backups push at once (the drill only reads, and
+# has its own group so it never cancels a pending scheduled backup).
+concurrency:
+  group: backup-repo
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: "24"
+
+      - name: Backup
+        env:
+          # A scheduled run has no inputs: production.
+          TARGET: ${{ inputs.target || 'prod' }}
+          PROD_BACKUP_DB_URL: ${{ secrets.PROD_BACKUP_DB_URL }}
+          DEV_BACKUP_DB_URL: ${{ secrets.DEV_BACKUP_DB_URL }}
+          # An Actions Variable (not a secret): the public key's fingerprint.
+          BACKUP_KEY_FINGERPRINT: ${{ vars.BACKUP_KEY_FINGERPRINT }}
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/backup.sh

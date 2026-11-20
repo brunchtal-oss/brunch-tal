@@ -486,6 +486,54 @@ describe("grants", () => {
     }
   })
 
+  // Story 6.3: the backup's login role reads everything and can do nothing
+  // else. Login itself (and its password) is set by hand in each project,
+  // so rolcanlogin may be either.
+  it("story 6.3: backup_reader is read-only: bypassrls, member of pg_read_all_data only, no grant", async () => {
+    const [attrs, memberOf, grants] = await Promise.all([
+      sql<Record<string, boolean>>(
+        `select rolsuper, rolcreaterole, rolcreatedb, rolreplication,
+           rolbypassrls, rolinherit
+         from pg_roles where rolname = 'backup_reader'`
+      ),
+      sql<{ r: string }>(
+        `select g.rolname as r from pg_auth_members m
+         join pg_roles g on g.oid = m.roleid
+         where m.member = 'backup_reader'::regrole
+         order by 1`
+      ),
+      sql<{ n: number }>(
+        `with acl as (
+           select (aclexplode(c.relacl)).grantee from pg_class c
+           where c.relacl is not null
+           union all
+           select (aclexplode(a.attacl)).grantee from pg_attribute a
+           where a.attacl is not null
+           union all
+           select (aclexplode(p.proacl)).grantee from pg_proc p
+           where p.proacl is not null
+           union all
+           select (aclexplode(n.nspacl)).grantee from pg_namespace n
+           where n.nspacl is not null
+         )
+         select count(*)::int as n from acl
+         where grantee = 'backup_reader'::regrole`
+      ),
+    ])
+    expect(attrs).toEqual([
+      {
+        rolsuper: false,
+        rolcreaterole: false,
+        rolcreatedb: false,
+        rolreplication: false,
+        rolbypassrls: true,
+        rolinherit: true,
+      },
+    ])
+    expect(memberOf.map((row) => row.r)).toEqual(["pg_read_all_data"])
+    expect(grants[0].n).toBe(0)
+  })
+
   it("give every function at most one API role, never anon or PUBLIC", async () => {
     expect(await functionGrantViolations()).toEqual([])
   })

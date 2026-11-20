@@ -1,0 +1,2 @@
+# Story 6.3: the backup scripts run with bash on Linux runners
+*.sh text eol=lf
