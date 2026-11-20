@@ -432,6 +432,8 @@ describe("P3: the activation link", () => {
         "default_prep_days",
         "id",
         "marketing_reminder_schedule",
+        // Online payments (PR A): the public purchase switch, not a link.
+        "public_online_purchase",
         "updated_at",
       ])
       await db.query(

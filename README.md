@@ -182,6 +182,21 @@
 - ‏MCP של Supabase ו-`.env.local` נשארים על הפיתוח בלבד. לפרודקשן אין `execute_sql`, ‏`apply_migration` או קריאת MCP. שינוי בפרודקשן עובר רק דרך הסקריפטים שלמטה, ה-Dashboard או ה-SQL Editor שלו, ורק באישור המשתמשת.
 - מסד הפיתוח נשאר תמיד. אחרי המסירה הוא מושהה, לא נמחק.
 
+### תשלום מקוון (Grow)
+
+שישה משתני שרת בלבד (אף פעם לא `NEXT_PUBLIC_*`), בלי ערכים ב-repo:
+
+| משתנה | מה הוא |
+| --- | --- |
+| `ONLINE_PAYMENTS_ENABLED` | מתג הסליקה של השרת. רק `true` מפעיל רכישה באתר. כבוי: אין אזור רכישה, והמסכים כמו היום. הודעות מ-Grow ממשיכות להיקלט גם כשהוא כבוי |
+| `GROW_ENV` | `sandbox` או `production` (קובע את כתובות ה-API של morning) |
+| `GROW_CLIENT_ID`, ‏`GROW_CLIENT_SECRET` | פרטי ה-API של morning (client credentials) |
+| `GROW_PLUGIN_ID` | מזהה התוסף של Grow |
+| `GROW_DOCUMENT_TYPE` | ‏`400` (קבלה, עוסק פטור) או `320` (חשבונית מס/קבלה) |
+
+- בפיתוח וב-Preview: ערכי ה-sandbox בלבד. ב-Production המשתנים נשארים ריקים עד ש-Grow מאשרים את האתר החי.
+- ‏`/api/payments/` פטור מנעילת האתר (`SITE_LOCK_EXEMPT_PREFIXES`); כל checkout מאמת את הסוד שלו. לפני בדיקה מקצה לקצה על Preview לוודא ש-Vercel Deployment Protection לא חוסם `POST /api/payments/grow`.
+
 ### פרודקשן: `.env.prod.local` וסקריפטי `prod-*`
 
 ‏`.env.prod.local` בשורש התיקייה שממנה מריצים (התיקייה הראשית או ה-worktree), עם ארבעה משתני חובה: ‏`PROD_SUPABASE_URL`, ‏`PROD_SUPABASE_PUBLISHABLE_KEY`, ‏`PROD_SUPABASE_SECRET_KEY` (‏`sb_secret_`) ו-`PROD_DATABASE_URL` (‏Connect → Session pooler, פורט 5432, עם סיסמת המסד; תו מיוחד בסיסמה מקודד, למשל `@` כ-`%40`). שורה חמישית, `PROD_CRON_SECRET`, נוספת אחרי צעד 6: אותו ערך כמו `CRON_SECRET` של Vercel Production וכמו `cron_secret` ב-Vault. רק `prod-check` קורא אותה, כדי לוודא את שרשרת הפוש, ובלעדיה שלוש השורות שלה ✗. הקובץ לא נכנס ל-git (‏`.env*` ב-`.gitignore`), ו-Next.js לא טוען קובץ בשם הזה. המשתמשת יוצרת וממלאת אותו; אף אחד לא מדפיס או מעתיק ממנו.

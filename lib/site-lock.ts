@@ -6,13 +6,18 @@ import { sameSecret } from "@/lib/server/secret"
 // Site lock until launch (story 1.6, architecture AD-22). Pure decision used
 // by `proxy.ts`: every request needs HTTP Basic Auth, except the
 // machine-to-machine prefixes below. Each exempt route MUST verify its own
-// secret or signature (e.g. `/api/jobs/*` checks CRON_SECRET, E3).
+// secret or signature (e.g. `/api/jobs/*` checks CRON_SECRET, E3;
+// `/api/payments/grow` checks the per-checkout notify secret).
 // Story 5.9 lets the site be installed while locked: the manifest and icons
 // are public files, a passed lock is remembered in a signed cookie, and a
 // browser page gets a sign-in form (POST /site-lock) along with the 401.
 
 /** Path prefixes that skip the lock. Keep the trailing slash. */
-export const SITE_LOCK_EXEMPT_PREFIXES = ["/api/jobs/"] as const
+export const SITE_LOCK_EXEMPT_PREFIXES = [
+  "/api/jobs/",
+  // Grow's notifyUrl (online payments): checks the checkout's own secret.
+  "/api/payments/",
+] as const
 
 export type SiteLockEnv = {
   SITE_LOCKED?: string

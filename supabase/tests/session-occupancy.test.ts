@@ -139,6 +139,36 @@ describe("admin_list_session_occupancy", () => {
     })
   })
 
+  // Online payments (PR A): a checkout's seat hold counts while it is open
+  // and before hold_until; a failed, expired or past hold does not.
+  it("an open checkout hold counts until hold_until; a closed one does not", async () => {
+    await inRollback(async (db) => {
+      const f = await seed(db)
+      const eventId = await insertEvent(db, f)
+      const hold = async (state: string, holdUntil: string) => {
+        await db.query(
+          `insert into public.checkouts (
+             product_id, event_id, party_size, amount_agorot, product_name,
+             reference, state, pay_until, hold_until, notify_secret_hash,
+             browser_secret_hash, terms_accepted_at, closed_at)
+           values ($1, $2, 1, 12800, 'x',
+             'BT-' || upper(substr(md5(random()::text), 1, 10)), $3,
+             now() + interval '10 minutes', now() + $4::interval, 'n', 'b',
+             now(), case when $3 = 'open' then null else now() end)`,
+          [f.card, eventId, state, holdUntil]
+        )
+      }
+      await hold("open", "15 minutes")
+      await hold("open", "-1 second")
+      await hold("failed", "15 minutes")
+      await hold("expired", "15 minutes")
+      await book(db, eventId, f.customerA)
+      expect(await occupancy(db, f, [eventId])).toEqual([
+        { event_id: eventId, occupied: 2, capacity: 12 },
+      ])
+    })
+  })
+
   it("a cancelled booking does not count", async () => {
     await inRollback(async (db) => {
       const f = await seed(db)

@@ -1174,6 +1174,8 @@ describe("grants and schedules", { timeout: 30_000 }, () => {
       // Story 5.11.
       { jobname: "marketing_reminders", every: "00:05:00", scheduled: true },
       { jobname: "refresh_credit_options", every: "00:15:00", scheduled: true },
+      // Online payments (PR A).
+      { jobname: "release_holds", every: "00:01:00", scheduled: true },
       { jobname: "reminders", every: "00:01:00", scheduled: true },
     ])
   })

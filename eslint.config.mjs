@@ -99,6 +99,8 @@ const PRIVILEGED_ALLOWED = [
   "app/api/**",
   "app/(auth)/reset/[[]token[]]/page.tsx",
   "app/(auth)/join/[[]token[]]/page.tsx",
+  // The browser returns of online payments (route handlers).
+  "app/(public)/pay/**/route.ts",
 ];
 const PRIVILEGED_REGEX = String.raw`^((@/lib/|(\.\.?/)+(lib/)?)server/|(\.\.?/)+)privileged(/|$)`;
 const PRIVILEGED_MESSAGE =

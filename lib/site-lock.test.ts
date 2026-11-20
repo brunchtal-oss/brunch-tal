@@ -61,16 +61,24 @@ describe("checkSiteLock", () => {
     expect(checkSiteLock("/", header, locked)).toBe("deny")
   })
 
-  it.each(["/api/jobs/x", "/api/jobs/reminders/run"])("exempts %s", (path) => {
-    expect(checkSiteLock(path, null, locked)).toBe("allow")
-  })
-
-  it.each(["/api/jobsx", "/api/jobs", "/api/job/x", "/API/jobs/x"])(
-    "does not exempt look-alike %s",
+  it.each(["/api/jobs/x", "/api/jobs/reminders/run", "/api/payments/grow"])(
+    "exempts %s",
     (path) => {
-      expect(checkSiteLock(path, null, locked)).toBe("deny")
+      expect(checkSiteLock(path, null, locked)).toBe("allow")
     }
   )
+
+  it.each([
+    "/api/jobsx",
+    "/api/jobs",
+    "/api/job/x",
+    "/API/jobs/x",
+    "/api/payments",
+    "/api/paymentsx/grow",
+    "/pay/return",
+  ])("does not exempt look-alike %s", (path) => {
+    expect(checkSiteLock(path, null, locked)).toBe("deny")
+  })
 
   it.each([
     ["no password", { SITE_LOCKED: "true", SITE_LOCK_USER: "tal" }],
@@ -164,7 +172,7 @@ describe("public files (story 5.9)", () => {
   })
 
   it("leaves the exempt prefixes as they were", () => {
-    expect(SITE_LOCK_EXEMPT_PREFIXES).toEqual(["/api/jobs/"])
+    expect(SITE_LOCK_EXEMPT_PREFIXES).toEqual(["/api/jobs/", "/api/payments/"])
   })
 })
 

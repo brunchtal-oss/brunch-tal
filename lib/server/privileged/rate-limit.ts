@@ -19,10 +19,12 @@ import { createServiceClient } from "@/lib/server/privileged/service-client"
 //   email: 5 per IP, 3 per id (story 6.11: forgot password, id = the
 //          normalized email; resend, id = "resend:<user id>"; self email
 //          change, id = "change:<user id>")
+//   checkout: 10 an hour per IP (online payments: a guest's checkout; both
+//          keys are the IP, the window is the hour)
 // The keys reach the database only to be hashed there; they are never
 // logged here (AD-22).
 
-export type RateLimitBucket = "login" | "token" | "email"
+export type RateLimitBucket = "login" | "token" | "email" | "checkout"
 
 export type RateLimitKeys = {
   // The client IP (clientIp()).

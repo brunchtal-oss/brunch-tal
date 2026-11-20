@@ -169,6 +169,8 @@ const EXPECTED_GRANTS = [
   "function public.admin_refund_credit(p_credit_id uuid, p_reason text, p_confirmed boolean, p_idempotency_key uuid) authenticated EXECUTE",
   "function public.admin_remove_prep_day(p_event_id uuid, p_day_offset integer, p_idempotency_key uuid) authenticated EXECUTE",
   "function public.admin_reschedule_event(p_event_id uuid, p_starts_at timestamp with time zone, p_ends_at timestamp with time zone, p_confirmed boolean, p_message text, p_idempotency_key uuid) authenticated EXECUTE",
+  // Online payments (PR A): Tal marks an issue as handled.
+  "function public.admin_resolve_online_payment_issue(p_issue_id uuid, p_idempotency_key uuid) authenticated EXECUTE",
   "function public.admin_revoke_link(p_token_id uuid, p_idempotency_key uuid) authenticated EXECUTE",
   "function public.admin_search_customers(p_query text) authenticated EXECUTE",
   "function public.admin_set_concept_archived(p_concept_id uuid, p_archived boolean) authenticated EXECUTE",
@@ -202,10 +204,17 @@ const EXPECTED_GRANTS = [
   // Story 6.11: email verification, reset eligibility, her own email change
   // (service_role since round 2: the server checks her password first), our
   // verification token, and the Send Email Hook (Auth's role only).
+  // Online payments (PR A): the customer's checkout, the guest's (service
+  // role, behind the rate limit), and the confirm and return steps.
+  "function public.begin_checkout(p_product_id uuid, p_event_id uuid, p_terms_accepted boolean, p_idempotency_key uuid) authenticated EXECUTE",
+  "function public.begin_guest_checkout(p_product_id uuid, p_event_id uuid, p_terms_accepted boolean, p_idempotency_key uuid) service_role EXECUTE",
   "function public.begin_my_email_change(p_user_id uuid, p_email text, p_idempotency_key uuid) service_role EXECUTE",
   "function public.book_session(p_event_id uuid, p_idempotency_key uuid) authenticated EXECUTE",
   "function public.book_sessions(p_items uuid[], p_idempotency_key uuid) authenticated EXECUTE",
   "function public.cancel_booking(p_booking_id uuid, p_idempotency_key uuid, p_choice text) authenticated EXECUTE",
+  "function public.cancel_checkout(p_checkout_id uuid, p_browser_secret text) service_role EXECUTE",
+  "function public.checkout_for_confirm(p_checkout_id uuid, p_secret text, p_secret_kind text) service_role EXECUTE",
+  "function public.checkout_return(p_checkout_id uuid, p_browser_secret text) service_role EXECUTE",
   "function public.choose_credit_outcome(p_credit_id uuid, p_choice text, p_idempotency_key uuid) authenticated EXECUTE",
   "function public.claim_join(p_token text, p_idempotency_key uuid) authenticated EXECUTE",
   "function public.claim_push_jobs(p_limit integer) service_role EXECUTE",
@@ -226,6 +235,7 @@ const EXPECTED_GRANTS = [
   "function public.join_complete(p_token text, p_profile jsonb, p_idempotency_key uuid) service_role EXECUTE",
   "function public.join_waitlist(p_event_id uuid, p_idempotency_key uuid) authenticated EXECUTE",
   "function public.leave_waitlist(p_event_id uuid, p_idempotency_key uuid) authenticated EXECUTE",
+  "function public.mark_checkout_notified(p_checkout_id uuid, p_notify_secret text) service_role EXECUTE",
   "function public.mark_notifications_read(p_ids uuid[]) authenticated EXECUTE",
   "function public.mark_notifications_unread(p_ids uuid[]) authenticated EXECUTE",
   "function public.move_booking(p_booking_id uuid, p_target_event_id uuid, p_idempotency_key uuid) authenticated EXECUTE",
@@ -248,6 +258,7 @@ const EXPECTED_GRANTS = [
   "function public.preview_book_sessions(p_items uuid[]) authenticated EXECUTE",
   "function public.preview_move_booking(p_booking_id uuid) authenticated EXECUTE",
   "function public.rate_limit_hit(p_bucket text, p_keys text[]) service_role EXECUTE",
+  "function public.record_online_payment(p_checkout_id uuid, p_secret text, p_secret_kind text, p_document_id text, p_outcome text, p_amount_agorot integer, p_paid_at timestamp with time zone) service_role EXECUTE",
   "function public.register_push_subscription(p_endpoint text, p_keys jsonb, p_platform text) authenticated EXECUTE",
   "function public.request_email_verification(p_user_id uuid, p_site_url text) service_role EXECUTE",
   "function public.reset_begin(p_token text, p_idempotency_key uuid) service_role EXECUTE",

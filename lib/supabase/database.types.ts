@@ -340,6 +340,9 @@ export type Database = {
           inactivity_months: number
           last_places_threshold: number
           marketing_reminder_schedule: Json
+          online_hold_grace_minutes: number
+          online_payment_window_minutes: number
+          public_online_purchase: boolean
           registration_close_days_before: number
           registration_close_local_time: string
           reminder_lead_hours: number
@@ -363,6 +366,9 @@ export type Database = {
           inactivity_months?: number
           last_places_threshold?: number
           marketing_reminder_schedule?: Json
+          online_hold_grace_minutes?: number
+          online_payment_window_minutes?: number
+          public_online_purchase?: boolean
           registration_close_days_before?: number
           registration_close_local_time?: string
           reminder_lead_hours?: number
@@ -386,6 +392,9 @@ export type Database = {
           inactivity_months?: number
           last_places_threshold?: number
           marketing_reminder_schedule?: Json
+          online_hold_grace_minutes?: number
+          online_payment_window_minutes?: number
+          public_online_purchase?: boolean
           registration_close_days_before?: number
           registration_close_local_time?: string
           reminder_lead_hours?: number
@@ -467,6 +476,98 @@ export type Database = {
             columns: ["source_entitlement_id"]
             isOneToOne: false
             referencedRelation: "entitlements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      checkouts: {
+        Row: {
+          amount_agorot: number
+          browser_secret_hash: string
+          closed_at: string | null
+          created_at: string
+          customer_id: string | null
+          event_id: string | null
+          hold_until: string | null
+          id: string
+          last_notified_at: string | null
+          notify_secret_hash: string
+          party_size: number
+          pay_until: string
+          payment_id: string | null
+          product_id: string
+          product_name: string
+          reference: string
+          state: string
+          terms_accepted_at: string
+        }
+        Insert: {
+          amount_agorot: number
+          browser_secret_hash: string
+          closed_at?: string | null
+          created_at?: string
+          customer_id?: string | null
+          event_id?: string | null
+          hold_until?: string | null
+          id?: string
+          last_notified_at?: string | null
+          notify_secret_hash: string
+          party_size: number
+          pay_until: string
+          payment_id?: string | null
+          product_id: string
+          product_name: string
+          reference: string
+          state?: string
+          terms_accepted_at: string
+        }
+        Update: {
+          amount_agorot?: number
+          browser_secret_hash?: string
+          closed_at?: string | null
+          created_at?: string
+          customer_id?: string | null
+          event_id?: string | null
+          hold_until?: string | null
+          id?: string
+          last_notified_at?: string | null
+          notify_secret_hash?: string
+          party_size?: number
+          pay_until?: string
+          payment_id?: string | null
+          product_id?: string
+          product_name?: string
+          reference?: string
+          state?: string
+          terms_accepted_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checkouts_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkouts_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkouts_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: true
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkouts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
@@ -1336,6 +1437,50 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "notification_templates"
             referencedColumns: ["type", "recipient_kind"]
+          },
+        ]
+      }
+      online_payment_issues: {
+        Row: {
+          amount_agorot: number | null
+          checkout_id: string
+          created_at: string
+          detail: Json
+          id: string
+          provider_transaction_id: string | null
+          reason: string
+          resolved_at: string | null
+          resolved_by: string | null
+        }
+        Insert: {
+          amount_agorot?: number | null
+          checkout_id: string
+          created_at?: string
+          detail?: Json
+          id?: string
+          provider_transaction_id?: string | null
+          reason: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+        }
+        Update: {
+          amount_agorot?: number | null
+          checkout_id?: string
+          created_at?: string
+          detail?: Json
+          id?: string
+          provider_transaction_id?: string | null
+          reason?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "online_payment_issues_checkout_id_fkey"
+            columns: ["checkout_id"]
+            isOneToOne: false
+            referencedRelation: "checkouts"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -2282,6 +2427,10 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_resolve_online_payment_issue: {
+        Args: { p_idempotency_key: string; p_issue_id: string }
+        Returns: Json
+      }
       admin_revoke_link: {
         Args: { p_idempotency_key: string; p_token_id: string }
         Returns: Json
@@ -2446,6 +2595,24 @@ export type Database = {
         }
         Returns: Json
       }
+      begin_checkout: {
+        Args: {
+          p_event_id: string
+          p_idempotency_key: string
+          p_product_id: string
+          p_terms_accepted: boolean
+        }
+        Returns: Json
+      }
+      begin_guest_checkout: {
+        Args: {
+          p_event_id: string
+          p_idempotency_key: string
+          p_product_id: string
+          p_terms_accepted: boolean
+        }
+        Returns: Json
+      }
       begin_my_email_change: {
         Args: { p_email: string; p_idempotency_key: string; p_user_id: string }
         Returns: Json
@@ -2464,6 +2631,18 @@ export type Database = {
           p_choice?: string
           p_idempotency_key: string
         }
+        Returns: Json
+      }
+      cancel_checkout: {
+        Args: { p_browser_secret: string; p_checkout_id: string }
+        Returns: Json
+      }
+      checkout_for_confirm: {
+        Args: { p_checkout_id: string; p_secret: string; p_secret_kind: string }
+        Returns: Json
+      }
+      checkout_return: {
+        Args: { p_browser_secret: string; p_checkout_id: string }
         Returns: Json
       }
       choose_credit_outcome: {
@@ -2529,6 +2708,10 @@ export type Database = {
       }
       leave_waitlist: {
         Args: { p_event_id: string; p_idempotency_key: string }
+        Returns: Json
+      }
+      mark_checkout_notified: {
+        Args: { p_checkout_id: string; p_notify_secret: string }
         Returns: Json
       }
       mark_notifications_read: { Args: { p_ids?: string[] }; Returns: Json }
@@ -2614,6 +2797,18 @@ export type Database = {
       preview_move_booking: { Args: { p_booking_id: string }; Returns: Json }
       rate_limit_hit: {
         Args: { p_bucket: string; p_keys: string[] }
+        Returns: Json
+      }
+      record_online_payment: {
+        Args: {
+          p_amount_agorot: number
+          p_checkout_id: string
+          p_document_id: string
+          p_outcome: string
+          p_paid_at: string
+          p_secret: string
+          p_secret_kind: string
+        }
         Returns: Json
       }
       register_push_subscription: {

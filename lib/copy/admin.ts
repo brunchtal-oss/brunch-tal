@@ -1357,6 +1357,8 @@ export const adminCopy = {
           auto_extend: "הארכה אוטומטית של כרטיסיות",
           cleanup: "מחיקת נתונים ישנים",
           marketing_reminders: "תזכורות שיווק",
+          // Online payments (PR A).
+          release_holds: "שחרור מקומות שנשמרו לתשלום",
         } as Record<string, string>,
       },
       // The push settings are missing in Vault (story 5.10).
@@ -2544,6 +2546,8 @@ export const adminCopy = {
       admin_update_marketing_reminder_text: "עריכת נוסח לתזכורות השיווק",
       // Story 5.24.
       admin_update_marketing_tags: "עדכון כלי מדידה ופרסום",
+      // Online payments (PR A).
+      admin_resolve_online_payment_issue: "סימון תשלום מקוון שטופל",
     } as Record<string, string>,
     // Common keys of before/after; an unknown key shows its code.
     fields: {
