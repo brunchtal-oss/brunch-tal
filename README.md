@@ -237,4 +237,48 @@
 3. בטלפון ברשת הביתית (הכתובת שהשרת מדפיס) אין פוש ואין התקנה, כי זה http.
 4. בזמן התרגול לא מריצים `npm run test:db`, ולא מאפסים את נתוני הסרטונים.
 
+### גיבוי ושחזור (6.3)
+
+לפרויקט החינמי ב-Supabase אין גיבויים, ולכן יש גיבוי חיצוני משלנו.
+
+- **מה נשמר, ומתי:** כל לילה (01:17 UTC) workflow ב-GitHub Actions שומר את כל המסד של הפרודקשן (תפקידים, מבנה ונתונים, כולל המשתמשות ב-`auth.users` ורשימת הקבצים ב-`storage.objects`), ומעתיק כל תמונה ציבורית חדשה (`media-public`). התמונות בטיוטה (`media-drafts`) לא נשמרות: אחרי שחזור האתר מציג את כל התמונות, וחיתוך מחדש של תמונה ישנה דורש העלאה מחדש.
+- **איפה:** ב-repo **פרטי** של העסק ב-GitHub. כל יום הוא Release בשם `db-<תאריך>`, ובו `db-<תאריך>.tar.gpg` (המסד, מוצפן) ו-`counts-<תאריך>.json` (מספר השורות בכל טבלה). התמונות בתיקייה `media/` שם. נשמרים 30 הימים האחרונים, ועוד הגיבוי הראשון של כל חודש ל-12 חודשים. ב-repo הזה (הציבורי) יש רק הסקריפטים והתבניות (`ops/backup/`, ושם גם ההקמה: מה מעתיקים, שמות הסודות והתפקיד `backup_reader`). אף פעם לא גיבוי, מפתח או סוד.
+- **ההצפנה והמפתח:** הקובץ מוצפן ב-gpg למפתח ציבורי. את המפתח הפרטי (קובץ `backup-private.asc`, בלי סיסמה) מחזיקות שתיים: המשתמשת, וטל (בתיקייה פרטית ב-Google Drive שלה או במנהל הסיסמאות שלה). בלי המפתח אי אפשר לפתוח שום גיבוי, ולכן לא מוחקים את שני העותקים. המפתח לא נמצא ב-GitHub (חוץ מסוד זמני בזמן תרגול).
+- **כשל:** ריצה שנכשלה לפני שמירת המסד (למשל פרויקט מושהה, "הגיבוי נכשל: אין חיבור למסד") לא שומרת כלום. אם רק שלב התמונות נכשל (תמונה שלא ירדה, או push), ה-Release של המסד לאותו יום כבר נשמר, ניקוי הגיבויים הישנים עדיין רץ, והריצה מסומנת כנכשלה. בכל כשל GitHub שולח מייל למי ששינתה לאחרונה את שורת ה-cron ב-`backup.yml` של ה-repo הפרטי. פרויקט מושהה: Dashboard ← Restore, ואז מריצים את ה-workflow ידנית (Actions ← `backup` ← Run workflow).
+
+#### פענוח במחשב (Windows)
+
+ב-Git Bash. ה-`gpg` מגיע עם Git for Windows, ואין מה להתקין.
+
+1. מורידים מה-repo הפרטי (Releases) את `db-<תאריך>.tar.gpg`, ושומרים את `backup-private.asc` באותה תיקייה, מחוץ לכל repo.
+2. מפתח זמני, כדי שהמפתח הפרטי לא יישאר במחשב: `export GNUPGHOME="$(mktemp -d)"`, ואז `gpg --import backup-private.asc`
+3. באותו חלון: `gpg --output db.tar --decrypt db-<תאריך>.tar.gpg`, ואז `tar -xf db.tar`. מתקבלים `roles.sql`, ‏`schema.sql`, ‏`data.sql` ו-`cron.sql` (המשימות המתוזמנות; בגיבוי ישן מלפני 2026-11-20 אין `cron.sql`).
+4. "No secret key" אומר שהמפתח לא מתאים לקובץ או שלא יובא, ושום קובץ לא נכתב.
+5. בסיום, באותו חלון: `rm -rf "$GNUPGHOME"` (המפתח שיובא נמחק מהמחשב; `backup-private.asc` עצמו חוזר רק למקום השמור שלו).
+6. הקבצים הגלויים (`db.tar` וקובצי ה-SQL) מכילים את כל נתוני הלקוחות. בסיום מוחקים אותם, ולא מעלים אותם לשום מקום.
+
+#### שחזור לפרויקט חדש
+
+רק לפרויקט חדש וריק, אף פעם לא לפרויקט הפיתוח. אפשר לבקש מ-Claude לעבור על זה יחד. בפרויקט חדש ב-Supabase שירותי Auth ו-Storage כבר בגרסה העדכנית, ולכן הנתונים שלהם נכנסים כמו שהם; רק התרגול, על מחסנית מקומית, צריך להעלות אותם לגרסה האחרונה (`drill.sh` עושה את זה לבד).
+
+1. **פרויקט חדש** ב-Supabase (באותו אזור), עם סיסמת מסד חדשה. התקנה אחת: ‏PostgreSQL 17, רק "Command Line Tools" (בשביל `psql`).
+2. **המסד**, לפי התיעוד של Supabase, מתוך התיקייה עם שלושת הקבצים: `psql --single-transaction -v ON_ERROR_STOP=1 -f roles.sql -f schema.sql -c "SET session_replication_role = replica" -f data.sql --dbname "<Session pooler של הפרויקט החדש, משתמש postgres>"`. הכול בעסקה אחת: אם משהו נכשל, לא נשאר כלום, ומתקנים ומריצים שוב.
+3. **התמונות:** מורידים את ה-repo הפרטי (Code ← Download ZIP) ופותחים אותו. בתיקייה של ה-repo הזה יוצרים `.env.restore.local` עם `RESTORE_SUPABASE_URL=https://<ref>.supabase.co` ו-`RESTORE_SUPABASE_SECRET_KEY=<מפתח sb_secret_ של הפרויקט החדש>`, ואז רשימת התמונות **מהמסד ששוחזר** (לא `manifest.json` של התיקייה, שהיא הרשימה החדשה ביותר ולא זו של הגיבוי): `psql -X -At -f ops/backup/media-list.sql --dbname "<אותה כתובת כמו בצעד 2>" > objects.json`. אחר כך `node ops/backup/restore-media.mjs --dir <נתיב ל-media> --objects objects.json` (יבש, מראה כמה קבצים) ואותה פקודה עם `--apply`. הסקריפט לא מדפיס את המפתח, ומסרב לפרויקט הפיתוח ולפרויקט הפרודקשן הנוכחי (‏`.env.prod.local`). בסוף מוחקים את `objects.json`.
+4. **Vault:** הגיבוי לא כולל את ערכי ה-Vault, ולכן מזינים אותם מחדש ב-SQL Editor (`vault.create_secret`): ‏`app_url` ו-`cron_secret` (checklist "Supabase Vault" למעלה), ‏`resend_api_key` ו-`site_url` ("מייל (Resend)"), ו-`email_image_url` (התמונה בראש המיילים, `media-public/email/header.jpg` בפרויקט החדש).
+5. **המשימות המתוזמנות:** הגיבוי של Supabase לא כולל את סכמת `cron`, ולכן הן נשמרות בנפרד ב-`cron.sql` (שורת `cron.schedule(...)` לכל משימה). מריצים את `cron.sql` מהגיבוי המפוענח בפרויקט החדש: ב-SQL Editor (מדביקים את התוכן) או `psql -v ON_ERROR_STOP=1 -f cron.sql --dbname "<אותה כתובת כמו בצעד 2>"`. אם מתקבלת שגיאה ש-`cron` לא קיים, קודם `create extension if not exists pg_cron with schema pg_catalog;`. אחר כך ‏`select jobname from cron.job order by 1;` צריך להחזיר את שמונה המשימות של `private.job_intervals()`. רק בגיבוי ישן בלי `cron.sql`: לכל משימה שחסרה מריצים שוב את שורת ה-`cron.schedule(...)` שלה מהמיגרציה שיצרה אותה: ‏`complete_events` ב-`20261006111238_session_completion_job.sql`, ‏`invoke_push_worker` ב-`20261006184326_push_pipeline.sql`, ‏`reminders` ב-`20261006220241_session_reminders.sql`, ‏`expiry_alerts`, ‏`auto_extend`, ‏`refresh_credit_options` ו-`cleanup` ב-`20261019233918_scheduled_jobs.sql`, ו-`marketing_reminders` ב-`20261020194721_marketing_reminders.sql`.
+6. **סיסמאות התפקידים:** הגיבוי לא כולל סיסמאות. ל-`backup_reader` קובעים סיסמה חדשה (`alter role backup_reader with login password '…';`) ומעדכנים את `PROD_BACKUP_DB_URL` ב-repo הפרטי.
+7. **היסטוריית המיגרציות** לא בגיבוי. מסמנים את כל קובצי `supabase/migrations` כמוחלים (`npx supabase@3.1.0 migration repair --status applied <versions…>` מול הפרויקט החדש), כדי ש-`prod-migrate` לא ינסה להריץ אותם שוב.
+8. **שאר ההקמה** לפי "הקמת הפרודקשן, צעד אחר צעד" למעלה, בלי צעדים 3, 4, 7 ו-8 (המיגרציות, האדמינים והתוכן כבר במסד): הגדרות Auth, ה-hook של המייל, Data API, ‏`.env.prod.local` חדש, ו-Vercel Production לפרויקט החדש. משתמשות מתחברות עם הסיסמאות הקיימות שלהן. בסוף `node scripts/prod-check.mjs`.
+
+#### תרגול שחזור
+
+התרגול רץ ב-repo הפרטי (Actions ← `restore-drill`), על מחסנית Supabase מקומית וזמנית בתוך ה-runner, ולא על אף פרויקט אמיתי. לפניו מוסיפים את הסוד הזמני `DRILL_PRIVATE_KEY` (תוכן `backup-private.asc`), ומוחקים אותו מיד אחריו. הוא עובר רק כשכל טבלה ששוחזרה זהה במספר השורות לגיבוי, מספר המשימות המתוזמנות אחרי הרצת `cron.sql` זהה לגיבוי, וכל תמונה ציבורית מוגשת.
+
+חוזרים על התרגול כל 3 חודשים ואחרי כל שינוי ב-`ops/backup/`, ובכל פעם בודקים ששני העותקים של המפתח הפרטי (של המשתמשת ושל טל) פותחים את הגיבוי החדש ביותר.
+
+| תאריך | Release | תוצאה |
+| --- | --- | --- |
+| 2026-11-20 | `dev-db-2026-11-20` (פיתוח, חזרה) | עבר: 42 טבלאות זהות (כולל `auth.users` ו-`storage.objects`), 9 משימות מתוזמנות, 21 תמונות מוגשות. פענוח מקומי ב-Windows עבר. |
+| | `db-…` (פרודקשן) | (אחרי המיזוג) |
+
 </div>

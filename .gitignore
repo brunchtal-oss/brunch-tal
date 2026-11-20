@@ -55,3 +55,18 @@ versions*/
 
 # Claude Code local permissions (per machine)
 .claude/settings.local.json
+
+# Story 6.3: backups, their plain files and keys never enter this public repo
+# (the backup lives in the business's private repo; ops/backup/README.md)
+*.gpg
+*.tar
+backup-private*.asc
+/media/
+/media-dev/
+/counts-*.json
+/roles.sql
+/schema.sql
+/data.sql
+/db.tar
+/restore.env
+/objects.json

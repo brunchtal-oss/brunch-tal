@@ -963,6 +963,24 @@
   target: id 10 (המסירה)
   summary: פרויקט הפרודקשן בתוכנית החינמית מושהה אחרי כ-7 ימים בלי פעילות API (האתר הנעול כמעט בלי תנועה). השדרוג בתשלום במסירה מסיים את ההשהיות. עד אז בודקים לפני 6.4 ו-6.8, ומחזירים ב-Dashboard ← Restore.
   evidence: spec 6.1, Design Notes. מחליף את ההחלטה הפתוחה של 5.10 (יעד 6.9).
+  status: פתוח. ‏6.3 (2026-11-20): התיעוד של Supabase סופר "פעילות משתמש במסד", והגיבוי היומי הוא התחברות ושאילתות אמיתיות דרך ה-pooler, ולכן הוא כנראה עוזר, אבל זה לא מתועד ולא סומכים עליו. אם הפרויקט מושהה, ריצת הגיבוי נכשלת ונשלח מייל באותו יום (למי ששינתה לאחרונה את שורת ה-cron), כאזהרה מוקדמת. השדרוג (id 10) נשאר הפתרון.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-3-backup-and-restore.md`
+  target: id 10 (המסירה)
+  summary: GitHub שולח מייל על ריצת גיבוי מתוזמנת שנכשלה רק למי ששינתה לאחרונה את שורת ה-cron ב-`.github/workflows/backup.yml` של ה-repo הפרטי, לא לבעלת ה-repo. במסירה: טל עושה את השינוי האחרון בשורה הזאת (כדי שגם היא תקבל את המייל), או שנרשם במפורש לאן המייל הולך ומי מעבירה לה אותו.
+  evidence: spec 6.3, Boundaries (Always); ‏`ops/backup/README.md`.
+  status: פתוח
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-3-backup-and-restore.md`
+  target: id 10 (המסירה)
+  summary: תדירות תרגול השחזור: כל 3 חודשים ואחרי כל שינוי ב-`ops/backup/`, ובכל פעם בדיקה ששני העותקים של המפתח הפרטי (של המשתמשת ושל טל) פותחים את הגיבוי החדש ביותר. להחליט במסירה מי מריצה אותו אחרי ההשקה ואיך זוכרים (תזכורת ביומן או issue מתוזמן).
+  evidence: ביקורת 6.3; README › "תרגול שחזור".
+  status: פתוח
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-3-backup-and-restore.md`
+  target: id 10 (המסירה)
+  summary: גודל ה-repo הפרטי: התמונות נכנסות ל-git ולא נמחקות, ותמונה שה-`updated_at` שלה השתנה יורדת שוב ונשמרת כגרסה נוספת בהיסטוריה. לבדוק את הגודל (Settings, או `git count-objects -vH`) מול המגבלות של GitHub, ולהחליט אם צריך ניקוי היסטוריה או מקום אחר לתמונות.
+  evidence: ביקורת 6.3; ‏`ops/backup/media.mjs`.
   status: פתוח
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-6-1-production-environment.md`

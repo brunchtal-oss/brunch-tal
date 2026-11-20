@@ -1,0 +1,48 @@
+# Story 6.3: the restore drill, manual only. A template from the public
+# site repo (ops/backup/workflows/); it runs only in the business's private
+# backup repo, as .github/workflows/restore-drill.yml.
+#
+# Needs the temporary secret DRILL_PRIVATE_KEY (the backup's private key),
+# added just before the run and deleted right after it.
+name: restore-drill
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "prod or dev: whose backups to restore"
+        type: choice
+        options: [prod, dev]
+        default: prod
+      tag:
+        description: "Release to restore (db-YYYY-MM-DD); empty = the newest"
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: restore-drill
+  cancel-in-progress: false
+
+jobs:
+  drill:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: "24"
+
+      - name: Restore drill
+        env:
+          TARGET: ${{ inputs.target }}
+          TAG: ${{ inputs.tag }}
+          DRILL_PRIVATE_KEY: ${{ secrets.DRILL_PRIVATE_KEY }}
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/drill.sh
