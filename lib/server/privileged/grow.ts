@@ -18,6 +18,19 @@ const TIMEOUT_MS = 10_000
 const TOKEN_MARGIN_MS = 60_000
 // morning's document statuses: 3 a cancelling document, 4 cancelled.
 const CANCELLED_STATUSES = new Set([3, 4])
+const PAGE_SIZE = 100
+const MAX_PAGES = 5
+
+// The search's page count: `pages`, else from `total`, else one page.
+function pageCount(data: Record<string, unknown>): number {
+  if (typeof data.pages === "number" && Number.isFinite(data.pages)) {
+    return Math.max(1, Math.ceil(data.pages))
+  }
+  if (typeof data.total === "number" && Number.isFinite(data.total)) {
+    return Math.max(1, Math.ceil(data.total / PAGE_SIZE))
+  }
+  return 1
+}
 
 export class GrowUnavailableError extends Error {
   constructor(
@@ -79,7 +92,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value)
 }
 
-// The reference as a whole token of the description ("<product> · BT-…"):
+// The reference as a whole token of the description ("BT-… · <product>"):
 // BT-AB12 never matches BT-AB123.
 export function descriptionHasReference(
   description: unknown,
@@ -207,22 +220,34 @@ export function createGrowClient(config: GrowConfig, deps: GrowDeps = {}) {
     fromDate: string
   ): Promise<DocumentSearch> {
     const token = await accessToken()
-    const data = await post(
-      "documents_search",
-      `${config.apiUrl}/documents/search`,
-      {
-        description: reference,
-        fromDate,
-        type: [config.documentType],
-        page: 1,
-        pageSize: 100,
-      },
-      token
-    )
-    const items = isRecord(data) ? data.items : undefined
-    if (!Array.isArray(items)) {
-      console.error("grow.failed", { op: "documents_search", status: 200 })
-      throw new GrowUnavailableError("documents_search", 200)
+    // Every page of the search (100 a page, at most 5): a reference past
+    // that is "unavailable", never "none".
+    const items: unknown[] = []
+    for (let page = 1; ; page++) {
+      const data = await post(
+        "documents_search",
+        `${config.apiUrl}/documents/search`,
+        {
+          description: reference,
+          fromDate,
+          type: [config.documentType],
+          page,
+          pageSize: PAGE_SIZE,
+        },
+        token
+      )
+      const pageItems = isRecord(data) ? data.items : undefined
+      if (!Array.isArray(pageItems)) {
+        console.error("grow.failed", { op: "documents_search", status: 200 })
+        throw new GrowUnavailableError("documents_search", 200)
+      }
+      items.push(...pageItems)
+      const pages = pageCount(data as Record<string, unknown>)
+      if (pages > MAX_PAGES) {
+        console.error("grow.failed", { op: "documents_search", pages })
+        throw new GrowUnavailableError("documents_search", 200)
+      }
+      if (page >= pages) break
     }
     const matches = items.filter(
       (item): item is Record<string, unknown> =>

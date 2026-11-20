@@ -1359,6 +1359,7 @@ export const adminCopy = {
           marketing_reminders: "תזכורות שיווק",
           // Online payments (PR A).
           release_holds: "שחרור מקומות שנשמרו לתשלום",
+          reconcile_payments: "התאמת תשלומים מול Grow",
         } as Record<string, string>,
       },
       // The push settings are missing in Vault (story 5.10).
@@ -2406,6 +2407,13 @@ export const adminCopy = {
       booked: (places: number) =>
         places > 1 ? `נרשמה (${places} מקומות)` : "נרשמה",
       refundOpened: "נפתחה בקשת החזר",
+      // Online payments: the checkout's reference is the row's reason.
+      onlineIssueResolved: (reference: string | null) =>
+        reference ? `סומן שטופל (${reference})` : "סומן שטופל",
+      unconfirmedClosed: (reference: string | null) =>
+        reference
+          ? `התשלום נבדק ב-Grow והרכישה נסגרה (${reference})`
+          : "התשלום נבדק ב-Grow והרכישה נסגרה",
       creditReturned: "הזיכוי חזר ללקוחה",
       credit: (sessions: number) =>
         sessions === 1
@@ -2548,6 +2556,7 @@ export const adminCopy = {
       admin_update_marketing_tags: "עדכון כלי מדידה ופרסום",
       // Online payments (PR A).
       admin_resolve_online_payment_issue: "סימון תשלום מקוון שטופל",
+      admin_close_unconfirmed_checkout: "סגירת רכישה מקוונת שלא אושרה",
     } as Record<string, string>,
     // Common keys of before/after; an unknown key shows its code.
     fields: {

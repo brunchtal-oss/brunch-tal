@@ -226,6 +226,12 @@ export const ERROR_MESSAGES = {
   // answer, and the server kill switch (ONLINE_PAYMENTS_ENABLED) is off.
   GROW_UNAVAILABLE: "מערכת התשלום לא זמינה כרגע. אפשר לנסות שוב בעוד כמה דקות",
   ONLINE_PAYMENTS_OFF: "תשלום באתר לא זמין כרגע. צרי קשר לרכישה",
+  // The guest checkout's rate limit (bucket checkout: 10 an hour per IP).
+  CHECKOUT_TOO_MANY: "נעשו יותר מדי ניסיונות. אפשר לנסות שוב בעוד שעה.",
+  // admin_close_unconfirmed_checkout on a checkout that is paid or already
+  // in an issue.
+  CHECKOUT_NOT_CLOSABLE:
+    "אי אפשר לסגור את הרכישה הזו, כי היא כבר שולמה או כבר בטיפול",
   // Raised by the adapter (never by SQL).
   INVALID_CREDENTIALS: "המייל או הסיסמה לא תואמים",
   // Correct password, but no active customer profile and not an admin.

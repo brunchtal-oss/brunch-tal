@@ -97,4 +97,28 @@ describe("handleGrowNotification", () => {
     expect(logged).not.toContain("xxxx")
     expect(logged).not.toContain(SECRET)
   })
+
+  it("stops pulling the body after the cap", async () => {
+    let pulls = 0
+    const chunk = new Uint8Array(16 * 1024)
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        pulls++
+        controller.enqueue(chunk)
+      },
+    })
+    const response = await handleGrowNotification(
+      new Request(`https://site.test/api/payments/grow?c=${ID}&s=${SECRET}`, {
+        method: "POST",
+        body,
+        duplex: "half",
+      } as RequestInit),
+      async () => ({ ok: true, pending: false })
+    )
+    expect(response.status).toBe(200)
+    // 64 KB in 16 KB chunks: the cap is passed on the fifth chunk, and
+    // the stream may have been asked for at most a couple more.
+    expect(pulls).toBeGreaterThanOrEqual(5)
+    expect(pulls).toBeLessThanOrEqual(8)
+  })
 })

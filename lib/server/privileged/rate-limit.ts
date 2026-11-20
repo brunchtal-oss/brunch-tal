@@ -19,8 +19,10 @@ import { createServiceClient } from "@/lib/server/privileged/service-client"
 //   email: 5 per IP, 3 per id (story 6.11: forgot password, id = the
 //          normalized email; resend, id = "resend:<user id>"; self email
 //          change, id = "change:<user id>")
-//   checkout: 10 an hour per IP (online payments: a guest's checkout; both
-//          keys are the IP, the window is the hour)
+//   checkout: an hour's window (online payments): 10 per IP; a customer's
+//          checkout also sends id = her auth uid, 3 an hour. A guest's
+//          sends the IP key only (id null). Checked with peekRateLimit
+//          before a begin, counted only after the Grow form exists.
 // The keys reach the database only to be hashed there; they are never
 // logged here (AD-22).
 
@@ -29,8 +31,9 @@ export type RateLimitBucket = "login" | "token" | "email" | "checkout"
 export type RateLimitKeys = {
   // The client IP (clientIp()).
   ip: string
-  // The account ("<ip> <normalized email>", login) or the raw token.
-  id: string
+  // The account ("<ip> <normalized email>", login) or the raw token; null
+  // sends the IP key only (a guest's checkout).
+  id: string | null
 }
 
 // The client IP as Vercel passes it: x-real-ip, else the first address of
@@ -58,12 +61,33 @@ export async function hitRateLimit(
   bucket: RateLimitBucket,
   keys: RateLimitKeys
 ): Promise<RateLimitVerdict> {
+  return callLimiter("rate_limit_hit", bucket, keys)
+}
+
+// Whether one more attempt would be allowed, without counting it (the
+// checkout bucket: checked before a begin, counted with hitRateLimit only
+// once a checkout and its Grow form exist).
+export async function peekRateLimit(
+  bucket: RateLimitBucket,
+  keys: RateLimitKeys
+): Promise<RateLimitVerdict> {
+  return callLimiter("rate_limit_peek", bucket, keys)
+}
+
+async function callLimiter(
+  rpc: "rate_limit_hit" | "rate_limit_peek",
+  bucket: RateLimitBucket,
+  keys: RateLimitKeys
+): Promise<RateLimitVerdict> {
   let result: Awaited<ReturnType<typeof callRpc<"rate_limit_hit">>>
   try {
-    result = await callRpc(createServiceClient(), "rate_limit_hit", {
+    result = await callRpc(createServiceClient(), rpc, {
       p_bucket: bucket,
       // Bounded, as the SQL accepts at most 512 characters a key.
-      p_keys: [`ip:${keys.ip}`.slice(0, 512), `id:${keys.id}`.slice(0, 512)],
+      p_keys: [
+        `ip:${keys.ip}`.slice(0, 512),
+        ...(keys.id === null ? [] : [`id:${keys.id}`.slice(0, 512)]),
+      ],
     })
   } catch {
     result = { ok: false, code: "SERVER_ERROR" }

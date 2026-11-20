@@ -36,7 +36,7 @@ function doc(extra: Record<string, unknown>) {
     status: 1,
     documentDate: "2026-11-20",
     creationDate: NOW / 1000,
-    description: "כרטיסייה · BT-AB12000000",
+    description: "BT-AB12000000 · כרטיסייה",
     amount: 472,
     currency: "ILS",
     ...extra,
@@ -76,7 +76,7 @@ describe("createPaymentForm", () => {
       .mockResolvedValueOnce(json({ url: "https://pay.test/form/1" }))
 
     const url = await client().createPaymentForm({
-      description: "כרטיסייה · BT-AB12000000",
+      description: "BT-AB12000000 · כרטיסייה",
       amountAgorot: 12750,
       successUrl: "https://site.test/pay/return",
       failureUrl: "https://site.test/pay/failed",
@@ -101,7 +101,7 @@ describe("createPaymentForm", () => {
     )
     expect(fetchMock.mock.calls[1][1].signal).toBeInstanceOf(AbortSignal)
     expect(bodyOf(1)).toEqual({
-      description: "כרטיסייה · BT-AB12000000",
+      description: "BT-AB12000000 · כרטיסייה",
       type: 400,
       amount: 127.5,
       currency: "ILS",
@@ -125,7 +125,7 @@ describe("createPaymentForm", () => {
         : json({ url: "https://pay.test/form" })
     )
     const input = {
-      description: "x · BT-AB12000000",
+      description: "BT-AB12000000 · x",
       amountAgorot: 100,
       successUrl: "https://s/r",
       failureUrl: "https://s/f",
@@ -228,7 +228,7 @@ describe("findCheckoutDocument", () => {
 
   it("keeps only the exact reference, the type, the date and not cancelled", async () => {
     const result = await search([
-      doc({ id: "near", description: "x · BT-AB120000001" }),
+      doc({ id: "near", description: "BT-AB120000001 · x" }),
       doc({ id: "other-type", type: 320 }),
       doc({ id: "cancelled", status: 4 }),
       doc({ id: "cancelling", status: 3 }),
@@ -249,5 +249,63 @@ describe("descriptionHasReference", () => {
     [null, "BT-AB12", false],
   ])("%j has %s: %s", (description, reference, expected) => {
     expect(descriptionHasReference(description, reference)).toBe(expected)
+  })
+})
+
+describe("paging and the token on 401", () => {
+  it("pages through the results (pages from the answer) and finds the document on page 2", async () => {
+    fetchMock
+      .mockResolvedValueOnce(json(TOKEN))
+      .mockResolvedValueOnce(
+        json({ total: 150, page: 1, pageSize: 100, pages: 2, items: [] })
+      )
+      .mockResolvedValueOnce(
+        json({ total: 150, page: 2, pageSize: 100, pages: 2, items: [doc({})] })
+      )
+    const result = await client().findCheckoutDocument(
+      "BT-AB12000000",
+      "2026-11-20"
+    )
+    expect(result.kind).toBe("one")
+    expect(bodyOf(1).page).toBe(1)
+    expect(bodyOf(2).page).toBe(2)
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+  })
+
+  it("the page count from total when pages is missing", async () => {
+    fetchMock
+      .mockResolvedValueOnce(json(TOKEN))
+      .mockResolvedValueOnce(json({ total: 101, items: [] }))
+      .mockResolvedValueOnce(json({ total: 101, items: [] }))
+    expect(
+      await client().findCheckoutDocument("BT-AB12000000", "2026-11-20")
+    ).toEqual({ kind: "none" })
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+  })
+
+  it("more than 5 pages is unavailable, not none", async () => {
+    fetchMock
+      .mockResolvedValueOnce(json(TOKEN))
+      .mockResolvedValueOnce(json({ total: 600, pages: 6, items: [] }))
+    await expect(
+      client().findCheckoutDocument("BT-AB12000000", "2026-11-20")
+    ).rejects.toBeInstanceOf(GrowUnavailableError)
+  })
+
+  it("a 401 drops the cached token, so the next call gets a new one", async () => {
+    fetchMock
+      .mockResolvedValueOnce(json(TOKEN))
+      .mockResolvedValueOnce(json({ error: "x" }, 401))
+      .mockResolvedValueOnce(json({ ...TOKEN, accessToken: "jwt-new" }))
+      .mockResolvedValueOnce(json({ total: 0, items: [] }))
+    const grow = client()
+    await expect(
+      grow.findCheckoutDocument("BT-AB12000000", "2026-11-20")
+    ).rejects.toBeInstanceOf(GrowUnavailableError)
+    await grow.findCheckoutDocument("BT-AB12000000", "2026-11-20")
+    expect(String(fetchMock.mock.calls[2][0])).toMatch(/oauth\/token$/)
+    expect(fetchMock.mock.calls[3][1].headers.Authorization).toBe(
+      "Bearer jwt-new"
+    )
   })
 })

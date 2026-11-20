@@ -2,13 +2,13 @@
 title: 'Online payments with Grow — PR A: data, provider and notification'
 type: 'feature'
 created: '2026-11-20'
-status: 'in-progress'
+status: 'done'
 baseline_commit: '2754c31e662e0a1bb270d11a61749e9442d05fa0'
 route: 'full'
 route_source: 'auto'
-review: ''
-review_source: ''
-lenses_ran: []
+review: 'thorough'
+review_source: 'pinned'
+lenses_ran: [blind-hunter, edge-case-hunter, verification-gap, intent-alignment, money-entitlements, security, concurrency, matrix-coverage, adversarial]
 review_loop_iteration: 0
 context:
   - '{project-root}/_bmad-output/implementation-artifacts/spec-online-payments-grow.md'
@@ -37,6 +37,29 @@ context:
 - **Unconfirmed safety net (work manager, 2026-11-20):** every authenticated notification first writes `checkouts.last_notified_at` in its own short call (`mark_checkout_notified`), even when the answer will be 503. Attention item `online_payment_unconfirmed`: `last_notified_at` set, state not `paid`, older than 30 minutes, no unresolved issue for it. Tal checks it in Grow.
 - **Exact match at morning:** `findCheckoutDocument` keeps only documents of `GROW_DOCUMENT_TYPE`, dated from the checkout's creation day on, not cancelled, whose description contains the reference as a whole token (`· BT-…` at the end, compared exactly, not a substring of another reference).
 - **Amount without float:** the morning amount becomes agorot as `parseShekelsToAgorot(n.toFixed(2))` in `lib/money.ts`; tested with `0.1 + 0.2` → 30 agorot.
+
+### Decisions after review (work manager for the user, 2026-11-20)
+
+- **Reconciliation job:** `app/api/jobs/reconcile-payments/route.ts` (POST, `CRON_SECRET`, same pattern and lock exemption as `/api/jobs/push`), called by pg_cron through pg_net every 10 minutes, as `invoke_push_worker`. When payments are not configured (switch off or Grow vars missing) it answers 200 at once, with no Grow call and no write. It confirms `open`/`failed`/`expired` checkouts created in the last 7 days, at most 20 per run (oldest check first), with the same confirm and search as the route, secret kind `system` (service role only; it grants nothing the verification did not). Cron job `reconcile_payments` in `job_intervals`, attention and Hebrew job names.
+- **No 503 storm:** the notification answers 200 when the checkout is no longer `open`, or 30 minutes after `first_notified_at`; reconciliation takes over. `first_notified_at` (set once) replaces `last_notified_at` for the attention item.
+- **Tal closes "unconfirmed":** `admin_close_unconfirmed_checkout(p_checkout_id, p_idempotency_key)` moves the checkout to `issue` with an issue row `closed_by_admin` (resolved), so a later verified document becomes `second_payment`, never a second grant. Audited.
+- **Cleanup:** unpaid checkouts are deleted after 90 days (not 30), and never one with `first_notified_at` set.
+- **`begin_checkout` is service_role only:** the server passes the verified auth uid from the session claims (`p_auth_uid`, never browser input); the RPC derives the customer with the same rule as `private.current_customer_id` (null for not activated or anonymized → `NOT_AUTHORIZED`). Recorded in `security-and-rpc-rules.md` as a declared exception.
+- ~~**Verified document on an `issue` checkout:** lands as a payment when the checkout has no payment yet.~~ Replaced in pass 2: **a checkout with any issue never grants automatically.** A later verified document is recorded as a new issue `late_document` (attention), and Tal decides. Only `paid` gives replay or `second_payment`.
+- **Reconciliation gate (pass 2):** the reconcile route answers 200 at once only when the Grow vars are missing (as the notification route), not when the switch is off, so payments lost during a switched-off incident still land.
+- **Logged-in limits (pass 2):** checkout bucket also per customer, 5 an hour; re-beginning the same event keeps the previous `hold_until` (no extension); reconciliation skips checkouts still inside their pay window and checkouts with no `form_created_at` (set after Grow returns the form URL).
+- **Join link once (pass 2):** `checkout_return` issues a join token at most once per checkout (`join_issued_at`); later returns get `join_blocked`.
+- **Snapshot (pass 2):** `price_agorot` is not compared (the core handles price changes).
+- **Pass 3 (work manager, 2026-11-20):** the "no extension" rule is removed (every checkout gets a full window); the checkout limit counts only a begin that created a checkout and a Grow form (checked before, counted after), logged-in customer 3 an hour, guest 10 per IP. Reconciliation also checks `issue` and `paid` checkouts whose `last_notified_at` is after `closed_at` (a new document becomes `late_document` or `second_payment`, never a grant). If `mark_checkout_form_created` fails, the begin fails (`GROW_UNAVAILABLE`, checkout cancelled, no redirect); `first_notified_at` also counts as proof of a form. A join token may be re-issued from the same browser secret within 10 minutes of `join_issued_at` (revoke then issue); later, `join_blocked`. The `online_payment_issue` attention item carries the provider document id and the checkout's earlier issue (reason, resolved or not); PR B adds its Hebrew text. PR A closes after this pass: one full test:db; later findings go to PR B or deferred.
+- **Product snapshot:** the checkout stores the product fields the grant uses; a mismatch at confirm time is an issue `product_changed`, never a grant from the edited product.
+- **Anonymized customer at confirm:** issue `customer_unavailable`, no payment row.
+- **Her other open checkout for the same event** is closed before the core places the booking, so her own hold does not park her payment.
+- **Re-buying the same session:** closing her previous hold does not notify the waitlist when the new hold takes the same event in the same transaction.
+- **Cookie:** holds up to 5 `<id>.<secret>` entries; `successUrl`/`failureUrl` carry `?c=<checkout id>`; `/pay/failed` cancels only the entry whose id matches `c`. An entry is removed once a join token was issued for it (one issue per browser return chain). `secure` only on https.
+- **Payment URLs** are built from `NEXT_PUBLIC_SITE_URL` (`lib/site-url.ts`), never request headers. **Lock exemption** narrows to `/api/payments/grow`.
+- **Morning search:** the reference comes first in the description (`BT-… · <product>`); the search pages through results (at most 5 pages of 100); more pages than that is "unavailable", not "none".
+- **Return paths:** a guest's non-pinned failure goes to `/` with the notice, never `/me`; a paid checkout reaches `checkout_return` even when morning is unavailable.
+- **Rate-limit code** `CHECKOUT_TOO_MANY` ("אפשר לנסות שוב בעוד שעה").
 
 ## Boundaries & Constraints
 
@@ -112,7 +135,45 @@ Umbrella matrix applies. Additional rows:
 
 ## Spec Change Log
 
+- 2026-11-20, review pass 1 (9 lenses). Triggers: lost payment with no recovery (adversarial 1, money 1, blind, edge), kill switch not enforced in the DB (adversarial 3), `issue` treated as `paid` (matrix, verification-gap, edge, concurrency 1), product edits mid-checkout (money 2), shared-browser join takeover (security 1, adversarial 5). Amended: "Decisions after review" above. Avoids: charged cards with no record, a second grant after Tal's manual approval, seats held while payments are off, grants from an edited product. No revert (work manager's decision): the base was sound and every fix is additive; patched on the existing code. KEEP: the notification as a trigger only, server-to-server verification, the advisory lock + unique index dedupe, the exception sub-block around the core, `close_checkout` with `free_before`, hashed per-checkout secrets.
+
+- 2026-11-20, review pass 2 (focused security + adversarial on the fixes). Triggers: double grant after Tal settles an `issue` checkout by hand and a single document later verifies (security 1, adversarial 1 and 2); reconciliation off during a switched-off incident (adversarial 5); a logged-in customer re-holding the last seat silently forever and starving reconciliation (adversarial 4, 6; security 3); join link re-issued server-side (security 2, adversarial 9); `price_agorot` false positives (adversarial 8). Amended: pass 2 bullets in "Decisions after review". **This reverses pass 1's "issue checkout accepts a verified document":** automatic grants on a checkout that Tal may already have settled by hand can double-grant, and a rare manual step is safer than a second entitlement (work manager, 2026-11-20). KEEP everything from pass 1.
+
 ## Review Triage Log
+
+Pass 1, 2026-11-20 — lenses: blind-hunter, edge-case-hunter, verification-gap, intent-alignment, money-entitlements, security, concurrency, matrix-coverage, adversarial. No deadlock, no secret leak, no grant without payment found.
+
+| # | Finding (lens) | Verdict | Route | Evidence / action |
+|---|---|---|---|---|
+| 1 | No recovery when the notification never lands; row deleted at 30 days (adversarial, money, blind, edge) | high | patch (decision) | Reconciliation job, `first_notified_at`, cleanup 90 days and keeps notified rows |
+| 2 | 503 storm can disable Grow delivery (adversarial, edge) | high | patch (decision) | 200 when not open or 30 min after first notification |
+| 3 | Manual approval then late verification double-grants (money) | high | patch (decision) | `admin_close_unconfirmed_checkout` |
+| 4 | Kill switch not enforced in the DB (adversarial) | medium | patch (decision) | `begin_checkout` to service_role with verified auth uid |
+| 5 | `issue` checkout turns a verified document into `second_payment` (matrix, verification-gap, edge, concurrency) | high | patch | Accept a verified document while no payment exists |
+| 6 | Join link re-issued on every return for 7 days; shared-browser takeover; revokes the open link (security, adversarial, blind, concurrency) | high | patch | Cookie entry removed after issue |
+| 7 | One cookie per browser; tab 2 overwrites tab 1; `/pay/failed` cancels the wrong one; GET CSRF releases the hold (edge, blind, security, adversarial) | medium | patch | Multi-entry cookie + `?c=` |
+| 8 | Product edited mid-checkout grants the new product (money) | high | patch | Snapshot + `product_changed` issue |
+| 9 | Payment lands on an anonymized customer unseen (money) | medium | patch | `customer_unavailable` issue |
+| 10 | Her own second hold parks her late payment (concurrency) | medium | patch | Close her other open checkout for the event first |
+| 11 | False waitlist push on re-begin of the same session (security, money, concurrency) | medium | patch | No notify when the same event is re-held |
+| 12 | Payment URLs from request headers (security, adversarial) | medium | patch | `NEXT_PUBLIC_SITE_URL` |
+| 13 | Lock exemption wider than the route (security) | low | patch | `/api/payments/grow` |
+| 14 | Reference at the end; first page only (adversarial, money, blind) | medium | patch | Reference first; paging |
+| 15 | Guest non-pinned failure sent to `/me` (edge) | low | patch | `/` with notice |
+| 16 | Paid checkout shown pending when morning is down (blind) | medium | patch | Return reads `checkout_return` anyway |
+| 17 | `secure` cookie dropped on LAN http (edge) | low | patch | `secure` on https only |
+| 18 | Rate-limit text says 15 minutes (blind) | low | patch | `CHECKOUT_TOO_MANY` |
+| 19 | Resolve audit writes whole rows, no result sentence (blind) | low | patch | Changed columns only + result |
+| 20 | `link_conflict` and `online_purchase_incomplete` both shown (blind) | low | patch | Exclude live conflict/stuck |
+| 21 | Cleanup vs record race leaves a null row (concurrency, edge) | low | patch | `found` check |
+| 22 | 6.8 duty not recorded where 6.8 reads (blind) | low | patch | deferred-work entry |
+| 23 | Umbrella matrix row "not verified → issue" contradicts PR A (blind) | low | patch | Umbrella wording |
+| 24 | Untested: return/fail orchestration, `checkout_return` joined/blocked/conflict, Grow 401 eviction, body cap, unconfirmed exclusions, negative `purchase_repeat`, `approve_failed` (verification-gap, matrix) | medium | patch | Tests added |
+| 25 | `cancel_checkout` failure after Grow failure not logged (edge) | low | patch | Log line |
+| 26 | Parked known customer gets no notice (money) | medium | defer | PR B screen (return notice) |
+| 27 | Morning "closed" vs "not cancelled" status (intent, blind) | maybe-false | defer | Settled in the PR B sandbox capture |
+
+Rejected: `/pay/pending` missing (PR B page; unreachable while off); notify route throttle (verification decides, low); hourly window doubling and CGNAT (in the existing deferred entry); `GROW_DOCUMENT_TYPE` change mid-checkout and lost-response replay (low, rare); `unconfirmed` excluding `issue` (intended); second migration `drop` (handled: SQL Editor in dev, flagged for prod); concurrent `not_verified` label (fixed by 5).
 
 ## Design Notes
 

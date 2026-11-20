@@ -484,12 +484,16 @@ export type Database = {
         Row: {
           amount_agorot: number
           browser_secret_hash: string
+          checked_at: string | null
           closed_at: string | null
           created_at: string
           customer_id: string | null
           event_id: string | null
+          first_notified_at: string | null
+          form_created_at: string | null
           hold_until: string | null
           id: string
+          join_issued_at: string | null
           last_notified_at: string | null
           notify_secret_hash: string
           party_size: number
@@ -497,6 +501,7 @@ export type Database = {
           payment_id: string | null
           product_id: string
           product_name: string
+          product_snapshot: Json | null
           reference: string
           state: string
           terms_accepted_at: string
@@ -504,12 +509,16 @@ export type Database = {
         Insert: {
           amount_agorot: number
           browser_secret_hash: string
+          checked_at?: string | null
           closed_at?: string | null
           created_at?: string
           customer_id?: string | null
           event_id?: string | null
+          first_notified_at?: string | null
+          form_created_at?: string | null
           hold_until?: string | null
           id?: string
+          join_issued_at?: string | null
           last_notified_at?: string | null
           notify_secret_hash: string
           party_size: number
@@ -517,6 +526,7 @@ export type Database = {
           payment_id?: string | null
           product_id: string
           product_name: string
+          product_snapshot?: Json | null
           reference: string
           state?: string
           terms_accepted_at: string
@@ -524,12 +534,16 @@ export type Database = {
         Update: {
           amount_agorot?: number
           browser_secret_hash?: string
+          checked_at?: string | null
           closed_at?: string | null
           created_at?: string
           customer_id?: string | null
           event_id?: string | null
+          first_notified_at?: string | null
+          form_created_at?: string | null
           hold_until?: string | null
           id?: string
+          join_issued_at?: string | null
           last_notified_at?: string | null
           notify_secret_hash?: string
           party_size?: number
@@ -537,6 +551,7 @@ export type Database = {
           payment_id?: string | null
           product_id?: string
           product_name?: string
+          product_snapshot?: Json | null
           reference?: string
           state?: string
           terms_accepted_at?: string
@@ -2204,6 +2219,10 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_close_unconfirmed_checkout: {
+        Args: { p_checkout_id: string; p_idempotency_key: string }
+        Returns: Json
+      }
       admin_complete_refund: {
         Args: {
           p_amount_agorot: number
@@ -2597,6 +2616,7 @@ export type Database = {
       }
       begin_checkout: {
         Args: {
+          p_auth_uid: string
           p_event_id: string
           p_idempotency_key: string
           p_product_id: string
@@ -2653,6 +2673,7 @@ export type Database = {
         }
         Returns: Json
       }
+      claim_checkouts_to_reconcile: { Args: { p_limit: number }; Returns: Json }
       claim_join: {
         Args: { p_idempotency_key: string; p_token: string }
         Returns: Json
@@ -2708,6 +2729,10 @@ export type Database = {
       }
       leave_waitlist: {
         Args: { p_event_id: string; p_idempotency_key: string }
+        Returns: Json
+      }
+      mark_checkout_form_created: {
+        Args: { p_browser_secret: string; p_checkout_id: string }
         Returns: Json
       }
       mark_checkout_notified: {
@@ -2796,6 +2821,10 @@ export type Database = {
       preview_book_sessions: { Args: { p_items: string[] }; Returns: Json }
       preview_move_booking: { Args: { p_booking_id: string }; Returns: Json }
       rate_limit_hit: {
+        Args: { p_bucket: string; p_keys: string[] }
+        Returns: Json
+      }
+      rate_limit_peek: {
         Args: { p_bucket: string; p_keys: string[] }
         Returns: Json
       }

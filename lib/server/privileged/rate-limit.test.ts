@@ -4,6 +4,7 @@ import {
   clientIp,
   clientIpFrom,
   hitRateLimit,
+  peekRateLimit,
   rateLimitCode,
 } from "./rate-limit"
 
@@ -108,6 +109,28 @@ describe("hitRateLimit", () => {
     await hitRateLimit("login", { ip: "1.2.3.4", id: "a".repeat(600) })
     const keys = rpc.mock.calls[0][1].p_keys as string[]
     expect(keys[1]).toHaveLength(512)
+  })
+
+  it("id null sends the IP key only (a guest's checkout)", async () => {
+    rpc.mockResolvedValue({ data: { allowed: true }, error: null })
+    await hitRateLimit("checkout", { ip: "203.0.113.7", id: null })
+    expect(rpc.mock.calls[0][1]).toEqual({
+      p_bucket: "checkout",
+      p_keys: ["ip:203.0.113.7"],
+    })
+  })
+})
+
+describe("peekRateLimit", () => {
+  it("asks rate_limit_peek with the same keys, without counting", async () => {
+    rpc.mockResolvedValue({ data: { allowed: false }, error: null })
+    await expect(
+      peekRateLimit("checkout", { ip: "203.0.113.7", id: "uid-1" })
+    ).resolves.toBe("blocked")
+    expect(rpc).toHaveBeenCalledWith("rate_limit_peek", {
+      p_bucket: "checkout",
+      p_keys: ["ip:203.0.113.7", "id:uid-1"],
+    })
   })
 })
 

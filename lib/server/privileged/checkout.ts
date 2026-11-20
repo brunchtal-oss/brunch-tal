@@ -1,6 +1,7 @@
 import "server-only"
 
 import { cookies } from "next/headers"
+import { NextResponse } from "next/server"
 
 import type { ErrorCode } from "@/lib/errors"
 import {
@@ -10,7 +11,6 @@ import {
   type OnlinePaymentsEnv,
 } from "@/lib/payments/online-config"
 import { callRpc } from "@/lib/rpc"
-import { requestOrigin } from "@/lib/server/join-link"
 import {
   createGrowClient,
   GrowUnavailableError,
@@ -20,9 +20,11 @@ import {
 import {
   clientIp,
   hitRateLimit,
+  peekRateLimit,
   rateLimitCode,
 } from "@/lib/server/privileged/rate-limit"
 import { createServiceClient } from "@/lib/server/privileged/service-client"
+import { explicitSiteUrl } from "@/lib/site-url"
 import { createClient } from "@/lib/supabase/server"
 
 // Online payments, the server half (spec-online-payments-grow-a.md).
@@ -30,22 +32,32 @@ import { createClient } from "@/lib/supabase/server"
 // startCheckout: the kill switch, the guest rate limit, the begin RPC (seat
 // hold for a pinned product), then the Grow form (no network call inside a
 // transaction). A Grow failure cancels the checkout (the hold is released).
-// The browser keeps `bt_checkout` = "<id>.<browser secret>"; the notify
-// secret goes only into Grow's notifyUrl.
+// Every RPC runs through the service role, so the kill switch is enforced
+// here before any row exists; a customer's checkout passes the uid of her
+// verified session claims. The URLs are built from NEXT_PUBLIC_SITE_URL,
+// never from request headers.
 //
-// confirmCheckout: the one confirm step of both triggers (the notification
-// with the notify secret, the browser return with the browser secret). The
-// notification body is never read for business data: the payment is the
-// morning document found by the checkout's reference (verification is the
-// source of truth). Nothing secret or personal is logged.
+// The browser keeps `bt_checkout`: up to 5 "<id>.<browser secret>" entries,
+// newest first. successUrl / failureUrl carry ?c=<checkout id>, and the
+// return uses only the matching entry. The notify secret goes only into
+// Grow's notifyUrl.
+//
+// confirmCheckout: the one confirm step of every trigger (the notification
+// with the notify secret, the browser return with the browser secret, the
+// reconciliation job with kind 'system'). The notification body is never
+// read for business data: the payment is the morning document found by
+// the checkout's reference. Nothing secret or personal is logged.
 
 export const CHECKOUT_COOKIE = "bt_checkout"
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 7
+const MAX_COOKIE_ENTRIES = 5
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const SECRET = /^[A-Za-z0-9_-]{16,200}$/
 
-export type SecretKind = "notify" | "browser"
+export type SecretKind = "notify" | "browser" | "system"
+
+export type CheckoutEntry = { id: string; secret: string }
 
 export function isCheckoutId(value: unknown): value is string {
   return typeof value === "string" && UUID.test(value)
@@ -55,16 +67,49 @@ export function isCheckoutSecret(value: unknown): value is string {
   return typeof value === "string" && SECRET.test(value)
 }
 
-/** The checkout of the `bt_checkout` cookie, else null. */
+/** The valid entries of the `bt_checkout` cookie, newest first (at most 5). */
 export function parseCheckoutCookie(
   value: string | null | undefined
-): { id: string; secret: string } | null {
-  if (!value) return null
-  const dot = value.indexOf(".")
-  if (dot < 0) return null
-  const id = value.slice(0, dot)
-  const secret = value.slice(dot + 1)
-  return isCheckoutId(id) && isCheckoutSecret(secret) ? { id, secret } : null
+): CheckoutEntry[] {
+  if (!value) return []
+  const entries: CheckoutEntry[] = []
+  for (const part of value.split(",")) {
+    const dot = part.indexOf(".")
+    if (dot < 0) continue
+    const id = part.slice(0, dot)
+    const secret = part.slice(dot + 1)
+    if (isCheckoutId(id) && isCheckoutSecret(secret)) {
+      entries.push({ id, secret })
+    }
+  }
+  return entries.slice(0, MAX_COOKIE_ENTRIES)
+}
+
+export function serializeCheckoutCookie(entries: CheckoutEntry[]): string {
+  return entries
+    .slice(0, MAX_COOKIE_ENTRIES)
+    .map((e) => `${e.id}.${e.secret}`)
+    .join(",")
+}
+
+/** The entry of checkout `c`, else null (no c, or no match). */
+export function checkoutEntryFor(
+  cookie: string | null | undefined,
+  c: string | null | undefined
+): CheckoutEntry | null {
+  if (!isCheckoutId(c)) return null
+  return parseCheckoutCookie(cookie).find((e) => e.id === c) ?? null
+}
+
+/** The cookie's options: `secure` only when the site is https. */
+export function checkoutCookieOptions(env: OnlinePaymentsEnv = process.env) {
+  return {
+    httpOnly: true,
+    secure: (explicitSiteUrl(env) ?? "").startsWith("https://"),
+    sameSite: "lax" as const,
+    path: "/",
+    maxAge: COOKIE_MAX_AGE,
+  }
 }
 
 type BeginResult = {
@@ -81,8 +126,9 @@ type BeginResult = {
 }
 
 export type StartCheckoutInput = {
-  // customer: begin_checkout as the signed-in customer (her session);
-  // guest: begin_guest_checkout through the service role, rate limited.
+  // customer: begin_checkout with the uid of her verified session claims;
+  // guest: begin_guest_checkout, rate limited. Both through the service
+  // role.
   as: "customer" | "guest"
   productId: string
   eventId: string | null
@@ -110,13 +156,22 @@ function growFor(deps: CheckoutDeps, config: GrowConfig): GrowClient {
   return (deps.grow ?? createGrowClient)(config)
 }
 
+// The uid of the verified session claims (never browser input), else null.
+async function sessionUid(): Promise<string | null> {
+  const supabase = await createClient()
+  const { data } = await supabase.auth.getClaims()
+  const sub = data?.claims?.sub
+  return isCheckoutId(sub) ? sub : null
+}
+
 export async function startCheckout(
   input: StartCheckoutInput,
   deps: CheckoutDeps = {}
 ): Promise<StartCheckoutResult> {
   const env = deps.env ?? process.env
   const config = growConfig(env)
-  if (!onlinePaymentsEnabled(env) || !config) {
+  const site = explicitSiteUrl(env)
+  if (!onlinePaymentsEnabled(env) || !config || !site) {
     return { ok: false, code: "ONLINE_PAYMENTS_OFF" }
   }
 
@@ -128,25 +183,40 @@ export async function startCheckout(
     return { ok: false, code: "INVALID_INPUT" }
   }
 
-  if (input.as === "guest") {
-    const ip = await clientIp()
-    const stop = rateLimitCode(await hitRateLimit("checkout", { ip, id: ip }))
-    if (stop) return { ok: false, code: stop }
-  }
-
-  const origin = await requestOrigin()
-  if (!origin) return { ok: false, code: "SERVER_ERROR" }
-
+  const service = createServiceClient()
   const args = {
     p_product_id: input.productId,
     p_event_id: input.eventId as string,
     p_terms_accepted: input.termsAccepted,
     p_idempotency_key: input.idempotencyKey,
   }
-  const begun =
-    input.as === "customer"
-      ? await callRpc(await createClient(), "begin_checkout", args)
-      : await callRpc(createServiceClient(), "begin_guest_checkout", args)
+
+  // The checkout bucket (an hour): 10 per IP; a customer also by her uid,
+  // 3. Checked here without counting; counted only once the checkout and
+  // its Grow form exist, so a failed attempt costs nothing.
+  const uid = input.as === "customer" ? await sessionUid() : null
+  if (input.as === "customer" && !uid) {
+    return { ok: false, code: "NOT_AUTHORIZED" }
+  }
+  const ip = await clientIp()
+  const limitKeys = { ip, id: uid }
+  const stop = rateLimitCode(await peekRateLimit("checkout", limitKeys))
+  if (stop) {
+    return {
+      ok: false,
+      code: stop === "TOO_MANY_ATTEMPTS" ? "CHECKOUT_TOO_MANY" : stop,
+    }
+  }
+
+  let begun: Awaited<ReturnType<typeof callRpc<"begin_checkout">>>
+  if (!uid) {
+    begun = await callRpc(service, "begin_guest_checkout", args)
+  } else {
+    begun = await callRpc(service, "begin_checkout", {
+      p_auth_uid: uid,
+      ...args,
+    })
+  }
   if (!begun.ok) return { ok: false, code: begun.code }
 
   const checkout = begun.data as unknown as BeginResult
@@ -163,18 +233,23 @@ export async function startCheckout(
     return { ok: false, code: "SERVER_ERROR" }
   }
 
-  const notifyUrl = new URL("/api/payments/grow", origin)
+  const notifyUrl = new URL("/api/payments/grow", site)
   notifyUrl.searchParams.set("c", checkout.checkout_id)
   notifyUrl.searchParams.set("s", notifySecret)
+  const backUrl = (path: string) => {
+    const url = new URL(path, site)
+    url.searchParams.set("c", checkout.checkout_id)
+    return url.href
+  }
 
   let url: string
   try {
     url = await growFor(deps, config).createPaymentForm({
-      description: `${checkout.product_name} · ${checkout.reference}`,
+      description: `${checkout.reference} · ${checkout.product_name}`,
       amountAgorot: checkout.amount_agorot,
       client: input.payer,
-      successUrl: new URL("/pay/return", origin).href,
-      failureUrl: new URL("/pay/failed", origin).href,
+      successUrl: backUrl("/pay/return"),
+      failureUrl: backUrl("/pay/failed"),
       notifyUrl: notifyUrl.href,
       custom: checkout.checkout_id,
     })
@@ -182,24 +257,55 @@ export async function startCheckout(
     if (!(error instanceof GrowUnavailableError)) {
       console.error("checkout.failed", { step: "payment_form" })
     }
-    // The hold is released at once; a failure here is logged by callRpc.
-    await callRpc(createServiceClient(), "cancel_checkout", {
-      p_checkout_id: checkout.checkout_id,
-      p_browser_secret: browserSecret,
-    })
+    await cancelCheckout(service, checkout.checkout_id, browserSecret)
     return { ok: false, code: "GROW_UNAVAILABLE" }
   }
 
-  const store = await cookies()
-  store.set(CHECKOUT_COOKIE, `${checkout.checkout_id}.${browserSecret}`, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "lax",
-    path: "/",
-    maxAge: COOKIE_MAX_AGE,
+  // Reconciliation looks only at checkouts that got a form, so without the
+  // mark the begin fails: the checkout is cancelled, no redirect, no cookie.
+  const marked = await callRpc(service, "mark_checkout_form_created", {
+    p_checkout_id: checkout.checkout_id,
+    p_browser_secret: browserSecret,
   })
+  if (!marked.ok) {
+    console.error("checkout.form_mark_failed", { code: marked.code })
+    await cancelCheckout(service, checkout.checkout_id, browserSecret)
+    return { ok: false, code: "GROW_UNAVAILABLE" }
+  }
+
+  // Counted now (its own failure is logged by the limiter).
+  await hitRateLimit("checkout", limitKeys)
+
+  const store = await cookies()
+  const kept = parseCheckoutCookie(store.get(CHECKOUT_COOKIE)?.value).filter(
+    (e) => e.id !== checkout.checkout_id
+  )
+  store.set(
+    CHECKOUT_COOKIE,
+    serializeCheckoutCookie([
+      { id: checkout.checkout_id, secret: browserSecret },
+      ...kept,
+    ]),
+    checkoutCookieOptions(env)
+  )
 
   return { ok: true, data: { kind: "redirect", url } }
+}
+
+// Releases the hold of a checkout that will not be paid; a failure is
+// logged with the code only.
+async function cancelCheckout(
+  service: ReturnType<typeof createServiceClient>,
+  checkoutId: string,
+  browserSecret: string
+): Promise<void> {
+  const cancelled = await callRpc(service, "cancel_checkout", {
+    p_checkout_id: checkoutId,
+    p_browser_secret: browserSecret,
+  })
+  if (!cancelled.ok) {
+    console.error("checkout.cancel_failed", { code: cancelled.code })
+  }
 }
 
 export type CheckoutState = "open" | "paid" | "failed" | "expired" | "issue"
@@ -208,8 +314,8 @@ export type ConfirmResult =
   | {
       ok: true
       state: CheckoutState
-      // No document at morning yet (the notification answers 503 so Grow
-      // retries; the return shows "pending").
+      // No document at morning yet, and Grow may still be asked to retry
+      // (the notification answers 503; the return shows "pending").
       pending: boolean
     }
   | {
@@ -224,47 +330,54 @@ type ConfirmRow = {
   created_on: string
 }
 
+function notFoundOr(code: ErrorCode): "CHECKOUT_NOT_FOUND" | "SERVER_ERROR" {
+  return code === "CHECKOUT_NOT_FOUND" ? code : "SERVER_ERROR"
+}
+
+// secret is ignored for kind 'system' (the reconciliation job, service role).
 export async function confirmCheckout(
   checkoutId: string,
-  secret: string,
+  secret: string | null,
   kind: SecretKind,
   deps: CheckoutDeps = {}
 ): Promise<ConfirmResult> {
-  if (!isCheckoutId(checkoutId) || !isCheckoutSecret(secret)) {
+  if (
+    !isCheckoutId(checkoutId) ||
+    (kind !== "system" && !isCheckoutSecret(secret))
+  ) {
     return { ok: false, code: "CHECKOUT_NOT_FOUND" }
   }
   const service = createServiceClient()
+  const rpcSecret = (kind === "system" ? null : secret) as string
 
-  // The unconfirmed safety net: written first, in its own short call.
+  // The unconfirmed safety net: written first, in its own short call. After
+  // 30 minutes (or once the checkout is closed) Grow is not asked to retry.
+  let retryAllowed = true
   if (kind === "notify") {
     const marked = await callRpc(service, "mark_checkout_notified", {
       p_checkout_id: checkoutId,
-      p_notify_secret: secret,
+      p_notify_secret: rpcSecret,
     })
-    if (!marked.ok) {
-      return {
-        ok: false,
-        code:
-          marked.code === "CHECKOUT_NOT_FOUND" ? marked.code : "SERVER_ERROR",
-      }
-    }
+    if (!marked.ok) return { ok: false, code: notFoundOr(marked.code) }
+    retryAllowed =
+      (marked.data as { retry_allowed?: unknown } | null)?.retry_allowed ===
+      true
   }
 
   const read = await callRpc(service, "checkout_for_confirm", {
     p_checkout_id: checkoutId,
-    p_secret: secret,
+    p_secret: rpcSecret,
     p_secret_kind: kind,
   })
-  if (!read.ok) {
-    return {
-      ok: false,
-      code: read.code === "CHECKOUT_NOT_FOUND" ? read.code : "SERVER_ERROR",
-    }
-  }
+  if (!read.ok) return { ok: false, code: notFoundOr(read.code) }
   const row = read.data as unknown as ConfirmRow
 
   const config = growConfig(deps.env ?? process.env)
-  if (!config) return { ok: false, code: "GROW_UNAVAILABLE" }
+  if (!config) {
+    return retryAllowed
+      ? { ok: false, code: "GROW_UNAVAILABLE" }
+      : { ok: true, state: row.state, pending: false }
+  }
 
   let search: Awaited<ReturnType<GrowClient["findCheckoutDocument"]>>
   try {
@@ -273,7 +386,9 @@ export async function confirmCheckout(
       row.created_on
     )
   } catch {
-    return { ok: false, code: "GROW_UNAVAILABLE" }
+    return retryAllowed
+      ? { ok: false, code: "GROW_UNAVAILABLE" }
+      : { ok: true, state: row.state, pending: false }
   }
 
   // Not at morning yet. A failed or expired checkout may still be paid (a
@@ -282,7 +397,7 @@ export async function confirmCheckout(
     return {
       ok: true,
       state: row.state,
-      pending: row.state !== "paid" && row.state !== "issue",
+      pending: retryAllowed && row.state !== "paid" && row.state !== "issue",
     }
   }
 
@@ -307,17 +422,11 @@ export async function confirmCheckout(
 
   const recorded = await callRpc(service, "record_online_payment", {
     p_checkout_id: checkoutId,
-    p_secret: secret,
+    p_secret: rpcSecret,
     p_secret_kind: kind,
     ...args,
   })
-  if (!recorded.ok) {
-    return {
-      ok: false,
-      code:
-        recorded.code === "CHECKOUT_NOT_FOUND" ? recorded.code : "SERVER_ERROR",
-    }
-  }
+  if (!recorded.ok) return { ok: false, code: notFoundOr(recorded.code) }
   const state = (recorded.data as { state?: CheckoutState } | null)?.state
   return { ok: true, state: state ?? row.state, pending: false }
 }
@@ -332,13 +441,19 @@ type ReturnRow = {
   join_blocked?: boolean
 }
 
-// Where a closed checkout sends the browser: its session page, or "my
-// purchases" without a session, with ?payment=<state>.
-export function closedPathFor(state: string, eventId: string | null): string {
+// Where a closed checkout sends the browser, with ?payment=<state>: its
+// session page; without a session, "my purchases" for a known customer or
+// the home page for a guest.
+export function closedPathFor(
+  state: string,
+  eventId: string | null,
+  customerKnown: boolean
+): string {
   const payment = encodeURIComponent(state)
-  return eventId
-    ? `/sessions/${eventId}?payment=${payment}`
-    : `/me/purchases?payment=${payment}`
+  if (eventId) return `/sessions/${eventId}?payment=${payment}`
+  return customerKnown
+    ? `/me/purchases?payment=${payment}`
+    : `/?payment=${payment}`
 }
 
 /** The redirect of the browser return, from checkout_return's answer. */
@@ -350,66 +465,123 @@ export function returnPathFor(row: ReturnRow, pending: boolean): string {
     }
     // Paid, but no link can be issued (a join in progress, a conflict for
     // Tal, a voided purchase).
-    return closedPathFor("issue", row.event_id)
+    return closedPathFor("issue", row.event_id, false)
   }
-  if (row.state === "open" || pending) return "/pay/pending"
-  return closedPathFor(row.state, row.event_id)
+  if (row.state === "open" || pending) return PENDING_PATH
+  return closedPathFor(row.state, row.event_id, row.customer_known)
 }
 
 const PENDING_PATH = "/pay/pending"
 const NOT_FOUND_PATH = "/sessions"
 
-/** GET /pay/return: confirm, then where she goes. */
+// The browser's next step and the cookie: undefined keeps it, a string
+// replaces it, null deletes it.
+export type PaymentRedirect = { path: string; cookie?: string | null }
+
+function withoutEntry(
+  cookie: string | null | undefined,
+  id: string
+): string | null {
+  const left = parseCheckoutCookie(cookie).filter((e) => e.id !== id)
+  return left.length > 0 ? serializeCheckoutCookie(left) : null
+}
+
+/** GET /pay/return?c=<checkout>: confirm, then where she goes. */
 export async function returnFromPayment(
   cookie: string | null | undefined,
+  c: string | null | undefined,
   deps: CheckoutDeps = {}
-): Promise<string> {
-  const parsed = parseCheckoutCookie(cookie)
-  if (!parsed) return NOT_FOUND_PATH
+): Promise<PaymentRedirect> {
+  const entry = checkoutEntryFor(cookie, c)
+  if (!entry) return { path: NOT_FOUND_PATH }
 
+  // Morning down or a database error still reads the checkout's state: a
+  // paid one goes on to her join link or her area.
   const confirmed = await confirmCheckout(
-    parsed.id,
-    parsed.secret,
+    entry.id,
+    entry.secret,
     "browser",
     deps
   )
-  if (!confirmed.ok) {
-    return confirmed.code === "CHECKOUT_NOT_FOUND"
-      ? NOT_FOUND_PATH
-      : PENDING_PATH
+  if (!confirmed.ok && confirmed.code === "CHECKOUT_NOT_FOUND") {
+    return { path: NOT_FOUND_PATH }
   }
 
   const back = await callRpc(createServiceClient(), "checkout_return", {
-    p_checkout_id: parsed.id,
-    p_browser_secret: parsed.secret,
+    p_checkout_id: entry.id,
+    p_browser_secret: entry.secret,
   })
   if (!back.ok) {
-    return back.code === "CHECKOUT_NOT_FOUND" ? NOT_FOUND_PATH : PENDING_PATH
+    return {
+      path: back.code === "CHECKOUT_NOT_FOUND" ? NOT_FOUND_PATH : PENDING_PATH,
+    }
   }
-  return returnPathFor(back.data as unknown as ReturnRow, confirmed.pending)
+  const row = back.data as unknown as ReturnRow
+  if (!confirmed.ok && row.state !== "paid") return { path: PENDING_PATH }
+
+  const path = returnPathFor(row, confirmed.ok && confirmed.pending)
+  // A join link is issued once per entry: the next return cannot take it.
+  return row.join_token
+    ? { path, cookie: withoutEntry(cookie, entry.id) }
+    : { path }
 }
 
-/** GET /pay/failed: the checkout fails (hold released), then the notice. */
+/** GET /pay/failed?c=<checkout>: only that checkout fails, then the notice. */
 export async function failFromPayment(
-  cookie: string | null | undefined
-): Promise<string> {
-  const parsed = parseCheckoutCookie(cookie)
-  if (!parsed) return NOT_FOUND_PATH
+  cookie: string | null | undefined,
+  c: string | null | undefined
+): Promise<PaymentRedirect> {
+  const entry = checkoutEntryFor(cookie, c)
+  if (!entry) return { path: NOT_FOUND_PATH }
 
   const cancelled = await callRpc(createServiceClient(), "cancel_checkout", {
-    p_checkout_id: parsed.id,
-    p_browser_secret: parsed.secret,
+    p_checkout_id: entry.id,
+    p_browser_secret: entry.secret,
   })
   if (!cancelled.ok) {
-    return cancelled.code === "CHECKOUT_NOT_FOUND"
-      ? NOT_FOUND_PATH
-      : PENDING_PATH
+    return {
+      path:
+        cancelled.code === "CHECKOUT_NOT_FOUND" ? NOT_FOUND_PATH : PENDING_PATH,
+    }
   }
   const row = cancelled.data as unknown as {
     state: CheckoutState
     event_id: string | null
+    customer_known?: boolean
   }
   // Paid already (a late failure page): the return decides.
-  if (row.state === "paid") return "/pay/return"
-  return closedPathFor(row.state, row.event_id)
+  if (row.state === "paid") {
+    return { path: `/pay/return?c=${encodeURIComponent(entry.id)}` }
+  }
+  return {
+    path: closedPathFor(row.state, row.event_id, row.customer_known === true),
+  }
+}
+
+/** The 303 of /pay/return and /pay/failed, with the cookie change. No
+ * referrer, no cache (a join token may be in Location). */
+export function paymentRedirectResponse(
+  redirect: PaymentRedirect,
+  requestUrl: string,
+  env: OnlinePaymentsEnv = process.env
+): NextResponse {
+  const response = NextResponse.redirect(
+    new URL(redirect.path, requestUrl),
+    303
+  )
+  response.headers.set("Cache-Control", "no-store")
+  response.headers.set("Referrer-Policy", "no-referrer")
+  if (typeof redirect.cookie === "string") {
+    response.cookies.set(
+      CHECKOUT_COOKIE,
+      redirect.cookie,
+      checkoutCookieOptions(env)
+    )
+  } else if (redirect.cookie === null) {
+    response.cookies.set(CHECKOUT_COOKIE, "", {
+      ...checkoutCookieOptions(env),
+      maxAge: 0,
+    })
+  }
+  return response
 }

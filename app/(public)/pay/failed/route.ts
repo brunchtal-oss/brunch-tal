@@ -3,22 +3,18 @@ import { cookies } from "next/headers"
 import {
   CHECKOUT_COOKIE,
   failFromPayment,
+  paymentRedirectResponse,
 } from "@/lib/server/privileged/checkout"
 
-// GET /pay/failed: Grow's failureUrl. The checkout fails (an open hold is
-// released and the waitlist hears of it), then the session page (or "my
-// purchases") shows ?payment=failed. A checkout that is already paid goes
-// to /pay/return.
+// GET /pay/failed?c=<checkout>: Grow's failureUrl. Only the cookie entry
+// whose id is c fails (an open hold is released and the waitlist hears of
+// it), so a forged link cannot cancel another checkout. Then the session
+// page (or "my purchases", or the home page for a guest) shows
+// ?payment=failed. A checkout that is already paid goes to /pay/return.
 
 export async function GET(request: Request): Promise<Response> {
   const store = await cookies()
-  const path = await failFromPayment(store.get(CHECKOUT_COOKIE)?.value)
-  return new Response(null, {
-    status: 303,
-    headers: {
-      Location: new URL(path, request.url).href,
-      "Cache-Control": "no-store",
-      "Referrer-Policy": "no-referrer",
-    },
-  })
+  const c = new URL(request.url).searchParams.get("c")
+  const redirect = await failFromPayment(store.get(CHECKOUT_COOKIE)?.value, c)
+  return paymentRedirectResponse(redirect, request.url)
 }

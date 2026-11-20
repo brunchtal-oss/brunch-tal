@@ -8,6 +8,7 @@ import {
   isPublicFile,
   isSiteLocked,
   safeLockNext,
+  SITE_LOCK_EXEMPT_PATHS,
   SITE_LOCK_EXEMPT_PREFIXES,
   siteLockAccess,
   siteLockCookieHeader,
@@ -75,6 +76,10 @@ describe("checkSiteLock", () => {
     "/API/jobs/x",
     "/api/payments",
     "/api/paymentsx/grow",
+    "/api/payments/",
+    "/api/payments/other",
+    "/api/payments/grow/x",
+    "/api/payments/growx",
     "/pay/return",
   ])("does not exempt look-alike %s", (path) => {
     expect(checkSiteLock(path, null, locked)).toBe("deny")
@@ -172,7 +177,8 @@ describe("public files (story 5.9)", () => {
   })
 
   it("leaves the exempt prefixes as they were", () => {
-    expect(SITE_LOCK_EXEMPT_PREFIXES).toEqual(["/api/jobs/", "/api/payments/"])
+    expect(SITE_LOCK_EXEMPT_PREFIXES).toEqual(["/api/jobs/"])
+    expect(SITE_LOCK_EXEMPT_PATHS).toEqual(["/api/payments/grow"])
   })
 })
 

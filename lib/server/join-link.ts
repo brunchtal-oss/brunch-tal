@@ -18,9 +18,7 @@ export async function resetLinkFor(token: string): Promise<string | null> {
   return origin ? `${origin}/reset/${token}` : null
 }
 
-// The site's address as the browser sent it (also the base of the online
-// payment URLs, lib/server/privileged/checkout.ts).
-export async function requestOrigin(): Promise<string | null> {
+async function requestOrigin(): Promise<string | null> {
   const h = await headers()
   const origin = h.get("origin")
   if (origin && /^https?:\/\/[^/]+$/.test(origin)) return origin

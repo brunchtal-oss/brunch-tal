@@ -1052,4 +1052,19 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-online-payments-grow-a.md`
   target: לפני הפעלת `public_online_purchase` (רכישה בעמוד המפגש הציבורי)
   summary: לבדוק אם 10 התחלות רכישה בשעה לכל IP (הדלי `checkout` של `rate_limit_hit`) נמוך מספיק, כך שאי אפשר לחסום מפגש מלא בשמירות מקום של אורחות שלא משלמות.
-  evidence: כל checkout של מוצר מוצמד שומר מקום לחלון התשלום ועוד התוספת (ברירת מחדל 15 דקות). לאורחת אין מגבלה אחרת חוץ מהקצב (החלטת התכנון, 2026-11-20), ו-10 בשעה מ-IP אחד יכולות להחזיק 10 מקומות לרבע שעה, שוב ושוב. אפשרויות: סף נמוך יותר, מגבלה לכל מפגש, או שמירת מקום רק ללקוחה מחוברת.
+  evidence: כל checkout של מוצר מוצמד שומר מקום לחלון התשלום ועוד התוספת (ברירת מחדל 15 דקות). לאורחת אין מגבלה אחרת חוץ מהקצב (החלטת התכנון, 2026-11-20), ו-10 בשעה מ-IP אחד יכולות להחזיק 10 מקומות לרבע שעה, שוב ושוב. אפשרויות: סף נמוך יותר, מגבלה לכל מפגש, או שמירת מקום רק ללקוחה מחוברת. בנוסף (ביקורת, 2026-11-20): החלון קבוע לפי שעה עגולה, ולכן רצף סביב תחילת שעה יכול להגיע ל-20 ניסיונות ברצף; ומאחורי CGNAT (רשת סלולרית) הרבה לקוחות אמיתיות חולקות IP אחד ועלולות להיחסם יחד. ועוד (ביקורת, סבב 3): ההתאמה מול Grow בודקת עד 20 checkouts כל 10 דקות, ולכן מעל כ-120 checkouts עם טופס בשעה היא עלולה לפגר. רלוונטי רק אחרי שרכישה בעמוד הציבורי מופעלת.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-online-payments-grow-a.md`
+  target: PR B (`spec-online-payments-grow-b.md`)
+  summary: תווית והסבר בעברית ב"לטיפול" לכל `reason` של `online_payment_issue`: ‏not_verified, ‏amount_mismatch, ‏second_payment, ‏intro_not_eligible, ‏approve_failed, ‏closed_by_admin, ‏product_changed, ‏customer_unavailable ו-late_document (כולל מסמך ה-morning, `provider_transaction_id`, והבעיה הקודמת של ה-checkout, `earlier_issue`).
+  evidence: PR A מחזיר את הפריטים בלי נוסח (Never: attention copy ב-PR A). ‏`toAttentionItems` מסנן סוג שאין לו נוסח, ולכן בלי PR B טל לא רואה אותם.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-online-payments-grow-a.md`
+  target: 6.8
+  summary: ניקוי נתוני הבדיקה בפרודקשן צריך לכלול גם את `checkouts` ואת `online_payment_issues` (לפני `payments`, בגלל ה-FK).
+  evidence: חובה מה-spec של הסליקה (Always: "6.8 must include the new tables"). שתי הטבלאות נוצרו ב-PR A, וב-checkout שנבדק ב-sandbox יש שורה שמפנה לתשלום.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-online-payments-grow-a.md`
+  target: הדלקת הסליקה (לפני ONLINE_PAYMENTS_ENABLED=true בפרודקשן, אחרי אישור Grow)
+  summary: ביקורת מלאה אחרונה על כל הסליקה (PR א' ו-PR ב') עם כל המבקרים (blind, edge-case, verification-gap, intent, כסף וזכויות, אבטחה, מקביליות, מיפוי מטריצות, adversarial). ההדלקה רק אחרי שהיא נקייה. לבדוק בה גם את הרשומות שנדחו: הגבלת הקצב לאורחת (10 לכל IP, חלון שעה קבוע, CGNAT), ההתאמה שבודקת עד 20 checkouts כל 10 דקות (מעל כ-120 בשעה היא מפגרת), והסטטוס של מסמך ב-morning (closed מול not cancelled, לפי הלכידה ב-sandbox).
+  evidence: החלטת המשתמשת 2026-11-20 (completion-plan-2026-10-10.md): PR א' נסגר אחרי סבב התיקונים השלישי, בלי סבב ביקורת נוסף.

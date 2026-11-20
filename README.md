@@ -195,7 +195,8 @@
 | `GROW_DOCUMENT_TYPE` | ‏`400` (קבלה, עוסק פטור) או `320` (חשבונית מס/קבלה) |
 
 - בפיתוח וב-Preview: ערכי ה-sandbox בלבד. ב-Production המשתנים נשארים ריקים עד ש-Grow מאשרים את האתר החי.
-- ‏`/api/payments/` פטור מנעילת האתר (`SITE_LOCK_EXEMPT_PREFIXES`); כל checkout מאמת את הסוד שלו. לפני בדיקה מקצה לקצה על Preview לוודא ש-Vercel Deployment Protection לא חוסם `POST /api/payments/grow`.
+- ‏`/api/payments/grow` (הנתיב המדויק, `SITE_LOCK_EXEMPT_PATHS`) פטור מנעילת האתר; כל checkout מאמת את הסוד שלו. ‏`/api/jobs/reconcile-payments` (כל 10 דקות, `CRON_SECRET`) משלים תשלום שההודעה עליו לא הגיעה.
+- כתובות החזרה וההודעה נבנות מ-`NEXT_PUBLIC_SITE_URL`. בלעדיו אין רכישה באתר (`ONLINE_PAYMENTS_OFF`). לפני בדיקה מקצה לקצה על Preview לוודא ש-Vercel Deployment Protection לא חוסם `POST /api/payments/grow`.
 
 ### פרודקשן: `.env.prod.local` וסקריפטי `prod-*`
 

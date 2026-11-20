@@ -13,11 +13,11 @@ import { sameSecret } from "@/lib/server/secret"
 // browser page gets a sign-in form (POST /site-lock) along with the 401.
 
 /** Path prefixes that skip the lock. Keep the trailing slash. */
-export const SITE_LOCK_EXEMPT_PREFIXES = [
-  "/api/jobs/",
-  // Grow's notifyUrl (online payments): checks the checkout's own secret.
-  "/api/payments/",
-] as const
+export const SITE_LOCK_EXEMPT_PREFIXES = ["/api/jobs/"] as const
+
+/** Exact paths that skip the lock: Grow's notifyUrl (online payments),
+ * which checks the checkout's own secret. */
+export const SITE_LOCK_EXEMPT_PATHS = ["/api/payments/grow"] as const
 
 export type SiteLockEnv = {
   SITE_LOCKED?: string
@@ -41,7 +41,10 @@ export function isSiteLocked(env: SiteLockEnv): boolean {
 }
 
 export function isExemptPath(pathname: string): boolean {
-  return SITE_LOCK_EXEMPT_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+  return (
+    SITE_LOCK_EXEMPT_PREFIXES.some((prefix) => pathname.startsWith(prefix)) ||
+    (SITE_LOCK_EXEMPT_PATHS as readonly string[]).includes(pathname)
+  )
 }
 
 /**

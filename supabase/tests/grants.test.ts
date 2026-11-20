@@ -120,6 +120,7 @@ const EXPECTED_GRANTS = [
   "function public.admin_cancel_event(p_event_id uuid, p_confirmed boolean, p_message text, p_idempotency_key uuid, p_parked_acknowledged boolean) authenticated EXECUTE",
   "function public.admin_change_credit_options(p_credit_id uuid, p_event_ids uuid[], p_reason text, p_confirmed boolean, p_idempotency_key uuid) authenticated EXECUTE",
   "function public.admin_change_phone(p_customer_id uuid, p_phone text, p_idempotency_key uuid) authenticated EXECUTE",
+  "function public.admin_close_unconfirmed_checkout(p_checkout_id uuid, p_idempotency_key uuid) authenticated EXECUTE",
   "function public.admin_complete_refund(p_refund_request_id uuid, p_refunded_on date, p_amount_agorot integer, p_reference text, p_confirmed boolean, p_idempotency_key uuid) authenticated EXECUTE",
   "function public.admin_copy_media(p_source_id uuid, p_idempotency_key uuid) authenticated EXECUTE",
   "function public.admin_correct_entitlement(p_entitlement_id uuid, p_field text, p_value jsonb, p_related_event_id uuid, p_reason text, p_confirmed boolean, p_idempotency_key uuid) authenticated EXECUTE",
@@ -206,7 +207,8 @@ const EXPECTED_GRANTS = [
   // verification token, and the Send Email Hook (Auth's role only).
   // Online payments (PR A): the customer's checkout, the guest's (service
   // role, behind the rate limit), and the confirm and return steps.
-  "function public.begin_checkout(p_product_id uuid, p_event_id uuid, p_terms_accepted boolean, p_idempotency_key uuid) authenticated EXECUTE",
+  // Service role since the review: the server passes the verified auth uid.
+  "function public.begin_checkout(p_auth_uid uuid, p_product_id uuid, p_event_id uuid, p_terms_accepted boolean, p_idempotency_key uuid) service_role EXECUTE",
   "function public.begin_guest_checkout(p_product_id uuid, p_event_id uuid, p_terms_accepted boolean, p_idempotency_key uuid) service_role EXECUTE",
   "function public.begin_my_email_change(p_user_id uuid, p_email text, p_idempotency_key uuid) service_role EXECUTE",
   "function public.book_session(p_event_id uuid, p_idempotency_key uuid) authenticated EXECUTE",
@@ -216,6 +218,7 @@ const EXPECTED_GRANTS = [
   "function public.checkout_for_confirm(p_checkout_id uuid, p_secret text, p_secret_kind text) service_role EXECUTE",
   "function public.checkout_return(p_checkout_id uuid, p_browser_secret text) service_role EXECUTE",
   "function public.choose_credit_outcome(p_credit_id uuid, p_choice text, p_idempotency_key uuid) authenticated EXECUTE",
+  "function public.claim_checkouts_to_reconcile(p_limit integer) service_role EXECUTE",
   "function public.claim_join(p_token text, p_idempotency_key uuid) authenticated EXECUTE",
   "function public.claim_push_jobs(p_limit integer) service_role EXECUTE",
   "function public.consume_email_verification(p_token text, p_session_user_id uuid) service_role EXECUTE",
@@ -235,6 +238,7 @@ const EXPECTED_GRANTS = [
   "function public.join_complete(p_token text, p_profile jsonb, p_idempotency_key uuid) service_role EXECUTE",
   "function public.join_waitlist(p_event_id uuid, p_idempotency_key uuid) authenticated EXECUTE",
   "function public.leave_waitlist(p_event_id uuid, p_idempotency_key uuid) authenticated EXECUTE",
+  "function public.mark_checkout_form_created(p_checkout_id uuid, p_browser_secret text) service_role EXECUTE",
   "function public.mark_checkout_notified(p_checkout_id uuid, p_notify_secret text) service_role EXECUTE",
   "function public.mark_notifications_read(p_ids uuid[]) authenticated EXECUTE",
   "function public.mark_notifications_unread(p_ids uuid[]) authenticated EXECUTE",
@@ -258,6 +262,7 @@ const EXPECTED_GRANTS = [
   "function public.preview_book_sessions(p_items uuid[]) authenticated EXECUTE",
   "function public.preview_move_booking(p_booking_id uuid) authenticated EXECUTE",
   "function public.rate_limit_hit(p_bucket text, p_keys text[]) service_role EXECUTE",
+  "function public.rate_limit_peek(p_bucket text, p_keys text[]) service_role EXECUTE",
   "function public.record_online_payment(p_checkout_id uuid, p_secret text, p_secret_kind text, p_document_id text, p_outcome text, p_amount_agorot integer, p_paid_at timestamp with time zone) service_role EXECUTE",
   "function public.register_push_subscription(p_endpoint text, p_keys jsonb, p_platform text) authenticated EXECUTE",
   "function public.request_email_verification(p_user_id uuid, p_site_url text) service_role EXECUTE",

@@ -76,7 +76,8 @@ context:
 | Seat lost | payment after the hold ended, session full | payment + entitlement, no booking → existing `paid_without_place` | — |
 | Waitlist | session full, a seat frees | hold allowed only like a self-booking; release of a hold notifies the waitlist | — |
 | Bad secret | wrong/missing `s` | 401, nothing written | — |
-| Not verified at morning | no matching closed document, or amount/currency differ | no payment; issue `not_verified` / `amount_mismatch` | 200 |
+| Not verified at morning | no matching document yet | no payment, no issue; `pending` (the return) | 503 so Grow retries (30 minutes from the first notification), then reconciliation |
+| Not verified at morning | more than one matching document, or amount/currency differ | no payment; issue `not_verified` / `amount_mismatch` | 200 |
 | Second txn on a paid checkout | — | issue `second_payment` | 200 |
 | Issue write fails | DB unavailable | nothing written | 5xx, Grow retries |
 | Failure return | Grow failureUrl | checkout `failed`, hold released → session page notice | — |
