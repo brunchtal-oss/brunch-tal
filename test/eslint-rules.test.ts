@@ -98,6 +98,8 @@ describe("lib/server/privileged import boundary", () => {
     "app/api/jobs/push/route.ts",
     "app/(auth)/reset/[token]/page.tsx",
     "app/(auth)/join/[token]/page.tsx",
+    "app/(public)/pay/return/route.ts",
+    "app/(public)/pay/failed/route.ts",
   ])("allowed in %s", async (file) => {
     expect(await violations(file, PRIVILEGED_IMPORT)).toEqual([])
   })
@@ -106,6 +108,7 @@ describe("lib/server/privileged import boundary", () => {
     "app/me/page.tsx",
     "lib/auth/require-customer.ts",
     "app/(auth)/reset/[token]/reset-view.ts",
+    "app/(public)/pay/pending/page.tsx",
     "components/auth/password-input.tsx",
   ])("forbidden in %s", async (file) => {
     expect(await violations(file, PRIVILEGED_IMPORT)).toContain(

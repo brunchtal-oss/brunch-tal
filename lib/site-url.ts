@@ -30,3 +30,12 @@ export function siteUrl(env: SiteUrlEnv = process.env): string {
   if (vercel) return httpUrl(`https://${vercel}`) ?? LOCAL
   return LOCAL
 }
+
+/**
+ * NEXT_PUBLIC_SITE_URL alone, when it is a valid http(s) URL, else null: no
+ * fallback to Vercel or localhost (the online payment URLs must be the
+ * site's own address, never taken from request headers).
+ */
+export function explicitSiteUrl(env: SiteUrlEnv = process.env): string | null {
+  return httpUrl(env.NEXT_PUBLIC_SITE_URL)
+}

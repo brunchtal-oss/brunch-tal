@@ -73,3 +73,25 @@ export function parseShekelsToAgorot(input: string): number | null {
   if (agorot > BigInt(Number.MAX_SAFE_INTEGER)) return null
   return Number(agorot)
 }
+
+/**
+ * An amount for the payment provider (Grow / morning takes shekels as a JSON
+ * number): built from the exact decimal string, so 12750 becomes 127.5 with
+ * no float arithmetic. Throws on a value that is not a safe, non-negative
+ * integer.
+ */
+export function agorotToProviderAmount(agorot: number): number {
+  return Number(agorotToDecimal(agorot))
+}
+
+/**
+ * A provider amount (shekels, a JSON number) in agorot: rounded to two
+ * decimals by toFixed, then parsed as the string (0.1 + 0.2 -> 30). null for
+ * a negative, non-finite or too large value.
+ */
+export function providerAmountToAgorot(amount: number): number | null {
+  if (typeof amount !== "number" || !Number.isFinite(amount) || amount < 0) {
+    return null
+  }
+  return parseShekelsToAgorot(amount.toFixed(2))
+}

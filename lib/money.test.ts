@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest"
 
 import {
   agorotToDecimal,
+  agorotToProviderAmount,
   formatAgorot,
   formatAgorotInput,
   parseShekelsToAgorot,
+  providerAmountToAgorot,
 } from "./money"
 
 describe("formatAgorot", () => {
@@ -105,5 +107,29 @@ describe("agorotToDecimal (fix-seo-editor)", () => {
   it("throws on a negative or non-integer value", () => {
     expect(() => agorotToDecimal(-1)).toThrow(RangeError)
     expect(() => agorotToDecimal(1.5)).toThrow(RangeError)
+  })
+})
+
+describe("provider amounts (online payments)", () => {
+  it("agorot to the provider's shekel number, exactly", () => {
+    expect(agorotToProviderAmount(12800)).toBe(128)
+    expect(agorotToProviderAmount(12750)).toBe(127.5)
+    expect(agorotToProviderAmount(1)).toBe(0.01)
+    expect(() => agorotToProviderAmount(-1)).toThrow(RangeError)
+  })
+
+  it("the provider's number back to agorot without float drift", () => {
+    expect(providerAmountToAgorot(0.1 + 0.2)).toBe(30)
+    expect(providerAmountToAgorot(127.5)).toBe(12750)
+    expect(providerAmountToAgorot(128)).toBe(12800)
+    expect(providerAmountToAgorot(4.35)).toBe(435)
+    expect(providerAmountToAgorot(0)).toBe(0)
+  })
+
+  it("null for a negative or non-finite amount", () => {
+    expect(providerAmountToAgorot(-1)).toBeNull()
+    expect(providerAmountToAgorot(Number.NaN)).toBeNull()
+    expect(providerAmountToAgorot(Number.POSITIVE_INFINITY)).toBeNull()
+    expect(providerAmountToAgorot(1e21)).toBeNull()
   })
 })

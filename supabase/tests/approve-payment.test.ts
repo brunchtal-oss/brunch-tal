@@ -637,10 +637,12 @@ describe("pg_proc", () => {
     ).toEqual(["private.approve_payment_core"])
   })
 
-  it("only admin_approve_payment calls the core", async () => {
+  // Online payments (PR A): the verified provider document is the only
+  // other caller (AD-10); nothing else may call the core.
+  it("only admin_approve_payment and record_online_payment call the core", async () => {
     expect(
       await functionsMatching(/private\.approve_payment_core\s*\(/i)
-    ).toEqual(["public.admin_approve_payment"])
+    ).toEqual(["public.admin_approve_payment", "public.record_online_payment"])
   })
 
   it("only grant_from_payment inserts entitlements", async () => {

@@ -549,6 +549,8 @@ describe("story 5.10: scheduled jobs and push", () => {
       auto_extend: "הארכה אוטומטית של כרטיסיות",
       cleanup: "מחיקת נתונים ישנים",
       marketing_reminders: "תזכורות שיווק",
+      release_holds: "שחרור מקומות שנשמרו לתשלום",
+      reconcile_payments: "התאמת תשלומים מול Grow",
     }
     for (const [job, name] of Object.entries(names)) {
       expect(

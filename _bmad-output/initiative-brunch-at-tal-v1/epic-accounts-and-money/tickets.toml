@@ -170,3 +170,15 @@ after = [13, 15, "4.4"]
 hitl = false
 risk = "medium"
 references = ["spec .memlog.md 2026-11-03 ו-2026-11-09", "completion-plan-2026-10-10.md (2026-11-03 סעיף 4)", "spec-2-13-two-photo-consents.md", "ARCHITECTURE-SPINE.md#ad-5"]
+
+[[entry]]
+id = 17
+type = "story"
+title = "Online payments with Grow — תשלום מקוון עם Grow"
+description = "סבב הסליקה (completion-plan-2026-10-10.md, 2026-11-11 סעיפים 3–4; ההחלטות ב-online-payments.md וב-spec-online-payments-grow.md, 2026-11-20). רכישה מעמוד המפגש (באזור האישי תמיד, באתר הציבורי לפי ההגדרה public_online_purchase) ו\"רכישת כרטיסייה\" מ\"הרכישות שלי\"; שמירת מקום בשורת ה-checkout בזמן התשלום; דף תשלום של Grow לכל רכישה; הודעה מהספק שמאומתת מול morning ונותנת זכות והרשמה דרך approve_payment_core; חזרה לטופס ההצטרפות או לאזור האישי; \"לטיפול\" לתשלום שלא נרשם או לא הושלם; קבלה אוטומטית מ-morning; ההחזר נשאר ידני בלוח של Grow. מתג שרת ONLINE_PAYMENTS_ENABLED, כבוי בפרודקשן עד אישור Grow. שני PRs: א' (מסד, ספק, נתיב) ו-ב' (מסכים ובדיקה ב-sandbox)."
+verify = "בדיקות מסד ויחידה לכל שורה במטריצות של spec-online-payments-grow-a.md ו-b.md; grants.test.ts. ב-Vercel Preview מול ה-sandbox: מוצר מוצמד וכרטיסייה, לקוחה חדשה וקיימת, תשלום שנכשל ושפג, הודעה כפולה (רשומה אחת). בטלפון: גיליון הרכישה, החזרה, הבאנר וההגדרות."
+covers = ["CAP-2", "CAP-4", "CAP-5", "CAP-6", "CAP-34", "CAP-37"]
+after = [11, 14, 15, "3.11"]
+hitl = true
+risk = "high"
+references = ["online-payments.md", "spec-online-payments-grow.md", "ARCHITECTURE-SPINE.md (Deferred, AD-5, AD-6, AD-10, AD-23)", "completion-plan-2026-10-10.md (2026-11-11)"]

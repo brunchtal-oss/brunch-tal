@@ -84,6 +84,10 @@ const NOT_BEFORE_BIND = [
   // Story 5.6: join_waitlist derives the customer from the caller; a
   // purchase bound later only ends her entry (private.bind_purchase).
   "waitlist_entries",
+  // Online payments (PR A): a checkout's customer_id is set only from the
+  // caller when it starts (private.current_customer_id()) and stays as
+  // created; a guest's purchase is bound through its payment.
+  "checkouts",
 ]
 
 const CUSTOMER_TABLES = `

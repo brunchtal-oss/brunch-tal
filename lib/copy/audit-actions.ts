@@ -377,6 +377,21 @@ export const SHOWN_AUDIT_ACTIONS: Record<string, readonly AuditRule[]> = {
   admin_set_correction_booking_handled: [
     { entity: "entitlement_correction_bookings" },
   ],
+  // Online payments: Tal marked an issue (a payment checked in Grow) as
+  // handled, or closed a checkout Grow never confirmed. The reason holds
+  // the checkout's reference.
+  admin_resolve_online_payment_issue: [
+    {
+      entity: "online_payment_issues",
+      result: (row) => results.onlineIssueResolved(row.reason),
+    },
+  ],
+  admin_close_unconfirmed_checkout: [
+    {
+      entity: "checkouts",
+      result: (row) => results.unconfirmedClosed(row.reason),
+    },
+  ],
   // Story 3.14: one row per extended week (actor: the system).
   job_auto_extend: [
     { entity: "entitlements", result: () => results.autoExtended },

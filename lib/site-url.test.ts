@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { siteUrl } from "./site-url"
+import { explicitSiteUrl, siteUrl } from "./site-url"
 
 describe("siteUrl (fix-search-ready)", () => {
   it("uses NEXT_PUBLIC_SITE_URL without its trailing slash", () => {
@@ -32,5 +32,20 @@ describe("siteUrl (fix-search-ready)", () => {
       "https://x.vercel.app"
     )
     expect(siteUrl({})).toBe("http://localhost:3000")
+  })
+})
+
+describe("explicitSiteUrl (online payments)", () => {
+  it("NEXT_PUBLIC_SITE_URL only, without a trailing slash", () => {
+    expect(
+      explicitSiteUrl({ NEXT_PUBLIC_SITE_URL: "https://example.co.il/" })
+    ).toBe("https://example.co.il")
+  })
+
+  it("null without it, with no Vercel or localhost fallback", () => {
+    expect(
+      explicitSiteUrl({ VERCEL_PROJECT_PRODUCTION_URL: "x.vercel.app" })
+    ).toBeNull()
+    expect(explicitSiteUrl({ NEXT_PUBLIC_SITE_URL: "ftp://x" })).toBeNull()
   })
 })
