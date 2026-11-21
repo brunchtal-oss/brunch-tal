@@ -138,6 +138,8 @@ export type StartCheckoutResult =
 export type CheckoutDeps = {
   env?: OnlinePaymentsEnv
   grow?: (config: GrowConfig) => GrowClient
+  // Tests only: the browser return's wait between looks.
+  sleep?: (ms: number) => Promise<void>
 }
 
 function growFor(deps: CheckoutDeps, config: GrowConfig): GrowClient {
@@ -670,6 +672,13 @@ export function returnPathFor(
   }
 }
 
+// The waits before each further look on the browser return.
+export const RETURN_WAITS_MS = [1000, 2000] as const
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 const PENDING_PATH = "/pay/pending"
 const NOT_FOUND_PATH = "/sessions"
 
@@ -716,12 +725,16 @@ export async function returnFromPayment(
 
   // Morning down or a database error still reads the checkout's state: a
   // paid one goes on to her join link or her area.
-  const confirmed = await confirmCheckout(
-    entry.id,
-    entry.secret,
-    "browser",
-    deps
-  )
+  let confirmed = await confirmCheckout(entry.id, entry.secret, "browser", deps)
+  // Grow sends the browser back about when it creates the receipt, so the
+  // first look often finds nothing (sandbox 2026-11-21, user decision):
+  // with no document yet, look again a few times (about 3 seconds in all)
+  // before the pending page.
+  for (const wait of RETURN_WAITS_MS) {
+    if (!(confirmed.ok && confirmed.pending)) break
+    await (deps.sleep ?? sleep)(wait)
+    confirmed = await confirmCheckout(entry.id, entry.secret, "browser", deps)
+  }
   // The checkout is gone (or its secret does not match): its entry is
   // useless, so it leaves the cookie.
   if (!confirmed.ok && confirmed.code === "CHECKOUT_NOT_FOUND") {

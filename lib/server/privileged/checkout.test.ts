@@ -73,8 +73,11 @@ const BROWSER_2 = "c".repeat(43)
 
 const createPaymentForm = vi.fn()
 const findCheckoutDocument = vi.fn()
+// The browser return's waits between looks, without waiting.
+const sleep = vi.fn(async () => {})
 const deps: CheckoutDeps = {
   env: ENV,
+  sleep,
   grow: () =>
     ({ createPaymentForm, findCheckoutDocument }) as unknown as GrowClient,
 }
@@ -847,6 +850,44 @@ describe("returnFromPayment", () => {
       path: "/sessions",
       cookie: `${OTHER}.${BROWSER_2}`,
     })
+  })
+
+  it("the receipt lands a moment after the return: looked at again, the join link without the pending page", async () => {
+    routeRpc(undefined, {
+      back: ok({ ...RETURN_ROW, joined: false, join_token: "tok" }),
+    })
+    findCheckoutDocument
+      .mockResolvedValueOnce({ kind: "none" })
+      .mockResolvedValueOnce(ONE_DOC)
+    expect((await returnFromPayment(cookie, CHECKOUT, deps)).path).toBe(
+      "/join/tok"
+    )
+    expect(findCheckoutDocument).toHaveBeenCalledTimes(2)
+    expect(sleep).toHaveBeenCalledTimes(1)
+    expect(sleep).toHaveBeenCalledWith(1000)
+  })
+
+  it("still no receipt after the looks (about 3 seconds): the pending page", async () => {
+    routeRpc(undefined, { back: ok({ ...RETURN_ROW, state: "open" }) })
+    findCheckoutDocument.mockResolvedValue({ kind: "none" })
+    expect(await returnFromPayment(cookie, CHECKOUT, deps)).toEqual({
+      path: `/pay/pending?c=${CHECKOUT}`,
+    })
+    expect(findCheckoutDocument).toHaveBeenCalledTimes(3)
+    expect(sleep.mock.calls).toEqual([[1000], [2000]])
+  })
+
+  it("a paid checkout or morning down: no further look", async () => {
+    routeRpc(undefined, {
+      forConfirm: ok({ ...FOR_CONFIRM, state: "paid" }),
+      back: ok({ ...RETURN_ROW, customer_known: true, booked: true }),
+    })
+    findCheckoutDocument.mockRejectedValue(
+      new GrowUnavailableError("documents_search", null)
+    )
+    await returnFromPayment(cookie, CHECKOUT, deps)
+    expect(findCheckoutDocument).toHaveBeenCalledTimes(1)
+    expect(sleep).not.toHaveBeenCalled()
   })
 
   it("morning down on an open checkout: pending", async () => {
