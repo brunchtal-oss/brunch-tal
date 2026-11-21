@@ -27,7 +27,8 @@ export async function loadGuestPurchaseOptions(
 export async function startGuestPurchaseAction(
   input: unknown
 ): Promise<PurchaseStartResult> {
+  // A guest sends her name and email (for Grow only).
   const shape = purchaseInputShape(input)
-  if (!shape) return { ok: false, code: "INVALID_INPUT" }
+  if (!shape?.payer) return { ok: false, code: "INVALID_INPUT" }
   return startPurchase({ as: "guest", ...shape })
 }

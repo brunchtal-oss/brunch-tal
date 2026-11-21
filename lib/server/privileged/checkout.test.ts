@@ -17,6 +17,11 @@ import {
 import { GrowUnavailableError, type GrowClient } from "./grow"
 
 const serviceRpc = vi.fn()
+// The profile read of a customer's Grow client (from().select().eq().maybeSingle()).
+const profileRead = vi.fn()
+const serviceFrom = vi.fn(() => ({
+  select: () => ({ eq: () => ({ maybeSingle: profileRead }) }),
+}))
 const getClaims = vi.fn()
 const cookieSet = vi.fn()
 const cookieGet = vi.fn()
@@ -24,7 +29,7 @@ const hitRateLimit = vi.fn()
 const peekRateLimit = vi.fn()
 
 vi.mock("@/lib/server/privileged/service-client", () => ({
-  createServiceClient: () => ({ rpc: serviceRpc }),
+  createServiceClient: () => ({ rpc: serviceRpc, from: serviceFrom }),
 }))
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({ auth: { getClaims } }),
@@ -59,6 +64,8 @@ const OTHER = "55555555-5555-4555-8555-555555555555"
 const PRODUCT = "22222222-2222-4222-8222-222222222222"
 const EVENT = "33333333-3333-4333-8333-333333333333"
 const KEY = "44444444-4444-4444-8444-444444444444"
+// A guest's details: sent to Grow only.
+const PAYER = { name: "Noa Guest", email: "noa.guest@example.test" }
 const UID = "66666666-6666-4666-8666-666666666666"
 const NOTIFY = "n".repeat(43)
 const BROWSER = "b".repeat(43)
@@ -96,6 +103,10 @@ beforeEach(() => {
   hitRateLimit.mockResolvedValue("allowed")
   peekRateLimit.mockResolvedValue("allowed")
   getClaims.mockResolvedValue({ data: { claims: { sub: UID } } })
+  profileRead.mockResolvedValue({
+    data: { full_name: "Dana Levi" },
+    error: null,
+  })
   cookieGet.mockReturnValue(undefined)
 })
 
@@ -203,7 +214,7 @@ describe("startCheckout", () => {
     createPaymentForm.mockResolvedValue("https://pay.test/form")
 
     const result = await startCheckout(
-      { ...customerInput, as: "guest", eventId: EVENT },
+      { ...customerInput, as: "guest", eventId: EVENT, payer: PAYER },
       deps
     )
 
@@ -226,7 +237,10 @@ describe("startCheckout", () => {
 
   it("a guest over the limit: CHECKOUT_TOO_MANY, no row", async () => {
     peekRateLimit.mockResolvedValue("blocked")
-    const result = await startCheckout({ ...customerInput, as: "guest" }, deps)
+    const result = await startCheckout(
+      { ...customerInput, as: "guest", payer: PAYER },
+      deps
+    )
     expect(result).toEqual({ ok: false, code: "CHECKOUT_TOO_MANY" })
     expect(serviceRpc).not.toHaveBeenCalled()
   })
@@ -1103,6 +1117,119 @@ describe("startPurchase: review pass 1", () => {
       ok: false,
       code: "PRODUCT_NOT_PURCHASABLE",
     })
+  })
+})
+
+// Grow refuses a form without a client name (errorCode 2201, sandbox
+// 2026-11-21): a guest sends her name and email, a customer's come from her
+// profile and claims. They go to Grow only.
+describe("the payer sent to Grow", () => {
+  const guest = {
+    as: "guest" as const,
+    productId: PRODUCT,
+    eventId: EVENT,
+    termsAccepted: true,
+    idempotencyKey: KEY,
+    payer: PAYER,
+  }
+
+  it("a customer: her profile's name and her claims' email", async () => {
+    getClaims.mockResolvedValue({
+      data: { claims: { sub: UID, email: "dana@example.test" } },
+    })
+    serviceRpc.mockResolvedValue(ok(BEGUN))
+    createPaymentForm.mockResolvedValue("https://pay.test/form")
+    await startCheckout(customerInput, deps)
+    expect(serviceFrom).toHaveBeenCalledWith("profiles")
+    expect(createPaymentForm.mock.calls[0][0].client).toEqual({
+      name: "Dana Levi",
+      emails: ["dana@example.test"],
+    })
+  })
+
+  it("a customer's page cannot send other details: they are ignored", async () => {
+    serviceRpc.mockImplementation(async (name: string) =>
+      name === "get_purchase_options" ? ok(OPTIONS) : ok(BEGUN)
+    )
+    createPaymentForm.mockResolvedValue("https://pay.test/form")
+    await startPurchase({ ...customerInput, payer: PAYER }, deps)
+    expect(createPaymentForm.mock.calls[0][0].client).toEqual({
+      name: "Dana Levi",
+    })
+  })
+
+  it("a customer whose profile cannot be read: SERVER_ERROR, no row, no detail logged", async () => {
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {})
+    profileRead.mockResolvedValue({ data: null, error: { code: "XX000" } })
+    expect(await startCheckout(customerInput, deps)).toEqual({
+      ok: false,
+      code: "SERVER_ERROR",
+    })
+    expect(serviceRpc).not.toHaveBeenCalled()
+    expect(createPaymentForm).not.toHaveBeenCalled()
+    expect(errors).toHaveBeenCalledWith("checkout.payer_failed", {
+      found: false,
+    })
+    errors.mockRestore()
+  })
+
+  it("a guest: her name and email go to Grow as the client", async () => {
+    serviceRpc.mockResolvedValue(ok({ ...BEGUN, event_id: EVENT }))
+    createPaymentForm.mockResolvedValue("https://pay.test/form")
+    await startCheckout(guest, deps)
+    expect(createPaymentForm.mock.calls[0][0].client).toEqual({
+      name: "Noa Guest",
+      emails: ["noa.guest@example.test"],
+    })
+    expect(serviceFrom).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    ["no details", undefined],
+    ["a blank name", { ...PAYER, name: "   " }],
+    ["a name over 80", { ...PAYER, name: "x".repeat(81) }],
+    ["a bad email", { ...PAYER, email: "noa@" }],
+    ["an email over 254", { ...PAYER, email: `${"a".repeat(250)}@x.co` }],
+  ])("a guest with %s: INVALID_INPUT before any call", async (_, payer) => {
+    expect(await startCheckout({ ...guest, payer }, deps)).toEqual({
+      ok: false,
+      code: "INVALID_INPUT",
+    })
+    expect(serviceRpc).not.toHaveBeenCalled()
+    expect(peekRateLimit).not.toHaveBeenCalled()
+  })
+
+  it("the details never reach a log, an RPC or a cookie, even when Grow fails", async () => {
+    const spies = (["error", "warn", "log", "info"] as const).map((m) =>
+      vi.spyOn(console, m).mockImplementation(() => {})
+    )
+    serviceRpc.mockImplementation(async (name: string) =>
+      name === "begin_guest_checkout"
+        ? ok({ ...BEGUN, event_id: EVENT })
+        : ok({ state: "failed" })
+    )
+    createPaymentForm.mockRejectedValue(new Error("boom"))
+    expect(await startCheckout(guest, deps)).toEqual({
+      ok: false,
+      code: "GROW_UNAVAILABLE",
+    })
+    // And once more with a form, so the cookie is written.
+    createPaymentForm.mockResolvedValue("https://pay.test/form")
+    serviceRpc.mockImplementation(async () => ok({ ...BEGUN, event_id: EVENT }))
+    expect((await startCheckout(guest, deps)).ok).toBe(true)
+
+    const seen = JSON.stringify([
+      serviceRpc.mock.calls,
+      cookieSet.mock.calls,
+      hitRateLimit.mock.calls,
+      peekRateLimit.mock.calls,
+      ...spies.map((s) => s.mock.calls),
+    ])
+    for (const detail of ["Noa Guest", "noa.guest@example.test"]) {
+      expect(seen).not.toContain(detail)
+    }
+    expect(cookieSet).toHaveBeenCalledTimes(1)
+    for (const s of spies) s.mockRestore()
   })
 })
 

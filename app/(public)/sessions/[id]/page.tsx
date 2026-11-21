@@ -132,6 +132,7 @@ export async function SessionContent({
                     eventId={session.id}
                     start={startGuestPurchaseAction}
                     contactHref={contactHref}
+                    askPayer
                     trigger={customerCopy.purchase.buy}
                     triggerClassName={buttonClass({
                       size: "lg",

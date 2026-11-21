@@ -12,6 +12,9 @@ export type SheetState = {
   key: string
   productId: string
   terms: boolean
+  // The guest sheet's name and email, as typed (sent to Grow only).
+  payerName: string
+  payerEmail: string
   busy: boolean
   error: ErrorCode | null
 }
@@ -21,6 +24,7 @@ export type SheetEvent =
   | { type: "close" }
   | { type: "select"; productId: string; key: string }
   | { type: "terms"; value: boolean }
+  | { type: "payer"; name?: string; email?: string }
   | { type: "submit" }
   | { type: "failed"; code: ErrorCode; key: string }
   // pageshow with event.persisted: Back after leaving for Grow restores the
@@ -32,6 +36,8 @@ export const CLOSED: SheetState = {
   key: "",
   productId: "",
   terms: false,
+  payerName: "",
+  payerEmail: "",
   busy: false,
   error: null,
 }
@@ -44,6 +50,9 @@ export function sheetReducer(state: SheetState, event: SheetEvent): SheetState {
         key: event.key,
         productId: event.products[0]?.id ?? "",
         terms: false,
+        // Kept while the page lives: reopening does not erase what she typed.
+        payerName: state.payerName,
+        payerEmail: state.payerEmail,
         busy: false,
         error: null,
       }
@@ -56,6 +65,13 @@ export function sheetReducer(state: SheetState, event: SheetEvent): SheetState {
         : { ...state, productId: event.productId, key: event.key, error: null }
     case "terms":
       return { ...state, terms: event.value, error: null }
+    case "payer":
+      return {
+        ...state,
+        payerName: event.name ?? state.payerName,
+        payerEmail: event.email ?? state.payerEmail,
+        error: null,
+      }
     case "submit":
       return { ...state, busy: true, error: null }
     case "failed":
@@ -65,12 +81,18 @@ export function sheetReducer(state: SheetState, event: SheetEvent): SheetState {
   }
 }
 
-/** Why the pay button cannot be pressed, or null when it can. */
+/**
+ * Why the pay button cannot be pressed, or null when it can, in the
+ * sheet's order. payerValid: undefined when the sheet does not ask for a
+ * name and email (a customer).
+ */
 export function unavailableReason(
   product: PurchaseProduct | null,
-  terms: boolean
-): "product" | "terms" | null {
+  terms: boolean,
+  payerValid?: boolean
+): "product" | "payer" | "terms" | null {
   if (!product) return "product"
+  if (payerValid === false) return "payer"
   return terms ? null : "terms"
 }
 

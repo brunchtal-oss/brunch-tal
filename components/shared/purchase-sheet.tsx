@@ -7,6 +7,8 @@ import { XIcon } from "lucide-react"
 import { InlineNotice } from "@/components/shared/inline-notice"
 import { OnlineButton } from "@/components/shared/online-button"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
 import {
   Sheet,
   SheetClose,
@@ -16,12 +18,15 @@ import {
 } from "@/components/ui/sheet"
 import { Spinner } from "@/components/ui/spinner"
 import { customerCopy } from "@/lib/copy/customer"
+import { authCopy } from "@/lib/copy/auth"
 import { shellCopy } from "@/lib/copy/shell"
 import { errorMessage, type ErrorCode } from "@/lib/errors"
 import { newIdempotencyKey } from "@/lib/idempotency"
 import { formatAgorot } from "@/lib/money"
 import {
   holdsSeat,
+  PAYER_NAME_MAX,
+  payerShape,
   purchaseRequest,
   type PurchaseProduct,
   type PurchaseStartInput,
@@ -61,6 +66,7 @@ export function PurchaseSheet({
   trigger,
   triggerClassName,
   contactHref = null,
+  askPayer = false,
 }: {
   products: readonly PurchaseProduct[]
   // The session of the page; a pinned product holds a seat in it, a card is
@@ -71,6 +77,9 @@ export function PurchaseSheet({
   triggerClassName?: string
   // WhatsApp, for a refusal that advises contact.
   contactHref?: string | null
+  // The guest sheet: her name and email for Grow's receipt (the Grow form
+  // does not ask for them). A customer's come from her profile.
+  askPayer?: boolean
 }) {
   const [state, dispatch] = useReducer(sheetReducer, CLOSED)
   const titleRef = useRef<HTMLHeadingElement>(null)
@@ -88,7 +97,16 @@ export function PurchaseSheet({
   }, [])
 
   const product = products.find((p) => p.id === state.productId) ?? null
-  const request = purchaseRequest(product, eventId, state.terms, state.key)
+  const payer = askPayer
+    ? payerShape({ name: state.payerName, email: state.payerEmail })
+    : undefined
+  const request = purchaseRequest(
+    product,
+    eventId,
+    state.terms,
+    state.key,
+    payer
+  )
 
   async function pay() {
     if (state.busy || !request) return
@@ -157,6 +175,10 @@ export function PurchaseSheet({
           busy={state.busy}
           error={state.error}
           contactHref={contactHref}
+          payer={
+            askPayer ? { name: state.payerName, email: state.payerEmail } : null
+          }
+          onPayer={(change) => dispatch({ type: "payer", ...change })}
           onSelect={(productId) =>
             dispatch({ type: "select", productId, key: newIdempotencyKey() })
           }
@@ -182,6 +204,8 @@ export function PurchaseSheetBody({
   busy,
   error,
   contactHref,
+  payer = null,
+  onPayer = () => {},
   onSelect,
   onTerms,
   onPay,
@@ -193,6 +217,9 @@ export function PurchaseSheetBody({
   busy: boolean
   error: ErrorCode | null
   contactHref: string | null
+  // The guest sheet's fields as typed; null when the sheet does not ask.
+  payer?: { name: string; email: string } | null
+  onPayer?: (change: { name?: string; email?: string }) => void
   onSelect: (productId: string) => void
   onTerms: (value: boolean) => void
   onPay: () => void
@@ -202,7 +229,11 @@ export function PurchaseSheetBody({
   const reasonId = `${ids}-reason`
   const product = products.find((p) => p.id === productId) ?? null
   const pinned = holdsSeat(product, eventId)
-  const reason = unavailableReason(product, terms)
+  const reason = unavailableReason(
+    product,
+    terms,
+    payer ? payerShape(payer) !== null : undefined
+  )
   const unavailable = reason !== null && !busy
 
   return (
@@ -249,6 +280,50 @@ export function PurchaseSheetBody({
         <p className="mt-3 text-[15px] text-muted-foreground">
           {copy.holdLine}
         </p>
+      )}
+
+      {payer && (
+        <fieldset className="mt-5 flex flex-col gap-4">
+          <legend className="mb-2 text-[15px] font-semibold">
+            {copy.payerLegend}
+          </legend>
+          <Field>
+            <FieldLabel htmlFor={`${ids}-payer-name`}>
+              {copy.payerName} {authCopy.required}
+            </FieldLabel>
+            <Input
+              id={`${ids}-payer-name`}
+              value={payer.name}
+              onChange={(e) => onPayer({ name: e.target.value })}
+              autoComplete="name"
+              maxLength={PAYER_NAME_MAX}
+              required
+              aria-required
+              className="h-12 text-base"
+            />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor={`${ids}-payer-email`}>
+              {copy.payerEmail} {authCopy.required}
+            </FieldLabel>
+            <Input
+              id={`${ids}-payer-email`}
+              value={payer.email}
+              onChange={(e) => onPayer({ email: e.target.value })}
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              dir="ltr"
+              required
+              aria-required
+              aria-describedby={`${ids}-payer-hint`}
+              className="h-12 text-start text-base"
+            />
+            <FieldDescription id={`${ids}-payer-hint`}>
+              {copy.payerHint}
+            </FieldDescription>
+          </Field>
+        </fieldset>
       )}
 
       <div className="mt-5 flex min-h-11 items-center gap-3">
@@ -313,7 +388,9 @@ export function PurchaseSheetBody({
         <p id={reasonId} className="mt-2 text-[15px] text-muted-foreground">
           {reason === "product"
             ? copy.chooseProduct
-            : errorMessage("TERMS_REQUIRED")}
+            : reason === "payer"
+              ? copy.payerMissing
+              : errorMessage("TERMS_REQUIRED")}
         </p>
       )}
     </>

@@ -5,6 +5,7 @@ import {
   holdsSeat,
   NO_PURCHASE,
   parsePurchaseOptions,
+  payerShape,
   purchaseInputShape,
   purchaseRequest,
   type PurchaseProduct,
@@ -109,6 +110,44 @@ describe("purchaseRequest", () => {
     expect(purchaseRequest(CARD, null, false, KEY)).toBeNull()
     expect(purchaseRequest(null, null, true, KEY)).toBeNull()
   })
+
+  it("the guest sheet: sent with valid details, nothing while they are not valid", () => {
+    const payer = { name: "Noa", email: "noa@example.test" }
+    expect(purchaseRequest(CARD, null, true, KEY, payer)?.payer).toEqual(payer)
+    expect(purchaseRequest(CARD, null, true, KEY, null)).toBeNull()
+    // A customer's sheet does not ask: no payer key at all.
+    expect(purchaseRequest(CARD, null, true, KEY)).not.toHaveProperty("payer")
+  })
+})
+
+describe("payerShape", () => {
+  it("trims a valid name and email", () => {
+    expect(
+      payerShape({ name: "  Noa Levi ", email: " noa@example.test " })
+    ).toEqual({
+      name: "Noa Levi",
+      email: "noa@example.test",
+    })
+    expect(
+      payerShape({ name: "x".repeat(80), email: "a@b.co" })?.name
+    ).toHaveLength(80)
+  })
+
+  it.each([
+    null,
+    "x",
+    {},
+    { name: "Noa" },
+    { name: "", email: "noa@example.test" },
+    { name: "   ", email: "noa@example.test" },
+    { name: "x".repeat(81), email: "noa@example.test" },
+    { name: "Noa", email: "noa" },
+    { name: "Noa", email: "noa@example" },
+    { name: "Noa", email: `${"a".repeat(250)}@x.co` },
+    { name: 1, email: "noa@example.test" },
+  ])("refuses %j", (value) => {
+    expect(payerShape(value)).toBeNull()
+  })
 })
 
 describe("purchaseInputShape", () => {
@@ -126,9 +165,20 @@ describe("purchaseInputShape", () => {
     )
   })
 
+  it("keeps valid guest details, trimmed", () => {
+    expect(
+      purchaseInputShape({
+        ...input,
+        payer: { name: " Noa ", email: "noa@example.test" },
+      })?.payer
+    ).toEqual({ name: "Noa", email: "noa@example.test" })
+  })
+
   it.each([
     null,
     "x",
+    { ...input, payer: { name: "", email: "noa@example.test" } },
+    { ...input, payer: null },
     { ...input, productId: "x" },
     { ...input, eventId: "x" },
     { ...input, eventId: undefined },

@@ -1,3 +1,4 @@
+import { isEmailShape } from "@/lib/email"
 import type { ErrorCode } from "@/lib/errors"
 
 import { isCheckoutId } from "./checkout-cookie"
@@ -72,6 +73,28 @@ export function canBuy(options: PurchaseOptions): boolean {
   return options.enabled && options.products.length > 0
 }
 
+// A guest's name and email for Grow's receipt (the Grow form does not ask
+// for them, and its API refuses a form without a client name: errorCode
+// 2201, sandbox 2026-11-21). Sent to Grow only; never stored, logged or put
+// in a cookie. A customer's come from her profile on the server.
+export type PayerInput = { name: string; email: string }
+
+export const PAYER_NAME_MAX = 80
+
+/** Trimmed name and email when both are valid, else null (pure). */
+export function payerShape(value: unknown): PayerInput | null {
+  if (typeof value !== "object" || value === null) return null
+  const row = value as Record<string, unknown>
+  if (typeof row.name !== "string" || typeof row.email !== "string") {
+    return null
+  }
+  const name = row.name.trim()
+  const email = row.email.trim()
+  if (name.length === 0 || name.length > PAYER_NAME_MAX) return null
+  if (!isEmailShape(email)) return null
+  return { name, email }
+}
+
 // The pay button's Server Action (the session pages and "my purchases").
 export type PurchaseStartInput = {
   productId: string
@@ -79,6 +102,8 @@ export type PurchaseStartInput = {
   eventId: string | null
   termsAccepted: boolean
   idempotencyKey: string
+  // The guest sheet only.
+  payer?: PayerInput
 }
 
 export type PurchaseStartResult =
@@ -100,31 +125,38 @@ export function purchaseInputShape(input: unknown): PurchaseStartInput | null {
   ) {
     return null
   }
+  const payer = row.payer === undefined ? undefined : payerShape(row.payer)
+  if (payer === null) return null
   return {
     productId: row.productId,
     eventId: row.eventId as string | null,
     termsAccepted: row.termsAccepted,
     idempotencyKey: row.idempotencyKey,
+    ...(payer ? { payer } : {}),
   }
 }
 
 /**
  * What the pay button sends, or null while it cannot be pressed (no
- * product, or the terms not accepted). A pinned product holds a seat in
- * the page's session; a card is bought without one.
+ * product, no valid payer details where the sheet asks for them, or the
+ * terms not accepted). A pinned product holds a seat in the page's
+ * session; a card is bought without one. `payer`: undefined when the sheet
+ * does not ask (a customer), null while the fields are not valid.
  */
 export function purchaseRequest(
   product: PurchaseProduct | null,
   eventId: string | null,
   termsAccepted: boolean,
-  idempotencyKey: string
+  idempotencyKey: string,
+  payer?: PayerInput | null
 ): PurchaseStartInput | null {
-  if (!product || !termsAccepted) return null
+  if (!product || !termsAccepted || payer === null) return null
   return {
     productId: product.id,
     eventId: holdsSeat(product, eventId) ? eventId : null,
     termsAccepted,
     idempotencyKey,
+    ...(payer ? { payer } : {}),
   }
 }
 

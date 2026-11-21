@@ -150,6 +150,26 @@ describe("PurchaseSheet: open", () => {
     expect(html).not.toContain(ERROR_MESSAGES.TERMS_REQUIRED)
   })
 
+  it("the guest sheet: name and email fields with the receipt hint; a customer's has none", () => {
+    const html = body({ payer: { name: "", email: "" } })
+    expect(html).toContain(copy.payerName)
+    expect(html).toContain(copy.payerEmail)
+    expect(html).toContain(copy.payerHint)
+    expect(html).toContain('type="email"')
+    expect(html).toContain('autoComplete="email"')
+    expect(body()).not.toContain(copy.payerHint)
+  })
+
+  it("the guest sheet without valid details: aria-disabled, described by their reason", () => {
+    const html = body({ payer: { name: "Noa", email: "noa@" } })
+    const button = payButton(html)
+    expect(button).toContain('aria-disabled="true"')
+    expect(html).toContain(copy.payerMissing)
+    expect(
+      payButton(body({ payer: { name: "Noa", email: "noa@example.test" } }))
+    ).not.toContain("aria-disabled")
+  })
+
   it("busy: aria-busy and aria-disabled, not dimmed", () => {
     const button = payButton(body({ busy: true }))
     expect(button).toContain('aria-busy="true"')
@@ -179,6 +199,8 @@ describe("the sheet's state", () => {
       key: "k1",
       productId: SINGLE.id,
       terms: false,
+      payerName: "",
+      payerEmail: "",
       busy: false,
       error: null,
     })
@@ -235,6 +257,23 @@ describe("the sheet's state", () => {
     expect(unavailableReason(null, true)).toBe("product")
     expect(unavailableReason(CARD, false)).toBe("terms")
     expect(unavailableReason(CARD, true)).toBeNull()
+    // The guest sheet: the details before the terms, in the sheet's order.
+    expect(unavailableReason(CARD, false, false)).toBe("payer")
+    expect(unavailableReason(CARD, false, true)).toBe("terms")
+    expect(unavailableReason(CARD, true, true)).toBeNull()
+    expect(unavailableReason(null, true, false)).toBe("product")
+  })
+
+  it("the guest's details: kept as typed, and across a reopening", () => {
+    const named = sheetReducer(opened, { type: "payer", name: "Noa" })
+    const both = sheetReducer(named, { type: "payer", email: "n@x.co" })
+    expect([both.payerName, both.payerEmail]).toEqual(["Noa", "n@x.co"])
+    const again = sheetReducer(sheetReducer(both, { type: "close" }), {
+      type: "open",
+      key: "k3",
+      products,
+    })
+    expect([again.payerName, again.payerEmail]).toEqual(["Noa", "n@x.co"])
   })
 
   it.each([

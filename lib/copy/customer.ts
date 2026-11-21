@@ -389,6 +389,14 @@ export const customerCopy = {
     holdLine: "המקום נשמר לך עד סיום התשלום.",
     // The pay button's reason while no product is chosen.
     chooseProduct: "צריך לבחור מה לרכוש",
+    // The guest sheet only: her details for the payment's receipt (sent to
+    // Grow only, never kept by the site).
+    payerLegend: "הפרטים שלך",
+    payerName: "שם מלא",
+    payerEmail: "מייל",
+    payerHint: "הקבלה על התשלום תישלח למייל הזה.",
+    // The pay button's reason while the name or the email is not valid.
+    payerMissing: "צריך למלא שם ומייל תקין כדי להמשיך",
     termsBefore: "קראתי ואני מסכימה ל",
     termsLink: "תקנון הרכישה",
     pay: "למעבר לתשלום",

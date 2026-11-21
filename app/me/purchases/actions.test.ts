@@ -54,8 +54,13 @@ describe("the purchase actions (online payments, PR B)", () => {
       ...INPUT,
       eventId: EVENT,
     })
-    await startGuestPurchaseAction({ ...INPUT, as: "customer" })
-    expect(startPurchase).toHaveBeenLastCalledWith({ as: "guest", ...INPUT })
+    const payer = { name: "Noa", email: "noa@example.test" }
+    await startGuestPurchaseAction({ ...INPUT, as: "customer", payer })
+    expect(startPurchase).toHaveBeenLastCalledWith({
+      as: "guest",
+      ...INPUT,
+      payer,
+    })
   })
 
   it("a card is always bought without a session", async () => {
@@ -78,6 +83,17 @@ describe("the purchase actions (online payments, PR B)", () => {
         code: "INVALID_INPUT",
       })
     }
+    expect(startPurchase).not.toHaveBeenCalled()
+  })
+
+  it("a guest without her name and email: INVALID_INPUT without a start", async () => {
+    await expect(startGuestPurchaseAction(INPUT)).resolves.toEqual({
+      ok: false,
+      code: "INVALID_INPUT",
+    })
+    await expect(
+      startGuestPurchaseAction({ ...INPUT, payer: { name: "Noa", email: "x" } })
+    ).resolves.toEqual({ ok: false, code: "INVALID_INPUT" })
     expect(startPurchase).not.toHaveBeenCalled()
   })
 })

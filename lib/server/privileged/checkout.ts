@@ -28,6 +28,8 @@ import {
 import {
   NO_PURCHASE,
   parsePurchaseOptions,
+  payerShape,
+  type PayerInput,
   type PurchaseOptions,
 } from "@/lib/payments/purchase-options"
 import { callRpc } from "@/lib/rpc"
@@ -117,8 +119,11 @@ export type StartCheckoutInput = {
   eventId: string | null
   termsAccepted: boolean
   idempotencyKey: string
-  // Sent to Grow only (name, email, phone); never stored by us.
-  payer?: GrowClientInput
+  // A guest's name and email (required for a guest, ignored for a
+  // customer, whose own come from her profile and claims). Grow refuses a
+  // form without a client name (errorCode 2201). Sent to Grow only; never
+  // stored, logged, audited or put in a cookie.
+  payer?: PayerInput
 }
 
 export type StartCheckoutData =
@@ -139,12 +144,43 @@ function growFor(deps: CheckoutDeps, config: GrowConfig): GrowClient {
   return (deps.grow ?? createGrowClient)(config)
 }
 
-// The uid of the verified session claims (never browser input), else null.
-async function sessionUid(): Promise<string | null> {
+// The uid and email of the verified session claims (never browser input),
+// else null.
+async function sessionIdentity(): Promise<{
+  uid: string
+  email: string | null
+} | null> {
   const supabase = await createClient()
   const { data } = await supabase.auth.getClaims()
   const sub = data?.claims?.sub
-  return isCheckoutId(sub) ? sub : null
+  if (!isCheckoutId(sub)) return null
+  const email = data?.claims?.email
+  return { uid: sub, email: typeof email === "string" && email ? email : null }
+}
+
+async function sessionUid(): Promise<string | null> {
+  return (await sessionIdentity())?.uid ?? null
+}
+
+// A customer's Grow client: her profile's name and her claims' email. null
+// when the profile cannot be read (logged without any personal detail).
+async function customerPayer(
+  service: ReturnType<typeof createServiceClient>,
+  uid: string,
+  email: string | null
+): Promise<GrowClientInput | null> {
+  const { data, error } = await service
+    .from("profiles")
+    .select("full_name")
+    .eq("id", uid)
+    .maybeSingle()
+  const name =
+    !error && typeof data?.full_name === "string" ? data.full_name.trim() : ""
+  if (!name) {
+    console.error("checkout.payer_failed", { found: !error && data !== null })
+    return null
+  }
+  return { name, ...(email ? { emails: [email] } : {}) }
 }
 
 export async function startCheckout(
@@ -165,6 +201,12 @@ export async function startCheckout(
   ) {
     return { ok: false, code: "INVALID_INPUT" }
   }
+  // A guest's name and email are checked again here (the sheet checked
+  // them too); nothing is created without them.
+  const guestPayer = input.as === "guest" ? payerShape(input.payer) : null
+  if (input.as === "guest" && !guestPayer) {
+    return { ok: false, code: "INVALID_INPUT" }
+  }
 
   const service = createServiceClient()
   const args = {
@@ -177,7 +219,8 @@ export async function startCheckout(
   // The checkout bucket (an hour): 10 per IP; a customer also by her uid,
   // 3. Checked here without counting; counted only once the checkout and
   // its Grow form exist, so a failed attempt costs nothing.
-  const uid = input.as === "customer" ? await sessionUid() : null
+  const identity = input.as === "customer" ? await sessionIdentity() : null
+  const uid = identity?.uid ?? null
   if (input.as === "customer" && !uid) {
     return { ok: false, code: "NOT_AUTHORIZED" }
   }
@@ -189,6 +232,19 @@ export async function startCheckout(
       ok: false,
       code: stop === "TOO_MANY_ATTEMPTS" ? "CHECKOUT_TOO_MANY" : stop,
     }
+  }
+
+  // Grow's client, before any row exists. A customer always has a name
+  // (profiles.full_name is not null and not blank); an unreadable profile
+  // refuses with SERVER_ERROR and creates nothing.
+  let payer: GrowClientInput
+  if (identity) {
+    const named = await customerPayer(service, identity.uid, identity.email)
+    if (!named) return { ok: false, code: "SERVER_ERROR" }
+    payer = named
+  } else {
+    const guest = guestPayer as PayerInput
+    payer = { name: guest.name, emails: [guest.email] }
   }
 
   let begun: Awaited<ReturnType<typeof callRpc<"begin_checkout">>>
@@ -230,7 +286,7 @@ export async function startCheckout(
     url = await growFor(deps, config).createPaymentForm({
       description: `${checkout.reference} · ${checkout.product_name}`,
       amountAgorot: checkout.amount_agorot,
-      client: input.payer,
+      client: payer,
       successUrl: backUrl("/pay/return"),
       failureUrl: backUrl("/pay/failed"),
       notifyUrl: notifyUrl.href,
@@ -306,7 +362,7 @@ export async function purchaseOptions(
  * for the same event, or the cards without one), then startCheckout.
  */
 export async function startPurchase(
-  input: Omit<StartCheckoutInput, "payer">,
+  input: StartCheckoutInput,
   deps: CheckoutDeps = {}
 ): Promise<StartCheckoutResult> {
   const env = deps.env ?? process.env
@@ -339,6 +395,8 @@ export async function startPurchase(
     {
       ...input,
       eventId: product.validityMode === "days" ? null : input.eventId,
+      // A customer's details come from her profile, never from the page.
+      payer: input.as === "guest" ? input.payer : undefined,
     },
     deps
   )
