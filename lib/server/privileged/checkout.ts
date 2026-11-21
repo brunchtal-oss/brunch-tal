@@ -672,8 +672,9 @@ export function returnPathFor(
   }
 }
 
-// The waits before each further look on the browser return.
-export const RETURN_WAITS_MS = [1000, 2000] as const
+// The waits before each further look on the browser return (about 10
+// seconds in all: a sandbox receipt took longer than 3 seconds, 2026-11-21).
+export const RETURN_WAITS_MS = [1000, 2000, 3000, 4000] as const
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))

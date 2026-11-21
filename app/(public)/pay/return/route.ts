@@ -14,6 +14,9 @@ import {
 // the home page for a guest) with ?payment=<state>. The checkout is the
 // cookie entry whose id is c; no c or no match is "not found".
 
+// The return waits up to about 10 seconds for the receipt (RETURN_WAITS_MS).
+export const maxDuration = 30
+
 export async function GET(request: Request): Promise<Response> {
   const store = await cookies()
   const c = new URL(request.url).searchParams.get("c")

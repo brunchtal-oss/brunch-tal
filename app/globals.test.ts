@@ -97,7 +97,22 @@ describe("globals.css", () => {
   // Story 5.25: the accessibility button above the bars and the notice, and
   // the room the page keeps for it.
   describe("accessibility button", () => {
-    const flat = css.replace(/\s+/g, " ")
+    // Without the guard that skips a route kept hidden (fixes-log #27,
+    // checked on its own below), so the selectors read as written.
+    const HIDDEN_GUARD =
+      /:not\(\s*\[style\*="display: none"\], \[style\*="display: none"\] \*\s*\)/g
+    const flat = css
+      .replace(/\s+/g, " ")
+      .replace(HIDDEN_GUARD, "")
+      .replace(/:has\(\s*(\[data-[^\]]+\])\s*\)/g, ":has($1)")
+
+    it("every :has([data-…]) skips a marker inside a hidden route", () => {
+      const spaced = css.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\s+/g, " ")
+      const markers = spaced.match(/:has\(\s*\[data-[^\]]+\][^)]*\)?/g) ?? []
+      expect(markers.length).toBeGreaterThan(20)
+      for (const marker of markers)
+        expect(marker, marker).toMatch(/^:has\(\s*\[data-[^\]]+\]:not\(/)
+    })
 
     function rule(selector: string) {
       const start = flat.indexOf(`${selector} {`)
@@ -148,7 +163,7 @@ describe("globals.css", () => {
       )
       expect(
         rule(
-          "body:has([data-a11y-button]):not(:has([data-tab-bar])):not( :has([data-site-footer]) ) #main"
+          "body:has([data-a11y-button]):not( :has([data-tab-bar]) ):not( :has([data-site-footer]) ) #main"
         )
       ).toContain("padding-bottom: var(--a11y-room)")
     })

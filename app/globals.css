@@ -215,6 +215,15 @@
 }
 
 /*
+ * Every `:has([data-…])` below skips a marker inside a route that is kept
+ * hidden: with cacheComponents, Next keeps routes visited earlier in the tab
+ * in the page inside a hidden <Activity>, which React hides with an inline
+ * `display: none !important`. Without it, the admin's hidden mobile tab bar
+ * took the room off the customer's tab bar on a wide screen after signing
+ * out of /admin and into /me (fixes-log #27, 2026-11-21).
+ */
+
+/*
  * The accessibility button (story 5.25, components/shared/
  * accessibility-button.tsx), on every page but /admin: 48px at the bottom
  * inline-end. While it is in the page the page keeps --a11y-room (16 + 48)
@@ -222,14 +231,27 @@
  * control ends under it: here for a page with neither a tab bar nor a
  * footer (the auth layout, /offline), below for the tab bar and the footer.
  */
-html:has([data-a11y-button]) {
+html:has(
+  [data-a11y-button]:not([style*="display: none"], [style*="display: none"] *)
+) {
   --a11y-room: 4rem;
   scroll-padding-bottom: var(--a11y-room);
 }
 /* Inside <main> (min-h-svh in the auth layout and /offline), so the page
    does not grow past the screen. */
-body:has([data-a11y-button]):not(:has([data-tab-bar])):not(
-    :has([data-site-footer])
+body:has(
+    [data-a11y-button]:not([style*="display: none"], [style*="display: none"] *)
+  ):not(
+    :has(
+      [data-tab-bar]:not([style*="display: none"], [style*="display: none"] *)
+    )
+  ):not(
+    :has(
+      [data-site-footer]:not(
+        [style*="display: none"],
+        [style*="display: none"] *
+      )
+    )
   )
   #main {
   padding-bottom: var(--a11y-room);
@@ -241,23 +263,37 @@ body:has([data-a11y-button]):not(:has([data-tab-bar])):not(
  * it in /me: the page ends above them and a focused control is never
  * scrolled under them.
  */
-html:has([data-tab-bar]) {
+html:has(
+  [data-tab-bar]:not([style*="display: none"], [style*="display: none"] *)
+) {
   scroll-padding-bottom: calc(
     var(--tab-bar-height, calc(4rem + env(safe-area-inset-bottom))) + 1rem +
       var(--a11y-room, 0px)
   );
 }
-body:has([data-tab-bar]) {
+body:has(
+  [data-tab-bar]:not([style*="display: none"], [style*="display: none"] *)
+) {
   padding-bottom: calc(
     var(--tab-bar-height, calc(4rem + env(safe-area-inset-bottom))) + 1rem +
       var(--a11y-room, 0px)
   );
 }
 @media (min-width: 64rem) {
-  html:has([data-tab-bar="mobile"]) {
+  html:has(
+    [data-tab-bar="mobile"]:not(
+      [style*="display: none"],
+      [style*="display: none"] *
+    )
+  ) {
     scroll-padding-bottom: 0;
   }
-  body:has([data-tab-bar="mobile"]) {
+  body:has(
+    [data-tab-bar="mobile"]:not(
+      [style*="display: none"],
+      [style*="display: none"] *
+    )
+  ) {
     padding-bottom: 0;
   }
 }
@@ -273,16 +309,25 @@ body:has([data-tab-bar]) {
  */
 @custom-variant short (@media (max-height: 479.98px));
 
-html:has([data-top-bar]) {
+html:has(
+  [data-top-bar]:not([style*="display: none"], [style*="display: none"] *)
+) {
   scroll-padding-top: 5rem;
 }
-html:has([data-whatsapp-bar]) {
+html:has(
+  [data-whatsapp-bar]:not([style*="display: none"], [style*="display: none"] *)
+) {
   scroll-padding-bottom: calc(
     4.5rem + 1px + env(safe-area-inset-bottom) + 1rem + var(--a11y-room, 0px)
   );
 }
 @media (max-height: 479.98px) {
-  html:has([data-whatsapp-bar]) {
+  html:has(
+    [data-whatsapp-bar]:not(
+      [style*="display: none"],
+      [style*="display: none"] *
+    )
+  ) {
     scroll-padding-bottom: var(--a11y-room, 0px);
   }
 }
@@ -294,16 +339,31 @@ html:has([data-whatsapp-bar]) {
  * (short window). The accessibility button's room (story 5.25) is added
  * with and without the bar.
  */
-body:has([data-a11y-button]) [data-site-footer] {
+body:has(
+    [data-a11y-button]:not([style*="display: none"], [style*="display: none"] *)
+  )
+  [data-site-footer] {
   padding-bottom: var(--a11y-room);
 }
-body:has([data-whatsapp-bar]) [data-site-footer] {
+body:has(
+    [data-whatsapp-bar]:not(
+      [style*="display: none"],
+      [style*="display: none"] *
+    )
+  )
+  [data-site-footer] {
   padding-bottom: calc(
     5.5rem + 1px + env(safe-area-inset-bottom) + var(--a11y-room, 0px)
   );
 }
 @media (max-height: 479.98px) {
-  body:has([data-whatsapp-bar]) [data-site-footer] {
+  body:has(
+      [data-whatsapp-bar]:not(
+        [style*="display: none"],
+        [style*="display: none"] *
+      )
+    )
+    [data-site-footer] {
     padding-bottom: var(--a11y-room, 0px);
   }
 }
@@ -317,12 +377,24 @@ body:has([data-whatsapp-bar]) [data-site-footer] {
 [data-cookie-notice] {
   bottom: calc(1rem + env(safe-area-inset-bottom));
 }
-body:has([data-whatsapp-bar]) [data-cookie-notice] {
+body:has(
+    [data-whatsapp-bar]:not(
+      [style*="display: none"],
+      [style*="display: none"] *
+    )
+  )
+  [data-cookie-notice] {
   bottom: calc(4.5rem + 1px + env(safe-area-inset-bottom) + 1rem);
 }
 @media (max-height: 479.98px) {
   [data-cookie-notice],
-  body:has([data-whatsapp-bar]) [data-cookie-notice] {
+  body:has(
+      [data-whatsapp-bar]:not(
+        [style*="display: none"],
+        [style*="display: none"] *
+      )
+    )
+    [data-cookie-notice] {
     bottom: 0;
   }
 }
@@ -337,25 +409,51 @@ body:has([data-whatsapp-bar]) [data-cookie-notice] {
 [data-a11y-button] {
   bottom: calc(1rem + env(safe-area-inset-bottom));
 }
-body:has([data-whatsapp-bar]) [data-a11y-button] {
+body:has(
+    [data-whatsapp-bar]:not(
+      [style*="display: none"],
+      [style*="display: none"] *
+    )
+  )
+  [data-a11y-button] {
   bottom: calc(4.5rem + 1px + env(safe-area-inset-bottom) + 1rem);
 }
 /* The tab bar publishes its height (labels may wrap to two lines on a narrow
    phone) as --tab-bar-height on <html>; before that, one-line labels: 68px
    plus its 1px top rule and the safe area. */
-body:has([data-tab-bar]) [data-a11y-button] {
+body:has(
+    [data-tab-bar]:not([style*="display: none"], [style*="display: none"] *)
+  )
+  [data-a11y-button] {
   bottom: calc(
     var(--tab-bar-height, calc(4.25rem + 1px + env(safe-area-inset-bottom))) +
       1rem
   );
 }
-body:has([data-cookie-notice]) [data-a11y-button] {
+body:has(
+    [data-cookie-notice]:not(
+      [style*="display: none"],
+      [style*="display: none"] *
+    )
+  )
+  [data-a11y-button] {
   bottom: calc(
     1rem + env(safe-area-inset-bottom) + var(--cookie-notice-height, 0px) +
       0.5rem
   );
 }
-body:has([data-whatsapp-bar]):has([data-cookie-notice]) [data-a11y-button] {
+body:has(
+    [data-whatsapp-bar]:not(
+      [style*="display: none"],
+      [style*="display: none"] *
+    )
+  ):has(
+    [data-cookie-notice]:not(
+      [style*="display: none"],
+      [style*="display: none"] *
+    )
+  )
+  [data-a11y-button] {
   bottom: calc(
     4.5rem + 1px + env(safe-area-inset-bottom) + 1rem +
       var(--cookie-notice-height, 0px) + 0.5rem
@@ -364,18 +462,47 @@ body:has([data-whatsapp-bar]):has([data-cookie-notice]) [data-a11y-button] {
 /* The customer's multi-date selection bar sits right above the tab bar and
    publishes its height as --selection-bar-height: while it is shown the
    button is 16 above it, clear of "ביטול הבחירה" and "להמשך". */
-body:has([data-selection-bar]) [data-a11y-button] {
+body:has(
+    [data-selection-bar]:not(
+      [style*="display: none"],
+      [style*="display: none"] *
+    )
+  )
+  [data-a11y-button] {
   bottom: calc(
     var(--tab-bar-height, calc(4.25rem + 1px + env(safe-area-inset-bottom))) +
       var(--selection-bar-height, 0px) + 1rem
   );
 }
 @media (max-height: 479.98px) {
-  body:has([data-whatsapp-bar]) [data-a11y-button] {
+  body:has(
+      [data-whatsapp-bar]:not(
+        [style*="display: none"],
+        [style*="display: none"] *
+      )
+    )
+    [data-a11y-button] {
     bottom: calc(1rem + env(safe-area-inset-bottom));
   }
-  body:has([data-cookie-notice]) [data-a11y-button],
-  body:has([data-whatsapp-bar]):has([data-cookie-notice]) [data-a11y-button] {
+  body:has(
+      [data-cookie-notice]:not(
+        [style*="display: none"],
+        [style*="display: none"] *
+      )
+    )
+    [data-a11y-button],
+  body:has(
+      [data-whatsapp-bar]:not(
+        [style*="display: none"],
+        [style*="display: none"] *
+      )
+    ):has(
+      [data-cookie-notice]:not(
+        [style*="display: none"],
+        [style*="display: none"] *
+      )
+    )
+    [data-a11y-button] {
     bottom: calc(var(--cookie-notice-height, 0px) + 0.5rem);
   }
 }
@@ -418,18 +545,50 @@ body:has([data-selection-bar]) [data-a11y-button] {
     size: A4 portrait;
     margin: 12mm;
   }
-  body:has([data-work-sheet]) {
+  body:has(
+    [data-work-sheet]:not([style*="display: none"], [style*="display: none"] *)
+  ) {
     padding-bottom: 0;
     background: #fff;
     color: #000;
   }
-  body:has([data-work-sheet]) [data-top-bar],
-  body:has([data-work-sheet]) nav,
-  body:has([data-work-sheet]) a[href="#main"],
-  body:has([data-work-sheet]) button:not([data-slot="checkbox"]) {
+  body:has(
+      [data-work-sheet]:not(
+        [style*="display: none"],
+        [style*="display: none"] *
+      )
+    )
+    [data-top-bar],
+  body:has(
+      [data-work-sheet]:not(
+        [style*="display: none"],
+        [style*="display: none"] *
+      )
+    )
+    nav,
+  body:has(
+      [data-work-sheet]:not(
+        [style*="display: none"],
+        [style*="display: none"] *
+      )
+    )
+    a[href="#main"],
+  body:has(
+      [data-work-sheet]:not(
+        [style*="display: none"],
+        [style*="display: none"] *
+      )
+    )
+    button:not([data-slot="checkbox"]) {
     display: none !important;
   }
-  body:has([data-work-sheet]) main {
+  body:has(
+      [data-work-sheet]:not(
+        [style*="display: none"],
+        [style*="display: none"] *
+      )
+    )
+    main {
     max-width: none;
     padding: 0;
     gap: 1rem;

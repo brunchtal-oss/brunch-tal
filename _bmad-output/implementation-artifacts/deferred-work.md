@@ -1068,3 +1068,8 @@
   target: הדלקת הסליקה (לפני ONLINE_PAYMENTS_ENABLED=true בפרודקשן, אחרי אישור Grow)
   summary: ביקורת מלאה אחרונה על כל הסליקה (PR א' ו-PR ב') עם כל המבקרים (blind, edge-case, verification-gap, intent, כסף וזכויות, אבטחה, מקביליות, מיפוי מטריצות, adversarial). ההדלקה רק אחרי שהיא נקייה. לבדוק בה גם את הרשומות שנדחו: הגבלת הקצב לאורחת (10 לכל IP, חלון שעה קבוע, CGNAT), ההתאמה שבודקת עד 20 checkouts כל 10 דקות (מעל כ-120 בשעה היא מפגרת), והסטטוס של מסמך ב-morning (closed מול not cancelled, לפי הלכידה ב-sandbox).
   evidence: החלטת המשתמשת 2026-11-20 (completion-plan-2026-10-10.md): PR א' נסגר אחרי סבב התיקונים השלישי, בלי סבב ביקורת נוסף.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-online-payments-grow-b.md`
+  target: הדלקת הסליקה (לפני ONLINE_PAYMENTS_ENABLED=true בפרודקשן, אחרי אישור Grow)
+  summary: לבדוק כרטיס שנדחה בפעם הראשונה מול Grow החי: התשלום נדחה בטופס, לא נרשם תשלום, החזרה (או הביטול) מגיעה ל-`?payment=failed`, והמקום משתחרר.
+  evidence: בבדיקת ה-sandbox (2026-11-21) כרטיס הכשל של Grow (4580458045804580) נכשל רק בעסקת תשלומים, ואצלנו `maxPayments` הוא 1, ולכן הוא חויב. מסלול הכשל נבדק רק דרך ביטול בטופס של Grow. בדיקות היחידה מכסות את `failFromPayment` ואת החזרה בלי מסמך (החלטת מנהל העבודה).

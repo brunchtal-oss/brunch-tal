@@ -61,9 +61,8 @@ export function scopeOf(field: EditorField): React.ReactNode {
   }
   if (field === "reminder") return copy.scope.bookings
   if (field === "creditOptions") return copy.scope.credits
-  if (field === "paymentWindow" || field === "holdGrace") {
-    return copy.scope.checkouts
-  }
+  if (field === "paymentWindow") return copy.scope.paymentWindow
+  if (field === "holdGrace") return copy.scope.holdGrace
   if (field === "publicPurchase") return copy.scope.publicPurchase
   return copy.scope.new
 }

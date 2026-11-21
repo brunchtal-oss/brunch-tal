@@ -867,14 +867,14 @@ describe("returnFromPayment", () => {
     expect(sleep).toHaveBeenCalledWith(1000)
   })
 
-  it("still no receipt after the looks (about 3 seconds): the pending page", async () => {
+  it("still no receipt after the looks (about 10 seconds): the pending page", async () => {
     routeRpc(undefined, { back: ok({ ...RETURN_ROW, state: "open" }) })
     findCheckoutDocument.mockResolvedValue({ kind: "none" })
     expect(await returnFromPayment(cookie, CHECKOUT, deps)).toEqual({
       path: `/pay/pending?c=${CHECKOUT}`,
     })
-    expect(findCheckoutDocument).toHaveBeenCalledTimes(3)
-    expect(sleep.mock.calls).toEqual([[1000], [2000]])
+    expect(findCheckoutDocument).toHaveBeenCalledTimes(5)
+    expect(sleep.mock.calls).toEqual([[1000], [2000], [3000], [4000]])
   })
 
   it("a paid checkout or morning down: no further look", async () => {
